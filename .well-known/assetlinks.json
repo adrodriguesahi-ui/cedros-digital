@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.netlify.cedros_digital.twa",
+        "sha256_cert_fingerprints": ["40:15:80:E8:EA:E1:F8:A2:6B:C0:72:DE:FB:7E:82:E6:A8:EB:B8:F2:C2:50:F3:08:EF:7D:50:99:F9:50:B6:48"]
+      }
+    }]
