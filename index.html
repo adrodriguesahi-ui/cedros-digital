@@ -7720,13 +7720,21 @@
         return;
       }
       const originalText = forgotPasswordBtn.textContent;
+      forgotPasswordBtn.textContent = 'Verificando…';
+      const { data: row } = await supa.from('usuarios').select('id').eq('email', email).maybeSingle();
+      if(!row){
+        forgotPasswordBtn.textContent = originalText;
+        forgotPasswordMsg.style.color = '#FF6B5C';
+        forgotPasswordMsg.textContent = 'Esse e-mail não está cadastrado no clube.';
+        return;
+      }
       forgotPasswordBtn.textContent = 'Enviando…';
       const { error } = await supa.auth.resetPasswordForEmail(email, { redirectTo: window.location.href.split('#')[0] });
       forgotPasswordBtn.textContent = originalText;
       forgotPasswordMsg.style.color = error ? '#FF6B5C' : 'var(--accent)';
       forgotPasswordMsg.textContent = error
         ? ('Não foi possível enviar: ' + error.message)
-        : 'Enviamos um link para redefinir sua senha — confira seu e-mail.';
+        : 'E-mail cadastrado — enviamos um link para redefinir sua senha. Confira sua caixa de entrada.';
     });
   }
 
