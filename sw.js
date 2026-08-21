@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cedros-digital-v4';
+const CACHE_NAME = 'cedros-digital-v5';
 const ASSETS = [
   './login.html',
   './manifest.json',
@@ -24,12 +24,30 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Cache-first, falling back to network, so the app keeps working offline
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   // Only cache same-origin requests — never intercept calls to Supabase (or
   // any other external API), otherwise admin data would be served stale.
   if (new URL(event.request.url).origin !== self.location.origin) return;
+
+  // HTML: network-first. The app updates often (login, permissions, admin
+  // panel), and a cache-first HTML response can get a visitor permanently
+  // stuck on an old version — including old, less-restrictive login logic.
+  // Falls back to the cached copy only when offline.
+  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Everything else (icons, manifest): cache-first, they rarely change.
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
