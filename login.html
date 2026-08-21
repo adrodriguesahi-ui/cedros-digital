@@ -7703,13 +7703,17 @@
   if(forgotPasswordBtn){
     forgotPasswordBtn.addEventListener('click', async (e) => {
       e.preventDefault();
-      const email = document.getElementById('email').value.trim();
+      const emailInput = document.getElementById('email');
+      const email = emailInput.value.trim();
       forgotPasswordMsg.style.display = '';
       if(!validEmail(email)){
+        document.getElementById('emailField').classList.add('invalid');
+        emailInput.focus();
         forgotPasswordMsg.style.color = '#FF6B5C';
         forgotPasswordMsg.textContent = 'Digite seu e-mail no campo acima antes de clicar aqui.';
         return;
       }
+      document.getElementById('emailField').classList.remove('invalid');
       if(!supa){
         forgotPasswordMsg.style.color = '#FF6B5C';
         forgotPasswordMsg.textContent = 'Indisponível: Supabase não configurado.';
