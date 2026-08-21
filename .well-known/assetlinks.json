@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "app.netlify.cedros_digital.twa",
-        "sha256_cert_fingerprints": ["40:15:80:E8:EA:E1:F8:A2:6B:C0:72:DE:FB:7E:82:E6:A8:EB:B8:F2:C2:50:F3:08:EF:7D:50:99:F9:50:B6:48"]
+        "sha256_cert_fingerprints": ["DF:9E:BB:BC:10:0A:0D:60:07:72:4E:ED:A6:56:EF:BE:00:0C:B8:56:C8:80:AE:9B:92:3B:E5:80:9B:74:BB:10"]
       }
     }]
