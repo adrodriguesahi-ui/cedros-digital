@@ -7588,16 +7588,19 @@
 
   // Aplica o acesso por área do usuário logado, reaproveitando a mesma função
   // usada pela simulação "testar como este usuário" no painel de Administração.
+  // Devolve { found:false } se o e-mail não estiver cadastrado em `usuarios`
+  // (ou seja, ainda não foi liberado por um admin) — usado pra barrar o acesso.
   async function applyLoggedInUser(authUser){
-    if(!supa || !authUser || !authUser.email) return;
+    if(!supa || !authUser || !authUser.email) return { found: false };
     const { data: row } = await supa.from('usuarios').select('nome, papel, acesso').eq('email', authUser.email).maybeSingle();
-    if(!row) return; // ainda não cadastrado pelo admin — dashboard fica sem restrição, como hoje
+    if(!row) return { found: false };
     let access = row.acesso;
     if(!access){
       const { data: def } = await supa.rpc('permissoes_padrao_papel', { papel_nome: row.papel });
       access = def || (window.__ROLE_VISIBILITY && window.__ROLE_VISIBILITY[row.papel]) || {};
     }
     if(window.__applyAccessToDashboard) window.__applyAccessToDashboard(access, row.nome);
+    return { found: true };
   }
 
   wireSubmit('loginForm', 'submitBtn', [
@@ -7607,7 +7610,11 @@
     if(!supa) return { error: 'Login indisponível: Supabase não configurado.' };
     const { data, error } = await supa.auth.signInWithPassword({ email: values.email, password: values.password });
     if(error) return { error: 'E-mail ou senha incorretos.' };
-    await applyLoggedInUser(data.user);
+    const { found } = await applyLoggedInUser(data.user);
+    if(!found){
+      await supa.auth.signOut();
+      return { error: 'Seu cadastro ainda não foi aprovado pela diretoria. Aguarde a liberação de acesso.' };
+    }
     showView('view-dashboard');
   }, 'loginAuthError');
 
@@ -7631,14 +7638,15 @@
     showView('view-success');
   }, 'signupAuthError');
 
-  // Sessão já ativa (ex.: reabriu o app) — pula direto pro dashboard com o acesso aplicado
+  // Sessão já ativa (ex.: reabriu o app) — pula direto pro dashboard com o acesso aplicado,
+  // mas só se o e-mail continuar cadastrado (senão desloga: pode ter sido removido pelo admin)
   if(supa){
-    supa.auth.getSession().then(({ data }) => {
+    supa.auth.getSession().then(async ({ data }) => {
       const user = data && data.session && data.session.user;
-      if(user){
-        applyLoggedInUser(user);
-        showView('view-dashboard');
-      }
+      if(!user) return;
+      const { found } = await applyLoggedInUser(user);
+      if(found){ showView('view-dashboard'); }
+      else { await supa.auth.signOut(); }
     });
   }
 
