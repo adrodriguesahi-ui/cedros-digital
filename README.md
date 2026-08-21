@@ -2,15 +2,24 @@
 
 App do Clube de Desbravadores Cedros do Líbano — PWA (Progressive Web App).
 
+Publicado em: https://cedros-digital.adrodrigues-ahi.workers.dev
+
 ## Como publicar
 
-1. Suba todos os arquivos desta pasta para este repositório no GitHub (arraste os arquivos pela interface web do GitHub, em "Add file → Upload files").
-2. Na Netlify, escolha "Import from Git", conecte este repositório e implante.
-3. Pronto — o site já fica acessível e instalável como app.
+Hospedado no **Cloudflare Workers** (Workers & Pages → "Connect to Git"), com deploy automático a cada `git push` na branch `main` — configurado via [wrangler.toml](wrangler.toml) (site estático, sem build, servido a partir da raiz do repositório).
+
+Pra publicar do zero:
+1. No painel da Cloudflare, vá em **Workers & Pages → Create → Connect to Git** e selecione este repositório.
+2. Build command: nenhum. Deploy command: `npx wrangler deploy` (usa o `wrangler.toml` já no repo).
+3. Depois do primeiro deploy, em **Domains**, ative o toggle da URL `*.workers.dev` (vem desativado por padrão).
 
 ## Como atualizar depois
 
-Sempre que uma nova versão do `login.html` for enviada, é só subir o arquivo atualizado para este mesmo repositório (substituindo o antigo) que a Netlify publica a nova versão automaticamente.
+É só dar `git push` no repositório (branch `main`) — a Cloudflare detecta o commit e publica a nova versão automaticamente.
+
+## Backend (Supabase)
+
+Login, cadastro e o painel de Administração usam o Supabase (Postgres + Auth) — ver [supabase/schema.sql](supabase/schema.sql) para o schema (tabelas, função de permissões padrão e RLS).
 
 ## Gerar APK
 
