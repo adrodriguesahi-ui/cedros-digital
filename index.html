@@ -2358,6 +2358,7 @@
                 <option>Cedros</option>
                 <option>Cedros Rosa</option>
                 <option>Flanboyan</option>
+                <option>Diretoria do Clube</option>
                 <option>Ainda não sei minha unidade</option>
               </select>
               <span class="field-icon-right">
@@ -4196,6 +4197,7 @@
                 <option value="Cedros">Cedros</option>
                 <option value="Cedros Rosa">Cedros Rosa</option>
                 <option value="Flanboyan">Flanboyan</option>
+                <option value="Diretoria do Clube">Nenhuma — só Diretoria</option>
               </select>
             </div>
             <div>
@@ -7292,7 +7294,7 @@
         '<span class="ad-card-access-btn" title="Gerenciar acesso"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.5 12.5 8-8M16 5l2 2M13 8l2 2"/></svg></span>';
       card.querySelector('.pl-event-title').textContent = row.nome;
       card.querySelector('.ad-col-email').textContent = row.email;
-      card.querySelector('.ad-col-unit').textContent = 'Unidade ' + row.unidade;
+      card.querySelector('.ad-col-unit').textContent = (row.unidade === 'Diretoria do Clube' ? '' : 'Unidade ') + row.unidade;
       card.querySelector('.pl-event-tag').textContent = row.papel;
       card.dataset.id = row.id;
       card.dataset.name = row.nome;
