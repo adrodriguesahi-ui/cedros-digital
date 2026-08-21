@@ -2,7 +2,7 @@
       "relation": ["delegate_permission/common.handle_all_urls"],
       "target": {
         "namespace": "android_app",
-        "package_name": "app.netlify.cedros_digital.twa",
-        "sha256_cert_fingerprints": ["DF:9E:BB:BC:10:0A:0D:60:07:72:4E:ED:A6:56:EF:BE:00:0C:B8:56:C8:80:AE:9B:92:3B:E5:80:9B:74:BB:10"]
+        "package_name": "dev.workers.adrodrigues_ahi.cedros_digital.twa",
+        "sha256_cert_fingerprints": ["A4:C3:78:63:41:5C:0F:3F:A5:1E:96:BF:B1:C1:2B:4A:61:4E:7C:32:0C:C1:90:23:62:DF:4D:3B:58:A4:2F:88"]
       }
     }]
