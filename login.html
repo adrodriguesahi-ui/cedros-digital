@@ -2293,6 +2293,8 @@
             <a href="#" class="link">Esqueci a senha</a>
           </div>
 
+          <p class="pl-reminder-hint" id="loginAuthError" style="display:none; color:#FF6B5C; text-align:center;"></p>
+
           <button type="submit" class="btn btn-fill" id="submitBtn">
             <span class="spinner"></span>
             <span class="btn-label">Entrar</span>
@@ -2389,6 +2391,8 @@
             <p class="error-msg">As senhas precisam ser iguais.</p>
           </div>
           </div>
+
+          <p class="pl-reminder-hint" id="signupAuthError" style="display:none; color:#FF6B5C; text-align:center;"></p>
 
           <button type="submit" class="btn btn-fill" id="signupBtn" style="margin-top:6px;">
             <span class="spinner"></span>
@@ -7480,6 +7484,7 @@
         }
       }
     }
+    window.__applyAccessToDashboard = applyAccessToDashboard;
 
     accessSaveBtn.addEventListener('click', async () => {
       const card = window.__currentEditingUserCard;
@@ -7534,21 +7539,27 @@
     });
   });
 
-  function wireSubmit(formId, btnId, fields, onOk){
+  // wireSubmit: valida os campos e chama onSubmit(values), que faz a chamada
+  // real ao Supabase Auth e devolve { error } (mensagem) em caso de falha.
+  function wireSubmit(formId, btnId, fields, onSubmit, errorElId){
     const form = document.getElementById(formId);
     const btn = document.getElementById(btnId);
     const label = btn.querySelector('.btn-label');
     const originalLabel = label.textContent;
+    const errorEl = errorElId ? document.getElementById(errorElId) : null;
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if(errorEl) errorEl.style.display = 'none';
       let ok = true;
+      const values = {};
       fields.forEach(f => {
         const el = document.getElementById(f.id);
         const wrap = document.getElementById(f.field);
         const valid = f.validate(el.value);
         wrap.classList.toggle('invalid', !valid);
         if(!valid) ok = false;
+        values[f.id] = el.value;
       });
       if(!ok) return;
 
@@ -7556,21 +7567,44 @@
       btn.setAttribute('disabled','true');
       label.textContent = 'Enviando…';
 
-      setTimeout(() => {
-        btn.classList.remove('loading');
-        btn.removeAttribute('disabled');
-        label.textContent = originalLabel;
-        if(onOk) onOk();
-      }, 1500);
+      const result = await onSubmit(values);
+
+      btn.classList.remove('loading');
+      btn.removeAttribute('disabled');
+      label.textContent = originalLabel;
+
+      if(result && result.error){
+        if(errorEl){ errorEl.textContent = result.error; errorEl.style.display = ''; }
+      }
     });
   }
 
   const validEmail = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
+  // Aplica o acesso por área do usuário logado, reaproveitando a mesma função
+  // usada pela simulação "testar como este usuário" no painel de Administração.
+  async function applyLoggedInUser(authUser){
+    if(!supa || !authUser || !authUser.email) return;
+    const { data: row } = await supa.from('usuarios').select('nome, papel, acesso').eq('email', authUser.email).maybeSingle();
+    if(!row) return; // ainda não cadastrado pelo admin — dashboard fica sem restrição, como hoje
+    let access = row.acesso;
+    if(!access){
+      const { data: def } = await supa.rpc('permissoes_padrao_papel', { papel_nome: row.papel });
+      access = def || (window.__ROLE_VISIBILITY && window.__ROLE_VISIBILITY[row.papel]) || {};
+    }
+    if(window.__applyAccessToDashboard) window.__applyAccessToDashboard(access, row.nome);
+  }
+
   wireSubmit('loginForm', 'submitBtn', [
     { id:'email', field:'emailField', validate: validEmail },
     { id:'password', field:'passField', validate: v => v.length >= 6 }
-  ], () => showView('view-dashboard'));
+  ], async (values) => {
+    if(!supa) return { error: 'Login indisponível: Supabase não configurado.' };
+    const { data, error } = await supa.auth.signInWithPassword({ email: values.email, password: values.password });
+    if(error) return { error: 'E-mail ou senha incorretos.' };
+    await applyLoggedInUser(data.user);
+    showView('view-dashboard');
+  }, 'loginAuthError');
 
   wireSubmit('signupForm', 'signupBtn', [
     { id:'fullname', field:'nameField', validate: v => v.trim().length >= 3 },
@@ -7579,7 +7613,29 @@
     { id:'unidade', field:'unitField', validate: v => v.trim().length > 0 },
     { id:'passwordSignup', field:'passSignupField', validate: v => v.length >= 6 },
     { id:'passwordConfirm', field:'confirmField', validate: v => v.length >= 6 && v === document.getElementById('passwordSignup').value }
-  ], () => showView('view-success'));
+  ], async (values) => {
+    if(!supa) return { error: 'Cadastro indisponível: Supabase não configurado.' };
+    const { error } = await supa.auth.signUp({
+      email: values.emailSignup,
+      password: values.passwordSignup,
+      options: { data: { full_name: values.fullname } }
+    });
+    if(error){
+      return { error: /registered|exists/i.test(error.message) ? 'Este e-mail já está cadastrado.' : 'Não foi possível criar a conta: ' + error.message };
+    }
+    showView('view-success');
+  }, 'signupAuthError');
+
+  // Sessão já ativa (ex.: reabriu o app) — pula direto pro dashboard com o acesso aplicado
+  if(supa){
+    supa.auth.getSession().then(({ data }) => {
+      const user = data && data.session && data.session.user;
+      if(user){
+        applyLoggedInUser(user);
+        showView('view-dashboard');
+      }
+    });
+  }
 
   // Auto-rotating activities banner: timed fade slideshow ("apresentação")
   (function(){
