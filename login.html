@@ -16,6 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --night:#0A130C;
@@ -1011,6 +1012,9 @@
     font-size:11.5px; font-weight:600; line-height:1.45; color:rgba(245,239,225,0.75);
   }
   .ad-disclaimer svg{ flex-shrink:0; margin-top:1px; color:var(--gold); }
+
+  /* Cabeçalho de colunas (Nome/E-mail/Unidade/Papel) só faz sentido na tabela larga do desktop */
+  #adTableHead{ display:none; }
 
   .ad-role-tab{
     flex-shrink:0; white-space:nowrap;
@@ -2167,6 +2171,33 @@
     .pl-fab{ right:calc(50% - 320px + 5vw); }
     .pl-modal-overlay{ align-items:center; }
     .pl-modal{ max-width:460px; border-radius:22px; max-height:80vh; box-shadow:0 24px 60px rgba(0,0,0,0.4); }
+
+    /* Administração: lista de usuários vira tabela larga em vez de cards empilhados de celular */
+    #view-admin .pl-content{ max-width:1040px; }
+    #adTableHead{
+      display:grid;
+      grid-template-columns:44px 1.6fr 1.8fr 1.2fr 1fr 32px;
+      gap:14px;
+      padding:6px 16px;
+      font-size:10.5px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;
+      color:rgba(245,239,225,0.45);
+    }
+    #adContent .ad-card{
+      display:grid;
+      grid-template-columns:44px 1.6fr 1.8fr 1.2fr 1fr 32px;
+      align-items:center;
+      gap:14px;
+    }
+    #adContent .pl-event-body{ display:contents; }
+    #adContent .pl-event-title{ margin:0; }
+    #adContent .pl-event-meta{ display:contents; }
+    #adContent .ad-col-sep{ display:none; }
+    #adContent .pl-event-tag{ justify-self:start; }
+    #adContent .ad-card-access-btn{ justify-self:center; color:rgba(245,239,225,0.45); }
+
+    #adModalOverlay .pl-modal{ max-width:620px; }
+    #adModalOverlay .ad-field-row{ display:flex; gap:14px; }
+    #adModalOverlay .ad-field-row > *{ flex:1; min-width:0; }
   }
 </style>
 </head>
@@ -4115,46 +4146,12 @@
             <input type="text" class="pl-input sp-search-input" id="adUserSearchInput" placeholder="Buscar usuário por nome ou e-mail...">
           </div>
 
+          <div class="ad-table-head" id="adTableHead" aria-hidden="true">
+            <span></span><span>Nome</span><span>E-mail</span><span>Unidade</span><span>Papel</span><span></span>
+          </div>
+
           <div id="adContent">
-            <a href="#" class="pl-event-card ad-card" data-name="Adrodrigues Santos" data-email="adrodrigues@cedrosdigital.org" data-unit="Ype" data-role="admin" data-role-label="Administrador">
-              <div class="am-thumb">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></svg>
-              </div>
-              <div class="pl-event-body">
-                <h4 class="pl-event-title">Adrodrigues Santos</h4>
-                <p class="pl-event-meta">adrodrigues@cedrosdigital.org · Unidade Ype</p>
-              </div>
-              <span class="pl-event-tag pl-tag-red">Administrador</span>
-              <span class="ad-card-access-btn" title="Gerenciar acesso">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.5 12.5 8-8M16 5l2 2M13 8l2 2"/></svg>
-              </span>
-            </a>
-            <a href="#" class="pl-event-card ad-card" data-name="Camila Ferreira" data-email="camila.ferreira@cedrosdigital.org" data-unit="Cedros" data-role="diretoria" data-role-label="Diretoria">
-              <div class="am-thumb">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></svg>
-              </div>
-              <div class="pl-event-body">
-                <h4 class="pl-event-title">Camila Ferreira</h4>
-                <p class="pl-event-meta">camila.ferreira@cedrosdigital.org · Unidade Cedros</p>
-              </div>
-              <span class="pl-event-tag pl-tag-gold">Diretoria</span>
-              <span class="ad-card-access-btn" title="Gerenciar acesso">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.5 12.5 8-8M16 5l2 2M13 8l2 2"/></svg>
-              </span>
-            </a>
-            <a href="#" class="pl-event-card ad-card" data-name="Lucas Andrade" data-email="lucas.andrade@cedrosdigital.org" data-unit="Pinheiro" data-role="usuario" data-role-label="Usuário">
-              <div class="am-thumb">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></svg>
-              </div>
-              <div class="pl-event-body">
-                <h4 class="pl-event-title">Lucas Andrade</h4>
-                <p class="pl-event-meta">lucas.andrade@cedrosdigital.org · Unidade Pinheiro</p>
-              </div>
-              <span class="pl-event-tag pl-tag-gray">Usuário</span>
-              <span class="ad-card-access-btn" title="Gerenciar acesso">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.5 12.5 8-8M16 5l2 2M13 8l2 2"/></svg>
-              </span>
-            </a>
+            <p class="pl-reminder-hint" id="adLoadingHint">Carregando usuários…</p>
           </div>
 
         </div>
@@ -4173,25 +4170,35 @@
             </button>
           </div>
 
-          <label class="pl-field-label">Nome</label>
-          <input type="text" class="pl-input" id="adFieldName" placeholder="Nome completo" maxlength="60">
-
-          <label class="pl-field-label">E-mail de acesso</label>
-          <input type="email" class="pl-input" id="adFieldEmail" placeholder="nome@exemplo.com" maxlength="80">
+          <div class="ad-field-row">
+            <div>
+              <label class="pl-field-label">Nome</label>
+              <input type="text" class="pl-input" id="adFieldName" placeholder="Nome completo" maxlength="60">
+            </div>
+            <div>
+              <label class="pl-field-label">E-mail de acesso</label>
+              <input type="email" class="pl-input" id="adFieldEmail" placeholder="nome@exemplo.com" maxlength="80">
+            </div>
+          </div>
           <p class="pl-reminder-hint">Esse e-mail identifica o usuário e será usado para login quando o sistema de contas for implementado.</p>
 
-          <label class="pl-field-label">Unidade</label>
-          <select class="pl-input" id="adFieldUnit">
-            <option value="Ype">Ype</option>
-            <option value="Ype Roxo">Ype Roxo</option>
-            <option value="Pinheiro">Pinheiro</option>
-            <option value="Cedros">Cedros</option>
-            <option value="Cedros Rosa">Cedros Rosa</option>
-            <option value="Flanboyan">Flanboyan</option>
-          </select>
-
-          <label class="pl-field-label">Papel / Permissão</label>
-          <select class="pl-input" id="adFieldRole"></select>
+          <div class="ad-field-row">
+            <div>
+              <label class="pl-field-label">Unidade</label>
+              <select class="pl-input" id="adFieldUnit">
+                <option value="Ype">Ype</option>
+                <option value="Ype Roxo">Ype Roxo</option>
+                <option value="Pinheiro">Pinheiro</option>
+                <option value="Cedros">Cedros</option>
+                <option value="Cedros Rosa">Cedros Rosa</option>
+                <option value="Flanboyan">Flanboyan</option>
+              </select>
+            </div>
+            <div>
+              <label class="pl-field-label">Papel / Permissão</label>
+              <select class="pl-input" id="adFieldRole"></select>
+            </div>
+          </div>
           <p class="pl-reminder-hint" id="adRoleHint">Selecione a função do usuário.</p>
 
           <button type="button" class="pl-btn" id="adUserAccessBtn" style="background:rgba(255,255,255,0.08); color:var(--cream); margin-top:4px; display:none;">
@@ -4619,6 +4626,14 @@
 </div>
 
 <script>
+  // Supabase — painel de Administração (ver supabase/schema.sql).
+  // Preencha com a Project URL e a chave anon public do seu projeto.
+  const SUPABASE_URL = 'https://noqaveawzxipxnmufwfn.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_-w3hya9Qp73MAM1B1FhuFQ_v2DWv6lk';
+  const supa = (SUPABASE_URL.indexOf('COLE_AQUI') === -1)
+    ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
+
   const views = document.querySelectorAll('.view');
   function showView(id){
     views.forEach(v => v.classList.toggle('active', v.id === id));
@@ -7201,103 +7216,193 @@
     window.__eoShowHub = showHub;
   })();
 
-  // Administração: usuários/permissões + controle de acesso por área
-  setupSimpleListScreen({
-    prefix: 'ad', cardClass: 'ad-card', required: 'Name',
-    createTitle: 'Novo Usuário', editTitle: 'Editar Usuário',
-    fields: [
-      {key:'Name', dataKey:'name'}, {key:'Email', dataKey:'email'}, {key:'Unit', dataKey:'unit', default:'Ype'}, {key:'Role', dataKey:'role', default:''}
-    ],
-    buildCard(data){
-      const roleOpt = document.querySelector('#adFieldRole option[value="' + data.Role + '"]');
-      const color = roleOpt ? roleOpt.getAttribute('data-color') : 'gray';
-      const label = roleOpt ? roleOpt.textContent : data.Role;
-      const card = document.createElement('a');
-      card.href = '#'; card.className = 'pl-event-card ad-card';
-      card.innerHTML =
-        '<div class="am-thumb"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></svg></div>' +
-        '<div class="pl-event-body"><h4 class="pl-event-title"></h4><p class="pl-event-meta"></p></div>' +
-        '<span class="pl-event-tag pl-tag-' + color + '"></span>';
-      card.querySelector('.pl-event-title').textContent = data.Name;
-      card.querySelector('.pl-event-meta').textContent = (data.Email ? data.Email + ' · ' : '') + 'Unidade ' + data.Unit;
-      card.querySelector('.pl-event-tag').textContent = label;
-      card.dataset.name = data.Name; card.dataset.email = data.Email; card.dataset.unit = data.Unit; card.dataset.role = data.Role; card.dataset.roleLabel = label;
-      return card;
-    },
-    afterSave(){ if(window.__wireUserCards) window.__wireUserCards(); }
-  });
-
-  // Busca de usuários (Usuários e Permissões)
+  // Administração: usuários/permissões — dados reais em Supabase (ver supabase/schema.sql)
   (function(){
-    const searchInput = document.getElementById('adUserSearchInput');
-    const content = document.getElementById('adContent');
-    if(!searchInput || !content) return;
-    function normalize(s){
-      return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    }
-    searchInput.addEventListener('input', () => {
-      const term = normalize(searchInput.value.trim());
-      content.querySelectorAll('.ad-card').forEach(card => {
-        const match = !term || normalize(card.dataset.name).includes(term) || normalize(card.dataset.email).includes(term);
-        card.style.display = match ? '' : 'none';
-      });
-    });
-  })();
-
-  // Acesso por área de cada usuário: permitir/restringir, refletindo nos ícones do dashboard
-  (function(){
-    const addBtn = document.getElementById('adAddBtn');
-    const userAccessBtn = document.getElementById('adUserAccessBtn');
-    const overlay = document.getElementById('adUserAccessOverlay');
-    const closeBtn = document.getElementById('adUserAccessClose');
-    const titleEl = document.getElementById('adUserAccessTitle');
-    const list = document.getElementById('adUserAccessList');
-    const resetBtn = document.getElementById('adUserAccessResetBtn');
-    const saveBtn = document.getElementById('adUserAccessSaveBtn');
-    const simBanner = document.getElementById('bdAccessSimBanner');
-    const simName = document.getElementById('bdAccessSimName');
-    const simClear = document.getElementById('bdAccessSimClear');
-    if(!userAccessBtn || !overlay) return;
-
+    const AREAS = [
+      { key: 'planning', label: 'Planejamento Anual', icon: '<rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/>' },
+      { key: 'classes', label: 'Classes Regulares', icon: '<circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/>' },
+      { key: 'units', label: 'Unidades', icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/>' },
+      { key: 'devotional', label: 'Devocional', icon: '<path d="M6 4h9l3 3v13H6Z"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/>' },
+      { key: 'treasury', label: 'Tesouraria', icon: '<circle cx="12" cy="12" r="9"/><path d="M12 7v10"/><path d="M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5c0 1.4 1.3 2 3 2.5 1.7.5 3 1.1 3 2.5 0 1.4-1.3 2.5-3 2.5s-3-1.1-3-2.5"/>' },
+      { key: 'secretary', label: 'Secretaria', icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>' },
+      { key: 'storage', label: 'Almoxarifado', icon: '<path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>' },
+      { key: 'manuals', label: 'Manuais', icon: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/>' },
+      { key: 'birthdays', label: 'Aniversariantes', icon: '<path d="M12 2c1 3-2 4-2 7a4 4 0 0 0 8 0c0-1-.5-2-1-2 .3 2-1 3-2 3-1.5 0-2-1.3-2-2.5 0-2 2-3 1-5.5-.7-1.7-2-2-2 0Z"/><path d="M6 22h12l-1-6H7l-1 6Z"/>' },
+      { key: 'specialties', label: 'Manual de Especialidades', icon: '<circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/>' },
+      { key: 'admin', label: 'Administração', icon: '<path d="M12 2 4 6v6c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10V6Z"/><path d="m9.5 12 1.8 1.8L15 10"/>' }
+    ];
     const AREA_TO_GOTO = {
       planning: 'view-planning', classes: 'view-classes', units: 'view-units', devotional: 'view-devotional',
       treasury: 'view-treasury', secretary: 'view-secretary', storage: 'view-storage', manuals: 'view-manuals',
       birthdays: 'view-birthdays', specialties: 'view-specialties', admin: 'view-admin'
     };
+    window.__ADMIN_AREAS = AREAS;
+
+    const content = document.getElementById('adContent');
+    const loadingHint = document.getElementById('adLoadingHint');
+    const searchInput = document.getElementById('adUserSearchInput');
+    const overlay = document.getElementById('adModalOverlay');
+    const modalTitle = document.getElementById('adModalTitle');
+    const modalClose = document.getElementById('adModalClose');
+    const addBtn = document.getElementById('adAddBtn');
+    const deleteBtn = document.getElementById('adDeleteBtn');
+    const saveBtn = document.getElementById('adSaveBtn');
+    const fieldName = document.getElementById('adFieldName');
+    const fieldEmail = document.getElementById('adFieldEmail');
+    const fieldUnit = document.getElementById('adFieldUnit');
+    const fieldRole = document.getElementById('adFieldRole');
+    const userAccessBtn = document.getElementById('adUserAccessBtn');
+    if(!content || !overlay) return;
+
+    const ROLE_VISIBILITY = {}; // nome do papel -> permissoes_padrao (carregado da tabela `papeis`)
+    const ROLE_COLORS = {};     // nome do papel -> cor da etiqueta
+    window.__ROLE_VISIBILITY = ROLE_VISIBILITY;
+
+    let editingCard = null;
+
+    function normalize(s){
+      return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    }
+
+    function applyFilter(){
+      if(!searchInput) return;
+      const term = normalize(searchInput.value.trim());
+      content.querySelectorAll('.ad-card').forEach(card => {
+        const match = !term || normalize(card.dataset.name).includes(term) || normalize(card.dataset.email).includes(term);
+        card.style.display = match ? '' : 'none';
+      });
+    }
+    if(searchInput) searchInput.addEventListener('input', applyFilter);
+
+    function buildCard(row){
+      const color = ROLE_COLORS[row.papel] || 'gray';
+      const card = document.createElement('a');
+      card.href = '#'; card.className = 'pl-event-card ad-card';
+      card.innerHTML =
+        '<div class="am-thumb"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></svg></div>' +
+        '<div class="pl-event-body"><h4 class="pl-event-title"></h4><p class="pl-event-meta"><span class="ad-col-email"></span><span class="ad-col-sep"> · </span><span class="ad-col-unit"></span></p></div>' +
+        '<span class="pl-event-tag pl-tag-' + color + '"></span>' +
+        '<span class="ad-card-access-btn" title="Gerenciar acesso"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.5 12.5 8-8M16 5l2 2M13 8l2 2"/></svg></span>';
+      card.querySelector('.pl-event-title').textContent = row.nome;
+      card.querySelector('.ad-col-email').textContent = row.email;
+      card.querySelector('.ad-col-unit').textContent = 'Unidade ' + row.unidade;
+      card.querySelector('.pl-event-tag').textContent = row.papel;
+      card.dataset.id = row.id;
+      card.dataset.name = row.nome;
+      card.dataset.email = row.email;
+      card.dataset.unit = row.unidade;
+      card.dataset.role = row.papel;
+      card.dataset.roleLabel = row.papel;
+      if(row.acesso) card.dataset.access = JSON.stringify(row.acesso);
+      card.addEventListener('click', (e) => { e.preventDefault(); openModal('edit', card); });
+      return card;
+    }
+
+    function showMessage(text){
+      content.innerHTML = '';
+      const p = document.createElement('p');
+      p.className = 'pl-reminder-hint';
+      p.textContent = text;
+      content.appendChild(p);
+    }
+
+    async function loadRoles(){
+      if(!supa) return;
+      const { data, error } = await supa.from('papeis').select('nome, cor, permissoes_padrao').order('nome');
+      if(error || !data) return;
+      fieldRole.innerHTML = '';
+      data.forEach(r => {
+        ROLE_VISIBILITY[r.nome] = r.permissoes_padrao || {};
+        ROLE_COLORS[r.nome] = r.cor;
+        const opt = document.createElement('option');
+        opt.value = r.nome; opt.textContent = r.nome; opt.setAttribute('data-color', r.cor);
+        fieldRole.appendChild(opt);
+      });
+    }
+
+    async function loadUsers(){
+      if(!supa){ showMessage('Configure SUPABASE_URL e SUPABASE_ANON_KEY no início do script para carregar os usuários (ver supabase/schema.sql).'); return; }
+      const { data, error } = await supa.from('usuarios').select('*').order('nome');
+      if(error){ showMessage('Não foi possível carregar os usuários: ' + error.message); return; }
+      content.innerHTML = '';
+      if(!data.length){ showMessage('Nenhum usuário cadastrado ainda.'); return; }
+      data.forEach(row => content.appendChild(buildCard(row)));
+      applyFilter();
+    }
+
+    function openModal(mode, card){
+      editingCard = card || null;
+      modalTitle.textContent = (mode === 'edit') ? 'Editar Usuário' : 'Novo Usuário';
+      deleteBtn.style.display = (mode === 'edit') ? '' : 'none';
+      fieldName.value = card ? card.dataset.name : '';
+      fieldEmail.value = card ? card.dataset.email : '';
+      fieldUnit.value = card ? card.dataset.unit : 'Ype';
+      fieldRole.value = card ? card.dataset.role : (fieldRole.options[0] ? fieldRole.options[0].value : '');
+      userAccessBtn.style.display = (mode === 'edit') ? '' : 'none';
+      window.__currentEditingUserCard = card || null;
+      overlay.classList.add('show');
+      setTimeout(() => fieldName.focus(), 150);
+    }
+    function closeModal(){ overlay.classList.remove('show'); editingCard = null; }
+
+    async function save(){
+      if(!fieldName.value.trim()){ fieldName.style.borderColor = '#FF6B5C'; return; }
+      if(!supa) return;
+      const payload = {
+        nome: fieldName.value.trim(),
+        email: fieldEmail.value.trim(),
+        unidade: fieldUnit.value,
+        papel: fieldRole.value
+      };
+      if(editingCard) payload.id = editingCard.dataset.id;
+      const { data, error } = await supa.from('usuarios').upsert(payload).select().single();
+      if(error){ alert('Não foi possível salvar: ' + error.message); return; }
+      const card = buildCard(data);
+      if(editingCard){ editingCard.replaceWith(card); } else { content.insertBefore(card, content.firstChild); }
+      applyFilter();
+      closeModal();
+    }
+
+    async function del(){
+      if(!editingCard || !supa) return;
+      const { error } = await supa.from('usuarios').delete().eq('id', editingCard.dataset.id);
+      if(error){ alert('Não foi possível excluir: ' + error.message); return; }
+      editingCard.remove();
+      closeModal();
+    }
+
+    addBtn.addEventListener('click', () => openModal('create'));
+    modalClose.addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => { if(e.target === overlay) closeModal(); });
+    saveBtn.addEventListener('click', save);
+    deleteBtn.addEventListener('click', del);
+    fieldName.addEventListener('input', () => { fieldName.style.borderColor = ''; });
+
+    loadRoles().then(loadUsers);
+
+    // ---- Acesso por área de cada usuário: permitir/restringir, refletindo nos ícones do dashboard ----
+    const accessOverlay = document.getElementById('adUserAccessOverlay');
+    const accessClose = document.getElementById('adUserAccessClose');
+    const accessTitle = document.getElementById('adUserAccessTitle');
+    const accessList = document.getElementById('adUserAccessList');
+    const accessResetBtn = document.getElementById('adUserAccessResetBtn');
+    const accessSaveBtn = document.getElementById('adUserAccessSaveBtn');
+    const simBanner = document.getElementById('bdAccessSimBanner');
+    const simName = document.getElementById('bdAccessSimName');
+    const simClear = document.getElementById('bdAccessSimClear');
 
     window.__currentEditingUserCard = null;
     let workingAccess = {};
-
-    function wireUserCards(){
-      document.querySelectorAll('.ad-card').forEach(card => {
-        card.addEventListener('click', () => {
-          window.__currentEditingUserCard = card;
-          userAccessBtn.style.display = '';
-        });
-      });
-    }
-    wireUserCards();
-    window.__wireUserCards = wireUserCards;
-
-    if(addBtn){
-      addBtn.addEventListener('click', () => {
-        window.__currentEditingUserCard = null;
-        userAccessBtn.style.display = 'none';
-      });
-    }
 
     function getUserAccess(card){
       if(card.dataset.access){
         try{ return JSON.parse(card.dataset.access); }catch(e){}
       }
-      const role = card.dataset.role;
-      const roleDefault = (window.__ROLE_VISIBILITY && window.__ROLE_VISIBILITY[role]) || {};
-      return Object.assign({}, roleDefault);
+      return Object.assign({}, ROLE_VISIBILITY[card.dataset.role] || {});
     }
 
-    function renderList(){
-      list.innerHTML = '';
-      const AREAS = window.__ADMIN_AREAS || [];
+    function renderAccessList(){
+      accessList.innerHTML = '';
       AREAS.forEach(area => {
         const row = document.createElement('div');
         row.className = 'ad-vis-row';
@@ -7329,29 +7434,32 @@
         const input = row.querySelector('.ad-vis-toggle');
         input.checked = workingAccess[area.key] !== false;
         input.addEventListener('change', () => { workingAccess[area.key] = input.checked; });
-        list.appendChild(row);
+        accessList.appendChild(row);
       });
     }
 
     userAccessBtn.addEventListener('click', () => {
       const card = window.__currentEditingUserCard;
       if(!card) return;
-      titleEl.textContent = 'Acesso por Área — ' + (card.dataset.name || '');
+      accessTitle.textContent = 'Acesso por Área — ' + (card.dataset.name || '');
       workingAccess = getUserAccess(card);
-      renderList();
-      overlay.classList.add('show');
+      renderAccessList();
+      accessOverlay.classList.add('show');
     });
 
-    resetBtn.addEventListener('click', () => {
+    accessResetBtn.addEventListener('click', async () => {
       const card = window.__currentEditingUserCard;
       if(!card) return;
-      const role = card.dataset.role;
-      workingAccess = Object.assign({}, (window.__ROLE_VISIBILITY && window.__ROLE_VISIBILITY[role]) || {});
-      renderList();
+      if(supa){
+        const { data } = await supa.rpc('permissoes_padrao_papel', { papel_nome: card.dataset.role });
+        workingAccess = Object.assign({}, data || ROLE_VISIBILITY[card.dataset.role] || {});
+      } else {
+        workingAccess = Object.assign({}, ROLE_VISIBILITY[card.dataset.role] || {});
+      }
+      renderAccessList();
     });
 
     function applyAccessToDashboard(access, userName){
-      const AREAS = window.__ADMIN_AREAS || [];
       let anyRestricted = false;
       const restrictedViews = [];
       AREAS.forEach(area => {
@@ -7373,16 +7481,18 @@
       }
     }
 
-    saveBtn.addEventListener('click', () => {
+    accessSaveBtn.addEventListener('click', async () => {
       const card = window.__currentEditingUserCard;
-      if(!card) return;
+      if(!card || !supa) return;
+      const { error } = await supa.from('usuarios').update({ acesso: workingAccess }).eq('id', card.dataset.id);
+      if(error){ alert('Não foi possível salvar o acesso: ' + error.message); return; }
       card.dataset.access = JSON.stringify(workingAccess);
       applyAccessToDashboard(workingAccess, card.dataset.name);
-      overlay.classList.remove('show');
+      accessOverlay.classList.remove('show');
     });
 
-    closeBtn.addEventListener('click', () => overlay.classList.remove('show'));
-    overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.classList.remove('show'); });
+    accessClose.addEventListener('click', () => accessOverlay.classList.remove('show'));
+    accessOverlay.addEventListener('click', (e) => { if(e.target === accessOverlay) accessOverlay.classList.remove('show'); });
 
     if(simClear){
       simClear.addEventListener('click', () => {
@@ -7391,110 +7501,6 @@
         simBanner.style.display = 'none';
       });
     }
-  })();
-
-  // Funções: hierarquia de acesso padrão + alimenta o campo "Papel / Permissão" do formulário de usuário
-  (function(){
-    const roleSelect = document.getElementById('adFieldRole');
-
-    const AREAS = [
-      { key: 'planning', label: 'Planejamento Anual', icon: '<rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/>' },
-      { key: 'classes', label: 'Classes Regulares', icon: '<circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/>' },
-      { key: 'units', label: 'Unidades', icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/>' },
-      { key: 'devotional', label: 'Devocional', icon: '<path d="M6 4h9l3 3v13H6Z"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/>' },
-      { key: 'treasury', label: 'Tesouraria', icon: '<circle cx="12" cy="12" r="9"/><path d="M12 7v10"/><path d="M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5c0 1.4 1.3 2 3 2.5 1.7.5 3 1.1 3 2.5 0 1.4-1.3 2.5-3 2.5s-3-1.1-3-2.5"/>' },
-      { key: 'secretary', label: 'Secretaria', icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>' },
-      { key: 'storage', label: 'Almoxarifado', icon: '<path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>' },
-      { key: 'manuals', label: 'Manuais', icon: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/>' },
-      { key: 'birthdays', label: 'Aniversariantes', icon: '<path d="M12 2c1 3-2 4-2 7a4 4 0 0 0 8 0c0-1-.5-2-1-2 .3 2-1 3-2 3-1.5 0-2-1.3-2-2.5 0-2 2-3 1-5.5-.7-1.7-2-2-2 0Z"/><path d="M6 22h12l-1-6H7l-1 6Z"/>' },
-      { key: 'specialties', label: 'Manual de Especialidades', icon: '<circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/>' },
-      { key: 'admin', label: 'Administração', icon: '<path d="M12 2 4 6v6c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10V6Z"/><path d="m9.5 12 1.8 1.8L15 10"/>' }
-    ];
-    const allTrue = {}; AREAS.forEach(a => allTrue[a.key] = true);
-
-    // Hierarquia de acesso padrão sugerida por nome de função.
-    // Cada nível abaixo herda o de cima e perde acesso a mais alguma coisa —
-    // Administrador (tudo) > Diretoria Executiva > Diretoria > Conselheiros/Instrutores > (funções novas/desconhecidas)
-    function defaultVisibilityFor(name){
-      const n = name.toLowerCase();
-
-      // Nível 1 — Administrador: acesso total, inclusive à própria Administração
-      if(n.indexOf('administrador') !== -1){
-        return Object.assign({}, allTrue);
-      }
-
-      // Nível 2 — Diretoria Executiva: acesso total às operações, só não entra na Administração
-      if(n.indexOf('executiv') !== -1){
-        return Object.assign({}, allTrue, { admin: false });
-      }
-
-      // Nível 3 — Diretoria: mais restrita que a Executiva — sem Administração, Tesouraria nem Secretaria
-      if(n.indexOf('diretoria') !== -1){
-        return Object.assign({}, allTrue, { admin: false, treasury: false, secretary: false });
-      }
-
-      // Nível 4 — Conselheiros: acompanham a rotina da unidade, sem financeiro/documentos oficiais/estoque
-      if(n.indexOf('conselh') !== -1){
-        return {
-          planning: true, classes: true, units: true, devotional: true,
-          manuals: true, birthdays: true, specialties: true,
-          treasury: false, secretary: false, storage: false, admin: false
-        };
-      }
-
-      // Nível 4 — Instrutores: mesmo nível de restrição dos Conselheiros, focado no ensino
-      if(n.indexOf('instrutor') !== -1){
-        return {
-          planning: true, classes: true, devotional: true, specialties: true, manuals: true,
-          units: false, birthdays: false,
-          treasury: false, secretary: false, storage: false, admin: false
-        };
-      }
-
-      // Nível 5 — funções novas/desconhecidas: padrão mais restrito, só o essencial de visualização
-      return {
-        planning: true, classes: true, devotional: true, manuals: true, birthdays: true,
-        units: false, specialties: false,
-        treasury: false, secretary: false, storage: false, admin: false
-      };
-    }
-
-    const ROLE_VISIBILITY = {};
-
-    const STATIC_ROLES = [
-      { name: 'Administrador', color: 'red' },
-      { name: 'Diretoria Executiva', color: 'purple' },
-      { name: 'Diretoria', color: 'gold' },
-      { name: 'Conselheiros', color: 'green' },
-      { name: 'Instrutores', color: 'blue' }
-    ];
-
-    function syncRolesUI(){
-      const roles = STATIC_ROLES;
-
-      // Garante uma entrada de visibilidade para cada função (preserva as já existentes)
-      roles.forEach(r => {
-        if(!ROLE_VISIBILITY[r.name]) ROLE_VISIBILITY[r.name] = defaultVisibilityFor(r.name);
-      });
-
-      // Reconstrói o <select> de Papel/Permissão do formulário de usuário
-      if(roleSelect){
-        const prevValue = roleSelect.value;
-        roleSelect.innerHTML = '';
-        roles.forEach(r => {
-          const opt = document.createElement('option');
-          opt.value = r.name; opt.textContent = r.name; opt.setAttribute('data-color', r.color);
-          roleSelect.appendChild(opt);
-        });
-        if(roles.some(r => r.name === prevValue)) roleSelect.value = prevValue;
-      }
-    }
-
-    window.__syncRolesUI = syncRolesUI;
-    window.__ADMIN_AREAS = AREAS;
-    window.__ROLE_VISIBILITY = ROLE_VISIBILITY;
-    window.__getRoleDefaultVisibility = defaultVisibilityFor;
-    syncRolesUI();
   })();
 
   // Dashboard: decorative links/cards (no destination yet) — just avoid a "#" page jump.
