@@ -2163,7 +2163,7 @@
     #view-success .success-footer-wrap{ padding-right:6vw; text-align:right; }
 
     /* Dashboard (Bet365-style): wider centered content, hide bottom bar */
-    .view-bdash .bd-content{ max-width:920px; margin:0 auto; padding-left:5vw; padding-right:5vw; padding-bottom:56px; }
+    .view-bdash .bd-content{ max-width:clamp(920px, 62vw, 1200px); margin:0 auto; padding-left:5vw; padding-right:5vw; padding-bottom:56px; }
     .bd-topbar, .bd-tabs, .bd-stats-ticker, .bd-greeting{ padding-left:5vw; padding-right:5vw; }
     .bd-tabbar{ display:none; }
     .bd-action-row{ max-width:420px; }
@@ -2171,14 +2171,14 @@
 
     /* Planejamento Anual: centered reading column, floating dialog instead of bottom sheet */
     .pl-topbar{ padding-left:5vw; padding-right:5vw; }
-    .pl-content{ max-width:640px; margin:0 auto; padding-left:5vw; padding-right:5vw; }
-    .cl-hub{ max-width:640px; margin:0 auto; padding-left:5vw; padding-right:5vw; }
+    .pl-content{ max-width:clamp(640px, 46vw, 820px); margin:0 auto; padding-left:5vw; padding-right:5vw; }
+    .cl-hub{ max-width:clamp(640px, 46vw, 820px); margin:0 auto; padding-left:5vw; padding-right:5vw; }
     .pl-fab{ right:calc(50% - 320px + 5vw); }
     .pl-modal-overlay{ align-items:center; }
     .pl-modal{ max-width:460px; border-radius:22px; max-height:80vh; box-shadow:0 24px 60px rgba(0,0,0,0.4); }
 
     /* Administração: lista de usuários vira tabela larga em vez de cards empilhados de celular */
-    #view-admin .pl-content{ max-width:1040px; }
+    #view-admin .pl-content{ max-width:clamp(1040px, 74vw, 1320px); }
     #adTableHead{
       display:grid;
       grid-template-columns:44px 1.6fr 1.8fr 1.2fr 1fr 70px;
