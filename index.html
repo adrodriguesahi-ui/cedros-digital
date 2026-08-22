@@ -4693,7 +4693,7 @@
       </div>
 
       <nav class="bd-tabbar" aria-label="Navegação inferior">
-        <a href="#" class="tab-item active">
+        <a href="#" class="tab-item active" data-goto="view-dashboard">
           <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/></svg>
           Início
         </a>
@@ -7653,7 +7653,7 @@
 
   // Dashboard: decorative links/cards (no destination yet) — just avoid a "#" page jump.
   document.querySelectorAll(
-    '.tab-item, .quick-item, .notice-item, .event-card, .dash-link, .dash-nav-item, .bd-tab, .bd-fixture, .bd-table-row, .link-card, .bd-banner, .bd-ranking-banner, .carousel-card'
+    '.tab-item:not([data-goto]), .quick-item, .notice-item, .event-card, .dash-link, .dash-nav-item, .bd-tab, .bd-fixture, .bd-table-row, .link-card, .bd-banner, .bd-ranking-banner, .carousel-card'
   ).forEach((el) => {
     el.addEventListener('click', (e) => e.preventDefault());
   });
