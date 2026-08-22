@@ -52,9 +52,13 @@ create table if not exists usuarios (
   unidade text not null,
   papel text not null references papeis(nome) on update cascade,
   acesso jsonb,
+  aprovado boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Colunas adicionadas depois da criação inicial da tabela (rodar de novo é seguro)
+alter table usuarios add column if not exists aprovado boolean not null default true;
 
 insert into usuarios (nome, email, unidade, papel) values
   ('Adrodrigues Santos', 'adrodrigues@cedrosdigital.org', 'Ype', 'Administrador'),

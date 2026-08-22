@@ -2200,6 +2200,27 @@
     #adContent .pl-event-tag{ justify-self:start; }
     #adContent .ad-card-access-btn{ justify-self:center; color:rgba(245,239,225,0.45); }
 
+    #adPendingContent .ad-card{
+      display:grid;
+      grid-template-columns:44px 1.6fr 1.8fr 1fr auto;
+      align-items:center;
+      gap:14px;
+      cursor:default;
+    }
+    #adPendingContent .pl-event-body{ display:contents; }
+    #adPendingContent .pl-event-title{ margin:0; }
+    #adPendingContent .pl-event-meta{ display:contents; }
+    #adPendingContent .ad-col-sep{ display:none; }
+    #adPendingContent .pl-event-tag{ justify-self:start; }
+    #adPendingContent .ad-pending-actions{ display:flex; gap:8px; justify-self:end; }
+    #adPendingContent .ad-pending-approve,
+    #adPendingContent .ad-pending-reject{
+      width:30px; height:30px; border-radius:50%; border:none; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+    }
+    #adPendingContent .ad-pending-approve{ background:rgba(90,200,120,0.18); color:#5AC878; }
+    #adPendingContent .ad-pending-reject{ background:rgba(255,107,92,0.18); color:#FF6B5C; }
+
     #adModalOverlay .pl-modal{ max-width:620px; }
     #adModalOverlay .ad-field-row{ display:flex; gap:14px; }
     #adModalOverlay .ad-field-row > *{ flex:1; min-width:0; }
@@ -4205,6 +4226,9 @@
           <input type="password" class="pl-input" id="adMyNewPasswordConfirm" placeholder="Confirme a nova senha" autocomplete="new-password">
           <button type="button" class="pl-btn pl-btn-primary" id="adMyPasswordSaveBtn" style="margin-top:8px;">Alterar senha</button>
           <p class="pl-reminder-hint" id="adMyPasswordMsg" style="display:none;"></p>
+
+          <div class="sp-area-heading" id="adPendingHeading" style="display:none;">Aprovações Pendentes</div>
+          <div id="adPendingContent" style="display:none; margin-bottom:18px;"></div>
 
           <div class="sp-area-heading">Usuários e Permissões</div>
 
@@ -7393,12 +7417,63 @@
 
     async function loadUsers(){
       if(!supa){ showMessage('Configure SUPABASE_URL e SUPABASE_ANON_KEY no início do script para carregar os usuários (ver supabase/schema.sql).'); return; }
-      const { data, error } = await supa.from('usuarios').select('*').order('nome');
+      const { data, error } = await supa.from('usuarios').select('*').eq('aprovado', true).order('nome');
       if(error){ showMessage('Não foi possível carregar os usuários: ' + error.message); return; }
       content.innerHTML = '';
       if(!data.length){ showMessage('Nenhum usuário cadastrado ainda.'); return; }
       data.forEach(row => content.appendChild(buildCard(row)));
       applyFilter();
+    }
+
+    const pendingHeading = document.getElementById('adPendingHeading');
+    const pendingContent = document.getElementById('adPendingContent');
+
+    function updatePendingVisibility(){
+      if(!pendingHeading || !pendingContent) return;
+      const has = pendingContent.children.length > 0;
+      pendingHeading.style.display = has ? '' : 'none';
+      pendingContent.style.display = has ? '' : 'none';
+    }
+
+    function buildPendingCard(row){
+      const card = document.createElement('div');
+      card.className = 'pl-event-card ad-card ad-card-pending';
+      card.innerHTML =
+        '<div class="am-thumb"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></svg></div>' +
+        '<div class="pl-event-body"><h4 class="pl-event-title"></h4><p class="pl-event-meta"><span class="ad-col-email"></span><span class="ad-col-sep"> · </span><span class="ad-col-unit"></span></p></div>' +
+        '<span class="pl-event-tag pl-tag-gray">Pendente</span>' +
+        '<div class="ad-pending-actions">' +
+          '<button type="button" class="ad-pending-approve" title="Aprovar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></button>' +
+          '<button type="button" class="ad-pending-reject" title="Recusar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
+        '</div>';
+      card.querySelector('.pl-event-title').textContent = row.nome;
+      card.querySelector('.ad-col-email').textContent = row.email;
+      card.querySelector('.ad-col-unit').textContent = (row.unidade === 'Diretoria do Clube' ? '' : 'Unidade ') + row.unidade;
+      card.querySelector('.ad-pending-approve').addEventListener('click', async () => {
+        if(!supa) return;
+        const { error } = await supa.from('usuarios').update({ aprovado: true }).eq('id', row.id);
+        if(error){ alert('Não foi possível aprovar: ' + error.message); return; }
+        card.remove();
+        updatePendingVisibility();
+        loadUsers();
+      });
+      card.querySelector('.ad-pending-reject').addEventListener('click', async () => {
+        if(!supa) return;
+        if(!confirm('Recusar o cadastro de ' + row.nome + '? O registro será removido.')) return;
+        const { error } = await supa.from('usuarios').delete().eq('id', row.id);
+        if(error){ alert('Não foi possível recusar: ' + error.message); return; }
+        card.remove();
+        updatePendingVisibility();
+      });
+      return card;
+    }
+
+    async function loadPendingUsers(){
+      if(!supa || !pendingContent) return;
+      const { data, error } = await supa.from('usuarios').select('*').eq('aprovado', false).order('created_at');
+      pendingContent.innerHTML = '';
+      if(!error && data) data.forEach(row => pendingContent.appendChild(buildPendingCard(row)));
+      updatePendingVisibility();
     }
 
     function openModal(mode, card){
@@ -7450,6 +7525,7 @@
     fieldName.addEventListener('input', () => { fieldName.style.borderColor = ''; });
 
     loadRoles().then(loadUsers);
+    loadPendingUsers();
 
     // ---- Acesso por área de cada usuário: permitir/restringir, refletindo nos ícones do dashboard ----
     const accessOverlay = document.getElementById('adUserAccessOverlay');
@@ -7654,8 +7730,8 @@
   // (ou seja, ainda não foi liberado por um admin) — usado pra barrar o acesso.
   async function applyLoggedInUser(authUser){
     if(!supa || !authUser || !authUser.email) return { found: false };
-    const { data: row } = await supa.from('usuarios').select('id, nome, papel, acesso').eq('email', authUser.email).maybeSingle();
-    if(!row){ window.__currentUsuario = null; return { found: false }; }
+    const { data: row } = await supa.from('usuarios').select('id, nome, papel, acesso, aprovado').eq('email', authUser.email).maybeSingle();
+    if(!row || row.aprovado === false){ window.__currentUsuario = null; return { found: false }; }
     let access = row.acesso;
     if(!access){
       const { data: def } = await supa.rpc('permissoes_padrao_papel', { papel_nome: row.papel });
@@ -7709,6 +7785,15 @@
     if(error){
       return { error: /registered|exists/i.test(error.message) ? 'Este e-mail já está cadastrado.' : 'Não foi possível criar a conta: ' + error.message };
     }
+    // Registra o pedido de acesso como pendente — só aparece no app depois que
+    // um admin aprovar em Administração → Aprovações Pendentes.
+    await supa.from('usuarios').upsert({
+      nome: values.fullname.trim(),
+      email: values.emailSignup.trim(),
+      unidade: values.unidade,
+      papel: 'Instrutores',
+      aprovado: false
+    }, { onConflict: 'email', ignoreDuplicates: true });
     showView('view-success');
   }, 'signupAuthError');
 
