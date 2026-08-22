@@ -1440,8 +1440,8 @@
   .bd-quicknav{
     display:flex; gap:10px; overflow-x:auto; padding:0 16px 18px; scrollbar-width:none;
     scroll-snap-type:x proximity;
-    -webkit-mask-image:linear-gradient(to right, black calc(100% - 28px), transparent 100%);
-    mask-image:linear-gradient(to right, black calc(100% - 28px), transparent 100%);
+    -webkit-mask-image:linear-gradient(90deg, #000 0%, #000 88%, transparent 100%);
+    mask-image:linear-gradient(90deg, #000 0%, #000 88%, transparent 100%);
   }
   .bd-quicknav::-webkit-scrollbar{ display:none; }
   .bd-qn-item{ scroll-snap-align:start; }
@@ -2295,7 +2295,7 @@
           </div>
 
           <div class="row-between">
-            <label class="remember"><input type="checkbox"> Lembrar-me</label>
+            <label class="remember"><input type="checkbox" id="rememberMe" checked> Lembrar-me</label>
             <a href="#" class="link" id="forgotPasswordBtn">Esqueci a senha</a>
           </div>
 
@@ -7679,6 +7679,16 @@
     if(!found){
       await supa.auth.signOut();
       return { error: 'Seu cadastro ainda não foi aprovado pela diretoria. Aguarde a liberação de acesso.' };
+    }
+    // "Lembrar-me": pede pro navegador salvar a credencial (prompt nativo "Salvar senha?"),
+    // pra autopreencher e-mail/senha da próxima vez. A senha só passa direto do formulário
+    // pro gerenciador de senhas do navegador, nunca é lida nem guardada pelo app.
+    const rememberMe = document.getElementById('rememberMe');
+    if(rememberMe && rememberMe.checked && window.PasswordCredential){
+      try{
+        const cred = new PasswordCredential({ id: values.email, password: values.password, name: values.email });
+        await navigator.credentials.store(cred);
+      }catch(e){}
     }
     showView('view-dashboard');
   }, 'loginAuthError');
