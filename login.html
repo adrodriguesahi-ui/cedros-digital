@@ -1143,7 +1143,7 @@
   .cl-status-pick-btn.selected{ border-color:var(--accent); background:rgba(63,203,107,0.12); }
 
   .pl-fab{
-    position:absolute; right:18px; bottom:calc(22px + env(safe-area-inset-bottom,0px));
+    position:absolute; right:18px; bottom:calc(84px + env(safe-area-inset-bottom,0px));
     width:54px; height:54px; border-radius:50%; border:none; cursor:pointer;
     background:linear-gradient(160deg, var(--accent), var(--accent-deep));
     color:#08130A; display:flex; align-items:center; justify-content:center;
@@ -2173,7 +2173,7 @@
     .pl-topbar{ padding-left:5vw; padding-right:5vw; }
     .pl-content{ max-width:clamp(640px, 46vw, 820px); margin:0 auto; padding-left:5vw; padding-right:5vw; }
     .cl-hub{ max-width:clamp(640px, 46vw, 820px); margin:0 auto; padding-left:5vw; padding-right:5vw; }
-    .pl-fab{ right:calc(50% - 320px + 5vw); }
+    .pl-fab{ right:calc(50% - 320px + 5vw); bottom:calc(22px + env(safe-area-inset-bottom,0px)); }
     .pl-modal-overlay{ align-items:center; }
     .pl-modal{ max-width:460px; border-radius:22px; max-height:80vh; box-shadow:0 24px 60px rgba(0,0,0,0.4); }
 
@@ -2500,7 +2500,7 @@
     </div>
 
     <!-- ===== VIEW: PLANEJAMENTO ANUAL (calendário/agenda de eventos do ano) ===== -->
-    <section class="view view-planning" id="view-planning">
+    <section class="view view-planning view-bdash" id="view-planning">
       <div class="pl-scroll">
 
         <div class="pl-topbar">
@@ -2821,10 +2821,32 @@
           </div>
         </div>
       </div>
+      <nav class="bd-tabbar" aria-label="Navegação inferior">
+        <a href="#" class="tab-item" data-goto="view-dashboard">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/></svg>
+          Início
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg>
+          Eventos
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Unidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>
+          Especialidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>
+          Mais
+        </a>
+      </nav>
     </section>
 
     <!-- ===== VIEW: CLASSES REGULARES (planejamento, status e registro fotográfico) ===== -->
-    <section class="view view-planning" id="view-classes">
+    <section class="view view-planning view-bdash" id="view-classes">
       <div class="pl-scroll">
 
         <div class="pl-topbar">
@@ -3182,10 +3204,32 @@
           </div>
         </div>
       </div>
+      <nav class="bd-tabbar" aria-label="Navegação inferior">
+        <a href="#" class="tab-item" data-goto="view-dashboard">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/></svg>
+          Início
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg>
+          Eventos
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Unidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>
+          Especialidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>
+          Mais
+        </a>
+      </nav>
     </section>
 
     <!-- ===== VIEW: UNIDADES (cantinho da unidade) ===== -->
-    <section class="view view-planning" id="view-units">
+    <section class="view view-planning view-bdash" id="view-units">
       <div class="pl-scroll">
 
         <div class="pl-topbar">
@@ -3315,10 +3359,32 @@
           </div>
         </div>
       </div>
+      <nav class="bd-tabbar" aria-label="Navegação inferior">
+        <a href="#" class="tab-item" data-goto="view-dashboard">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/></svg>
+          Início
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg>
+          Eventos
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Unidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>
+          Especialidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>
+          Mais
+        </a>
+      </nav>
     </section>
 
     <!-- ===== VIEW: DEVOCIONAL ===== -->
-    <section class="view view-planning" id="view-devotional">
+    <section class="view view-planning view-bdash" id="view-devotional">
       <div class="pl-scroll">
 
         <div class="pl-topbar">
@@ -3420,10 +3486,32 @@
           </div>
         </div>
       </div>
+      <nav class="bd-tabbar" aria-label="Navegação inferior">
+        <a href="#" class="tab-item" data-goto="view-dashboard">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/></svg>
+          Início
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg>
+          Eventos
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Unidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>
+          Especialidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>
+          Mais
+        </a>
+      </nav>
     </section>
 
     <!-- ===== VIEW: TESOURARIA ===== -->
-    <section class="view view-planning" id="view-treasury">
+    <section class="view view-planning view-bdash" id="view-treasury">
       <div class="pl-scroll">
 
         <div class="pl-topbar">
@@ -3552,10 +3640,32 @@
           </div>
         </div>
       </div>
+      <nav class="bd-tabbar" aria-label="Navegação inferior">
+        <a href="#" class="tab-item" data-goto="view-dashboard">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/></svg>
+          Início
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg>
+          Eventos
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Unidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>
+          Especialidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>
+          Mais
+        </a>
+      </nav>
     </section>
 
     <!-- ===== VIEW: SECRETARIA ===== -->
-    <section class="view view-planning" id="view-secretary">
+    <section class="view view-planning view-bdash" id="view-secretary">
       <div class="pl-scroll">
         <div class="pl-topbar">
           <button type="button" class="pl-back" data-back="view-dashboard" aria-label="Voltar">
@@ -3713,10 +3823,32 @@
           </div>
         </div>
       </div>
+      <nav class="bd-tabbar" aria-label="Navegação inferior">
+        <a href="#" class="tab-item" data-goto="view-dashboard">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/></svg>
+          Início
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg>
+          Eventos
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Unidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>
+          Especialidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>
+          Mais
+        </a>
+      </nav>
     </section>
 
     <!-- ===== VIEW: ALMOXARIFADO ===== -->
-    <section class="view view-planning" id="view-storage">
+    <section class="view view-planning view-bdash" id="view-storage">
       <div class="pl-scroll">
         <div class="pl-topbar">
           <button type="button" class="pl-back" data-back="view-dashboard" aria-label="Voltar">
@@ -3801,10 +3933,32 @@
           </div>
         </div>
       </div>
+      <nav class="bd-tabbar" aria-label="Navegação inferior">
+        <a href="#" class="tab-item" data-goto="view-dashboard">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/></svg>
+          Início
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg>
+          Eventos
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Unidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>
+          Especialidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>
+          Mais
+        </a>
+      </nav>
     </section>
 
     <!-- ===== VIEW: MANUAIS ===== -->
-    <section class="view view-planning" id="view-manuals">
+    <section class="view view-planning view-bdash" id="view-manuals">
       <div class="pl-scroll">
         <div class="pl-topbar">
           <button type="button" class="pl-back" data-back="view-dashboard" aria-label="Voltar">
@@ -3875,10 +4029,32 @@
           </div>
         </div>
       </div>
+      <nav class="bd-tabbar" aria-label="Navegação inferior">
+        <a href="#" class="tab-item" data-goto="view-dashboard">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/></svg>
+          Início
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg>
+          Eventos
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Unidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>
+          Especialidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>
+          Mais
+        </a>
+      </nav>
     </section>
 
     <!-- ===== VIEW: ANIVERSÁRIO ===== -->
-    <section class="view view-planning" id="view-birthdays">
+    <section class="view view-planning view-bdash" id="view-birthdays">
       <div class="pl-scroll">
         <div class="pl-topbar">
           <button type="button" class="pl-back" data-back="view-dashboard" aria-label="Voltar">
@@ -3952,10 +4128,32 @@
           </div>
         </div>
       </div>
+      <nav class="bd-tabbar" aria-label="Navegação inferior">
+        <a href="#" class="tab-item" data-goto="view-dashboard">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/></svg>
+          Início
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg>
+          Eventos
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Unidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>
+          Especialidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>
+          Mais
+        </a>
+      </nav>
     </section>
 
     <!-- ===== VIEW: MANUAL DE ESPECIALIDADES ===== -->
-    <section class="view view-planning" id="view-specialties">
+    <section class="view view-planning view-bdash" id="view-specialties">
       <div class="pl-scroll">
         <div class="pl-topbar">
           <button type="button" class="pl-back" data-back="view-dashboard" aria-label="Voltar">
@@ -4005,10 +4203,32 @@
           </div>
         </div>
       </div>
+      <nav class="bd-tabbar" aria-label="Navegação inferior">
+        <a href="#" class="tab-item" data-goto="view-dashboard">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/></svg>
+          Início
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg>
+          Eventos
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Unidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>
+          Especialidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>
+          Mais
+        </a>
+      </nav>
     </section>
 
     <!-- ===== VIEW: ORGANIZAÇÃO DE EVENTOS (tarefas, responsáveis e prazos) ===== -->
-    <section class="view view-planning" id="view-event-org">
+    <section class="view view-planning view-bdash" id="view-event-org">
       <div class="pl-scroll">
 
         <div class="pl-topbar">
@@ -4191,10 +4411,32 @@
           </div>
         </div>
       </div>
+      <nav class="bd-tabbar" aria-label="Navegação inferior">
+        <a href="#" class="tab-item" data-goto="view-dashboard">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/></svg>
+          Início
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg>
+          Eventos
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Unidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>
+          Especialidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>
+          Mais
+        </a>
+      </nav>
     </section>
 
     <!-- ===== VIEW: ADMINISTRAÇÃO DO SISTEMA ===== -->
-    <section class="view view-planning" id="view-admin">
+    <section class="view view-planning view-bdash" id="view-admin">
       <div class="pl-scroll">
 
         <div class="pl-topbar">
@@ -4320,6 +4562,28 @@
         </div>
       </div>
       </div>
+      <nav class="bd-tabbar" aria-label="Navegação inferior">
+        <a href="#" class="tab-item" data-goto="view-dashboard">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9"/></svg>
+          Início
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg>
+          Eventos
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Unidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>
+          Especialidades
+        </a>
+        <a href="#" class="tab-item">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>
+          Mais
+        </a>
+      </nav>
     </section>
 
     <!-- ===== VIEW 6: DASHBOARD (home after login) — Bet365-inspired layout ===== -->
