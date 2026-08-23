@@ -4721,6 +4721,26 @@
 </div>
 
 <script>
+  // Breakpoints — espelha os media queries do CSS (max-width:360px / min-width:900px)
+  // para que a lógica JS possa reagir ao tamanho de tela sem duplicar os valores.
+  const Breakpoints = (() => {
+    const mqSmall = window.matchMedia('(max-width: 360px)');
+    const mqDesktop = window.matchMedia('(min-width: 900px)');
+    const listeners = new Set();
+    function current(){
+      return mqDesktop.matches ? 'desktop' : (mqSmall.matches ? 'small' : 'mobile');
+    }
+    function notify(){ listeners.forEach(fn => fn(current())); }
+    mqSmall.addEventListener('change', notify);
+    mqDesktop.addEventListener('change', notify);
+    return {
+      isDesktop: () => mqDesktop.matches,
+      isSmall: () => mqSmall.matches,
+      current,
+      onChange(fn){ listeners.add(fn); return () => listeners.delete(fn); }
+    };
+  })();
+
   // Supabase — painel de Administração (ver supabase/schema.sql).
   // Preencha com a Project URL e a chave anon public do seu projeto.
   const SUPABASE_URL = 'https://noqaveawzxipxnmufwfn.supabase.co';
