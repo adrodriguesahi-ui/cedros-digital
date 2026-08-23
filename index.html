@@ -46,10 +46,13 @@
 
   /* ---- Phone frame: preview chrome on wider (desktop) viewports ---- */
   .frame-outer{
-    width:100vw;
-    height:100dvh;
+    /* Small safety margin on real mobile so content never sits under a
+       screen-protector's bezel — the app renders as a card slightly
+       smaller than the physical screen instead of true edge-to-edge. */
+    width:calc(100vw - 24px);
+    height:calc(100dvh - 24px);
     background:transparent;
-    border-radius:0;
+    border-radius:18px;
     padding:0;
     box-shadow:none;
     position:relative;
@@ -60,7 +63,7 @@
     width:100%;
     height:100%;
     background:#000;
-    border-radius:0;
+    border-radius:18px;
     overflow:hidden;
   }
 
