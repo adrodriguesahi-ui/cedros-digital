@@ -1440,6 +1440,9 @@
   .bd-quicknav{
     display:flex; gap:10px; overflow-x:auto; padding:0 16px 18px; scrollbar-width:none;
     scroll-snap-type:x mandatory;
+    /* Fade the trailing icon instead of hard-clipping it at the screen edge */
+    -webkit-mask-image:linear-gradient(90deg, #000 0%, #000 90%, transparent 100%);
+    mask-image:linear-gradient(90deg, #000 0%, #000 90%, transparent 100%);
   }
   .bd-quicknav::-webkit-scrollbar{ display:none; }
   .bd-qn-item{
@@ -2104,7 +2107,10 @@
     body{ padding:0; background:#000; }
 
     /* Room to spare on desktop — let the quick-nav wrap instead of scroll */
-    .bd-quicknav{ flex-wrap:wrap; overflow-x:visible; scroll-snap-type:none; }
+    .bd-quicknav{
+      flex-wrap:wrap; overflow-x:visible; scroll-snap-type:none;
+      -webkit-mask-image:none; mask-image:none;
+    }
 
     .frame-outer{
       width:100vw;
