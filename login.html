@@ -1438,11 +1438,8 @@
 
   /* Compact quick-nav icon row (Futebol / Placares / Tênis style) */
   .bd-quicknav{
-    display:flex; gap:10px; overflow-x:auto; padding:0 16px 18px; scrollbar-width:none;
-    scroll-snap-type:x mandatory;
+    display:flex; flex-wrap:wrap; gap:10px 14px; padding:0 16px 18px;
   }
-  .bd-quicknav::-webkit-scrollbar{ display:none; }
-  .bd-qn-item{ scroll-snap-align:start; }
   .bd-qn-item{
     flex-shrink:0; width:74px; display:flex; flex-direction:column;
     align-items:center; gap:7px; text-decoration:none;
