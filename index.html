@@ -1438,9 +1438,12 @@
 
   /* Compact quick-nav icon row (Futebol / Placares / Tênis style) */
   .bd-quicknav{
-    display:flex; flex-wrap:wrap; gap:10px 14px; padding:0 16px 18px;
+    display:flex; gap:10px; overflow-x:auto; padding:0 16px 18px; scrollbar-width:none;
+    scroll-snap-type:x mandatory;
   }
+  .bd-quicknav::-webkit-scrollbar{ display:none; }
   .bd-qn-item{
+    scroll-snap-align:start;
     flex-shrink:0; width:74px; display:flex; flex-direction:column;
     align-items:center; gap:7px; text-decoration:none;
   }
@@ -2099,6 +2102,9 @@
      ================================================================ */
   @media (min-width:900px){
     body{ padding:0; background:#000; }
+
+    /* Room to spare on desktop — let the quick-nav wrap instead of scroll */
+    .bd-quicknav{ flex-wrap:wrap; overflow-x:visible; scroll-snap-type:none; }
 
     .frame-outer{
       width:100vw;
@@ -4734,17 +4740,23 @@
     });
   }
 
-  // Time-based adaptive greeting
+  // Time-based adaptive greeting — usa o primeiro nome do usuário logado
+  // (evento cedros:loggedin, disparado em applyLoggedInUser) ou "Desbravador" antes do login.
   (function(){
     const greetingEl = document.getElementById('bdGreeting');
     if(!greetingEl) return;
-    const hour = new Date().getHours();
-    let text, cls;
-    if(hour < 12){ text = 'Bom dia, Desbravador!'; cls = 'time-morning'; }
-    else if(hour < 18){ text = 'Boa tarde, Desbravador!'; cls = 'time-day'; }
-    else { text = 'Boa noite, Desbravador!'; cls = 'time-night'; }
-    greetingEl.childNodes[0].textContent = text + ' ';
-    document.body.classList.add(cls);
+    function updateGreeting(name){
+      const who = (name || 'Desbravador').trim().split(' ')[0];
+      const hour = new Date().getHours();
+      let text, cls;
+      if(hour < 12){ text = 'Bom dia, ' + who + '!'; cls = 'time-morning'; }
+      else if(hour < 18){ text = 'Boa tarde, ' + who + '!'; cls = 'time-day'; }
+      else { text = 'Boa noite, ' + who + '!'; cls = 'time-night'; }
+      greetingEl.childNodes[0].textContent = text + ' ';
+      document.body.classList.add(cls);
+    }
+    updateGreeting();
+    document.addEventListener('cedros:loggedin', (e) => updateGreeting(e.detail && e.detail.nome));
   })();
 
   // Planejamento Anual: criar / editar / excluir eventos + lembretes no sino
