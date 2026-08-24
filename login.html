@@ -792,14 +792,29 @@
   .pl-stat-value.pl-stat-accent{ color:var(--gold); }
   .pl-stat-sub{ display:block; font-size:11.5px; font-weight:600; color:rgba(245,239,225,0.5); margin-top:2px; }
 
-  /* ---- Planejamento Anual: legenda de categorias ---- */
+  /* ---- Planejamento Anual: busca de eventos ---- */
+  .pl-search-wrap{ position:relative; margin:0 0 14px; }
+  .pl-search-wrap .pl-search-icon{ position:absolute; left:12px; top:50%; transform:translateY(-50%); color:rgba(245,239,225,0.4); }
+  .pl-search-wrap .pl-search-input{ padding-left:38px; }
+
+  /* ---- Planejamento Anual: legenda de categorias (clicável para filtrar) ---- */
   .pl-legend{
-    display:flex; flex-wrap:wrap; gap:8px 14px;
+    display:flex; flex-wrap:wrap; gap:8px 10px;
     margin:0 0 20px; padding:12px 14px;
     background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:14px;
   }
-  .pl-legend-item{ display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:rgba(245,239,225,0.6); }
+  .pl-legend-item{
+    display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:rgba(245,239,225,0.6);
+    background:none; border:1px solid transparent; border-radius:20px; padding:4px 10px 4px 8px;
+    cursor:pointer; font-family:inherit; transition:background .15s ease, border-color .15s ease, color .15s ease;
+  }
+  .pl-legend-item:active{ background:rgba(255,255,255,0.06); }
+  .pl-legend-item.active{ background:rgba(255,255,255,0.09); border-color:rgba(255,255,255,0.16); color:var(--cream); }
   .pl-legend-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+  /* ---- Planejamento Anual: evento já ocorrido ---- */
+  #view-planning .pl-event-card.pl-event-past{ opacity:0.5; }
+  #view-planning .pl-event-card.pl-event-past:active{ opacity:0.65; }
 
   /* ---- Classes Regulares: thumbnail, camera/upload buttons, photo preview ---- */
   .cl-thumb{
@@ -2587,13 +2602,18 @@
             </div>
           </div>
 
+          <div class="pl-search-wrap">
+            <svg class="pl-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="pl-input pl-search-input" id="plSearchInput" placeholder="Buscar evento por nome ou local...">
+          </div>
+
           <div class="pl-legend" id="plLegend">
-            <span class="pl-legend-item"><span class="pl-legend-dot" style="background:var(--accent)"></span>Reunião</span>
-            <span class="pl-legend-item"><span class="pl-legend-dot" style="background:#5B9BFF"></span>Culto</span>
-            <span class="pl-legend-item"><span class="pl-legend-dot" style="background:var(--gold)"></span>Acampamento</span>
-            <span class="pl-legend-item"><span class="pl-legend-dot" style="background:#B98BFF"></span>Cerimônia</span>
-            <span class="pl-legend-item"><span class="pl-legend-dot" style="background:#FF6B5C"></span>Concurso</span>
-            <span class="pl-legend-item"><span class="pl-legend-dot" style="background:#9AA3A0"></span>Outro</span>
+            <button type="button" class="pl-legend-item" data-tag-filter="green"><span class="pl-legend-dot" style="background:var(--accent)"></span>Reunião</button>
+            <button type="button" class="pl-legend-item" data-tag-filter="blue"><span class="pl-legend-dot" style="background:#5B9BFF"></span>Culto</button>
+            <button type="button" class="pl-legend-item" data-tag-filter="gold"><span class="pl-legend-dot" style="background:var(--gold)"></span>Acampamento</button>
+            <button type="button" class="pl-legend-item" data-tag-filter="purple"><span class="pl-legend-dot" style="background:#B98BFF"></span>Cerimônia</button>
+            <button type="button" class="pl-legend-item" data-tag-filter="red"><span class="pl-legend-dot" style="background:#FF6B5C"></span>Concurso</button>
+            <button type="button" class="pl-legend-item" data-tag-filter="gray"><span class="pl-legend-dot" style="background:#9AA3A0"></span>Outro</button>
           </div>
 
           <div class="pl-month-group" id="plMonthGroup-Maio" data-mon-index="5">
@@ -7388,7 +7408,11 @@
         const monIdx = parseInt(card.dataset.monIndex, 10);
         if(!day || !monIdx) return;
         const [hh, mm] = (card.dataset.time || '00:00').split(':').map(n => parseInt(n, 10) || 0);
-        const candidate = new Date(now.getFullYear(), monIdx - 1, day, hh, mm);
+        // Marca como "já ocorrido" com base no ciclo do ano corrente (sem rolar pro
+        // ano seguinte) — é o que o usuário espera ver esmaecido ao olhar a lista.
+        const thisYearDate = new Date(now.getFullYear(), monIdx - 1, day, hh, mm);
+        card.classList.toggle('pl-event-past', thisYearDate < now);
+        const candidate = new Date(thisYearDate);
         if(candidate < now) candidate.setFullYear(candidate.getFullYear() + 1);
         if(!bestDate || candidate < bestDate){ bestDate = candidate; best = card; }
       });
@@ -7545,6 +7569,49 @@
       applyDefaultMonthState(g);
     });
     updatePlanningStats();
+
+    // Busca + filtro por categoria (legenda clicável): combinados, escondem cards que não
+    // batem e recolhem meses sem nenhum resultado, sem alterar o estado real dos eventos.
+    const plSearchInput = document.getElementById('plSearchInput');
+    const activeTagFilters = new Set();
+
+    function normalizePl(s){
+      return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    }
+
+    function applyPlanningFilters(){
+      const term = normalizePl(plSearchInput ? plSearchInput.value.trim() : '');
+      document.querySelectorAll('#view-planning .pl-month-group').forEach(group => {
+        let groupHasVisible = false;
+        group.querySelectorAll('.pl-event-card').forEach(card => {
+          const matchesTerm = !term || normalizePl(card.dataset.title).includes(term) || normalizePl(card.dataset.local).includes(term);
+          const matchesTag = activeTagFilters.size === 0 || activeTagFilters.has(card.dataset.tag);
+          const match = matchesTerm && matchesTag;
+          card.style.display = match ? '' : 'none';
+          if(match) groupHasVisible = true;
+        });
+        const filtering = !!term || activeTagFilters.size > 0;
+        if(filtering){
+          group.style.display = groupHasVisible ? '' : 'none';
+          if(groupHasVisible) group.classList.remove('collapsed');
+        } else {
+          group.style.display = '';
+          applyDefaultMonthState(group);
+        }
+      });
+    }
+
+    if(plSearchInput){
+      plSearchInput.addEventListener('input', applyPlanningFilters);
+    }
+    document.querySelectorAll('#plLegend .pl-legend-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tag = btn.dataset.tagFilter;
+        if(activeTagFilters.has(tag)){ activeTagFilters.delete(tag); btn.classList.remove('active'); }
+        else { activeTagFilters.add(tag); btn.classList.add('active'); }
+        applyPlanningFilters();
+      });
+    });
 
     addBtn.addEventListener('click', () => openModal('create'));
     closeBtn.addEventListener('click', closeModal);
