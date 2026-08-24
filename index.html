@@ -2500,6 +2500,7 @@
                 <option>Cedros</option>
                 <option>Cedros Rosa</option>
                 <option>Flanboyan</option>
+                <option>Jacarandá</option>
                 <option>Diretoria do Clube</option>
                 <option>Ainda não sei minha unidade</option>
               </select>
@@ -5434,6 +5435,12 @@
             <span class="cl-hub-row-count" id="unHubStatus-Flanboyan">Sem informações</span>
             <svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </a>
+          <a href="#" class="cl-hub-row" data-open-unit="Jacarandá">
+            <span class="cl-class-dot cl-color-gray"></span>
+            <span class="cl-hub-row-name">Jacarandá</span>
+            <span class="cl-hub-row-count" id="unHubStatus-Jacaranda">Sem informações</span>
+            <svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </a>
         </div>
 
         <div class="pl-content" id="unContent" style="display:none;">
@@ -5790,6 +5797,7 @@
                       <option value="Cedros">Cedros</option>
                       <option value="Cedros Rosa">Cedros Rosa</option>
                       <option value="Flanboyan">Flanboyan</option>
+                      <option value="Jacarandá">Jacarandá</option>
                     </select>
                   </div>
                   <div class="pl-field-col">
@@ -5824,6 +5832,7 @@
                     <option value="Cedros">Cedros</option>
                     <option value="Cedros Rosa">Cedros Rosa</option>
                     <option value="Flanboyan">Flanboyan</option>
+                    <option value="Jacarandá">Jacarandá</option>
                   </select>
                   <button type="button" class="at-add-btn" id="atAddMemberBtn" aria-label="Adicionar desbravador">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -6261,6 +6270,7 @@
             <option value="Cedros" data-color="gold">Cedros</option>
             <option value="Cedros Rosa" data-color="red">Cedros Rosa</option>
             <option value="Flanboyan" data-color="gold">Flanboyan</option>
+            <option value="Jacarandá" data-color="gray">Jacarandá</option>
           </select>
           <div class="pl-modal-actions">
             <button type="button" class="pl-btn pl-btn-danger" id="btDeleteBtn" style="display:none;">Excluir</button>
@@ -6601,6 +6611,7 @@
                 <option value="Cedros">Cedros</option>
                 <option value="Cedros Rosa">Cedros Rosa</option>
                 <option value="Flanboyan">Flanboyan</option>
+                <option value="Jacarandá">Jacarandá</option>
                 <option value="Diretoria do Clube">Nenhuma — só Diretoria</option>
               </select>
             </div>
@@ -6883,6 +6894,12 @@
                   <span class="bento-bar-label">Flanboyan</span>
                   <span class="bento-bar-track"><span class="bento-bar-fill" style="width:66%;"></span></span>
                   <span class="bento-bar-val">210</span>
+                </div>
+                <div class="bento-bar-row">
+                  <span class="bento-bar-rank">7</span>
+                  <span class="bento-bar-label">Jacarandá</span>
+                  <span class="bento-bar-track"><span class="bento-bar-fill" style="width:0%;"></span></span>
+                  <span class="bento-bar-val">0</span>
                 </div>
               </div>
             </div>
@@ -8551,7 +8568,7 @@
     const content = document.getElementById('unContent');
     if(!overlay || !content) return;
 
-    const UNITS = ['Ype', 'Ype Roxo', 'Pinheiro', 'Cedros', 'Cedros Rosa', 'Flanboyan'];
+    const UNITS = ['Ype', 'Ype Roxo', 'Pinheiro', 'Cedros', 'Cedros Rosa', 'Flanboyan', 'Jacarandá'];
     const SCORE_CATEGORIES = ['Participação', 'Pontualidade', 'Uniforme', 'Higiene', 'Disciplina', 'Atividades'];
     const UNIT_DATA = {};
     UNITS.forEach(u => {
@@ -9262,7 +9279,7 @@
     const historyList = document.getElementById('atHistoryList');
     const historyEmpty = document.getElementById('atHistoryEmpty');
 
-    const UNIT_COLOR = { 'Ype':'green', 'Ype Roxo':'purple', 'Pinheiro':'blue', 'Cedros':'gold', 'Cedros Rosa':'red', 'Flanboyan':'orange' };
+    const UNIT_COLOR = { 'Ype':'green', 'Ype Roxo':'purple', 'Pinheiro':'blue', 'Cedros':'gold', 'Cedros Rosa':'red', 'Flanboyan':'orange', 'Jacarandá':'gray' };
 
     // Roster inicial de exemplo
     let roster = [
