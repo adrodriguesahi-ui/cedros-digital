@@ -742,35 +742,64 @@
   #view-planning .pl-event-date b{ font-size:19px; }
   #view-planning .pl-event-tag{ font-size:11px; font-weight:900; padding:6px 12px; }
 
-  #view-planning .pl-event-card:has(.pl-tag-green){ border-left-color:var(--accent); background:linear-gradient(120deg, rgba(63,203,107,0.22), rgba(63,203,107,0.03) 65%); }
+  /* Cor de categoria só no traço lateral e na pastilha de data — sem o preenchimento
+     em gradiente da versão anterior, que lia mais "app infantil" que "painel de gestão". */
+  #view-planning .pl-event-card:has(.pl-tag-green){ border-left-color:var(--accent); }
   #view-planning .pl-event-card:has(.pl-tag-green) .pl-event-date{ background:var(--accent); }
   #view-planning .pl-event-card:has(.pl-tag-green) .pl-event-date b,
   #view-planning .pl-event-card:has(.pl-tag-green) .pl-event-date em{ color:#08130A; }
 
-  #view-planning .pl-event-card:has(.pl-tag-gold){ border-left-color:var(--gold); background:linear-gradient(120deg, rgba(216,168,62,0.24), rgba(216,168,62,0.03) 65%); }
+  #view-planning .pl-event-card:has(.pl-tag-gold){ border-left-color:var(--gold); }
   #view-planning .pl-event-card:has(.pl-tag-gold) .pl-event-date{ background:var(--gold); }
   #view-planning .pl-event-card:has(.pl-tag-gold) .pl-event-date b,
   #view-planning .pl-event-card:has(.pl-tag-gold) .pl-event-date em{ color:#2B2010; }
 
-  #view-planning .pl-event-card:has(.pl-tag-blue){ border-left-color:#5B9BFF; background:linear-gradient(120deg, rgba(91,155,255,0.24), rgba(91,155,255,0.03) 65%); }
+  #view-planning .pl-event-card:has(.pl-tag-blue){ border-left-color:#5B9BFF; }
   #view-planning .pl-event-card:has(.pl-tag-blue) .pl-event-date{ background:#5B9BFF; }
   #view-planning .pl-event-card:has(.pl-tag-blue) .pl-event-date b,
   #view-planning .pl-event-card:has(.pl-tag-blue) .pl-event-date em{ color:#08130A; }
 
-  #view-planning .pl-event-card:has(.pl-tag-red){ border-left-color:#FF6B5C; background:linear-gradient(120deg, rgba(255,107,92,0.24), rgba(255,107,92,0.03) 65%); }
+  #view-planning .pl-event-card:has(.pl-tag-red){ border-left-color:#FF6B5C; }
   #view-planning .pl-event-card:has(.pl-tag-red) .pl-event-date{ background:#FF6B5C; }
   #view-planning .pl-event-card:has(.pl-tag-red) .pl-event-date b,
   #view-planning .pl-event-card:has(.pl-tag-red) .pl-event-date em{ color:#2B0C08; }
 
-  #view-planning .pl-event-card:has(.pl-tag-purple){ border-left-color:#B98BFF; background:linear-gradient(120deg, rgba(185,139,255,0.24), rgba(185,139,255,0.03) 65%); }
+  #view-planning .pl-event-card:has(.pl-tag-purple){ border-left-color:#B98BFF; }
   #view-planning .pl-event-card:has(.pl-tag-purple) .pl-event-date{ background:#B98BFF; }
   #view-planning .pl-event-card:has(.pl-tag-purple) .pl-event-date b,
   #view-planning .pl-event-card:has(.pl-tag-purple) .pl-event-date em{ color:#1E1030; }
 
-  #view-planning .pl-event-card:has(.pl-tag-gray){ border-left-color:#9AA3A0; background:linear-gradient(120deg, rgba(154,163,160,0.22), rgba(154,163,160,0.03) 65%); }
+  #view-planning .pl-event-card:has(.pl-tag-gray){ border-left-color:#9AA3A0; }
   #view-planning .pl-event-card:has(.pl-tag-gray) .pl-event-date{ background:#9AA3A0; }
   #view-planning .pl-event-card:has(.pl-tag-gray) .pl-event-date b,
   #view-planning .pl-event-card:has(.pl-tag-gray) .pl-event-date em{ color:#12160F; }
+
+  /* ---- Planejamento Anual: barra de resumo (total de eventos + próximo evento) ---- */
+  .pl-stats-bar{
+    display:flex; gap:10px; margin:2px 0 18px;
+  }
+  .pl-stat-card{
+    flex:1; min-width:0;
+    background:rgba(255,255,255,0.045);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:16px; padding:12px 14px;
+  }
+  .pl-stat-label{
+    display:block; font-size:10px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;
+    color:rgba(245,239,225,0.45); margin-bottom:5px;
+  }
+  .pl-stat-value{ display:block; font-size:15.5px; font-weight:900; color:var(--cream); line-height:1.25; }
+  .pl-stat-value.pl-stat-accent{ color:var(--gold); }
+  .pl-stat-sub{ display:block; font-size:11.5px; font-weight:600; color:rgba(245,239,225,0.5); margin-top:2px; }
+
+  /* ---- Planejamento Anual: legenda de categorias ---- */
+  .pl-legend{
+    display:flex; flex-wrap:wrap; gap:8px 14px;
+    margin:0 0 20px; padding:12px 14px;
+    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:14px;
+  }
+  .pl-legend-item{ display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:rgba(245,239,225,0.6); }
+  .pl-legend-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 
   /* ---- Classes Regulares: thumbnail, camera/upload buttons, photo preview ---- */
   .cl-thumb{
@@ -2545,6 +2574,27 @@
         </div>
 
         <div class="pl-content">
+
+          <div class="pl-stats-bar" id="plStatsBar">
+            <div class="pl-stat-card">
+              <span class="pl-stat-label">Total de eventos</span>
+              <span class="pl-stat-value" id="plStatTotal">—</span>
+            </div>
+            <div class="pl-stat-card">
+              <span class="pl-stat-label">Próximo evento</span>
+              <span class="pl-stat-value pl-stat-accent" id="plStatNextName">—</span>
+              <span class="pl-stat-sub" id="plStatNextWhen"></span>
+            </div>
+          </div>
+
+          <div class="pl-legend" id="plLegend">
+            <span class="pl-legend-item"><span class="pl-legend-dot" style="background:var(--accent)"></span>Reunião</span>
+            <span class="pl-legend-item"><span class="pl-legend-dot" style="background:#5B9BFF"></span>Culto</span>
+            <span class="pl-legend-item"><span class="pl-legend-dot" style="background:var(--gold)"></span>Acampamento</span>
+            <span class="pl-legend-item"><span class="pl-legend-dot" style="background:#B98BFF"></span>Cerimônia</span>
+            <span class="pl-legend-item"><span class="pl-legend-dot" style="background:#FF6B5C"></span>Concurso</span>
+            <span class="pl-legend-item"><span class="pl-legend-dot" style="background:#9AA3A0"></span>Outro</span>
+          </div>
 
           <div class="pl-month-group" id="plMonthGroup-Maio" data-mon-index="5">
             <div class="pl-month-head">
@@ -7320,6 +7370,42 @@
       const countEl = group.querySelector('.pl-month-count');
       if(countEl) countEl.textContent = n === 1 ? '1 evento' : n + ' eventos';
       if(n === 0) group.remove();
+      updatePlanningStats();
+    }
+
+    function updatePlanningStats(){
+      const totalEl = document.getElementById('plStatTotal');
+      const nameEl = document.getElementById('plStatNextName');
+      const whenEl = document.getElementById('plStatNextWhen');
+      if(!totalEl) return;
+      const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'));
+      totalEl.textContent = cards.length === 1 ? '1 evento' : cards.length + ' eventos';
+
+      const now = new Date();
+      let best = null, bestDate = null;
+      cards.forEach(card => {
+        const day = parseInt(card.dataset.day, 10);
+        const monIdx = parseInt(card.dataset.monIndex, 10);
+        if(!day || !monIdx) return;
+        const [hh, mm] = (card.dataset.time || '00:00').split(':').map(n => parseInt(n, 10) || 0);
+        const candidate = new Date(now.getFullYear(), monIdx - 1, day, hh, mm);
+        if(candidate < now) candidate.setFullYear(candidate.getFullYear() + 1);
+        if(!bestDate || candidate < bestDate){ bestDate = candidate; best = card; }
+      });
+
+      if(best){
+        nameEl.textContent = best.dataset.title || '—';
+        const diffDays = Math.round((bestDate - now) / 86400000);
+        const dateStr = bestDate.toLocaleDateString('pt-BR', { day:'2-digit', month:'short' });
+        let whenText = dateStr;
+        if(diffDays <= 0) whenText = 'Hoje · ' + dateStr;
+        else if(diffDays === 1) whenText = 'Amanhã · ' + dateStr;
+        else whenText = 'Em ' + diffDays + ' dias · ' + dateStr;
+        whenEl.textContent = whenText;
+      } else {
+        nameEl.textContent = 'Nenhum evento';
+        whenEl.textContent = '';
+      }
     }
 
     const CURRENT_MONTH_INDEX = new Date().getMonth() + 1; // 1-12
@@ -7458,6 +7544,7 @@
       wireMonthHeadToggle(g);
       applyDefaultMonthState(g);
     });
+    updatePlanningStats();
 
     addBtn.addEventListener('click', () => openModal('create'));
     closeBtn.addEventListener('click', closeModal);
