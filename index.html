@@ -699,12 +699,17 @@
   .pl-tag-purple{ background:rgba(185,139,255,0.16); color:#B98BFF; }
   .pl-tag-gray{ background:rgba(245,239,225,0.12); color:rgba(245,239,225,0.65); }
 
+  /* Posicionado absoluto (fora do flex row do card) de propósito: como .pl-event-card
+     só tem 46px fixos (data) + flex:1 (corpo) + tag, um 4º item fixo no fluxo normal
+     espremia o corpo a 0px de largura em telas estreitas, quebrando o título letra a
+     letra. Flutuando no canto ele não disputa espaço com o título/local do evento. */
   .pl-event-gcal-btn{
-    flex-shrink:0; width:30px; height:30px; display:flex; align-items:center; justify-content:center;
-    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); border-radius:50%;
-    color:rgba(245,239,225,0.6); cursor:pointer;
+    position:absolute; top:10px; right:10px; z-index:2;
+    width:26px; height:26px; display:flex; align-items:center; justify-content:center;
+    background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.14); border-radius:50%;
+    color:rgba(245,239,225,0.7); cursor:pointer;
   }
-  .pl-event-gcal-btn:active{ background:rgba(255,255,255,0.12); }
+  .pl-event-gcal-btn:active{ background:rgba(0,0,0,0.5); }
 
   /* ---- Planejamento Anual: visual chamativo, com destaque de cor por categoria ---- */
   /* (escopado por #view-planning para não afetar outras telas que reaproveitam .pl-event-card) */
