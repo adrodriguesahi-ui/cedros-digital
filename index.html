@@ -1119,6 +1119,7 @@
   .cl-student-bar{ padding:0 16px 12px; }
   .cl-student-bar-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
   .cl-student-bar-label{ font-size:11.5px; font-weight:700; color:rgba(245,239,225,0.55); }
+  .cl-student-progress-summary{ display:block; font-size:12.5px; font-weight:700; color:var(--accent); margin:-2px 0 8px; }
   .cl-student-add-btn{
     background:rgba(63,203,107,0.16); color:var(--accent); border:none;
     border-radius:20px; padding:6px 12px; font-size:11.5px; font-weight:800; cursor:pointer;
@@ -3000,6 +3001,7 @@
             <span class="cl-student-bar-label" id="clStudentModeLabel">Editando requisitos da classe</span>
             <button type="button" class="cl-student-add-btn" id="clStudentAddBtn">+ Aluno</button>
           </div>
+          <span class="cl-student-progress-summary" id="clStudentProgressSummary" style="display:none;"></span>
           <div class="cl-student-chips" id="clStudentChips"></div>
         </div>
 
@@ -7647,6 +7649,7 @@
     const studentBar = document.getElementById('clStudentBar');
     const studentChips = document.getElementById('clStudentChips');
     const studentModeLabel = document.getElementById('clStudentModeLabel');
+    const studentProgressSummary = document.getElementById('clStudentProgressSummary');
     const studentAddBtn = document.getElementById('clStudentAddBtn');
     const studentModalOverlay = document.getElementById('clStudentModalOverlay');
     const studentModalClose = document.getElementById('clStudentModalClose');
@@ -7701,6 +7704,8 @@
       const group = findClassGroup(currentClass);
       if(!group) return;
       const progressForStudent = selectedStudent ? (CLASS_PROGRESS[currentClass][selectedStudent] || {}) : null;
+      let doneCount = 0;
+      let totalCount = 0;
 
       group.querySelectorAll('.cl-activity-card').forEach(card => {
         const tag = card.querySelector('.pl-event-tag');
@@ -7718,7 +7723,18 @@
         }
         tag.textContent = label;
         tag.className = 'pl-event-tag pl-tag-' + color;
+        totalCount++;
+        if(status === 'done') doneCount++;
       });
+
+      if(studentProgressSummary){
+        if(progressForStudent){
+          studentProgressSummary.style.display = '';
+          studentProgressSummary.textContent = doneCount + ' concluídas · ' + (totalCount - doneCount) + ' restantes';
+        } else {
+          studentProgressSummary.style.display = 'none';
+        }
+      }
     }
 
     studentAddBtn.addEventListener('click', () => {
