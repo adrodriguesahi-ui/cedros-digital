@@ -699,6 +699,13 @@
   .pl-tag-purple{ background:rgba(185,139,255,0.16); color:#B98BFF; }
   .pl-tag-gray{ background:rgba(245,239,225,0.12); color:rgba(245,239,225,0.65); }
 
+  .pl-event-gcal-btn{
+    flex-shrink:0; width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); border-radius:50%;
+    color:rgba(245,239,225,0.6); cursor:pointer;
+  }
+  .pl-event-gcal-btn:active{ background:rgba(255,255,255,0.12); }
+
   /* ---- Planejamento Anual: visual chamativo, com destaque de cor por categoria ---- */
   /* (escopado por #view-planning para não afetar outras telas que reaproveitam .pl-event-card) */
   #view-planning .pl-month-head{ display:flex; align-items:center; gap:9px; margin:0 2px 12px; cursor:pointer; user-select:none; }
@@ -6944,11 +6951,25 @@
   }
 
   // splash -> cover (auto + tap)
+  // authState fica null até a sessão do Supabase ser conferida (ver getSession() mais abaixo).
+  // Sem isso, reabrir o app sempre mostrava um flash da tela de login antes de entrar no
+  // dashboard (ou pior, "prendia" o usuário lá se a checagem demorasse) — mesmo já logado.
   let splashDone = false;
+  let authState = null; // null = ainda não sabemos; {found:true/false} depois do getSession()
+  function leaveSplashResolve(){
+    showView(authState && authState.found ? 'view-dashboard' : 'view-cover');
+  }
   function leaveSplash(){
     if(splashDone) return;
     splashDone = true;
-    showView('view-cover');
+    if(authState){
+      leaveSplashResolve();
+    } else {
+      // Dá um tempinho extra pra checagem de sessão terminar antes de cair na tela de
+      // login — se demorar mais que isso, mostra login mas se corrige sozinho assim que
+      // a checagem real responder (ver showView('view-dashboard') abaixo).
+      setTimeout(leaveSplashResolve, 900);
+    }
   }
   const splashTimer = setTimeout(leaveSplash, 2600);
   document.getElementById('view-splash').addEventListener('click', () => {
@@ -7182,6 +7203,50 @@
       editingCard = null;
     }
 
+    // "Adicionar ao Google Agenda": monta a URL de quick-add do Google Calendar a partir
+    // dos dados do próprio card. Sem OAuth/login — abre o Google Agenda com o evento já
+    // preenchido, e a pessoa decide se quer salvar na agenda dela.
+    function buildGCalUrl(card){
+      const day = parseInt(card.dataset.day, 10);
+      const monIdx = parseInt(card.dataset.monIndex, 10); // 1-12
+      const [hh, mm] = (card.dataset.time || '00:00').split(':').map(n => parseInt(n, 10) || 0);
+      const now = new Date();
+      let year = now.getFullYear();
+      // Só temos dia+mês salvos (sem ano) — se a data já passou este ano, assume o próximo
+      // ano, já que esta é uma agenda anual recorrente do clube.
+      if(monIdx < (now.getMonth() + 1) || (monIdx === (now.getMonth() + 1) && day < now.getDate())){
+        year += 1;
+      }
+      const start = new Date(year, monIdx - 1, day, hh, mm);
+      const end = new Date(start.getTime() + 60 * 60 * 1000); // 1h de duração padrão
+      const pad = n => String(n).padStart(2, '0');
+      const fmt = d => d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + 'T' + pad(d.getHours()) + pad(d.getMinutes()) + '00';
+      const params = new URLSearchParams({
+        action: 'TEMPLATE',
+        text: card.dataset.title || '',
+        dates: fmt(start) + '/' + fmt(end),
+        location: card.dataset.local || '',
+        details: card.dataset.desc || ''
+      });
+      return 'https://www.google.com/calendar/render?' + params.toString();
+    }
+
+    function addGCalButton(card){
+      if(card.querySelector('.pl-event-gcal-btn')) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pl-event-gcal-btn';
+      btn.title = 'Adicionar ao Google Agenda';
+      btn.setAttribute('aria-label', 'Adicionar ao Google Agenda');
+      btn.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 3v4M16 3v4"/><path d="M12 13v5M9.5 15.5h5"/></svg>';
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        window.open(buildGCalUrl(card), '_blank', 'noopener');
+      });
+      card.appendChild(btn);
+    }
+
     function buildCardHTML(data){
       const a = document.createElement('a');
       a.href = '#';
@@ -7239,6 +7304,7 @@
         a.querySelector('.pl-event-body').appendChild(bellMark);
       }
       a.addEventListener('click', (e) => { e.preventDefault(); readOnlyMode ? openViewOnly(a) : openModal('edit', a); });
+      addGCalButton(a);
       return a;
     }
 
@@ -7378,6 +7444,9 @@
     document.querySelectorAll('.pl-event-card').forEach(card => {
       card.addEventListener('click', (e) => { e.preventDefault(); readOnlyMode ? openViewOnly(card) : openModal('edit', card); });
     });
+    // Escopado a #view-planning: .pl-event-card é uma classe-base reaproveitada por outras
+    // telas (Manuais, Classes, Aniversariantes...) que não têm data-day/data-mon-index.
+    document.querySelectorAll('#view-planning .pl-event-card').forEach(addGCalButton);
     document.querySelectorAll('#view-planning .pl-month-group').forEach(g => {
       wireMonthHeadToggle(g);
       applyDefaultMonthState(g);
@@ -8283,7 +8352,10 @@
     fieldTitle.addEventListener('input', () => { fieldTitle.style.borderColor = ''; });
 
     showHub();
-    document.querySelectorAll('.pl-month-group').forEach(g => { updateClassCount(g); regroupByArea(g); });
+    // Escopado a #view-classes: .pl-month-group é uma classe-base reaproveitada pelo
+    // Planejamento Anual e pela Organização de Eventos, que não têm .cl-activity-card —
+    // sem esse escopo, updateClassCount() via n===0 apagava os grupos deles.
+    document.querySelectorAll('#view-classes .pl-month-group').forEach(g => { updateClassCount(g); regroupByArea(g); });
     window.__clShowHub = showHub;
     loadClassDataFromSupabase();
   })();
@@ -10363,11 +10435,21 @@
   if(supa && !isPasswordRecovery){
     supa.auth.getSession().then(async ({ data }) => {
       const user = data && data.session && data.session.user;
-      if(!user) return;
+      if(!user){
+        authState = { found: false };
+        if(splashDone) showView('view-cover');
+        return;
+      }
       const { found } = await applyLoggedInUser(user);
+      authState = { found };
       if(found){ showView('view-dashboard'); }
-      else { await supa.auth.signOut(); }
+      else {
+        await supa.auth.signOut();
+        if(splashDone) showView('view-cover');
+      }
     });
+  } else {
+    authState = { found: false };
   }
 
   // Sair: encerra a sessão do Supabase, restaura o menu (sem restrição de acesso
