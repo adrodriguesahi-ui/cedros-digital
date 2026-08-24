@@ -6611,6 +6611,10 @@
           </div>
           <p class="pl-reminder-hint" id="adRoleHint">Selecione a função do usuário.</p>
 
+          <label class="pl-field-label">Cargo (opcional)</label>
+          <input type="text" class="pl-input" id="adFieldCargo" placeholder="Ex.: Diretor Associado" maxlength="40">
+          <p class="pl-reminder-hint">Se preenchido, aparece no painel dessa pessoa no lugar da frequência de presenças.</p>
+
           <button type="button" class="pl-btn" id="adUserAccessBtn" style="background:rgba(255,255,255,0.08); color:var(--cream); margin-top:4px; display:none;">
             Definir acesso por área deste usuário
           </button>
@@ -6727,8 +6731,8 @@
         <!-- Time-based adaptive greeting -->
         <p class="bd-greeting" id="bdGreeting">Olá, Desbravador!</p>
         <p class="bd-greeting-unit">
-          Unidade Ype
-          <span class="bd-attend-badge" aria-label="8 de 8 reuniões frequentadas este ano">8/8 presenças</span>
+          <span id="bdGreetingUnit">Unidade Ype</span>
+          <span class="bd-attend-badge" id="bdAttendBadge" aria-label="8 de 8 reuniões frequentadas este ano">8/8 presenças</span>
         </p>
 
         <div class="bd-reminder-banner" id="bdReminderBanner" role="button" tabindex="0" style="display:none;">
@@ -7087,6 +7091,26 @@
     }
     updateGreeting();
     document.addEventListener('cedros:loggedin', (e) => updateGreeting(e.detail && e.detail.nome));
+  })();
+
+  // Linha "Unidade X · presenças" do painel — reflete a unidade e o cargo reais
+  // do usuário logado. Quem tem cargo cadastrado (ex.: Diretoria) vê o cargo no
+  // lugar da frequência de presenças, já que esse indicador não se aplica a eles.
+  (function(){
+    const unitEl = document.getElementById('bdGreetingUnit');
+    const badgeEl = document.getElementById('bdAttendBadge');
+    if(!unitEl || !badgeEl) return;
+    window.__applyGreetingUnit = function(usuario){
+      if(!usuario) return;
+      unitEl.textContent = usuario.unidade === 'Diretoria do Clube' ? 'Diretoria do Clube' : 'Unidade ' + (usuario.unidade || '—');
+      if(usuario.cargo){
+        badgeEl.textContent = usuario.cargo;
+        badgeEl.setAttribute('aria-label', 'Cargo: ' + usuario.cargo);
+      } else {
+        badgeEl.textContent = '8/8 presenças';
+        badgeEl.setAttribute('aria-label', '8 de 8 reuniões frequentadas este ano');
+      }
+    };
   })();
 
   // Planejamento Anual: criar / editar / excluir eventos + lembretes no sino
@@ -10556,6 +10580,7 @@ const REQ_SUMMARIES = {
     const fieldEmail = document.getElementById('adFieldEmail');
     const fieldUnit = document.getElementById('adFieldUnit');
     const fieldRole = document.getElementById('adFieldRole');
+    const fieldCargo = document.getElementById('adFieldCargo');
     const userAccessBtn = document.getElementById('adUserAccessBtn');
     if(!content || !overlay) return;
 
@@ -10598,6 +10623,7 @@ const REQ_SUMMARIES = {
       card.dataset.unit = row.unidade;
       card.dataset.role = row.papel;
       card.dataset.roleLabel = row.papel;
+      card.dataset.cargo = row.cargo || '';
       if(row.acesso) card.dataset.access = JSON.stringify(row.acesso);
       card.addEventListener('click', (e) => { e.preventDefault(); openModal('edit', card); });
       return card;
@@ -10694,6 +10720,7 @@ const REQ_SUMMARIES = {
       fieldEmail.value = card ? card.dataset.email : '';
       fieldUnit.value = card ? card.dataset.unit : 'Ype';
       fieldRole.value = card ? card.dataset.role : (fieldRole.options[0] ? fieldRole.options[0].value : '');
+      fieldCargo.value = card ? (card.dataset.cargo || '') : '';
       userAccessBtn.style.display = (mode === 'edit') ? '' : 'none';
       window.__currentEditingUserCard = card || null;
       overlay.classList.add('show');
@@ -10708,7 +10735,8 @@ const REQ_SUMMARIES = {
         nome: fieldName.value.trim(),
         email: fieldEmail.value.trim(),
         unidade: fieldUnit.value,
-        papel: fieldRole.value
+        papel: fieldRole.value,
+        cargo: fieldCargo.value.trim() || null
       };
       if(editingCard) payload.id = editingCard.dataset.id;
       const { data, error } = await supa.from('usuarios').upsert(payload).select().single();
@@ -10940,7 +10968,7 @@ const REQ_SUMMARIES = {
   // (ou seja, ainda não foi liberado por um admin) — usado pra barrar o acesso.
   async function applyLoggedInUser(authUser){
     if(!supa || !authUser || !authUser.email) return { found: false };
-    const { data: row } = await supa.from('usuarios').select('id, nome, papel, acesso, aprovado').eq('email', authUser.email).maybeSingle();
+    const { data: row } = await supa.from('usuarios').select('id, nome, papel, acesso, aprovado, unidade, cargo').eq('email', authUser.email).maybeSingle();
     if(!row || row.aprovado === false){ window.__currentUsuario = null; return { found: false }; }
     let access = row.acesso;
     if(!access){
@@ -10948,8 +10976,9 @@ const REQ_SUMMARIES = {
       access = def || (window.__ROLE_VISIBILITY && window.__ROLE_VISIBILITY[row.papel]) || {};
     }
     if(window.__applyAccessToDashboard) window.__applyAccessToDashboard(access, row.nome);
-    window.__currentUsuario = { id: row.id, nome: row.nome, email: authUser.email, papel: row.papel };
+    window.__currentUsuario = { id: row.id, nome: row.nome, email: authUser.email, papel: row.papel, unidade: row.unidade, cargo: row.cargo };
     document.dispatchEvent(new CustomEvent('cedros:loggedin', { detail: window.__currentUsuario }));
+    if(window.__applyGreetingUnit) window.__applyGreetingUnit(window.__currentUsuario);
     return { found: true };
   }
 

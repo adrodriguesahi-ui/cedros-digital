@@ -64,6 +64,9 @@ create table if not exists usuarios (
 
 -- Colunas adicionadas depois da criação inicial da tabela (rodar de novo é seguro)
 alter table usuarios add column if not exists aprovado boolean not null default true;
+-- Cargo específico da pessoa (ex.: "Diretor Associado"), diferente do papel/permissão.
+-- Opcional: só quem tem um cargo definido mostra isso no painel em vez de presenças.
+alter table usuarios add column if not exists cargo text;
 
 insert into usuarios (nome, email, unidade, papel) values
   ('Adrodrigues Santos', 'adrodrigues@cedrosdigital.org', 'Ype', 'Administrador'),
