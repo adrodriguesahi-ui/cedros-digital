@@ -1132,6 +1132,12 @@
     font-size:12.5px; font-weight:800;
   }
   .cl-student-chip.active{ background:var(--accent); border-color:var(--accent); color:#08130A; }
+  .cl-student-chip-wrap{ display:flex; align-items:center; gap:4px; flex-shrink:0; }
+  .cl-student-chip-edit{
+    flex-shrink:0; width:26px; height:26px; display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:50%;
+    color:rgba(245,239,225,0.55); cursor:pointer;
+  }
 
   .cl-status-pick-options{ display:flex; flex-direction:column; gap:8px; margin-top:4px; }
   .cl-status-pick-btn{
@@ -5265,7 +5271,7 @@
       <div class="pl-modal-overlay" id="clStudentModalOverlay">
         <div class="pl-modal">
           <div class="pl-modal-head">
-            <h4 class="pl-modal-title">Adicionar Aluno</h4>
+            <h4 class="pl-modal-title" id="clStudentModalTitle">Adicionar Aluno</h4>
             <button type="button" class="pl-modal-close" id="clStudentModalClose" aria-label="Fechar">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
@@ -5273,6 +5279,7 @@
           <label class="pl-field-label">Nome do aluno</label>
           <input type="text" class="pl-input" id="clStudentNameInput" placeholder="Nome do desbravador" maxlength="60">
           <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-danger" id="clStudentDeleteBtn" style="display:none;">Excluir</button>
             <button type="button" class="pl-btn pl-btn-primary" id="clStudentSaveBtn">Adicionar</button>
           </div>
         </div>
@@ -7768,8 +7775,18 @@
     const studentAddBtn = document.getElementById('clStudentAddBtn');
     const studentModalOverlay = document.getElementById('clStudentModalOverlay');
     const studentModalClose = document.getElementById('clStudentModalClose');
+    const studentModalTitle = document.getElementById('clStudentModalTitle');
     const studentNameInput = document.getElementById('clStudentNameInput');
     const studentSaveBtn = document.getElementById('clStudentSaveBtn');
+    const studentDeleteBtn = document.getElementById('clStudentDeleteBtn');
+    let editingStudentName = null;
+
+    // Regra de negócio: só Administrador e Coordenador de Classes podem cadastrar,
+    // renomear ou excluir desbravadores em Classes Regulares (ver supabase/schema.sql).
+    function canManageStudents(){
+      const u = window.__currentUsuario;
+      return !!(u && (u.papel === 'Administrador' || u.papel === 'Coordenador de Classes'));
+    }
     const statusPickOverlay = document.getElementById('clStatusPickOverlay');
     const statusPickTitle = document.getElementById('clStatusPickTitle');
     const statusPickSubtitle = document.getElementById('clStatusPickSubtitle');
@@ -7777,17 +7794,52 @@
 
     const CLASS_STUDENTS = {};
     const CLASS_PROGRESS = {}; // CLASS_PROGRESS[className][studentName][activityTitle] = status
+    const STUDENT_IDS = {}; // STUDENT_IDS[className][studentName] = id na tabela "desbravadores" (Supabase)
     let selectedStudent = null;
     let statusPickCard = null;
 
     function ensureClassData(className){
       if(!CLASS_STUDENTS[className]) CLASS_STUDENTS[className] = [];
       if(!CLASS_PROGRESS[className]) CLASS_PROGRESS[className] = {};
+      if(!STUDENT_IDS[className]) STUDENT_IDS[className] = {};
+    }
+
+    // Carrega desbravadores e progresso já salvos no Supabase (tabelas "desbravadores"
+    // e "progresso_requisitos", ver supabase/schema.sql) para dentro dos objetos locais.
+    async function loadClassDataFromSupabase(){
+      if(!supa) return;
+      const { data: alunos, error: alunosErr } = await supa.from('desbravadores').select('id, nome, classe');
+      if(alunosErr){ console.error('Erro ao carregar desbravadores:', alunosErr.message); return; }
+      if(!alunos || !alunos.length) return;
+
+      const { data: progresso, error: progressoErr } = await supa.from('progresso_requisitos').select('desbravador_id, requisito_titulo, status');
+      if(progressoErr) console.error('Erro ao carregar progresso:', progressoErr.message);
+
+      const progressoByAluno = {};
+      (progresso || []).forEach(p => {
+        if(!progressoByAluno[p.desbravador_id]) progressoByAluno[p.desbravador_id] = {};
+        progressoByAluno[p.desbravador_id][p.requisito_titulo] = p.status;
+      });
+
+      alunos.forEach(aluno => {
+        ensureClassData(aluno.classe);
+        if(CLASS_STUDENTS[aluno.classe].indexOf(aluno.nome) === -1) CLASS_STUDENTS[aluno.classe].push(aluno.nome);
+        STUDENT_IDS[aluno.classe][aluno.nome] = aluno.id;
+        CLASS_PROGRESS[aluno.classe][aluno.nome] = progressoByAluno[aluno.id] || {};
+      });
+
+      updateHubCounts();
+      if(currentClass){
+        renderStudentBar(currentClass);
+        applyStudentProgressToCards();
+      }
     }
 
     function renderStudentBar(className){
       ensureClassData(className);
       studentChips.innerHTML = '';
+      const canManage = canManageStudents();
+      studentAddBtn.style.display = canManage ? '' : 'none';
 
       const allChip = document.createElement('button');
       allChip.type = 'button';
@@ -7797,13 +7849,38 @@
       studentChips.appendChild(allChip);
 
       CLASS_STUDENTS[className].forEach(name => {
+        const wrap = document.createElement('span');
+        wrap.className = 'cl-student-chip-wrap';
+
         const chip = document.createElement('button');
         chip.type = 'button';
         chip.className = 'cl-student-chip' + (selectedStudent === name ? ' active' : '');
         chip.textContent = name;
         chip.addEventListener('click', () => selectStudent(name));
-        studentChips.appendChild(chip);
+        wrap.appendChild(chip);
+
+        if(canManage){
+          const editBtn = document.createElement('button');
+          editBtn.type = 'button';
+          editBtn.className = 'cl-student-chip-edit';
+          editBtn.setAttribute('aria-label', 'Editar ' + name);
+          editBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+          editBtn.addEventListener('click', (e) => { e.stopPropagation(); openEditStudentModal(name); });
+          wrap.appendChild(editBtn);
+        }
+
+        studentChips.appendChild(wrap);
       });
+    }
+
+    function openEditStudentModal(name){
+      editingStudentName = name;
+      studentModalTitle.textContent = 'Editar Aluno';
+      studentNameInput.value = name;
+      studentSaveBtn.textContent = 'Salvar';
+      studentDeleteBtn.style.display = '';
+      studentModalOverlay.classList.add('show');
+      setTimeout(() => studentNameInput.focus(), 150);
     }
 
     function selectStudent(name){
@@ -7853,22 +7930,79 @@
     }
 
     studentAddBtn.addEventListener('click', () => {
+      editingStudentName = null;
+      studentModalTitle.textContent = 'Adicionar Aluno';
       studentNameInput.value = '';
+      studentSaveBtn.textContent = 'Adicionar';
+      studentDeleteBtn.style.display = 'none';
       studentModalOverlay.classList.add('show');
       setTimeout(() => studentNameInput.focus(), 150);
     });
     studentModalClose.addEventListener('click', () => studentModalOverlay.classList.remove('show'));
     studentModalOverlay.addEventListener('click', (e) => { if(e.target === studentModalOverlay) studentModalOverlay.classList.remove('show'); });
-    studentSaveBtn.addEventListener('click', () => {
+    studentSaveBtn.addEventListener('click', async () => {
       const name = studentNameInput.value.trim();
       if(!name){ studentNameInput.style.borderColor = '#FF6B5C'; return; }
       ensureClassData(currentClass);
+
+      if(editingStudentName){
+        // Renomear: atualiza as chaves nos objetos locais + a coluna "nome" no Supabase.
+        const oldName = editingStudentName;
+        if(oldName !== name){
+          const idx = CLASS_STUDENTS[currentClass].indexOf(oldName);
+          if(idx !== -1) CLASS_STUDENTS[currentClass][idx] = name;
+          CLASS_PROGRESS[currentClass][name] = CLASS_PROGRESS[currentClass][oldName] || {};
+          delete CLASS_PROGRESS[currentClass][oldName];
+          STUDENT_IDS[currentClass][name] = STUDENT_IDS[currentClass][oldName];
+          delete STUDENT_IDS[currentClass][oldName];
+          if(selectedStudent === oldName) selectedStudent = name;
+
+          const id = STUDENT_IDS[currentClass][name];
+          if(supa && id){
+            const { error } = await supa.from('desbravadores').update({ nome: name }).eq('id', id);
+            if(error) console.error('Erro ao renomear desbravador:', error.message);
+          }
+        }
+        studentModalOverlay.classList.remove('show');
+        selectStudent(selectedStudent);
+        updateHubCounts();
+        return;
+      }
+
       if(CLASS_STUDENTS[currentClass].indexOf(name) === -1) CLASS_STUDENTS[currentClass].push(name);
       studentModalOverlay.classList.remove('show');
       renderStudentBar(currentClass);
       updateHubCounts();
+
+      if(supa){
+        const { data, error } = await supa.from('desbravadores').insert({ nome: name, classe: currentClass }).select('id').single();
+        if(error) console.error('Erro ao salvar desbravador:', error.message);
+        else STUDENT_IDS[currentClass][name] = data.id;
+      }
     });
     studentNameInput.addEventListener('input', () => { studentNameInput.style.borderColor = ''; });
+
+    studentDeleteBtn.addEventListener('click', async () => {
+      if(!editingStudentName) return;
+      const name = editingStudentName;
+      const idx = CLASS_STUDENTS[currentClass].indexOf(name);
+      if(idx !== -1) CLASS_STUDENTS[currentClass].splice(idx, 1);
+      delete CLASS_PROGRESS[currentClass][name];
+      const id = STUDENT_IDS[currentClass][name];
+      delete STUDENT_IDS[currentClass][name];
+      if(selectedStudent === name) selectedStudent = null;
+
+      studentModalOverlay.classList.remove('show');
+      studentModeLabel.textContent = selectedStudent ? ('Marcando presença para: ' + selectedStudent) : 'Editando requisitos da classe';
+      renderStudentBar(currentClass);
+      applyStudentProgressToCards();
+      updateHubCounts();
+
+      if(supa && id){
+        const { error } = await supa.from('desbravadores').delete().eq('id', id);
+        if(error) console.error('Erro ao excluir desbravador:', error.message);
+      }
+    });
 
     function openStatusPick(card){
       statusPickCard = card;
@@ -7883,14 +8017,23 @@
     statusPickClose.addEventListener('click', () => statusPickOverlay.classList.remove('show'));
     statusPickOverlay.addEventListener('click', (e) => { if(e.target === statusPickOverlay) statusPickOverlay.classList.remove('show'); });
     statusPickOverlay.querySelectorAll('.cl-status-pick-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         if(!statusPickCard || !selectedStudent) return;
         ensureClassData(currentClass);
         if(!CLASS_PROGRESS[currentClass][selectedStudent]) CLASS_PROGRESS[currentClass][selectedStudent] = {};
-        CLASS_PROGRESS[currentClass][selectedStudent][statusPickCard.dataset.title] = btn.getAttribute('data-status');
+        const status = btn.getAttribute('data-status');
+        const requisitoTitulo = statusPickCard.dataset.title;
+        CLASS_PROGRESS[currentClass][selectedStudent][requisitoTitulo] = status;
         applyStudentProgressToCards();
         updateHubCounts();
         statusPickOverlay.classList.remove('show');
+
+        const desbravadorId = STUDENT_IDS[currentClass] && STUDENT_IDS[currentClass][selectedStudent];
+        if(supa && desbravadorId){
+          const { error } = await supa.from('progresso_requisitos')
+            .upsert({ desbravador_id: desbravadorId, requisito_titulo: requisitoTitulo, status }, { onConflict: 'desbravador_id,requisito_titulo' });
+          if(error) console.error('Erro ao salvar progresso:', error.message);
+        }
       });
     });
 
@@ -8142,6 +8285,7 @@
     showHub();
     document.querySelectorAll('.pl-month-group').forEach(g => { updateClassCount(g); regroupByArea(g); });
     window.__clShowHub = showHub;
+    loadClassDataFromSupabase();
   })();
 
   // Unidades: cantinho da unidade (descrição, responsável e fotos)
@@ -10019,7 +10163,7 @@
       access = def || (window.__ROLE_VISIBILITY && window.__ROLE_VISIBILITY[row.papel]) || {};
     }
     if(window.__applyAccessToDashboard) window.__applyAccessToDashboard(access, row.nome);
-    window.__currentUsuario = { id: row.id, nome: row.nome, email: authUser.email };
+    window.__currentUsuario = { id: row.id, nome: row.nome, email: authUser.email, papel: row.papel };
     document.dispatchEvent(new CustomEvent('cedros:loggedin', { detail: window.__currentUsuario }));
     return { found: true };
   }

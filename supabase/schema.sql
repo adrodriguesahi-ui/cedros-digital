@@ -39,6 +39,11 @@ insert into papeis (nome, cor, permissoes_padrao) values
     "planning":true,"classes":true,"units":false,"devotional":true,
     "treasury":false,"secretary":false,"storage":false,"manuals":true,
     "birthdays":false,"specialties":true,"admin":false
+  }'::jsonb),
+  ('Coordenador de Classes', 'gray', '{
+    "planning":true,"classes":true,"units":false,"devotional":false,
+    "treasury":false,"secretary":false,"storage":false,"manuals":true,
+    "birthdays":false,"specialties":true,"admin":false
   }'::jsonb)
 on conflict (nome) do nothing;
 
@@ -105,4 +110,50 @@ create policy "papeis: leitura publica" on papeis
 
 drop policy if exists "usuarios: acesso publico" on usuarios;
 create policy "usuarios: acesso publico" on usuarios
+  for all using (true) with check (true);
+
+-- ---------------------------------------------------------------------
+-- Classes Regulares: desbravadores cadastrados por classe e o progresso
+-- de cada um nos requisitos (data-title dos cards, ex.: "GE-1. Idade mínima").
+-- O catálogo de requisitos em si vive no HTML (index.html), não aqui —
+-- esta tabela só guarda quem está em cada classe e o status de cada item.
+-- ---------------------------------------------------------------------
+create table if not exists desbravadores (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null,
+  classe text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists progresso_requisitos (
+  id uuid primary key default gen_random_uuid(),
+  desbravador_id uuid not null references desbravadores(id) on delete cascade,
+  requisito_titulo text not null,
+  status text not null default 'todo',
+  updated_at timestamptz not null default now(),
+  unique (desbravador_id, requisito_titulo)
+);
+
+create or replace function set_updated_at_progresso()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_progresso_requisitos_updated_at on progresso_requisitos;
+create trigger trg_progresso_requisitos_updated_at
+  before update on progresso_requisitos
+  for each row execute function set_updated_at_progresso();
+
+alter table desbravadores enable row level security;
+alter table progresso_requisitos enable row level security;
+
+drop policy if exists "desbravadores: acesso publico" on desbravadores;
+create policy "desbravadores: acesso publico" on desbravadores
+  for all using (true) with check (true);
+
+drop policy if exists "progresso_requisitos: acesso publico" on progresso_requisitos;
+create policy "progresso_requisitos: acesso publico" on progresso_requisitos
   for all using (true) with check (true);
