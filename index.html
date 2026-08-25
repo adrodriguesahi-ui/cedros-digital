@@ -825,6 +825,21 @@
   .pl-cal-day-dots{ display:flex; gap:2px; height:4px; }
   .pl-cal-day-dot{ width:4px; height:4px; border-radius:50%; }
   .pl-cal-day-empty{ pointer-events:none; }
+  .pl-cal-day.is-selected .pl-cal-day-num{ background:var(--accent); color:#08130A; font-weight:900; }
+
+  /* ---- Planejamento Anual: chip do filtro por dia (limpa ao tocar no x) ---- */
+  .pl-day-filter-chip{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin:0 0 14px; padding:9px 8px 9px 14px;
+    background:rgba(63,203,107,0.12); border:1px solid rgba(63,203,107,0.3); border-radius:14px;
+    font-size:12.5px; font-weight:800; color:var(--accent);
+  }
+  .pl-day-filter-chip button{
+    flex-shrink:0; width:24px; height:24px; border-radius:50%; border:none; cursor:pointer;
+    background:rgba(255,255,255,0.1); color:var(--cream);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .pl-day-filter-chip button:active{ background:rgba(255,255,255,0.18); }
 
   /* ---- Planejamento Anual: busca de eventos ---- */
   .pl-search-wrap{ position:relative; margin:0 0 14px; }
@@ -2663,6 +2678,13 @@
               <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
             </div>
             <div class="pl-cal-grid" id="plCalGrid"></div>
+          </div>
+
+          <div class="pl-day-filter-chip" id="plDayFilterChip" style="display:none;">
+            <span id="plDayFilterLabel"></span>
+            <button type="button" id="plDayFilterClear" aria-label="Limpar filtro de dia">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
           </div>
 
           <div class="pl-search-wrap">
@@ -7594,6 +7616,7 @@
         if(tags) btn.classList.add('has-event');
         else btn.disabled = true;
         if(isCurrentMonth && d === todayDay) btn.classList.add('is-today');
+        if(activeDayFilter && activeDayFilter.monIdx === calViewMonth && activeDayFilter.day === d) btn.classList.add('is-selected');
 
         const numSpan = document.createElement('span');
         numSpan.className = 'pl-cal-day-num';
@@ -7616,15 +7639,34 @@
       }
     }
 
+    let activeDayFilter = null; // { monIdx, day } — setado ao tocar um dia com evento no calendário
+
     function jumpToDay(monIdx, day){
+      activeDayFilter = { monIdx, day };
+      renderCalendarGrid();
+      applyPlanningFilters();
+
+      const dayFilterChip = document.getElementById('plDayFilterChip');
+      const dayFilterLabel = document.getElementById('plDayFilterLabel');
+      if(dayFilterChip && dayFilterLabel){
+        dayFilterLabel.textContent = 'Mostrando ' + String(day).padStart(2, '0') + ' de ' + MONTH_NAMES_PT[monIdx - 1];
+        dayFilterChip.style.display = '';
+      }
+
       const dayStr = String(day).padStart(2, '0');
       const card = document.querySelector('#view-planning .pl-content .pl-event-card[data-mon-index="' + monIdx + '"][data-day="' + dayStr + '"]');
       if(!card) return;
-      const group = card.closest('.pl-month-group');
-      if(group){ group.classList.remove('collapsed'); group.style.display = ''; }
       card.scrollIntoView({ behavior: 'smooth', block: 'center' });
       card.classList.add('pl-event-flash');
       setTimeout(() => card.classList.remove('pl-event-flash'), 1400);
+    }
+
+    function clearDayFilter(){
+      activeDayFilter = null;
+      const dayFilterChip = document.getElementById('plDayFilterChip');
+      if(dayFilterChip) dayFilterChip.style.display = 'none';
+      renderCalendarGrid();
+      applyPlanningFilters();
     }
 
     const calPrevBtn = document.getElementById('plCalPrev');
@@ -7794,11 +7836,12 @@
         group.querySelectorAll('.pl-event-card').forEach(card => {
           const matchesTerm = !term || normalizePl(card.dataset.title).includes(term) || normalizePl(card.dataset.local).includes(term);
           const matchesTag = activeTagFilters.size === 0 || activeTagFilters.has(card.dataset.tag);
-          const match = matchesTerm && matchesTag;
+          const matchesDay = !activeDayFilter || (parseInt(card.dataset.monIndex, 10) === activeDayFilter.monIdx && parseInt(card.dataset.day, 10) === activeDayFilter.day);
+          const match = matchesTerm && matchesTag && matchesDay;
           card.style.display = match ? '' : 'none';
           if(match) groupHasVisible = true;
         });
-        const filtering = !!term || activeTagFilters.size > 0;
+        const filtering = !!term || activeTagFilters.size > 0 || !!activeDayFilter;
         if(filtering){
           group.style.display = groupHasVisible ? '' : 'none';
           if(groupHasVisible) group.classList.remove('collapsed');
@@ -7820,6 +7863,8 @@
         applyPlanningFilters();
       });
     });
+    const dayFilterClearBtn = document.getElementById('plDayFilterClear');
+    if(dayFilterClearBtn) dayFilterClearBtn.addEventListener('click', clearDayFilter);
 
     addBtn.addEventListener('click', () => openModal('create'));
     closeBtn.addEventListener('click', closeModal);
