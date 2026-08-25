@@ -792,6 +792,40 @@
   .pl-stat-value.pl-stat-accent{ color:var(--gold); }
   .pl-stat-sub{ display:block; font-size:11.5px; font-weight:600; color:rgba(245,239,225,0.5); margin-top:2px; }
 
+  /* ---- Planejamento Anual: grade de calendário do mês ---- */
+  .pl-calendar-card{
+    margin:0 0 16px; padding:14px 12px 10px;
+    background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08); border-radius:18px;
+  }
+  .pl-cal-head{ display:flex; align-items:center; justify-content:space-between; padding:0 4px 12px; }
+  .pl-cal-month-label{ font-size:14px; font-weight:900; color:var(--cream); text-transform:capitalize; }
+  .pl-cal-nav{
+    width:30px; height:30px; border-radius:50%; border:none; cursor:pointer;
+    background:rgba(255,255,255,0.06); color:rgba(245,239,225,0.75);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .pl-cal-nav:active{ background:rgba(255,255,255,0.12); }
+  .pl-cal-weekdays{
+    display:grid; grid-template-columns:repeat(7, 1fr);
+    font-size:10.5px; font-weight:800; color:rgba(245,239,225,0.4); text-align:center;
+    padding-bottom:6px;
+  }
+  .pl-cal-grid{ display:grid; grid-template-columns:repeat(7, 1fr); row-gap:4px; }
+  .pl-cal-day{
+    position:relative; aspect-ratio:1; border:none; background:none; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    font-size:12.5px; font-weight:700; color:var(--cream); border-radius:50%;
+  }
+  .pl-cal-day:disabled{ cursor:default; }
+  .pl-cal-day-num{ width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:50%; transition:background .15s ease; }
+  .pl-cal-day:not(:disabled):active .pl-cal-day-num{ background:rgba(255,255,255,0.1); }
+  .pl-cal-day.is-today .pl-cal-day-num{ background:var(--gold); color:var(--night); font-weight:900; }
+  .pl-cal-day.has-event .pl-cal-day-num{ box-shadow:inset 0 0 0 1px rgba(255,255,255,0.16); }
+  .pl-cal-day.is-today.has-event .pl-cal-day-num{ box-shadow:none; }
+  .pl-cal-day-dots{ display:flex; gap:2px; height:4px; }
+  .pl-cal-day-dot{ width:4px; height:4px; border-radius:50%; }
+  .pl-cal-day-empty{ pointer-events:none; }
+
   /* ---- Planejamento Anual: busca de eventos ---- */
   .pl-search-wrap{ position:relative; margin:0 0 14px; }
   .pl-search-wrap .pl-search-icon{ position:absolute; left:12px; top:50%; transform:translateY(-50%); color:rgba(245,239,225,0.4); }
@@ -815,6 +849,13 @@
   /* ---- Planejamento Anual: evento já ocorrido ---- */
   #view-planning .pl-event-card.pl-event-past{ opacity:0.5; }
   #view-planning .pl-event-card.pl-event-past:active{ opacity:0.65; }
+
+  /* ---- Planejamento Anual: destaque momentâneo ao pular pra um evento pelo calendário ---- */
+  @keyframes pl-event-flash-pulse{
+    0%, 100%{ box-shadow:0 8px 18px rgba(0,0,0,0.22); }
+    30%{ box-shadow:0 0 0 3px var(--gold), 0 8px 18px rgba(0,0,0,0.22); }
+  }
+  #view-planning .pl-event-card.pl-event-flash{ animation:pl-event-flash-pulse 1.4s ease; }
 
   /* ---- Classes Regulares: thumbnail, camera/upload buttons, photo preview ---- */
   .cl-thumb{
@@ -2606,6 +2647,22 @@
               <span class="pl-stat-value pl-stat-accent" id="plStatNextName">—</span>
               <span class="pl-stat-sub" id="plStatNextWhen"></span>
             </div>
+          </div>
+
+          <div class="pl-calendar-card" id="plCalendarCard">
+            <div class="pl-cal-head">
+              <button type="button" class="pl-cal-nav" id="plCalPrev" aria-label="Mês anterior">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <span class="pl-cal-month-label" id="plCalMonthLabel">—</span>
+              <button type="button" class="pl-cal-nav" id="plCalNext" aria-label="Próximo mês">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+            <div class="pl-cal-weekdays">
+              <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
+            </div>
+            <div class="pl-cal-grid" id="plCalGrid"></div>
           </div>
 
           <div class="pl-search-wrap">
@@ -7489,7 +7546,99 @@
         nameEl.textContent = 'Nenhum evento';
         whenEl.textContent = '';
       }
+
+      renderCalendarGrid();
     }
+
+    // Grade de calendário do mês (estilo agenda de celular): navega por mês,
+    // marca hoje e mostra uma bolinha colorida por categoria nos dias com evento.
+    // Eventos só guardam dia+mês (sem ano), então a bolinha aparece pro mês
+    // navegado independente do ano — mesma lógica recorrente usada no resto da tela.
+    let calViewYear = new Date().getFullYear();
+    let calViewMonth = new Date().getMonth() + 1; // 1-12
+    const MONTH_NAMES_PT = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+    const CAL_TAG_COLOR = { green:'var(--accent)', blue:'#5B9BFF', gold:'var(--gold)', red:'#FF6B5C', purple:'#B98BFF', gray:'#9AA3A0' };
+
+    function renderCalendarGrid(){
+      const grid = document.getElementById('plCalGrid');
+      const label = document.getElementById('plCalMonthLabel');
+      if(!grid || !label) return;
+
+      label.textContent = MONTH_NAMES_PT[calViewMonth - 1] + ' ' + calViewYear;
+
+      const firstWeekday = new Date(calViewYear, calViewMonth - 1, 1).getDay();
+      const daysInMonth = new Date(calViewYear, calViewMonth, 0).getDate();
+      const now = new Date();
+      const isCurrentMonth = now.getFullYear() === calViewYear && (now.getMonth() + 1) === calViewMonth;
+      const todayDay = now.getDate();
+
+      const dayTags = {};
+      document.querySelectorAll('#view-planning .pl-content .pl-event-card').forEach(card => {
+        if(parseInt(card.dataset.monIndex, 10) !== calViewMonth) return;
+        const day = parseInt(card.dataset.day, 10);
+        if(!day) return;
+        (dayTags[day] || (dayTags[day] = [])).push(card.dataset.tag || 'gray');
+      });
+
+      grid.innerHTML = '';
+      for(let i = 0; i < firstWeekday; i++){
+        const empty = document.createElement('span');
+        empty.className = 'pl-cal-day-empty';
+        grid.appendChild(empty);
+      }
+      for(let d = 1; d <= daysInMonth; d++){
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pl-cal-day';
+        const tags = dayTags[d];
+        if(tags) btn.classList.add('has-event');
+        else btn.disabled = true;
+        if(isCurrentMonth && d === todayDay) btn.classList.add('is-today');
+
+        const numSpan = document.createElement('span');
+        numSpan.className = 'pl-cal-day-num';
+        numSpan.textContent = d;
+        btn.appendChild(numSpan);
+
+        const dotsWrap = document.createElement('span');
+        dotsWrap.className = 'pl-cal-day-dots';
+        if(tags){
+          Array.from(new Set(tags)).slice(0, 3).forEach(tag => {
+            const dot = document.createElement('span');
+            dot.className = 'pl-cal-day-dot';
+            dot.style.background = CAL_TAG_COLOR[tag] || CAL_TAG_COLOR.gray;
+            dotsWrap.appendChild(dot);
+          });
+          btn.addEventListener('click', () => jumpToDay(calViewMonth, d));
+        }
+        btn.appendChild(dotsWrap);
+        grid.appendChild(btn);
+      }
+    }
+
+    function jumpToDay(monIdx, day){
+      const dayStr = String(day).padStart(2, '0');
+      const card = document.querySelector('#view-planning .pl-content .pl-event-card[data-mon-index="' + monIdx + '"][data-day="' + dayStr + '"]');
+      if(!card) return;
+      const group = card.closest('.pl-month-group');
+      if(group){ group.classList.remove('collapsed'); group.style.display = ''; }
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.classList.add('pl-event-flash');
+      setTimeout(() => card.classList.remove('pl-event-flash'), 1400);
+    }
+
+    const calPrevBtn = document.getElementById('plCalPrev');
+    const calNextBtn = document.getElementById('plCalNext');
+    if(calPrevBtn) calPrevBtn.addEventListener('click', () => {
+      calViewMonth--;
+      if(calViewMonth < 1){ calViewMonth = 12; calViewYear--; }
+      renderCalendarGrid();
+    });
+    if(calNextBtn) calNextBtn.addEventListener('click', () => {
+      calViewMonth++;
+      if(calViewMonth > 12){ calViewMonth = 1; calViewYear++; }
+      renderCalendarGrid();
+    });
 
     const CURRENT_MONTH_INDEX = new Date().getMonth() + 1; // 1-12
 
