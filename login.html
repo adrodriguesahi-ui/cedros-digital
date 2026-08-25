@@ -5824,25 +5824,11 @@
 
               <div class="sc-pdf-panel" id="scAttendancePanel" style="display:none;">
                 <div class="at-section-head">
-                  <span class="sp-area-heading" style="margin:0;">Desbravadores</span>
+                  <span class="sp-area-heading" style="margin:0;">Usuários</span>
                   <span class="at-roster-count" id="atRosterCount">0 cadastrados</span>
                 </div>
                 <div class="at-roster-list" id="atRosterList"></div>
-                <div class="at-add-row">
-                  <input type="text" class="pl-input" id="atNewMemberName" placeholder="Nome do desbravador">
-                  <select class="pl-input" id="atNewMemberUnit">
-                    <option value="Ype">Ype</option>
-                    <option value="Ype Roxo">Ype Roxo</option>
-                    <option value="Pinheiro">Pinheiro</option>
-                    <option value="Cedros">Cedros</option>
-                    <option value="Cedros Rosa">Cedros Rosa</option>
-                    <option value="Flanboyan">Flanboyan</option>
-                    <option value="Jacarandá">Jacarandá</option>
-                  </select>
-                  <button type="button" class="at-add-btn" id="atAddMemberBtn" aria-label="Adicionar desbravador">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                  </button>
-                </div>
+                <p class="pl-reminder-hint">Lista sincronizada com Administração → Usuários. Pra adicionar, editar ou remover alguém da chamada, gerencie o cadastro por lá.</p>
 
                 <div class="sp-area-heading">Nova Chamada</div>
                 <div class="pl-field-row">
@@ -9298,9 +9284,6 @@
     if(!rosterList) return;
 
     const rosterCount = document.getElementById('atRosterCount');
-    const newNameInput = document.getElementById('atNewMemberName');
-    const newUnitSelect = document.getElementById('atNewMemberUnit');
-    const addBtn = document.getElementById('atAddMemberBtn');
     const callDate = document.getElementById('atCallDate');
     const callEvent = document.getElementById('atCallEvent');
     const startCallBtn = document.getElementById('atStartCallBtn');
@@ -9313,13 +9296,7 @@
 
     const UNIT_COLOR = { 'Ype':'green', 'Ype Roxo':'purple', 'Pinheiro':'blue', 'Cedros':'gold', 'Cedros Rosa':'red', 'Flanboyan':'orange', 'Jacarandá':'gray' };
 
-    // Roster inicial de exemplo
-    let roster = [
-      { id: 1, name: 'Lucas Andrade', unit: 'Ype' },
-      { id: 2, name: 'Mariana Souza', unit: 'Pinheiro' },
-      { id: 3, name: 'Rafael Lima', unit: 'Cedros Rosa' }
-    ];
-    let nextId = 4;
+    let roster = [];
     let history = [];
 
     function renderRoster(){
@@ -9330,29 +9307,25 @@
         row.innerHTML =
           '<span class="cl-class-dot cl-color-' + (UNIT_COLOR[m.unit] || 'gray') + '"></span>' +
           '<span class="at-roster-name"></span>' +
-          '<span class="at-roster-unit"></span>' +
-          '<button type="button" class="at-roster-remove" aria-label="Remover"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+          '<span class="at-roster-unit"></span>';
         row.querySelector('.at-roster-name').textContent = m.name;
         row.querySelector('.at-roster-unit').textContent = m.unit;
-        row.querySelector('.at-roster-remove').addEventListener('click', () => {
-          roster = roster.filter(x => x.id !== m.id);
-          renderRoster();
-        });
         rosterList.appendChild(row);
       });
       rosterCount.textContent = roster.length === 1 ? '1 cadastrado' : roster.length + ' cadastrados';
     }
     renderRoster();
 
-    addBtn.addEventListener('click', () => {
-      const name = newNameInput.value.trim();
-      if(!name){ newNameInput.style.borderColor = '#FF6B5C'; return; }
-      roster.push({ id: nextId++, name, unit: newUnitSelect.value });
-      newNameInput.value = '';
-      newNameInput.style.borderColor = '';
+    // Sincroniza a lista com os cadastros reais de Administração → Usuários
+    // (mesma tabela `usuarios` usada pelo painel de admin), em vez de nomes fixos.
+    async function loadRosterFromSupabase(){
+      if(!supa) return;
+      const { data, error } = await supa.from('usuarios').select('id, nome, unidade').order('nome');
+      if(error || !data) return;
+      roster = data.map(row => ({ id: row.id, name: row.nome, unit: row.unidade }));
       renderRoster();
-    });
-    newNameInput.addEventListener('input', () => { newNameInput.style.borderColor = ''; });
+    }
+    loadRosterFromSupabase();
 
     function updateChecklistCount(){
       const total = checklist.querySelectorAll('.at-check-row').length;
