@@ -1603,6 +1603,7 @@
     border:1px solid var(--lg-border);
     font-size:12px; font-weight:700; color:var(--lg-muted);
     white-space:nowrap;
+    text-decoration:none;
     transition:transform .15s ease, background .15s ease;
   }
   .bd-chip:active{ transform:scale(0.94); background:rgba(255,255,255,0.09); }
@@ -6766,10 +6767,15 @@
         </div>
 
         <div class="bd-stats-ticker">
-          <span class="bd-chip"><b>56</b> Membros</span>
+          <a href="#" class="bd-chip" id="bdMembersChip"><b>56</b> Membros</a>
           <span class="bd-chip"><b>12</b> Especialidades</span>
           <span class="bd-chip"><b>18/20</b> Presença</span>
           <span class="bd-chip"><b>3</b> Aniversariantes</span>
+        </div>
+
+        <div class="toast" id="bdAccessToast" role="status" aria-live="polite">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+          <span id="bdAccessToastMsg"></span>
         </div>
 
         <!-- Event photo banner (carousel with peek of next slide) -->
@@ -10927,6 +10933,37 @@ const REQ_SUMMARIES = {
       showView(target);
     });
   });
+
+  // Card "Membros" do painel -> leva direto pra Chamada de Presença (Secretaria).
+  // Só quem tem acesso ao módulo de Secretaria (Diretoria Executiva/Administrador,
+  // conforme papeis.permissoes_padrao) consegue de fato abrir a lista de presença —
+  // os demais veem um aviso em vez de navegar, reaproveitando a mesma restrição
+  // que já esconde "Secretaria" do menu desses papéis.
+  (function(){
+    const chip = document.getElementById('bdMembersChip');
+    const toast = document.getElementById('bdAccessToast');
+    const toastMsg = document.getElementById('bdAccessToastMsg');
+    if(!chip) return;
+    let toastTimer;
+    function showAccessToast(text){
+      if(!toast || !toastMsg) return;
+      toastMsg.textContent = text;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
+    }
+    chip.addEventListener('click', (e) => {
+      e.preventDefault();
+      const restricted = window.__restrictedGotoViews && window.__restrictedGotoViews.indexOf('view-secretary') !== -1;
+      if(restricted){
+        showAccessToast('Apenas a Diretoria Executiva tem acesso à lista de presença.');
+        return;
+      }
+      showView('view-secretary');
+      const attendanceTab = document.querySelector('.sc-pdf-tab[data-tab="attendance"]');
+      if(attendanceTab) attendanceTab.click();
+    });
+  })();
 
   document.querySelectorAll('[data-toggle]').forEach(btn => {
     btn.addEventListener('click', () => {
