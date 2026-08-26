@@ -817,21 +817,32 @@
   .pl-progress-done i{ background:var(--accent); }
   .pl-progress-pending i{ background:rgba(245,239,225,0.3); }
 
-  /* ---- Planejamento Anual: tipos de eventos (donut + contagem) ---- */
+  /* ---- Planejamento Anual: tipos de eventos (distintivos + contagem) ---- */
   .pl-types-card{
     background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
     border-radius:16px; padding:14px; margin:0 0 16px;
   }
-  .pl-types-body{ display:flex; align-items:center; gap:16px; margin-top:11px; }
-  .pl-donut{ width:96px; height:96px; flex:none; transform:rotate(-90deg); }
-  .pl-donut-track{ stroke:rgba(255,255,255,0.08); }
-  .pl-donut-seg{ transition:stroke-dasharray .4s ease; }
-  .pl-types-list{ flex:1; min-width:0; display:flex; flex-direction:column; gap:7px; }
-  .pl-types-item{ display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:rgba(245,239,225,0.75); }
-  .pl-types-dot{ width:8px; height:8px; border-radius:50%; flex:none; }
-  .pl-types-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .pl-types-count{ color:var(--cream); font-weight:900; }
-  .pl-types-empty{ font-size:12px; font-weight:600; color:rgba(245,239,225,0.5); }
+  .pl-types-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:11px;
+  }
+  .pl-type-chip{
+    display:flex; align-items:center; gap:10px;
+    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+    border-radius:13px; padding:9px 10px;
+  }
+  .pl-type-badge{
+    flex:none; width:34px; height:34px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    border:1.5px solid rgba(255,255,255,0.18);
+  }
+  .pl-type-badge svg{ width:16px; height:16px; }
+  .pl-type-info{ min-width:0; display:flex; flex-direction:column; }
+  .pl-type-count{ font-size:14px; font-weight:900; color:var(--cream); line-height:1.15; }
+  .pl-type-name{
+    font-size:10.5px; font-weight:700; color:rgba(245,239,225,0.6);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .pl-types-empty{ font-size:12px; font-weight:600; color:rgba(245,239,225,0.5); margin-top:10px; display:block; }
 
   /* ---- Planejamento Anual: grade de calendário do mês ---- */
   .pl-calendar-card{
@@ -2913,12 +2924,7 @@
 
           <div class="pl-types-card" id="plTypesCard">
             <span class="pl-progress-label">Tipos de eventos</span>
-            <div class="pl-types-body">
-              <svg class="pl-donut" id="plDonut" viewBox="0 0 36 36">
-                <circle class="pl-donut-track" cx="18" cy="18" r="15.5" fill="none" stroke-width="4"></circle>
-              </svg>
-              <div class="pl-types-list" id="plTypesList"></div>
-            </div>
+            <div class="pl-types-grid" id="plTypesGrid"></div>
           </div>
 
           <div class="pl-calendar-card" id="plCalendarCard">
@@ -8908,65 +8914,65 @@
       renderCalendarGrid();
     }
 
-    // Donut de "Tipos de eventos": agrupa os cards por rótulo da tag (ex.: Reunião,
-    // Curso...) e desenha os arcos via stroke-dasharray, um círculo <circle> por fatia.
-    const DONUT_TAG_COLOR = { green:'#3FCB6B', blue:'#5B9BFF', gold:'#D8A83E', red:'#FF6B5C', purple:'#B98BFF', gray:'#9AA3A0' };
-    const DONUT_R = 15.5;
-    const DONUT_CIRC = 2 * Math.PI * DONUT_R;
+    // "Tipos de eventos": agrupa os cards por rótulo da tag (ex.: Reunião, Curso...)
+    // e mostra cada um como um distintivo (ícone + contagem), no estilo dos emblemas
+    // de especialidade do clube. O ícone segue a cor da tag (mesmas 6 famílias já
+    // usadas no formulário de evento: reunião, culto/curso, acampamento, concurso,
+    // cerimônia, outro), então cobre qualquer rótulo — inclusive os personalizados.
+    const EVENT_TYPE_STYLE = {
+      green:  { color:'#3FCB6B', icon:'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="8" r="2.4"/><path d="M15.5 14.2c2.3.5 4 2.5 4 5.8"/>' },
+      blue:   { color:'#5B9BFF', icon:'<path d="m3 9 9-5 9 5-9 5-9-5Z"/><path d="M7 11.5V17c0 1.4 2.5 2.5 5 2.5s5-1.1 5-2.5v-5.5"/><path d="M21 9v6"/>' },
+      gold:   { color:'#D8A83E', icon:'<path d="M3.5 21 14 3"/><path d="M20.5 21 10 3"/><path d="M15.5 21 12 15l-3.5 6"/><path d="M2 21h20"/>' },
+      red:    { color:'#FF6B5C', icon:'<circle cx="12" cy="8" r="6"/><path d="m15.5 12.9 1.5 9.1-5-3-5 3 1.5-9.1"/>' },
+      purple: { color:'#B98BFF', icon:'<path d="M5 21V4"/><path d="M5 4h13l-3 4 3 4H5"/>' },
+      gray:   { color:'#9AA3A0', icon:'<circle cx="12" cy="12" r="9"/><path d="m14.5 9.5-2 5-5 2 2-5 5-2Z"/>' }
+    };
 
     function renderEventTypesDonut(cards){
-      const svg = document.getElementById('plDonut');
-      const list = document.getElementById('plTypesList');
-      if(!svg || !list) return;
+      const grid = document.getElementById('plTypesGrid');
+      if(!grid) return;
+      grid.innerHTML = '';
+
+      if(!cards.length){
+        const empty = document.createElement('span');
+        empty.className = 'pl-types-empty';
+        empty.textContent = 'Nenhum evento cadastrado.';
+        grid.appendChild(empty);
+        return;
+      }
 
       const byLabel = new Map();
       cards.forEach(card => {
         const label = card.dataset.tagLabel || 'Outro';
-        const color = DONUT_TAG_COLOR[card.dataset.tag] || DONUT_TAG_COLOR.gray;
+        const style = EVENT_TYPE_STYLE[card.dataset.tag] || EVENT_TYPE_STYLE.gray;
         const entry = byLabel.get(label);
         if(entry) entry.count++;
-        else byLabel.set(label, { count: 1, color });
+        else byLabel.set(label, { count: 1, style });
       });
       const types = Array.from(byLabel, ([label, v]) => ({ label, ...v })).sort((a, b) => b.count - a.count);
 
-      svg.querySelectorAll('.pl-donut-seg').forEach(seg => seg.remove());
-      list.innerHTML = '';
-
-      if(!cards.length){
-        list.innerHTML = '<span class="pl-types-empty">Nenhum evento cadastrado.</span>';
-        return;
-      }
-
-      let offset = 0;
       types.forEach(t => {
-        const segLen = (t.count / cards.length) * DONUT_CIRC;
-        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        circle.setAttribute('class', 'pl-donut-seg');
-        circle.setAttribute('cx', '18');
-        circle.setAttribute('cy', '18');
-        circle.setAttribute('r', String(DONUT_R));
-        circle.setAttribute('fill', 'none');
-        circle.setAttribute('stroke', t.color);
-        circle.setAttribute('stroke-width', '4');
-        circle.setAttribute('stroke-dasharray', segLen + ' ' + (DONUT_CIRC - segLen));
-        circle.setAttribute('stroke-dashoffset', String(-offset));
-        svg.appendChild(circle);
-        offset += segLen;
+        const chip = document.createElement('div');
+        chip.className = 'pl-type-chip';
 
-        const item = document.createElement('div');
-        item.className = 'pl-types-item';
-        const pct = Math.round((t.count / cards.length) * 100);
-        const dot = document.createElement('span');
-        dot.className = 'pl-types-dot';
-        dot.style.background = t.color;
-        const name = document.createElement('span');
-        name.className = 'pl-types-name';
-        name.textContent = t.label;
+        const badge = document.createElement('span');
+        badge.className = 'pl-type-badge';
+        badge.style.background = t.style.color + '26';
+        badge.style.color = t.style.color;
+        badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + t.style.icon + '</svg>';
+
+        const info = document.createElement('span');
+        info.className = 'pl-type-info';
         const count = document.createElement('span');
-        count.className = 'pl-types-count';
-        count.textContent = t.count + ' · ' + pct + '%';
-        item.append(dot, name, count);
-        list.appendChild(item);
+        count.className = 'pl-type-count';
+        count.textContent = t.count === 1 ? '1 evento' : t.count + ' eventos';
+        const name = document.createElement('span');
+        name.className = 'pl-type-name';
+        name.textContent = t.label;
+        info.append(count, name);
+
+        chip.append(badge, info);
+        grid.appendChild(chip);
       });
     }
 
