@@ -682,7 +682,7 @@
     border-radius:12px; padding:7px 0;
   }
   .pl-event-date b{ font-size:17px; font-weight:900; color:var(--accent); line-height:1; }
-  .pl-event-date em{ font-style:normal; font-size:9px; font-weight:800; letter-spacing:0.04em; color:rgba(245,239,225,0.55); margin-top:2px; }
+  .pl-event-date em{ font-style:normal; font-size:9px; font-weight:800; letter-spacing:0.04em; color:rgba(245,239,225,0.55); margin-bottom:2px; }
   .pl-event-body{ flex:1; min-width:0; }
   .pl-event-title{ margin:0 0 4px; font-size:14.5px; font-weight:800; color:var(--cream); }
   .pl-event-meta{ display:flex; align-items:center; gap:5px; margin:0; font-size:12px; font-weight:600; color:rgba(245,239,225,0.55); }
@@ -2701,114 +2701,83 @@
             <button type="button" class="pl-legend-item" data-tag-filter="gray"><span class="pl-legend-dot" style="background:#9AA3A0"></span>Outro</button>
           </div>
 
-          <div class="pl-month-group" id="plMonthGroup-Maio" data-mon-index="5">
-            <div class="pl-month-head">
-              <span class="pl-month-name">Maio</span>
-              <span class="pl-month-count">3 eventos</span>
-              <svg class="pl-month-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          <a href="#" class="pl-event-card" data-day="24" data-mon-abbr="MAI" data-mon-name="Maio" data-mon-index="5" data-title="Planejamento Anual" data-time="15:00" data-local="Sede do Clube" data-tag="green" data-tag-label="Reunião">
+            <div class="pl-event-date"><em>DOM</em><b>24</b></div>
+            <div class="pl-event-body">
+              <h4 class="pl-event-title">Planejamento Anual</h4>
+              <p class="pl-event-meta">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                15:00 · Sede do Clube
+              </p>
             </div>
-            <a href="#" class="pl-event-card" data-day="24" data-mon-abbr="MAI" data-mon-name="Maio" data-mon-index="5" data-title="Planejamento Anual" data-time="15:00" data-local="Sede do Clube" data-tag="green" data-tag-label="Reunião">
-              <div class="pl-event-date"><b>24</b><em>MAI</em></div>
-              <div class="pl-event-body">
-                <h4 class="pl-event-title">Planejamento Anual</h4>
-                <p class="pl-event-meta">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
-                  15:00 · Sede do Clube
-                </p>
-              </div>
-              <span class="pl-event-tag pl-tag-green">Reunião</span>
-            </a>
-            <a href="#" class="pl-event-card" data-day="28" data-mon-abbr="MAI" data-mon-name="Maio" data-mon-index="5" data-title="Culto Jovem" data-time="19:30" data-local="Igreja Sede" data-tag="blue" data-tag-label="Culto">
-              <div class="pl-event-date"><b>28</b><em>MAI</em></div>
-              <div class="pl-event-body">
-                <h4 class="pl-event-title">Culto Jovem</h4>
-                <p class="pl-event-meta">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
-                  19:30 · Igreja Sede
-                </p>
-              </div>
-              <span class="pl-event-tag pl-tag-blue">Culto</span>
-            </a>
-            <a href="#" class="pl-event-card" data-day="31" data-mon-abbr="MAI" data-mon-name="Maio" data-mon-index="5" data-title="Acampamento de Unidade" data-time="08:00" data-local="Sítio Recanto Verde" data-tag="gold" data-tag-label="Acampamento">
-              <div class="pl-event-date"><b>31</b><em>MAI</em></div>
-              <div class="pl-event-body">
-                <h4 class="pl-event-title">Acampamento de Unidade</h4>
-                <p class="pl-event-meta">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
-                  08:00 · Sítio Recanto Verde
-                </p>
-              </div>
-              <span class="pl-event-tag pl-tag-gold">Acampamento</span>
-            </a>
-          </div>
-
-          <div class="pl-month-group" id="plMonthGroup-Junho" data-mon-index="6">
-            <div class="pl-month-head">
-              <span class="pl-month-name">Junho</span>
-              <span class="pl-month-count">1 evento</span>
-              <svg class="pl-month-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="pl-event-tag pl-tag-green">Reunião</span>
+          </a>
+          <a href="#" class="pl-event-card" data-day="28" data-mon-abbr="MAI" data-mon-name="Maio" data-mon-index="5" data-title="Culto Jovem" data-time="19:30" data-local="Igreja Sede" data-tag="blue" data-tag-label="Culto">
+            <div class="pl-event-date"><em>QUI</em><b>28</b></div>
+            <div class="pl-event-body">
+              <h4 class="pl-event-title">Culto Jovem</h4>
+              <p class="pl-event-meta">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                19:30 · Igreja Sede
+              </p>
             </div>
-            <a href="#" class="pl-event-card" data-day="05" data-mon-abbr="JUN" data-mon-name="Junho" data-mon-index="6" data-title="Investidura" data-time="16:00" data-local="Sede do Clube" data-tag="purple" data-tag-label="Cerimônia">
-              <div class="pl-event-date"><b>05</b><em>JUN</em></div>
-              <div class="pl-event-body">
-                <h4 class="pl-event-title">Investidura</h4>
-                <p class="pl-event-meta">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
-                  16:00 · Sede do Clube
-                </p>
-              </div>
-              <span class="pl-event-tag pl-tag-purple">Cerimônia</span>
-            </a>
-          </div>
-
-          <div class="pl-month-group" id="plMonthGroup-Julho" data-mon-index="7">
-            <div class="pl-month-head">
-              <span class="pl-month-name">Julho</span>
-              <span class="pl-month-count">1 evento</span>
-              <svg class="pl-month-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="pl-event-tag pl-tag-blue">Culto</span>
+          </a>
+          <a href="#" class="pl-event-card" data-day="31" data-mon-abbr="MAI" data-mon-name="Maio" data-mon-index="5" data-title="Acampamento de Unidade" data-time="08:00" data-local="Sítio Recanto Verde" data-tag="gold" data-tag-label="Acampamento">
+            <div class="pl-event-date"><em>DOM</em><b>31</b></div>
+            <div class="pl-event-body">
+              <h4 class="pl-event-title">Acampamento de Unidade</h4>
+              <p class="pl-event-meta">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                08:00 · Sítio Recanto Verde
+              </p>
             </div>
-            <a href="#" class="pl-event-card" data-day="12" data-mon-abbr="JUL" data-mon-name="Julho" data-mon-index="7" data-title="Concurso de Ordem Unida" data-time="14:00" data-local="Sede do Clube" data-tag="red" data-tag-label="Concurso">
-              <div class="pl-event-date"><b>12</b><em>JUL</em></div>
-              <div class="pl-event-body">
-                <h4 class="pl-event-title">Concurso de Ordem Unida</h4>
-                <p class="pl-event-meta">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
-                  14:00 · Sede do Clube
-                </p>
-              </div>
-              <span class="pl-event-tag pl-tag-red">Concurso</span>
-            </a>
-          </div>
-
-          <div class="pl-month-group" id="plMonthGroup-Setembro" data-mon-index="9">
-            <div class="pl-month-head">
-              <span class="pl-month-name">Setembro</span>
-              <span class="pl-month-count">2 eventos</span>
-              <svg class="pl-month-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            <span class="pl-event-tag pl-tag-gold">Acampamento</span>
+          </a>
+          <a href="#" class="pl-event-card" data-day="05" data-mon-abbr="JUN" data-mon-name="Junho" data-mon-index="6" data-title="Investidura" data-time="16:00" data-local="Sede do Clube" data-tag="purple" data-tag-label="Cerimônia">
+            <div class="pl-event-date"><em>SEX</em><b>05</b></div>
+            <div class="pl-event-body">
+              <h4 class="pl-event-title">Investidura</h4>
+              <p class="pl-event-meta">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                16:00 · Sede do Clube
+              </p>
             </div>
-            <a href="#" class="pl-event-card" data-day="05" data-mon-abbr="SET" data-mon-name="Setembro" data-mon-index="9" data-title="Dia Mundial dos Desbravadores" data-time="09:00" data-local="Sede do Clube" data-tag="gold" data-tag-label="Comemoração">
-              <div class="pl-event-date"><b>05</b><em>SET</em></div>
-              <div class="pl-event-body">
-                <h4 class="pl-event-title">Dia Mundial dos Desbravadores</h4>
-                <p class="pl-event-meta">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
-                  09:00 · Sede do Clube
-                </p>
-              </div>
-              <span class="pl-event-tag pl-tag-gold">Comemoração</span>
-            </a>
-            <a href="#" class="pl-event-card" data-day="07" data-mon-abbr="SET" data-mon-name="Setembro" data-mon-index="9" data-title="Desfile Cívico 7 de Setembro" data-time="09:00" data-local="Centro da Cidade" data-tag="green" data-tag-label="Desfile">
-              <div class="pl-event-date"><b>07</b><em>SET</em></div>
-              <div class="pl-event-body">
-                <h4 class="pl-event-title">Desfile Cívico 7 de Setembro</h4>
-                <p class="pl-event-meta">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
-                  09:00 · Centro da Cidade
-                </p>
-              </div>
-              <span class="pl-event-tag pl-tag-green">Desfile</span>
-            </a>
-          </div>
+            <span class="pl-event-tag pl-tag-purple">Cerimônia</span>
+          </a>
+          <a href="#" class="pl-event-card" data-day="12" data-mon-abbr="JUL" data-mon-name="Julho" data-mon-index="7" data-title="Concurso de Ordem Unida" data-time="14:00" data-local="Sede do Clube" data-tag="red" data-tag-label="Concurso">
+            <div class="pl-event-date"><em>DOM</em><b>12</b></div>
+            <div class="pl-event-body">
+              <h4 class="pl-event-title">Concurso de Ordem Unida</h4>
+              <p class="pl-event-meta">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                14:00 · Sede do Clube
+              </p>
+            </div>
+            <span class="pl-event-tag pl-tag-red">Concurso</span>
+          </a>
+          <a href="#" class="pl-event-card" data-day="05" data-mon-abbr="SET" data-mon-name="Setembro" data-mon-index="9" data-title="Dia Mundial dos Desbravadores" data-time="09:00" data-local="Sede do Clube" data-tag="gold" data-tag-label="Comemoração">
+            <div class="pl-event-date"><em>SÁB</em><b>05</b></div>
+            <div class="pl-event-body">
+              <h4 class="pl-event-title">Dia Mundial dos Desbravadores</h4>
+              <p class="pl-event-meta">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                09:00 · Sede do Clube
+              </p>
+            </div>
+            <span class="pl-event-tag pl-tag-gold">Comemoração</span>
+          </a>
+          <a href="#" class="pl-event-card" data-day="07" data-mon-abbr="SET" data-mon-name="Setembro" data-mon-index="9" data-title="Desfile Cívico 7 de Setembro" data-time="09:00" data-local="Centro da Cidade" data-tag="green" data-tag-label="Desfile">
+            <div class="pl-event-date"><em>SEG</em><b>07</b></div>
+            <div class="pl-event-body">
+              <h4 class="pl-event-title">Desfile Cívico 7 de Setembro</h4>
+              <p class="pl-event-meta">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+                09:00 · Centro da Cidade
+              </p>
+            </div>
+            <span class="pl-event-tag pl-tag-green">Desfile</span>
+          </a>
 
         </div>
       </div>
@@ -7487,8 +7456,9 @@
       a.dataset.reminderRepeatCount = data.reminderRepeatCount || '';
       a.dataset.reminderConfirmedTimes = data.reminderConfirmedTimes || '0';
       a.dataset.reminderLastConfirmedDate = data.reminderLastConfirmedDate || '';
+      const dowAbbr = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'][new Date(new Date().getFullYear(), data.monIdx - 1, parseInt(data.day, 10)).getDay()];
       a.innerHTML =
-        '<div class="pl-event-date"><b>' + data.day + '</b><em>' + data.monAbbr + '</em></div>' +
+        '<div class="pl-event-date"><em>' + dowAbbr + '</em><b>' + data.day + '</b></div>' +
         '<div class="pl-event-body">' +
           '<h4 class="pl-event-title"></h4>' +
           '<p class="pl-event-meta">' +
@@ -7521,14 +7491,6 @@
       a.addEventListener('click', (e) => { e.preventDefault(); readOnlyMode ? openViewOnly(a) : openModal('edit', a); });
       addGCalButton(a);
       return a;
-    }
-
-    function updateMonthCount(group){
-      const n = group.querySelectorAll('.pl-event-card').length;
-      const countEl = group.querySelector('.pl-month-count');
-      if(countEl) countEl.textContent = n === 1 ? '1 evento' : n + ' eventos';
-      if(n === 0) group.remove();
-      updatePlanningStats();
     }
 
     function updatePlanningStats(){
@@ -7682,43 +7644,17 @@
       renderCalendarGrid();
     });
 
-    const CURRENT_MONTH_INDEX = new Date().getMonth() + 1; // 1-12
-
-    function wireMonthHeadToggle(group){
-      const head = group.querySelector('.pl-month-head');
-      if(!head || head.dataset.wired) return;
-      head.dataset.wired = '1';
-      head.addEventListener('click', () => {
-        group.classList.toggle('collapsed');
+    // Insere um card na posição cronologicamente correta da lista corrida
+    // (sem agrupamento por mês — cada evento já mostra dia da semana + dia no próprio card).
+    function insertCardChronologically(card, monIdx, day){
+      const existing = Array.from(content.querySelectorAll('.pl-event-card'));
+      const next = existing.find(c => {
+        const cMon = parseInt(c.dataset.monIndex, 10);
+        const cDay = parseInt(c.dataset.day, 10);
+        return cMon > monIdx || (cMon === monIdx && cDay > day);
       });
-    }
-
-    function applyDefaultMonthState(group){
-      const monIdx = parseInt(group.dataset.monIndex, 10);
-      group.classList.toggle('collapsed', monIdx !== CURRENT_MONTH_INDEX);
-    }
-
-    function findOrCreateMonthGroup(monName, monIdx){
-      let group = content.querySelector('#plMonthGroup-' + monName);
-      if(group) return group;
-      group = document.createElement('div');
-      group.className = 'pl-month-group';
-      group.id = 'plMonthGroup-' + monName;
-      group.dataset.monIndex = monIdx;
-      group.innerHTML =
-        '<div class="pl-month-head">' +
-          '<span class="pl-month-name">' + monName + '</span>' +
-          '<span class="pl-month-count">0 eventos</span>' +
-          '<svg class="pl-month-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>' +
-        '</div>';
-      wireMonthHeadToggle(group);
-      applyDefaultMonthState(group);
-      // Insert in chronological order among existing groups
-      const groups = Array.from(content.querySelectorAll('.pl-month-group'));
-      const next = groups.find(g => parseInt(g.dataset.monIndex, 10) > monIdx);
-      if(next) content.insertBefore(group, next);
-      else content.appendChild(group);
-      return group;
+      if(next) content.insertBefore(card, next);
+      else content.appendChild(card);
     }
 
     function saveEvent(){
@@ -7772,27 +7708,15 @@
         reminderLastConfirmedDate = editingCard.dataset.reminderLastConfirmedDate || '';
       }
 
-      let oldGroup = null;
-      if(editingCard){
-        oldGroup = editingCard.closest('.pl-month-group');
-        editingCard.remove();
-      }
+      if(editingCard) editingCard.remove();
       const newCard = buildCardHTML({
         day: dayStr, monAbbr, monName, monIdx, title, time, local, responsible, tag, tagLabel,
         desc, note, reminderOn, reminderDate, reminderMsg, reminderConfirmed,
         reminderRepeatOn, reminderRepeatDays, reminderRepeatCount,
         reminderConfirmedTimes, reminderLastConfirmedDate
       });
-      const targetGroup = findOrCreateMonthGroup(monName, monIdx);
-
-      // Insert sorted by day within the group
-      const existing = Array.from(targetGroup.querySelectorAll('.pl-event-card'));
-      const nextCard = existing.find(c => parseInt(c.dataset.day, 10) > parseInt(dayStr, 10));
-      if(nextCard) targetGroup.insertBefore(newCard, nextCard);
-      else targetGroup.appendChild(newCard);
-
-      updateMonthCount(targetGroup);
-      if(oldGroup && oldGroup !== targetGroup && oldGroup.isConnected) updateMonthCount(oldGroup);
+      insertCardChronologically(newCard, monIdx, parseInt(dayStr, 10));
+      updatePlanningStats();
 
       closeModal();
       refreshReminderBell();
@@ -7800,9 +7724,8 @@
 
     function deleteEvent(){
       if(!editingCard) return;
-      const group = editingCard.closest('.pl-month-group');
       editingCard.remove();
-      if(group) updateMonthCount(group);
+      updatePlanningStats();
       closeModal();
       refreshReminderBell();
     }
@@ -7814,10 +7737,6 @@
     // Escopado a #view-planning: .pl-event-card é uma classe-base reaproveitada por outras
     // telas (Manuais, Classes, Aniversariantes...) que não têm data-day/data-mon-index.
     document.querySelectorAll('#view-planning .pl-event-card').forEach(addGCalButton);
-    document.querySelectorAll('#view-planning .pl-month-group').forEach(g => {
-      wireMonthHeadToggle(g);
-      applyDefaultMonthState(g);
-    });
     updatePlanningStats();
 
     // Busca + filtro por categoria (legenda clicável): combinados, escondem cards que não
@@ -7831,24 +7750,11 @@
 
     function applyPlanningFilters(){
       const term = normalizePl(plSearchInput ? plSearchInput.value.trim() : '');
-      document.querySelectorAll('#view-planning .pl-month-group').forEach(group => {
-        let groupHasVisible = false;
-        group.querySelectorAll('.pl-event-card').forEach(card => {
-          const matchesTerm = !term || normalizePl(card.dataset.title).includes(term) || normalizePl(card.dataset.local).includes(term);
-          const matchesTag = activeTagFilters.size === 0 || activeTagFilters.has(card.dataset.tag);
-          const matchesDay = !activeDayFilter || (parseInt(card.dataset.monIndex, 10) === activeDayFilter.monIdx && parseInt(card.dataset.day, 10) === activeDayFilter.day);
-          const match = matchesTerm && matchesTag && matchesDay;
-          card.style.display = match ? '' : 'none';
-          if(match) groupHasVisible = true;
-        });
-        const filtering = !!term || activeTagFilters.size > 0 || !!activeDayFilter;
-        if(filtering){
-          group.style.display = groupHasVisible ? '' : 'none';
-          if(groupHasVisible) group.classList.remove('collapsed');
-        } else {
-          group.style.display = '';
-          applyDefaultMonthState(group);
-        }
+      document.querySelectorAll('#view-planning .pl-content .pl-event-card').forEach(card => {
+        const matchesTerm = !term || normalizePl(card.dataset.title).includes(term) || normalizePl(card.dataset.local).includes(term);
+        const matchesTag = activeTagFilters.size === 0 || activeTagFilters.has(card.dataset.tag);
+        const matchesDay = !activeDayFilter || (parseInt(card.dataset.monIndex, 10) === activeDayFilter.monIdx && parseInt(card.dataset.day, 10) === activeDayFilter.day);
+        card.style.display = (matchesTerm && matchesTag && matchesDay) ? '' : 'none';
       });
     }
 
