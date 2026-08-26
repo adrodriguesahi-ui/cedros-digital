@@ -160,3 +160,105 @@ create policy "desbravadores: acesso publico" on desbravadores
 drop policy if exists "progresso_requisitos: acesso publico" on progresso_requisitos;
 create policy "progresso_requisitos: acesso publico" on progresso_requisitos
   for all using (true) with check (true);
+
+-- ---------------------------------------------------------------------
+-- Unidades: cadastro central (cor/status) + funções, atividades,
+-- avaliações mensais e conquistas de cada unidade. `usuarios.unidade`
+-- (texto livre) é o elo com os membros — não há FK ali para não quebrar
+-- cadastros já existentes.
+-- ---------------------------------------------------------------------
+create table if not exists unidades (
+  nome text primary key,
+  cor text not null default 'gray',
+  status text not null default 'ativa'
+);
+
+insert into unidades (nome, cor, status) values
+  ('Ype', 'green', 'ativa'),
+  ('Ype Roxo', 'purple', 'ativa'),
+  ('Pinheiro', 'blue', 'ativa'),
+  ('Cedros', 'gold', 'ativa'),
+  ('Cedros Rosa', 'red', 'ativa'),
+  ('Flanboyan', 'orange', 'ativa'),
+  ('Jacarandá', 'gray', 'ativa')
+on conflict (nome) do nothing;
+
+create table if not exists unit_funcoes (
+  id uuid primary key default gen_random_uuid(),
+  unidade text not null references unidades(nome) on update cascade on delete cascade,
+  funcao text not null,
+  nome text not null default '',
+  unique (unidade, funcao)
+);
+
+insert into unit_funcoes (unidade, funcao)
+  select u.nome, f.funcao
+  from unidades u
+  cross join (values
+    ('Capitão(a)'), ('Vice-capitão(a)'), ('Secretário(a)'),
+    ('Tesoureiro(a)'), ('Instrutor(a)'), ('Conselheiro(a)')
+  ) as f(funcao)
+on conflict (unidade, funcao) do nothing;
+
+create table if not exists unit_atividades (
+  id uuid primary key default gen_random_uuid(),
+  unidade text not null references unidades(nome) on update cascade on delete cascade,
+  titulo text not null,
+  descricao text,
+  data date not null,
+  hora text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists unit_avaliacoes (
+  id uuid primary key default gen_random_uuid(),
+  unidade text not null references unidades(nome) on update cascade on delete cascade,
+  mes_ref text not null,
+  area text not null,
+  percentual int not null default 0,
+  unique (unidade, mes_ref, area)
+);
+
+create table if not exists unit_conquistas (
+  id uuid primary key default gen_random_uuid(),
+  unidade text not null references unidades(nome) on update cascade on delete cascade,
+  titulo text not null,
+  descricao text,
+  conquistada boolean not null default false,
+  data_conquista text,
+  progresso_atual numeric not null default 0,
+  progresso_meta numeric not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists unit_mes_resumo (
+  unidade text not null references unidades(nome) on update cascade on delete cascade,
+  mes_ref text not null,
+  especialidades int not null default 0,
+  primary key (unidade, mes_ref)
+);
+
+alter table unidades enable row level security;
+alter table unit_funcoes enable row level security;
+alter table unit_atividades enable row level security;
+alter table unit_avaliacoes enable row level security;
+alter table unit_conquistas enable row level security;
+alter table unit_mes_resumo enable row level security;
+
+drop policy if exists "unidades: acesso publico" on unidades;
+create policy "unidades: acesso publico" on unidades for all using (true) with check (true);
+
+drop policy if exists "unit_funcoes: acesso publico" on unit_funcoes;
+create policy "unit_funcoes: acesso publico" on unit_funcoes for all using (true) with check (true);
+
+drop policy if exists "unit_atividades: acesso publico" on unit_atividades;
+create policy "unit_atividades: acesso publico" on unit_atividades for all using (true) with check (true);
+
+drop policy if exists "unit_avaliacoes: acesso publico" on unit_avaliacoes;
+create policy "unit_avaliacoes: acesso publico" on unit_avaliacoes for all using (true) with check (true);
+
+drop policy if exists "unit_conquistas: acesso publico" on unit_conquistas;
+create policy "unit_conquistas: acesso publico" on unit_conquistas for all using (true) with check (true);
+
+drop policy if exists "unit_mes_resumo: acesso publico" on unit_mes_resumo;
+create policy "unit_mes_resumo: acesso publico" on unit_mes_resumo for all using (true) with check (true);

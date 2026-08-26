@@ -1065,6 +1065,197 @@
   }
   .un-gallery-empty{ font-size:12.5px; font-weight:600; color:rgba(245,239,225,0.4); grid-column:1/-1; padding:12px 0; }
 
+  /* ---- Unidades: hub (lista) ---- */
+  .un-hub-pill{ font-size:10.5px !important; padding:4px 10px !important; margin-right:2px; flex-shrink:0; }
+
+  /* ---- Unidades: tabs do detalhe ---- */
+  .un-tabs{
+    display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; margin-bottom:14px;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none;
+  }
+  .un-tabs::-webkit-scrollbar{ display:none; }
+  .un-tab{
+    flex:0 0 auto; white-space:nowrap; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+    color:rgba(245,239,225,0.7); border-radius:12px; padding:9px 14px; font-size:12.5px; font-weight:800; cursor:pointer;
+  }
+  .un-tab.active{ background:var(--accent); border-color:var(--accent); color:#08130A; }
+
+  /* ---- Visão Geral: resumo do mês ---- */
+  .un-summary-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .un-summary-month{ font-size:12px; font-weight:800; color:rgba(245,239,225,0.5); }
+  .un-link-small{ font-size:12px; font-weight:800; color:var(--accent); text-decoration:none; }
+
+  .un-stat-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .un-stat-tile{
+    display:flex; flex-direction:column; align-items:flex-start; gap:6px;
+    background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px; padding:14px; text-decoration:none;
+  }
+  .un-stat-editable{ cursor:pointer; }
+  .un-stat-editable:active{ background:rgba(255,255,255,0.08); }
+  .un-stat-icon{
+    width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; color:#fff;
+  }
+  .un-stat-icon.c-green{ background:var(--accent); color:#08130A; }
+  .un-stat-icon.c-blue{ background:#5B9BFF; }
+  .un-stat-icon.c-gold{ background:var(--gold); color:#2B2010; }
+  .un-stat-icon.c-purple{ background:#B98BFF; }
+  .un-stat-icon.c-red{ background:#FF6B5C; }
+  .un-stat-icon.c-orange{ background:#FF9F43; }
+  .un-stat-value{ font-size:24px; font-weight:900; color:var(--cream); line-height:1.1; }
+  .un-stat-label{ font-size:11px; font-weight:700; color:rgba(245,239,225,0.5); }
+
+  .un-empty-hint{ font-size:12.5px; font-weight:600; color:rgba(245,239,225,0.4); padding:8px 0; margin:0; }
+
+  .un-mini-list{ display:flex; flex-direction:column; gap:8px; }
+  .un-mini-row{
+    display:flex; align-items:center; gap:11px;
+    background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px; padding:10px 12px;
+  }
+  .un-mini-date{
+    flex-shrink:0; width:40px; height:40px; border-radius:10px; background:rgba(216,168,62,0.16);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1;
+  }
+  .un-mini-date b{ font-size:14px; font-weight:900; color:var(--gold); }
+  .un-mini-date em{ font-size:8.5px; font-weight:800; font-style:normal; letter-spacing:0.03em; color:rgba(216,168,62,0.75); text-transform:uppercase; }
+  .un-mini-body{ flex:1; min-width:0; }
+  .un-mini-title{ font-size:13px; font-weight:800; color:var(--cream); }
+  .un-mini-meta{ font-size:11px; font-weight:600; color:rgba(245,239,225,0.5); margin-top:1px; }
+  .un-mini-time{ flex-shrink:0; font-size:11.5px; font-weight:800; color:rgba(245,239,225,0.55); }
+
+  .un-perf-row{ display:flex; align-items:center; gap:18px; }
+  .un-donut{
+    position:relative; width:104px; height:104px; border-radius:50%; flex-shrink:0;
+    background:conic-gradient(var(--accent) calc(var(--pct)*1%), rgba(255,255,255,0.1) 0);
+  }
+  .un-donut-inner{
+    position:absolute; inset:9px; border-radius:50%; background:var(--night);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+  }
+  .un-donut-value{ font-size:20px; font-weight:900; color:var(--cream); line-height:1.1; }
+  .un-donut-label{ font-size:9px; font-weight:700; color:rgba(245,239,225,0.5); margin-top:3px; line-height:1.25; }
+  .un-perf-bars{ flex:1; min-width:0; display:flex; flex-direction:column; gap:9px; }
+  .un-perf-bar-row{ display:flex; align-items:center; gap:8px; }
+  .un-perf-bar-dot{ flex-shrink:0; }
+  .un-perf-bar-name{ flex-shrink:0; width:58px; font-size:11px; font-weight:700; color:rgba(245,239,225,0.65); }
+  .un-perf-bar-track{ flex:1; height:6px; border-radius:4px; background:rgba(255,255,255,0.1); overflow:hidden; }
+  .un-perf-bar-fill{ display:block; height:100%; border-radius:4px; }
+  .un-perf-bar-pct{ flex-shrink:0; width:32px; text-align:right; font-size:11px; font-weight:800; color:var(--cream); }
+
+  /* ---- Membros ---- */
+  .un-member-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:8px; }
+  .un-member-row{
+    display:flex; align-items:center; gap:11px; cursor:pointer;
+    background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px; padding:10px 12px;
+  }
+  .un-member-avatar{
+    flex-shrink:0; width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:900; color:#08130A;
+  }
+  .un-member-body{ flex:1; min-width:0; }
+  .un-member-name{ font-size:13.5px; font-weight:800; color:var(--cream); }
+  .un-member-role{ font-size:11px; font-weight:600; color:rgba(245,239,225,0.5); margin-top:1px; }
+  .un-member-detail{ display:flex; flex-direction:column; gap:10px; padding:4px 2px 6px; }
+  .un-member-detail-row{ display:flex; flex-direction:column; gap:2px; }
+  .un-member-detail-row b{ font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.03em; color:rgba(245,239,225,0.45); }
+  .un-member-detail-row span{ font-size:14px; font-weight:700; color:var(--cream); }
+
+  /* ---- Funções ---- */
+  .un-role-list{ display:flex; flex-direction:column; gap:10px; }
+  .un-role-row{
+    display:flex; align-items:center; gap:12px; cursor:pointer;
+    background:rgba(255,255,255,0.045); border-left:4px solid rgba(255,255,255,0.2);
+    border-radius:14px; padding:12px 14px; box-shadow:0 6px 14px rgba(0,0,0,0.18);
+  }
+  .un-role-icon{ flex-shrink:0; width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; }
+  .un-role-body{ flex:1; min-width:0; }
+  .un-role-name{ font-size:13px; font-weight:800; color:var(--cream); }
+  .un-role-person{ font-size:12px; font-weight:600; color:rgba(245,239,225,0.5); margin-top:2px; }
+  .un-role-row.c-green{ border-left-color:var(--accent); } .un-role-row.c-green .un-role-icon{ background:var(--accent); color:#08130A; }
+  .un-role-row.c-blue{ border-left-color:#5B9BFF; } .un-role-row.c-blue .un-role-icon{ background:#5B9BFF; }
+  .un-role-row.c-gold{ border-left-color:var(--gold); } .un-role-row.c-gold .un-role-icon{ background:var(--gold); color:#2B2010; }
+  .un-role-row.c-red{ border-left-color:#FF6B5C; } .un-role-row.c-red .un-role-icon{ background:#FF6B5C; }
+  .un-role-row.c-purple{ border-left-color:#B98BFF; } .un-role-row.c-purple .un-role-icon{ background:#B98BFF; }
+  .un-role-row.c-orange{ border-left-color:#FF9F43; } .un-role-row.c-orange .un-role-icon{ background:#FF9F43; }
+  .un-role-row.c-gray{ border-left-color:#9AA3A0; } .un-role-row.c-gray .un-role-icon{ background:#9AA3A0; }
+
+  /* ---- Atividades da unidade ---- */
+  .un-activity-list{ display:flex; flex-direction:column; gap:10px; }
+  .un-activity-row{
+    display:flex; align-items:center; gap:12px; text-decoration:none; cursor:pointer;
+    background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px; padding:11px 13px;
+  }
+  .un-activity-date{
+    flex-shrink:0; width:44px; height:44px; border-radius:11px; background:var(--accent);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1.1;
+  }
+  .un-activity-date b{ font-size:15px; font-weight:900; color:#08130A; }
+  .un-activity-date em{ font-size:8.5px; font-weight:800; font-style:normal; letter-spacing:0.03em; color:rgba(8,19,10,0.7); text-transform:uppercase; }
+  .un-activity-row.done .un-activity-date{ background:rgba(255,255,255,0.14); }
+  .un-activity-row.done .un-activity-date b, .un-activity-row.done .un-activity-date em{ color:rgba(245,239,225,0.7); }
+  .un-activity-body{ flex:1; min-width:0; }
+  .un-activity-title{ font-size:13.5px; font-weight:800; color:var(--cream); }
+  .un-activity-desc{ font-size:11.5px; font-weight:600; color:rgba(245,239,225,0.5); margin-top:2px; }
+  .un-activity-time{ flex-shrink:0; font-size:12px; font-weight:800; color:rgba(245,239,225,0.6); }
+
+  /* ---- Conquistas ---- */
+  .un-badge-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .un-badge-card{
+    display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; cursor:pointer;
+    background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
+    border-radius:16px; padding:16px 10px;
+  }
+  .un-badge-icon{
+    width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff;
+    background:linear-gradient(150deg, var(--gold), #a87a1f);
+  }
+  .un-badge-title{ font-size:12.5px; font-weight:800; color:var(--cream); }
+  .un-badge-date{ font-size:10.5px; font-weight:700; color:rgba(245,239,225,0.45); }
+
+  .un-progress-list{ display:flex; flex-direction:column; gap:10px; }
+  .un-progress-row{
+    cursor:pointer; background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px; padding:12px 14px;
+  }
+  .un-progress-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+  .un-progress-title{ font-size:13px; font-weight:800; color:var(--cream); }
+  .un-progress-desc{ font-size:11.5px; font-weight:600; color:rgba(245,239,225,0.5); margin-top:2px; }
+  .un-progress-count{ flex-shrink:0; font-size:12px; font-weight:800; color:var(--gold); }
+  .un-progress-track{ height:6px; border-radius:4px; background:rgba(255,255,255,0.1); overflow:hidden; }
+  .un-progress-fill{ display:block; height:100%; border-radius:4px; background:var(--gold); }
+
+  /* ---- Relatórios / Configurações: menu de linhas ---- */
+  .un-report-list{ display:flex; flex-direction:column; gap:10px; }
+  .un-report-row{
+    display:flex; align-items:center; gap:12px; text-decoration:none;
+    background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px; padding:12px 14px;
+  }
+  .un-report-icon{ flex-shrink:0; width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; }
+  .un-report-icon.c-green{ background:var(--accent); color:#08130A; }
+  .un-report-icon.c-blue{ background:#5B9BFF; }
+  .un-report-icon.c-gold{ background:var(--gold); color:#2B2010; }
+  .un-report-icon.c-purple{ background:#B98BFF; }
+  .un-report-icon.c-red{ background:#FF6B5C; }
+  .un-report-icon.c-orange{ background:#FF9F43; }
+  .un-report-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+  .un-report-body b{ font-size:13px; font-weight:800; color:var(--cream); }
+  .un-report-body span{ font-size:11px; font-weight:600; color:rgba(245,239,225,0.5); }
+  .un-report-danger .un-report-body b{ color:#FF6B5C; }
+
+  .un-color-picker{ display:flex; gap:10px; flex-wrap:wrap; }
+  .un-color-swatch{
+    width:38px; height:38px; border-radius:50%; border:2px solid transparent; background:rgba(255,255,255,0.05);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .un-color-swatch .cl-class-dot{ width:18px; height:18px; margin:0; }
+  .un-color-swatch.selected{ border-color:var(--cream); }
+
+  .un-status-picker{ display:flex; gap:8px; flex-wrap:wrap; }
+
   /* ---- Devocional ---- */
   .dv-card{ position:relative; }
   .dv-read-mark{
@@ -1262,6 +1453,7 @@
   .cl-status-pick-btn[data-color="gray"]::before{ background:#9AA3A0; }
   .cl-status-pick-btn[data-color="gold"]::before{ background:var(--gold); }
   .cl-status-pick-btn[data-color="green"]::before{ background:var(--accent); }
+  .cl-status-pick-btn[data-color="blue"]::before{ background:#5B9BFF; }
   .cl-status-pick-btn.selected{ border-color:var(--accent); background:rgba(63,203,107,0.12); }
 
   .pl-fab{
@@ -6202,84 +6394,310 @@
         </div>
 
         <div class="cl-hub" id="unHub">
-          <a href="#" class="cl-hub-row" data-open-unit="Ype">
-            <span class="cl-class-dot cl-color-green"></span>
+          <a href="#" class="cl-hub-row un-hub-row" data-open-unit="Ype">
+            <span class="cl-class-dot cl-color-green" id="unHubDot-Ype"></span>
             <span class="cl-hub-row-name">Ype</span>
-            <span class="cl-hub-row-count" id="unHubStatus-Ype">Sem informações</span>
+            <span class="cl-hub-row-count" id="unHubCount-Ype">— membros</span>
+            <span class="pl-event-tag pl-tag-green un-hub-pill" id="unHubStatus-Ype">Ativa</span>
             <svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </a>
-          <a href="#" class="cl-hub-row" data-open-unit="Ype Roxo">
-            <span class="cl-class-dot cl-color-purple"></span>
+          <a href="#" class="cl-hub-row un-hub-row" data-open-unit="Ype Roxo">
+            <span class="cl-class-dot cl-color-purple" id="unHubDot-YpeRoxo"></span>
             <span class="cl-hub-row-name">Ype Roxo</span>
-            <span class="cl-hub-row-count" id="unHubStatus-YpeRoxo">Sem informações</span>
+            <span class="cl-hub-row-count" id="unHubCount-YpeRoxo">— membros</span>
+            <span class="pl-event-tag pl-tag-green un-hub-pill" id="unHubStatus-YpeRoxo">Ativa</span>
             <svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </a>
-          <a href="#" class="cl-hub-row" data-open-unit="Pinheiro">
-            <span class="cl-class-dot cl-color-blue"></span>
+          <a href="#" class="cl-hub-row un-hub-row" data-open-unit="Pinheiro">
+            <span class="cl-class-dot cl-color-blue" id="unHubDot-Pinheiro"></span>
             <span class="cl-hub-row-name">Pinheiro</span>
-            <span class="cl-hub-row-count" id="unHubStatus-Pinheiro">Sem informações</span>
+            <span class="cl-hub-row-count" id="unHubCount-Pinheiro">— membros</span>
+            <span class="pl-event-tag pl-tag-green un-hub-pill" id="unHubStatus-Pinheiro">Ativa</span>
             <svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </a>
-          <a href="#" class="cl-hub-row" data-open-unit="Cedros">
-            <span class="cl-class-dot cl-color-gold"></span>
+          <a href="#" class="cl-hub-row un-hub-row" data-open-unit="Cedros">
+            <span class="cl-class-dot cl-color-gold" id="unHubDot-Cedros"></span>
             <span class="cl-hub-row-name">Cedros</span>
-            <span class="cl-hub-row-count" id="unHubStatus-Cedros">Sem informações</span>
+            <span class="cl-hub-row-count" id="unHubCount-Cedros">— membros</span>
+            <span class="pl-event-tag pl-tag-green un-hub-pill" id="unHubStatus-Cedros">Ativa</span>
             <svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </a>
-          <a href="#" class="cl-hub-row" data-open-unit="Cedros Rosa">
-            <span class="cl-class-dot cl-color-red"></span>
+          <a href="#" class="cl-hub-row un-hub-row" data-open-unit="Cedros Rosa">
+            <span class="cl-class-dot cl-color-red" id="unHubDot-CedrosRosa"></span>
             <span class="cl-hub-row-name">Cedros Rosa</span>
-            <span class="cl-hub-row-count" id="unHubStatus-CedrosRosa">Sem informações</span>
+            <span class="cl-hub-row-count" id="unHubCount-CedrosRosa">— membros</span>
+            <span class="pl-event-tag pl-tag-green un-hub-pill" id="unHubStatus-CedrosRosa">Ativa</span>
             <svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </a>
-          <a href="#" class="cl-hub-row" data-open-unit="Flanboyan">
-            <span class="cl-class-dot cl-color-orange"></span>
+          <a href="#" class="cl-hub-row un-hub-row" data-open-unit="Flanboyan">
+            <span class="cl-class-dot cl-color-orange" id="unHubDot-Flanboyan"></span>
             <span class="cl-hub-row-name">Flanboyan</span>
-            <span class="cl-hub-row-count" id="unHubStatus-Flanboyan">Sem informações</span>
+            <span class="cl-hub-row-count" id="unHubCount-Flanboyan">— membros</span>
+            <span class="pl-event-tag pl-tag-green un-hub-pill" id="unHubStatus-Flanboyan">Ativa</span>
             <svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </a>
-          <a href="#" class="cl-hub-row" data-open-unit="Jacarandá">
-            <span class="cl-class-dot cl-color-gray"></span>
+          <a href="#" class="cl-hub-row un-hub-row" data-open-unit="Jacarandá">
+            <span class="cl-class-dot cl-color-gray" id="unHubDot-Jacaranda"></span>
             <span class="cl-hub-row-name">Jacarandá</span>
-            <span class="cl-hub-row-count" id="unHubStatus-Jacaranda">Sem informações</span>
+            <span class="cl-hub-row-count" id="unHubCount-Jacaranda">— membros</span>
+            <span class="pl-event-tag pl-tag-green un-hub-pill" id="unHubStatus-Jacaranda">Ativa</span>
             <svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </a>
         </div>
 
-        <div class="pl-content" id="unContent" style="display:none;">
+        <div class="un-detail" id="unDetail" style="display:none;">
 
-          <div class="un-section">
-            <div class="un-score-total-card">
-              <span class="un-score-total-label">Pontuação Total</span>
-              <span class="un-score-total-value" id="unScoreTotal">0</span>
-              <span class="un-score-total-max">de 60 pontos</span>
+          <div class="un-tabs" id="unTabs">
+            <button type="button" class="un-tab active" data-un-tab="overview">Visão Geral</button>
+            <button type="button" class="un-tab" data-un-tab="members">Membros</button>
+            <button type="button" class="un-tab" data-un-tab="roles">Funções</button>
+            <button type="button" class="un-tab" data-un-tab="activities">Atividades</button>
+            <button type="button" class="un-tab" data-un-tab="evaluations">Avaliações</button>
+            <button type="button" class="un-tab" data-un-tab="achievements">Conquistas</button>
+            <button type="button" class="un-tab" data-un-tab="corner">Cantinho</button>
+            <button type="button" class="un-tab" data-un-tab="reports">Relatórios</button>
+            <button type="button" class="un-tab" data-un-tab="settings">Configurações</button>
+          </div>
+
+          <div class="pl-content" id="unContent">
+
+            <!-- ---- Visão Geral ---- -->
+            <div class="un-panel" data-un-panel="overview" id="unPanelOverview">
+              <div class="un-section">
+                <div class="un-summary-head">
+                  <h4 class="un-section-title" style="margin:0;">Resumo do Mês</h4>
+                  <span class="un-summary-month" id="unSummaryMonth">—</span>
+                </div>
+                <div class="un-stat-grid">
+                  <div class="un-stat-tile">
+                    <span class="un-stat-icon c-green"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+                    <span class="un-stat-value" id="unStatMembers">0</span>
+                    <span class="un-stat-label">Membros</span>
+                  </div>
+                  <div class="un-stat-tile">
+                    <span class="un-stat-icon c-blue"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3" width="8" height="4" rx="1"/><path d="M8 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><path d="M9 12h6M9 16h6"/></svg></span>
+                    <span class="un-stat-value" id="unStatActivities">0</span>
+                    <span class="un-stat-label">Atividades</span>
+                  </div>
+                  <div class="un-stat-tile">
+                    <span class="un-stat-icon c-gold"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15 9 22 10 17 15 18 22 12 18.5 6 22 7 15 2 10 9 9Z"/></svg></span>
+                    <span class="un-stat-value" id="unStatPerformance">0%</span>
+                    <span class="un-stat-label">Desempenho</span>
+                  </div>
+                  <a href="#" class="un-stat-tile un-stat-editable" id="unStatSpecialtiesTile">
+                    <span class="un-stat-icon c-purple"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v18"/><path d="M4 4h13l-2.5 4L17 12H4"/></svg></span>
+                    <span class="un-stat-value" id="unStatSpecialties">0</span>
+                    <span class="un-stat-label">Especialidades</span>
+                  </a>
+                </div>
+              </div>
+
+              <div class="un-section">
+                <div class="un-summary-head">
+                  <h4 class="un-section-title" style="margin:0;">Próximas Atividades</h4>
+                  <a href="#" class="un-link-small" data-un-goto="activities">Ver todas</a>
+                </div>
+                <div class="un-mini-list" id="unUpcomingList">
+                  <p class="un-empty-hint">Nenhuma atividade agendada.</p>
+                </div>
+              </div>
+
+              <div class="un-section">
+                <div class="un-summary-head">
+                  <h4 class="un-section-title" style="margin:0;">Desempenho da Unidade</h4>
+                  <a href="#" class="un-link-small" data-un-goto="reports">Ver relatório</a>
+                </div>
+                <div class="un-perf-row">
+                  <div class="un-donut" id="unDonut" style="--pct:0;">
+                    <div class="un-donut-inner">
+                      <span class="un-donut-value" id="unDonutValue">0%</span>
+                      <span class="un-donut-label">Desempenho<br>geral</span>
+                    </div>
+                  </div>
+                  <div class="un-perf-bars" id="unPerfBars"></div>
+                </div>
+              </div>
             </div>
 
-            <div class="un-score-list" id="unScoreList"></div>
-            <button type="button" class="pl-btn pl-btn-primary" id="unScoreExportBtn" style="margin-top:12px;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:5px;"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-              Exportar pontuação
-            </button>
-            <p class="pl-reminder-hint">Os pontos são salvos automaticamente aqui no app assim que você digita. Use "Exportar" pra copiar o resumo e colar no clubes.adventistas.org.</p>
-          </div>
+            <!-- ---- Membros ---- -->
+            <div class="un-panel" data-un-panel="members" id="unPanelMembers" style="display:none;">
+              <div class="pl-search-wrap">
+                <svg class="pl-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="pl-input pl-search-input" id="unMemberSearch" placeholder="Buscar membro...">
+              </div>
+              <div class="un-member-list" id="unMemberList">
+                <p class="un-empty-hint">Nenhum membro cadastrado nesta unidade ainda.</p>
+              </div>
+              <p class="pl-reminder-hint">Lista sincronizada com Administração → Usuários. Pra adicionar, editar ou remover alguém desta unidade, gerencie o cadastro por lá.</p>
+            </div>
 
-          <div class="un-section">
-            <h4 class="un-section-title">Cantinho da Unidade</h4>
-            <p class="un-desc" id="unDescText">Nenhuma informação cadastrada ainda.</p>
-          </div>
+            <!-- ---- Funções ---- -->
+            <div class="un-panel" data-un-panel="roles" id="unPanelRoles" style="display:none;">
+              <div class="un-role-list" id="unRoleList"></div>
+            </div>
 
-          <div class="un-section">
-            <h4 class="un-section-title">Responsável pela decoração</h4>
-            <p class="un-resp" id="unRespText">—</p>
-          </div>
+            <!-- ---- Atividades ---- -->
+            <div class="un-panel" data-un-panel="activities" id="unPanelActivities" style="display:none;">
+              <div class="sc-pdf-tabs" style="margin-bottom:14px;">
+                <button type="button" class="sc-pdf-tab active" id="unActTabUpcoming" data-act-tab="upcoming">Próximas</button>
+                <button type="button" class="sc-pdf-tab" id="unActTabDone" data-act-tab="done">Realizadas</button>
+              </div>
+              <div class="un-activity-list" id="unActivityList">
+                <p class="un-empty-hint">Nenhuma atividade cadastrada.</p>
+              </div>
+            </div>
 
-          <div class="un-section">
-            <h4 class="un-section-title">Fotos do cantinho</h4>
-            <div class="un-gallery" id="unGallery"></div>
-          </div>
+            <!-- ---- Avaliações ---- -->
+            <div class="un-panel" data-un-panel="evaluations" id="unPanelEvaluations" style="display:none;">
+              <label class="pl-field-label" style="margin-top:0;">Mês de referência</label>
+              <select class="pl-input" id="unEvalMonth" style="margin-bottom:14px;"></select>
 
+              <div class="un-score-total-card">
+                <span class="un-score-total-label">Desempenho Geral</span>
+                <span class="un-score-total-value" id="unEvalTotal">0%</span>
+              </div>
+
+              <div class="un-score-list" id="unEvalList"></div>
+              <p class="pl-reminder-hint">As porcentagens são salvas automaticamente aqui no Supabase assim que você digita, por unidade e por mês.</p>
+            </div>
+
+            <!-- ---- Conquistas ---- -->
+            <div class="un-panel" data-un-panel="achievements" id="unPanelAchievements" style="display:none;">
+              <div class="un-section">
+                <h4 class="un-section-title">Conquistas da Unidade</h4>
+                <div class="un-badge-grid" id="unBadgeGrid">
+                  <p class="un-empty-hint">Nenhuma conquista registrada ainda.</p>
+                </div>
+              </div>
+              <div class="un-section">
+                <h4 class="un-section-title">Próximas Conquistas</h4>
+                <div class="un-progress-list" id="unProgressList">
+                  <p class="un-empty-hint">Nenhuma conquista em andamento.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- ---- Cantinho da Unidade (pontuação + decoração) ---- -->
+            <div class="un-panel" data-un-panel="corner" id="unPanelCorner" style="display:none;">
+              <div class="un-section">
+                <div class="un-score-total-card">
+                  <span class="un-score-total-label">Pontuação Total</span>
+                  <span class="un-score-total-value" id="unScoreTotal">0</span>
+                  <span class="un-score-total-max">de 60 pontos</span>
+                </div>
+
+                <div class="un-score-list" id="unScoreList"></div>
+                <button type="button" class="pl-btn pl-btn-primary" id="unScoreExportBtn" style="margin-top:12px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:5px;"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+                  Exportar pontuação
+                </button>
+                <p class="pl-reminder-hint">Os pontos são salvos automaticamente aqui no app assim que você digita. Use "Exportar" pra copiar o resumo e colar no clubes.adventistas.org.</p>
+              </div>
+
+              <div class="un-section">
+                <h4 class="un-section-title">Cantinho da Unidade</h4>
+                <p class="un-desc" id="unDescText">Nenhuma informação cadastrada ainda.</p>
+              </div>
+
+              <div class="un-section">
+                <h4 class="un-section-title">Responsável pela decoração</h4>
+                <p class="un-resp" id="unRespText">—</p>
+              </div>
+
+              <div class="un-section">
+                <h4 class="un-section-title">Fotos do cantinho</h4>
+                <div class="un-gallery" id="unGallery"></div>
+              </div>
+            </div>
+
+            <!-- ---- Relatórios ---- -->
+            <div class="un-panel" data-un-panel="reports" id="unPanelReports" style="display:none;">
+              <div class="un-report-list">
+                <a href="#" class="un-report-row" data-un-goto="evaluations">
+                  <span class="un-report-icon c-gold"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></span>
+                  <span class="un-report-body"><b>Desempenho da Unidade</b><span>Relatório de avaliações mensais</span></span>
+                  <svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </a>
+                <a href="#" class="un-report-row" id="unReportFrequency">
+                  <span class="un-report-icon c-blue"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span>
+                  <span class="un-report-body"><b>Frequência</b><span>Abrir Chamada de Presença desta unidade</span></span>
+                  <svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </a>
+                <a href="#" class="un-report-row" data-un-goto="activities">
+                  <span class="un-report-icon c-green"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 3v3M16 3v3"/></svg></span>
+                  <span class="un-report-body"><b>Atividades</b><span>Histórico de atividades da unidade</span></span>
+                  <svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </a>
+                <a href="#" class="un-report-row" data-un-goto="achievements">
+                  <span class="un-report-icon c-purple"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6"/><path d="M9 14.5 7.5 21 12 18.5 16.5 21 15 14.5"/></svg></span>
+                  <span class="un-report-body"><b>Conquistas</b><span>Histórico de conquistas da unidade</span></span>
+                  <svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </a>
+                <a href="#" class="un-report-row" id="unReportExport">
+                  <span class="un-report-icon c-orange"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></span>
+                  <span class="un-report-body"><b>Exportar Relatório</b><span>Gerar resumo e copiar como texto</span></span>
+                  <svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </a>
+              </div>
+            </div>
+
+            <!-- ---- Configurações ---- -->
+            <div class="un-panel" data-un-panel="settings" id="unPanelSettings" style="display:none;">
+              <div class="un-section">
+                <h4 class="un-section-title">Cor da unidade</h4>
+                <div class="un-color-picker" id="unColorPicker">
+                  <button type="button" class="un-color-swatch" data-color="green"><span class="cl-class-dot cl-color-green"></span></button>
+                  <button type="button" class="un-color-swatch" data-color="purple"><span class="cl-class-dot cl-color-purple"></span></button>
+                  <button type="button" class="un-color-swatch" data-color="blue"><span class="cl-class-dot cl-color-blue"></span></button>
+                  <button type="button" class="un-color-swatch" data-color="gold"><span class="cl-class-dot cl-color-gold"></span></button>
+                  <button type="button" class="un-color-swatch" data-color="red"><span class="cl-class-dot cl-color-red"></span></button>
+                  <button type="button" class="un-color-swatch" data-color="orange"><span class="cl-class-dot cl-color-orange"></span></button>
+                  <button type="button" class="un-color-swatch" data-color="gray"><span class="cl-class-dot cl-color-gray"></span></button>
+                </div>
+              </div>
+
+              <div class="un-section">
+                <h4 class="un-section-title">Status da unidade</h4>
+                <div class="un-status-picker" id="unStatusPicker">
+                  <button type="button" class="cl-status-pick-btn" data-status="ativa" data-color="green">Ativa</button>
+                  <button type="button" class="cl-status-pick-btn" data-status="andamento" data-color="gold">Em andamento</button>
+                  <button type="button" class="cl-status-pick-btn" data-status="pausada" data-color="blue">Pausada</button>
+                  <button type="button" class="cl-status-pick-btn" data-status="inativa" data-color="gray">Inativa</button>
+                </div>
+              </div>
+
+              <div class="un-section">
+                <div class="un-report-list">
+                  <a href="#" class="un-report-row" id="unSettingsMembers">
+                    <span class="un-report-icon c-green"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/></svg></span>
+                    <span class="un-report-body"><b>Gerenciar Membros</b><span>Adicionar, editar ou remover membros em Administração</span></span>
+                    <svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  </a>
+                  <a href="#" class="un-report-row" data-un-goto="roles">
+                    <span class="un-report-icon c-blue"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10V6Z"/></svg></span>
+                    <span class="un-report-body"><b>Gerenciar Funções</b><span>Editar quem ocupa cada função da unidade</span></span>
+                    <svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  </a>
+                  <a href="#" class="un-report-row" data-un-goto="evaluations">
+                    <span class="un-report-icon c-gold"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+                    <span class="un-report-body"><b>Critérios de Avaliação</b><span>Editar as notas mensais por área</span></span>
+                    <svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  </a>
+                  <a href="#" class="un-report-row un-report-danger" id="unDeactivateBtn">
+                    <span class="un-report-icon c-red"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="4.9" y1="4.9" x2="19.1" y2="19.1"/></svg></span>
+                    <span class="un-report-body"><b>Desativar Unidade</b><span>Marcar esta unidade como inativa</span></span>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
+
+      <button type="button" class="pl-fab" id="unFab" aria-label="Adicionar" style="display:none;">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
 
       <button type="button" class="pl-fab" id="unEditBtn" aria-label="Editar cantinho" style="display:none;">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
@@ -6323,6 +6741,132 @@
 
           <div class="pl-modal-actions">
             <button type="button" class="pl-btn pl-btn-primary" id="unSaveBtn">Salvar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pl-modal-overlay" id="unMemberModalOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title" id="unMemberModalTitle">Membro</h4>
+            <button type="button" class="pl-modal-close" id="unMemberModalClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="un-member-detail" id="unMemberDetail"></div>
+        </div>
+      </div>
+
+      <div class="pl-modal-overlay" id="unRoleModalOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title" id="unRoleModalTitle">Editar Função</h4>
+            <button type="button" class="pl-modal-close" id="unRoleModalClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <label class="pl-field-label" style="margin-top:0;">Nome do responsável</label>
+          <input type="text" class="pl-input" id="unRoleFieldName" placeholder="Nome de quem ocupa a função" maxlength="60">
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-primary" id="unRoleSaveBtn">Salvar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pl-modal-overlay" id="unActModalOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title" id="unActModalTitle">Nova Atividade</h4>
+            <button type="button" class="pl-modal-close" id="unActModalClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          <label class="pl-field-label" style="margin-top:0;">Título</label>
+          <input type="text" class="pl-input" id="unActFieldTitle" placeholder="Ex.: Reunião" maxlength="80">
+
+          <div class="pl-field-row">
+            <div class="pl-field-col">
+              <label class="pl-field-label">Data</label>
+              <input type="date" class="pl-input" id="unActFieldDate">
+            </div>
+            <div class="pl-field-col">
+              <label class="pl-field-label">Hora</label>
+              <input type="time" class="pl-input" id="unActFieldTime">
+            </div>
+          </div>
+
+          <label class="pl-field-label">Descrição</label>
+          <textarea class="pl-input pl-textarea" id="unActFieldDesc" rows="3" placeholder="Detalhes da atividade..." maxlength="300"></textarea>
+
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-danger" id="unActDeleteBtn" style="display:none;">Excluir</button>
+            <button type="button" class="pl-btn pl-btn-primary" id="unActSaveBtn">Salvar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pl-modal-overlay" id="unAchModalOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title" id="unAchModalTitle">Nova Conquista</h4>
+            <button type="button" class="pl-modal-close" id="unAchModalClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          <label class="pl-field-label" style="margin-top:0;">Título</label>
+          <input type="text" class="pl-input" id="unAchFieldTitle" placeholder="Ex.: Excelência" maxlength="60">
+
+          <label class="pl-field-label">Descrição / requisito</label>
+          <textarea class="pl-input pl-textarea" id="unAchFieldDesc" rows="2" placeholder="Ex.: Atinja 90% de desempenho geral" maxlength="200"></textarea>
+
+          <label class="pl-reminder-toggle-row" for="unAchFieldDone" style="margin-top:14px;">
+            <span class="pl-reminder-toggle-text">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Já conquistada
+            </span>
+            <span class="pl-switch">
+              <input type="checkbox" id="unAchFieldDone">
+              <span class="pl-switch-track"><span class="pl-switch-thumb"></span></span>
+            </span>
+          </label>
+
+          <div id="unAchDoneFields">
+            <label class="pl-field-label">Quando (ex.: Maio/2026)</label>
+            <input type="text" class="pl-input" id="unAchFieldWhen" placeholder="Mês/Ano" maxlength="30">
+          </div>
+
+          <div class="pl-field-row" id="unAchProgressFields">
+            <div class="pl-field-col">
+              <label class="pl-field-label">Progresso atual</label>
+              <input type="number" class="pl-input" id="unAchFieldCurrent" min="0" step="1" placeholder="0">
+            </div>
+            <div class="pl-field-col">
+              <label class="pl-field-label">Meta</label>
+              <input type="number" class="pl-input" id="unAchFieldGoal" min="0" step="1" placeholder="0">
+            </div>
+          </div>
+
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-danger" id="unAchDeleteBtn" style="display:none;">Excluir</button>
+            <button type="button" class="pl-btn pl-btn-primary" id="unAchSaveBtn">Salvar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pl-modal-overlay" id="unSpecModalOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Especialidades do Mês</h4>
+            <button type="button" class="pl-modal-close" id="unSpecModalClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <label class="pl-field-label" style="margin-top:0;">Quantas especialidades foram conquistadas neste mês?</label>
+          <input type="number" class="pl-input" id="unSpecFieldValue" min="0" step="1" placeholder="0">
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-primary" id="unSpecSaveBtn">Salvar</button>
           </div>
         </div>
       </div>
@@ -9430,33 +9974,608 @@
     loadClassDataFromSupabase();
   })();
 
-  // Unidades: cantinho da unidade (descrição, responsável e fotos)
+  // Unidades: hub + abas (Visão Geral, Membros, Funções, Atividades, Avaliações,
+  // Conquistas, Cantinho, Relatórios, Configurações). Membros vem de `usuarios`
+  // (mesma tabela da Chamada de Presença); o resto tem tabelas próprias — ver
+  // supabase/schema.sql (unidades, unit_funcoes, unit_atividades,
+  // unit_avaliacoes, unit_conquistas, unit_mes_resumo).
   (function(){
+    const hub = document.getElementById('unHub');
+    const detail = document.getElementById('unDetail');
     const overlay = document.getElementById('unModalOverlay');
-    const content = document.getElementById('unContent');
-    if(!overlay || !content) return;
+    if(!hub || !detail || !overlay) return;
 
     const UNITS = ['Ype', 'Ype Roxo', 'Pinheiro', 'Cedros', 'Cedros Rosa', 'Flanboyan', 'Jacarandá'];
+    const UNIT_COLOR_DEFAULT = { 'Ype':'green', 'Ype Roxo':'purple', 'Pinheiro':'blue', 'Cedros':'gold', 'Cedros Rosa':'red', 'Flanboyan':'orange', 'Jacarandá':'gray' };
+    const STATUS_LABEL = { ativa:'Ativa', andamento:'Em andamento', pausada:'Pausada', inativa:'Inativa' };
+    const STATUS_COLOR = { ativa:'green', andamento:'gold', pausada:'blue', inativa:'gray' };
+    const COLOR_HEX = { green:'var(--accent)', blue:'#5B9BFF', gold:'var(--gold)', purple:'#B98BFF', red:'#FF6B5C', orange:'#FF9F43', gray:'#9AA3A0' };
+    const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const MONTH_ABBR = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+
+    const ROLE_LIST = [
+      { funcao:'Capitão(a)', color:'gold', icon:'<path d="M12 2 4 6v6c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10V6Z"/>' },
+      { funcao:'Vice-capitão(a)', color:'purple', icon:'<path d="M12 2 4 6v6c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10V6Z"/>' },
+      { funcao:'Secretário(a)', color:'blue', icon:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h5"/>' },
+      { funcao:'Tesoureiro(a)', color:'gold', icon:'<circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.8a2.3 2.3 0 0 1 2.2-1.3h.7a2 2 0 1 1 0 4h-.7a2 2 0 1 0 0 4h.7a2.3 2.3 0 0 0 2.2-1.3"/>' },
+      { funcao:'Instrutor(a)', color:'orange', icon:'<path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.5 2.5 3 6 3s6-1.5 6-3v-5"/>' },
+      { funcao:'Conselheiro(a)', color:'gray', icon:'<circle cx="9" cy="7" r="3"/><path d="M2 20c0-3.3 2.7-6 6-6"/><circle cx="17" cy="7" r="3"/><path d="M22 20c0-3.3-2.7-6-6-6-.7 0-1.4.1-2 .4"/>' }
+    ];
+    const EVAL_AREAS = [
+      { area:'Espiritual', color:'green' },
+      { area:'Intelectual', color:'blue' },
+      { area:'Físico', color:'gold' },
+      { area:'Social', color:'purple' },
+      { area:'Caráter', color:'red' },
+      { area:'Liderança', color:'orange' }
+    ];
+    const OVERVIEW_AREAS = ['Espiritual', 'Intelectual', 'Físico', 'Social'];
+    const ACH_ICON = '<path d="M12 2 4 6v6c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10V6Z"/><path d="m9.5 12 1.8 1.8L15 10"/>';
+
+    function unitKey(name){ return name.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ /g, ''); }
+    function normalize(s){ return (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+    function mesRefOf(date){ return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0'); }
+    function mesLabelOf(mesRef){
+      const parts = mesRef.split('-');
+      return MONTH_NAMES[parseInt(parts[1], 10) - 1] + '/' + parts[0];
+    }
+    function todayStr(){
+      const t = new Date();
+      return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+    }
+    function fmtDateParts(dateStr){
+      const p = dateStr.split('-').map(n => parseInt(n, 10));
+      return { day: String(p[2]).padStart(2, '0'), monAbbr: MONTH_ABBR[p[1] - 1] };
+    }
+
+    const UNIT_META = {};
+    UNITS.forEach(name => { UNIT_META[name] = { cor: UNIT_COLOR_DEFAULT[name], status: 'ativa' }; });
+    const MEMBER_COUNT = {};
+
+    let currentUnit = null;
+    let currentTab = 'overview';
+    let currentActTab = 'upcoming';
+    let currentEvalMonth = mesRefOf(new Date());
+    let memberRoster = [];
+    let activityRows = [];
+    let evalScores = {};
+    let achievementRows = [];
+    let specialtiesCount = 0;
+    let editingRoleFuncao = null;
+    let editingActId = null;
+    let editingAchId = null;
+    let stagedPhoto = '';
+
+    const backBtn = document.getElementById('unBackBtn');
+    const titleEl = document.getElementById('unTitle');
+    const fab = document.getElementById('unFab');
+    const editBtn = document.getElementById('unEditBtn');
+
+    // ---------------------------------------------------------------
+    // Hub: cor/status (tabela `unidades`) + contagem real de membros
+    // ---------------------------------------------------------------
+    async function loadUnitMeta(){
+      if(!supa) return;
+      const { data, error } = await supa.from('unidades').select('nome, cor, status');
+      if(error || !data) return;
+      data.forEach(row => { UNIT_META[row.nome] = { cor: row.cor, status: row.status }; });
+    }
+
+    async function loadMemberCounts(){
+      UNITS.forEach(u => { MEMBER_COUNT[u] = 0; });
+      if(!supa) return;
+      const { data, error } = await supa.from('usuarios').select('unidade');
+      if(error || !data) return;
+      data.forEach(row => { if(MEMBER_COUNT.hasOwnProperty(row.unidade)) MEMBER_COUNT[row.unidade]++; });
+    }
+
+    function renderHub(){
+      UNITS.forEach(name => {
+        const key = unitKey(name);
+        const meta = UNIT_META[name];
+        const dot = document.getElementById('unHubDot-' + key);
+        if(dot) dot.className = 'cl-class-dot cl-color-' + meta.cor;
+        const count = document.getElementById('unHubCount-' + key);
+        if(count){
+          const n = MEMBER_COUNT[name] || 0;
+          count.textContent = n + (n === 1 ? ' membro' : ' membros');
+        }
+        const pill = document.getElementById('unHubStatus-' + key);
+        if(pill){
+          pill.className = 'pl-event-tag pl-tag-' + (STATUS_COLOR[meta.status] || 'green') + ' un-hub-pill';
+          pill.textContent = STATUS_LABEL[meta.status] || 'Ativa';
+        }
+      });
+    }
+
+    async function refreshHub(){
+      await Promise.all([loadUnitMeta(), loadMemberCounts()]);
+      renderHub();
+    }
+
+    // ---------------------------------------------------------------
+    // Visão Geral
+    // ---------------------------------------------------------------
+    function evalAverage(areas){
+      const vals = areas.map(a => evalScores[a] || 0);
+      if(!vals.length) return 0;
+      return Math.round(vals.reduce((s, v) => s + v, 0) / vals.length);
+    }
+
+    function renderOverviewStats(){
+      document.getElementById('unSummaryMonth').textContent = mesLabelOf(currentEvalMonth);
+      document.getElementById('unStatMembers').textContent = MEMBER_COUNT[currentUnit] || 0;
+      const today = todayStr();
+      document.getElementById('unStatActivities').textContent = activityRows.filter(a => a.data >= today).length;
+      const perf = evalAverage(OVERVIEW_AREAS);
+      document.getElementById('unStatPerformance').textContent = perf + '%';
+      document.getElementById('unStatSpecialties').textContent = specialtiesCount;
+
+      document.getElementById('unDonut').style.setProperty('--pct', perf);
+      document.getElementById('unDonutValue').textContent = perf + '%';
+
+      const bars = document.getElementById('unPerfBars');
+      bars.innerHTML = '';
+      OVERVIEW_AREAS.forEach(area => {
+        const areaMeta = EVAL_AREAS.find(a => a.area === area);
+        const val = evalScores[area] || 0;
+        const row = document.createElement('div');
+        row.className = 'un-perf-bar-row';
+        row.innerHTML =
+          '<span class="un-perf-bar-dot cl-class-dot cl-color-' + areaMeta.color + '"></span>' +
+          '<span class="un-perf-bar-name"></span>' +
+          '<span class="un-perf-bar-track"><span class="un-perf-bar-fill" style="width:' + val + '%; background:' + COLOR_HEX[areaMeta.color] + ';"></span></span>' +
+          '<span class="un-perf-bar-pct"></span>';
+        row.querySelector('.un-perf-bar-name').textContent = area;
+        row.querySelector('.un-perf-bar-pct').textContent = val + '%';
+        bars.appendChild(row);
+      });
+    }
+
+    function renderOverviewUpcoming(){
+      const list = document.getElementById('unUpcomingList');
+      const today = todayStr();
+      const upcoming = activityRows.filter(a => a.data >= today).sort((a, b) => a.data.localeCompare(b.data)).slice(0, 3);
+      list.innerHTML = '';
+      if(!upcoming.length){
+        list.innerHTML = '<p class="un-empty-hint">Nenhuma atividade agendada.</p>';
+        return;
+      }
+      upcoming.forEach(a => {
+        const parts = fmtDateParts(a.data);
+        const row = document.createElement('div');
+        row.className = 'un-mini-row';
+        row.innerHTML =
+          '<span class="un-mini-date"><b></b><em></em></span>' +
+          '<span class="un-mini-body"><span class="un-mini-title"></span><span class="un-mini-meta"></span></span>' +
+          '<span class="un-mini-time"></span>';
+        row.querySelector('.un-mini-date b').textContent = parts.day;
+        row.querySelector('.un-mini-date em').textContent = parts.monAbbr;
+        row.querySelector('.un-mini-title').textContent = a.titulo;
+        row.querySelector('.un-mini-meta').textContent = a.descricao || '';
+        row.querySelector('.un-mini-time').textContent = a.hora || '';
+        list.appendChild(row);
+      });
+    }
+
+    document.getElementById('unStatSpecialtiesTile').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('unSpecFieldValue').value = specialtiesCount;
+      document.getElementById('unSpecModalOverlay').classList.add('show');
+    });
+    document.getElementById('unSpecModalClose').addEventListener('click', () => document.getElementById('unSpecModalOverlay').classList.remove('show'));
+    document.getElementById('unSpecSaveBtn').addEventListener('click', async () => {
+      if(!currentUnit) return;
+      let v = parseInt(document.getElementById('unSpecFieldValue').value, 10);
+      if(isNaN(v) || v < 0) v = 0;
+      specialtiesCount = v;
+      if(supa) await supa.from('unit_mes_resumo').upsert({ unidade: currentUnit, mes_ref: currentEvalMonth, especialidades: v }, { onConflict: 'unidade,mes_ref' });
+      document.getElementById('unSpecModalOverlay').classList.remove('show');
+      renderOverviewStats();
+    });
+
+    async function loadSpecialties(name){
+      specialtiesCount = 0;
+      if(supa){
+        const { data } = await supa.from('unit_mes_resumo').select('especialidades').eq('unidade', name).eq('mes_ref', currentEvalMonth).maybeSingle();
+        if(data) specialtiesCount = data.especialidades || 0;
+      }
+    }
+
+    // ---------------------------------------------------------------
+    // Membros (lê de `usuarios`, mesma fonte da Chamada de Presença)
+    // ---------------------------------------------------------------
+    const memberSearchInput = document.getElementById('unMemberSearch');
+
+    async function loadMembers(name){
+      const list = document.getElementById('unMemberList');
+      list.innerHTML = '<p class="un-empty-hint">Carregando...</p>';
+      memberRoster = [];
+      if(supa){
+        const { data } = await supa.from('usuarios').select('id, nome, email, unidade, papel, cargo').eq('unidade', name).order('nome');
+        memberRoster = data || [];
+      }
+      renderMembers();
+    }
+
+    function renderMembers(){
+      const list = document.getElementById('unMemberList');
+      const term = normalize(memberSearchInput.value.trim());
+      const filtered = memberRoster.filter(m => !term || normalize(m.nome).indexOf(term) !== -1);
+      list.innerHTML = '';
+      if(!filtered.length){
+        const msg = memberRoster.length ? 'Nenhum membro encontrado.' : 'Nenhum membro cadastrado nesta unidade ainda.';
+        list.innerHTML = '<p class="un-empty-hint">' + msg + '</p>';
+        return;
+      }
+      const meta = UNIT_META[currentUnit] || { cor: 'gray' };
+      filtered.forEach(m => {
+        const row = document.createElement('div');
+        row.className = 'un-member-row';
+        const initials = (m.nome || '?').trim().split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
+        row.innerHTML =
+          '<span class="un-member-avatar" style="background:' + (COLOR_HEX[meta.cor] || '#9AA3A0') + '"></span>' +
+          '<span class="un-member-body"><span class="un-member-name"></span><span class="un-member-role"></span></span>' +
+          '<svg class="cl-hub-row-arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+        row.querySelector('.un-member-avatar').textContent = initials;
+        row.querySelector('.un-member-name').textContent = m.nome;
+        row.querySelector('.un-member-role').textContent = m.cargo || m.papel || '—';
+        row.addEventListener('click', () => openMemberDetail(m));
+        list.appendChild(row);
+      });
+    }
+    memberSearchInput.addEventListener('input', renderMembers);
+
+    function openMemberDetail(m){
+      document.getElementById('unMemberModalTitle').textContent = m.nome;
+      const wrap = document.getElementById('unMemberDetail');
+      wrap.innerHTML = '';
+      [['E-mail', m.email], ['Unidade', m.unidade], ['Função/Papel', m.papel], ['Cargo', m.cargo]].forEach(([label, val]) => {
+        const r = document.createElement('div');
+        r.className = 'un-member-detail-row';
+        r.innerHTML = '<b></b><span></span>';
+        r.querySelector('b').textContent = label;
+        r.querySelector('span').textContent = val || '—';
+        wrap.appendChild(r);
+      });
+      document.getElementById('unMemberModalOverlay').classList.add('show');
+    }
+    document.getElementById('unMemberModalClose').addEventListener('click', () => document.getElementById('unMemberModalOverlay').classList.remove('show'));
+
+    // ---------------------------------------------------------------
+    // Funções
+    // ---------------------------------------------------------------
+    async function loadRoles(name){
+      const list = document.getElementById('unRoleList');
+      list.innerHTML = '<p class="un-empty-hint">Carregando...</p>';
+      let byFunc = {};
+      if(supa){
+        const { data } = await supa.from('unit_funcoes').select('funcao, nome').eq('unidade', name);
+        (data || []).forEach(r => { byFunc[r.funcao] = r; });
+      }
+      list.innerHTML = '';
+      ROLE_LIST.forEach(rm => {
+        const rec = byFunc[rm.funcao];
+        const row = document.createElement('div');
+        row.className = 'un-role-row c-' + rm.color;
+        row.innerHTML =
+          '<span class="un-role-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + rm.icon + '</svg></span>' +
+          '<span class="un-role-body"><span class="un-role-name"></span><span class="un-role-person"></span></span>';
+        row.querySelector('.un-role-name').textContent = rm.funcao;
+        row.querySelector('.un-role-person').textContent = (rec && rec.nome) ? rec.nome : 'Não definido — toque para definir';
+        row.addEventListener('click', () => openRoleModal(rm.funcao, rec));
+        list.appendChild(row);
+      });
+    }
+
+    function openRoleModal(funcao, rec){
+      editingRoleFuncao = funcao;
+      document.getElementById('unRoleModalTitle').textContent = funcao;
+      document.getElementById('unRoleFieldName').value = (rec && rec.nome) || '';
+      document.getElementById('unRoleModalOverlay').classList.add('show');
+      setTimeout(() => document.getElementById('unRoleFieldName').focus(), 150);
+    }
+    document.getElementById('unRoleModalClose').addEventListener('click', () => document.getElementById('unRoleModalOverlay').classList.remove('show'));
+    document.getElementById('unRoleSaveBtn').addEventListener('click', async () => {
+      if(!currentUnit || !editingRoleFuncao) return;
+      const nome = document.getElementById('unRoleFieldName').value.trim();
+      if(supa) await supa.from('unit_funcoes').upsert({ unidade: currentUnit, funcao: editingRoleFuncao, nome }, { onConflict: 'unidade,funcao' });
+      document.getElementById('unRoleModalOverlay').classList.remove('show');
+      loadRoles(currentUnit);
+    });
+
+    // ---------------------------------------------------------------
+    // Atividades
+    // ---------------------------------------------------------------
+    async function loadActivities(name){
+      activityRows = [];
+      if(supa){
+        const { data } = await supa.from('unit_atividades').select('*').eq('unidade', name).order('data');
+        activityRows = data || [];
+      }
+      renderActivities();
+      renderOverviewUpcoming();
+      renderOverviewStats();
+    }
+
+    function renderActivities(){
+      const list = document.getElementById('unActivityList');
+      const today = todayStr();
+      const filtered = activityRows.filter(a => currentActTab === 'upcoming' ? a.data >= today : a.data < today);
+      filtered.sort((a, b) => currentActTab === 'upcoming' ? a.data.localeCompare(b.data) : b.data.localeCompare(a.data));
+      list.innerHTML = '';
+      if(!filtered.length){
+        const msg = currentActTab === 'upcoming' ? 'Nenhuma atividade agendada.' : 'Nenhuma atividade realizada ainda.';
+        list.innerHTML = '<p class="un-empty-hint">' + msg + '</p>';
+        return;
+      }
+      filtered.forEach(a => {
+        const parts = fmtDateParts(a.data);
+        const row = document.createElement('a');
+        row.href = '#';
+        row.className = 'un-activity-row' + (currentActTab === 'done' ? ' done' : '');
+        row.innerHTML =
+          '<span class="un-activity-date"><b></b><em></em></span>' +
+          '<span class="un-activity-body"><span class="un-activity-title"></span><span class="un-activity-desc"></span></span>' +
+          '<span class="un-activity-time"></span>';
+        row.querySelector('.un-activity-date b').textContent = parts.day;
+        row.querySelector('.un-activity-date em').textContent = parts.monAbbr;
+        row.querySelector('.un-activity-title').textContent = a.titulo;
+        row.querySelector('.un-activity-desc').textContent = a.descricao || '';
+        row.querySelector('.un-activity-time').textContent = a.hora || '';
+        row.addEventListener('click', (e) => { e.preventDefault(); openActModal(a); });
+        list.appendChild(row);
+      });
+    }
+
+    function setActTab(tab){
+      currentActTab = tab;
+      document.getElementById('unActTabUpcoming').classList.toggle('active', tab === 'upcoming');
+      document.getElementById('unActTabDone').classList.toggle('active', tab === 'done');
+      renderActivities();
+    }
+    document.getElementById('unActTabUpcoming').addEventListener('click', () => setActTab('upcoming'));
+    document.getElementById('unActTabDone').addEventListener('click', () => setActTab('done'));
+
+    function openActModal(rec){
+      editingActId = rec ? rec.id : null;
+      document.getElementById('unActModalTitle').textContent = rec ? 'Editar Atividade' : 'Nova Atividade';
+      document.getElementById('unActDeleteBtn').style.display = rec ? '' : 'none';
+      document.getElementById('unActFieldTitle').value = rec ? rec.titulo : '';
+      document.getElementById('unActFieldDate').value = rec ? rec.data : todayStr();
+      document.getElementById('unActFieldTime').value = rec ? (rec.hora || '') : '';
+      document.getElementById('unActFieldDesc').value = rec ? (rec.descricao || '') : '';
+      document.getElementById('unActModalOverlay').classList.add('show');
+      setTimeout(() => document.getElementById('unActFieldTitle').focus(), 150);
+    }
+    document.getElementById('unActModalClose').addEventListener('click', () => document.getElementById('unActModalOverlay').classList.remove('show'));
+    document.getElementById('unActSaveBtn').addEventListener('click', async () => {
+      if(!currentUnit) return;
+      const titulo = document.getElementById('unActFieldTitle').value.trim();
+      const data = document.getElementById('unActFieldDate').value;
+      if(!titulo || !data) return;
+      const payload = {
+        unidade: currentUnit, titulo, data,
+        hora: document.getElementById('unActFieldTime').value || null,
+        descricao: document.getElementById('unActFieldDesc').value.trim() || null
+      };
+      if(supa){
+        if(editingActId) await supa.from('unit_atividades').update(payload).eq('id', editingActId);
+        else await supa.from('unit_atividades').insert(payload);
+      }
+      document.getElementById('unActModalOverlay').classList.remove('show');
+      loadActivities(currentUnit);
+    });
+    document.getElementById('unActDeleteBtn').addEventListener('click', async () => {
+      if(!editingActId) return;
+      if(supa) await supa.from('unit_atividades').delete().eq('id', editingActId);
+      document.getElementById('unActModalOverlay').classList.remove('show');
+      loadActivities(currentUnit);
+    });
+
+    // ---------------------------------------------------------------
+    // Avaliações
+    // ---------------------------------------------------------------
+    function populateEvalMonths(){
+      const sel = document.getElementById('unEvalMonth');
+      sel.innerHTML = '';
+      const now = new Date();
+      for(let i = 3; i >= -3; i--){
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const ref = mesRefOf(d);
+        const opt = document.createElement('option');
+        opt.value = ref;
+        opt.textContent = mesLabelOf(ref);
+        if(ref === currentEvalMonth) opt.selected = true;
+        sel.appendChild(opt);
+      }
+    }
+    document.getElementById('unEvalMonth').addEventListener('change', (e) => {
+      currentEvalMonth = e.target.value;
+      loadEvaluations(currentUnit);
+      loadSpecialties(currentUnit).then(renderOverviewStats);
+    });
+
+    async function loadEvaluations(name){
+      populateEvalMonths();
+      evalScores = {};
+      EVAL_AREAS.forEach(a => { evalScores[a.area] = 0; });
+      if(supa){
+        const { data } = await supa.from('unit_avaliacoes').select('area, percentual').eq('unidade', name).eq('mes_ref', currentEvalMonth);
+        (data || []).forEach(r => { evalScores[r.area] = r.percentual; });
+      }
+      renderEvaluations();
+      renderOverviewStats();
+    }
+
+    function renderEvaluations(){
+      const list = document.getElementById('unEvalList');
+      list.innerHTML = '';
+      EVAL_AREAS.forEach(({ area, color }) => {
+        const row = document.createElement('div');
+        row.className = 'un-score-row c-' + color;
+        row.innerHTML =
+          '<span class="un-score-body">' +
+            '<span class="un-score-name"></span>' +
+            '<span class="un-score-bar"><span class="un-score-bar-fill"></span></span>' +
+          '</span>' +
+          '<input type="number" class="un-score-input" min="0" max="100" step="5">';
+        row.querySelector('.un-score-name').textContent = area;
+        const barFill = row.querySelector('.un-score-bar-fill');
+        const input = row.querySelector('input');
+        const val = evalScores[area] || 0;
+        input.value = val;
+        barFill.style.width = val + '%';
+        input.addEventListener('change', async () => {
+          let v = parseInt(input.value, 10);
+          if(isNaN(v)) v = 0;
+          v = Math.max(0, Math.min(100, v));
+          input.value = v;
+          evalScores[area] = v;
+          barFill.style.width = v + '%';
+          document.getElementById('unEvalTotal').textContent = evalAverage(EVAL_AREAS.map(a => a.area)) + '%';
+          if(supa && currentUnit) await supa.from('unit_avaliacoes').upsert({ unidade: currentUnit, mes_ref: currentEvalMonth, area, percentual: v }, { onConflict: 'unidade,mes_ref,area' });
+          renderOverviewStats();
+        });
+        list.appendChild(row);
+      });
+      document.getElementById('unEvalTotal').textContent = evalAverage(EVAL_AREAS.map(a => a.area)) + '%';
+    }
+
+    // ---------------------------------------------------------------
+    // Conquistas
+    // ---------------------------------------------------------------
+    async function loadAchievements(name){
+      const grid = document.getElementById('unBadgeGrid');
+      grid.innerHTML = '<p class="un-empty-hint">Carregando...</p>';
+      achievementRows = [];
+      if(supa){
+        const { data } = await supa.from('unit_conquistas').select('*').eq('unidade', name).order('created_at');
+        achievementRows = data || [];
+      }
+      renderAchievements();
+    }
+
+    function renderAchievements(){
+      const grid = document.getElementById('unBadgeGrid');
+      const list = document.getElementById('unProgressList');
+      const earned = achievementRows.filter(a => a.conquistada);
+      const pending = achievementRows.filter(a => !a.conquistada);
+
+      grid.innerHTML = '';
+      if(!earned.length){
+        grid.innerHTML = '<p class="un-empty-hint">Nenhuma conquista registrada ainda.</p>';
+      } else {
+        earned.forEach(a => {
+          const card = document.createElement('div');
+          card.className = 'un-badge-card';
+          card.innerHTML =
+            '<span class="un-badge-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ACH_ICON + '</svg></span>' +
+            '<span class="un-badge-title"></span><span class="un-badge-date"></span>';
+          card.querySelector('.un-badge-title').textContent = a.titulo;
+          card.querySelector('.un-badge-date').textContent = a.data_conquista || '';
+          card.addEventListener('click', () => openAchModal(a));
+          grid.appendChild(card);
+        });
+      }
+
+      list.innerHTML = '';
+      if(!pending.length){
+        list.innerHTML = '<p class="un-empty-hint">Nenhuma conquista em andamento.</p>';
+      } else {
+        pending.forEach(a => {
+          const meta = a.progresso_meta || 0;
+          const atual = a.progresso_atual || 0;
+          const pct = meta > 0 ? Math.min(100, Math.round(atual / meta * 100)) : 0;
+          const row = document.createElement('div');
+          row.className = 'un-progress-row';
+          row.innerHTML =
+            '<div class="un-progress-top"><div><div class="un-progress-title"></div><div class="un-progress-desc"></div></div><span class="un-progress-count"></span></div>' +
+            '<div class="un-progress-track"><span class="un-progress-fill" style="width:' + pct + '%"></span></div>';
+          row.querySelector('.un-progress-title').textContent = a.titulo;
+          row.querySelector('.un-progress-desc').textContent = a.descricao || '';
+          row.querySelector('.un-progress-count').textContent = atual + '/' + meta;
+          row.addEventListener('click', () => openAchModal(a));
+          list.appendChild(row);
+        });
+      }
+    }
+
+    function toggleAchFields(){
+      const done = document.getElementById('unAchFieldDone').checked;
+      document.getElementById('unAchDoneFields').style.display = done ? '' : 'none';
+      document.getElementById('unAchProgressFields').style.display = done ? 'none' : '';
+    }
+    document.getElementById('unAchFieldDone').addEventListener('change', toggleAchFields);
+
+    function openAchModal(rec){
+      editingAchId = rec ? rec.id : null;
+      document.getElementById('unAchModalTitle').textContent = rec ? 'Editar Conquista' : 'Nova Conquista';
+      document.getElementById('unAchDeleteBtn').style.display = rec ? '' : 'none';
+      document.getElementById('unAchFieldTitle').value = rec ? rec.titulo : '';
+      document.getElementById('unAchFieldDesc').value = rec ? (rec.descricao || '') : '';
+      document.getElementById('unAchFieldDone').checked = rec ? !!rec.conquistada : false;
+      document.getElementById('unAchFieldWhen').value = rec ? (rec.data_conquista || '') : '';
+      document.getElementById('unAchFieldCurrent').value = rec ? (rec.progresso_atual || 0) : 0;
+      document.getElementById('unAchFieldGoal').value = rec ? (rec.progresso_meta || 0) : 0;
+      toggleAchFields();
+      document.getElementById('unAchModalOverlay').classList.add('show');
+      setTimeout(() => document.getElementById('unAchFieldTitle').focus(), 150);
+    }
+    document.getElementById('unAchModalClose').addEventListener('click', () => document.getElementById('unAchModalOverlay').classList.remove('show'));
+    document.getElementById('unAchSaveBtn').addEventListener('click', async () => {
+      if(!currentUnit) return;
+      const titulo = document.getElementById('unAchFieldTitle').value.trim();
+      if(!titulo) return;
+      const done = document.getElementById('unAchFieldDone').checked;
+      const payload = {
+        unidade: currentUnit, titulo,
+        descricao: document.getElementById('unAchFieldDesc').value.trim() || null,
+        conquistada: done,
+        data_conquista: done ? (document.getElementById('unAchFieldWhen').value.trim() || null) : null,
+        progresso_atual: done ? 0 : (parseFloat(document.getElementById('unAchFieldCurrent').value) || 0),
+        progresso_meta: done ? 0 : (parseFloat(document.getElementById('unAchFieldGoal').value) || 0)
+      };
+      if(supa){
+        if(editingAchId) await supa.from('unit_conquistas').update(payload).eq('id', editingAchId);
+        else await supa.from('unit_conquistas').insert(payload);
+      }
+      document.getElementById('unAchModalOverlay').classList.remove('show');
+      loadAchievements(currentUnit);
+    });
+    document.getElementById('unAchDeleteBtn').addEventListener('click', async () => {
+      if(!editingAchId) return;
+      if(supa) await supa.from('unit_conquistas').delete().eq('id', editingAchId);
+      document.getElementById('unAchModalOverlay').classList.remove('show');
+      loadAchievements(currentUnit);
+    });
+
+    // ---------------------------------------------------------------
+    // Cantinho da Unidade (pontuação + decoração — funcionalidade original,
+    // continua guardada só na memória do app, como sempre foi)
+    // ---------------------------------------------------------------
     const SCORE_CATEGORIES = ['Participação', 'Pontualidade', 'Uniforme', 'Higiene', 'Disciplina', 'Atividades'];
-    const UNIT_DATA = {};
+    const CORNER_DATA = {};
     UNITS.forEach(u => {
       const scores = {};
       SCORE_CATEGORIES.forEach(c => { scores[c] = 0; });
-      UNIT_DATA[u] = { desc: '', resp: '', photos: [], scores };
+      CORNER_DATA[u] = { desc: '', resp: '', photos: [], scores };
     });
+    const CATEGORY_META = {
+      'Participação': { color: 'green', icon: '<circle cx="9" cy="7" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="m16 11 2 2 4-4"/>' },
+      'Pontualidade': { color: 'blue', icon: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>' },
+      'Uniforme': { color: 'gold', icon: '<path d="M8 3h8l3 4-3.5 2.5L17 20H7l1.5-10.5L5 7Z"/>' },
+      'Higiene': { color: 'purple', icon: '<path d="M12 2c2 4-3 5-3 9a3 3 0 0 0 6 0c0-1.3-.7-2.2-1.5-3"/>' },
+      'Disciplina': { color: 'red', icon: '<path d="M12 2 4 6v6c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10V6Z"/>' },
+      'Atividades': { color: 'orange', icon: '<path d="M12 2 15 9 22 10 17 15 18 22 12 18.5 6 22 7 15 2 10 9 9Z"/>' }
+    };
 
     const scoreList = document.getElementById('unScoreList');
     const scoreTotal = document.getElementById('unScoreTotal');
     const scoreExportBtn = document.getElementById('unScoreExportBtn');
-
-    const hub = document.getElementById('unHub');
-    const backBtn = document.getElementById('unBackBtn');
-    const titleEl = document.getElementById('unTitle');
     const descText = document.getElementById('unDescText');
     const respText = document.getElementById('unRespText');
     const gallery = document.getElementById('unGallery');
-    const editBtn = document.getElementById('unEditBtn');
-
     const fieldDesc = document.getElementById('unFieldDesc');
     const fieldResp = document.getElementById('unFieldResp');
     const photoCameraInput = document.getElementById('unPhotoCamera');
@@ -9467,23 +10586,8 @@
     const modalClose = document.getElementById('unModalClose');
     const saveBtn = document.getElementById('unSaveBtn');
 
-    let currentUnit = null;
-    let stagedPhoto = '';
-
-    function unitKey(name){ return name.replace(/ /g, ''); }
-
-    function updateHubStatuses(){
-      UNITS.forEach(name => {
-        const el = document.getElementById('unHubStatus-' + unitKey(name));
-        if(!el) return;
-        const d = UNIT_DATA[name];
-        const has = d.desc || d.resp || d.photos.length;
-        el.textContent = has ? 'Com informações' : 'Sem informações';
-      });
-    }
-
     function renderGallery(name){
-      const photos = UNIT_DATA[name].photos;
+      const photos = CORNER_DATA[name].photos;
       gallery.innerHTML = '';
       if(!photos.length){
         const empty = document.createElement('div');
@@ -9499,25 +10603,15 @@
           '<img src="' + src + '" alt="Foto do cantinho">' +
           '<button type="button" class="un-photo-remove" aria-label="Remover foto"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
         cell.querySelector('.un-photo-remove').addEventListener('click', () => {
-          UNIT_DATA[name].photos.splice(idx, 1);
+          CORNER_DATA[name].photos.splice(idx, 1);
           renderGallery(name);
-          updateHubStatuses();
         });
         gallery.appendChild(cell);
       });
     }
 
-    const CATEGORY_META = {
-      'Participação': { color: 'green', icon: '<circle cx="9" cy="7" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="m16 11 2 2 4-4"/>' },
-      'Pontualidade': { color: 'blue', icon: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>' },
-      'Uniforme': { color: 'gold', icon: '<path d="M8 3h8l3 4-3.5 2.5L17 20H7l1.5-10.5L5 7Z"/>' },
-      'Higiene': { color: 'purple', icon: '<path d="M12 2c2 4-3 5-3 9a3 3 0 0 0 6 0c0-1.3-.7-2.2-1.5-3"/>' },
-      'Disciplina': { color: 'red', icon: '<path d="M12 2 4 6v6c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10V6Z"/>' },
-      'Atividades': { color: 'orange', icon: '<path d="M12 2 15 9 22 10 17 15 18 22 12 18.5 6 22 7 15 2 10 9 9Z"/>' }
-    };
-
     function renderScores(name){
-      const scores = UNIT_DATA[name].scores;
+      const scores = CORNER_DATA[name].scores;
       scoreList.innerHTML = '';
       let total = 0;
       SCORE_CATEGORIES.forEach(cat => {
@@ -9552,36 +10646,18 @@
       scoreTotal.textContent = total;
     }
 
-    function renderDetail(name){
-      const d = UNIT_DATA[name];
+    function renderCornerDetail(name){
+      const d = CORNER_DATA[name];
       descText.textContent = d.desc || 'Nenhuma informação cadastrada ainda.';
       respText.textContent = d.resp || '—';
       renderGallery(name);
       renderScores(name);
     }
 
-    function showHub(){
-      currentUnit = null;
-      hub.style.display = '';
-      content.style.display = 'none';
-      titleEl.textContent = 'Unidades';
-      editBtn.style.display = 'none';
-      updateHubStatuses();
-    }
-
-    function openUnit(name){
-      currentUnit = name;
-      hub.style.display = 'none';
-      content.style.display = '';
-      titleEl.textContent = name;
-      editBtn.style.display = '';
-      renderDetail(name);
-    }
-
     if(scoreExportBtn){
       scoreExportBtn.addEventListener('click', () => {
         if(!currentUnit) return;
-        const scores = UNIT_DATA[currentUnit].scores;
+        const scores = CORNER_DATA[currentUnit].scores;
         const total = SCORE_CATEGORIES.reduce((sum, c) => sum + (scores[c] || 0), 0);
         const today = new Date().toLocaleDateString('pt-BR');
         const lines = [
@@ -9605,18 +10681,6 @@
         }
       });
     }
-
-    hub.querySelectorAll('.cl-hub-row').forEach(row => {
-      row.addEventListener('click', (e) => {
-        e.preventDefault();
-        openUnit(row.getAttribute('data-open-unit'));
-      });
-    });
-
-    backBtn.addEventListener('click', () => {
-      if(currentUnit !== null) showHub();
-      else showView('view-dashboard');
-    });
 
     function setStagedPhoto(dataUrl){
       stagedPhoto = dataUrl || '';
@@ -9644,9 +10708,9 @@
       photoUploadInput.value = '';
     });
 
-    function openModal(){
+    function openCornerModal(){
       if(!currentUnit) return;
-      const d = UNIT_DATA[currentUnit];
+      const d = CORNER_DATA[currentUnit];
       fieldDesc.value = d.desc;
       fieldResp.value = d.resp;
       photoCameraInput.value = '';
@@ -9655,26 +10719,187 @@
       overlay.classList.add('show');
       setTimeout(() => fieldDesc.focus(), 150);
     }
+    function closeCornerModal(){ overlay.classList.remove('show'); }
 
-    function closeModal(){
-      overlay.classList.remove('show');
-    }
-
-    editBtn.addEventListener('click', openModal);
-    modalClose.addEventListener('click', closeModal);
-    overlay.addEventListener('click', (e) => { if(e.target === overlay) closeModal(); });
+    editBtn.addEventListener('click', openCornerModal);
+    modalClose.addEventListener('click', closeCornerModal);
+    overlay.addEventListener('click', (e) => { if(e.target === overlay) closeCornerModal(); });
 
     saveBtn.addEventListener('click', () => {
       if(!currentUnit) return;
-      const d = UNIT_DATA[currentUnit];
+      const d = CORNER_DATA[currentUnit];
       d.desc = fieldDesc.value.trim();
       d.resp = fieldResp.value.trim();
       if(stagedPhoto) d.photos.push(stagedPhoto);
-      renderDetail(currentUnit);
-      updateHubStatuses();
-      closeModal();
+      renderCornerDetail(currentUnit);
+      closeCornerModal();
     });
 
+    // ---------------------------------------------------------------
+    // Relatórios
+    // ---------------------------------------------------------------
+    document.getElementById('unReportFrequency').addEventListener('click', (e) => {
+      e.preventDefault();
+      const restricted = window.__restrictedGotoViews && window.__restrictedGotoViews.indexOf('view-secretary') !== -1;
+      if(restricted){ alert('Apenas a Diretoria Executiva tem acesso à lista de presença.'); return; }
+      showView('view-secretary');
+      const tab = document.querySelector('.sc-pdf-tab[data-tab="attendance"]');
+      if(tab) tab.click();
+    });
+
+    document.getElementById('unReportExport').addEventListener('click', (e) => {
+      e.preventDefault();
+      if(!currentUnit) return;
+      const meta = UNIT_META[currentUnit] || {};
+      const perf = evalAverage(OVERVIEW_AREAS);
+      const earnedCount = achievementRows.filter(a => a.conquistada).length;
+      const today = new Date().toLocaleDateString('pt-BR');
+      const lines = [
+        'Clube: Cedros do Líbano (Código 14534)',
+        'Unidade: ' + currentUnit,
+        'Status: ' + (STATUS_LABEL[meta.status] || 'Ativa'),
+        'Data: ' + today,
+        '',
+        'Membros: ' + (MEMBER_COUNT[currentUnit] || 0),
+        'Atividades futuras: ' + activityRows.filter(a => a.data >= todayStr()).length,
+        'Desempenho geral (' + mesLabelOf(currentEvalMonth) + '): ' + perf + '%',
+        'Conquistas obtidas: ' + earnedCount
+      ];
+      const text = lines.join('\n');
+      const label = e.currentTarget.querySelector('.un-report-body b');
+      const original = label.textContent;
+      const finish = () => { label.textContent = 'Copiado! ✓'; setTimeout(() => { label.textContent = original; }, 1800); };
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(finish).catch(() => window.prompt('Copie o resumo abaixo:', text));
+      } else {
+        window.prompt('Copie o resumo abaixo:', text);
+      }
+    });
+
+    // ---------------------------------------------------------------
+    // Configurações
+    // ---------------------------------------------------------------
+    function renderSettings(){
+      const meta = UNIT_META[currentUnit] || { cor: 'gray', status: 'ativa' };
+      document.querySelectorAll('#unColorPicker .un-color-swatch').forEach(btn => {
+        btn.classList.toggle('selected', btn.getAttribute('data-color') === meta.cor);
+      });
+      document.querySelectorAll('#unStatusPicker .cl-status-pick-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.getAttribute('data-status') === meta.status);
+      });
+    }
+
+    async function saveUnitMeta(){
+      if(!currentUnit || !supa) return;
+      const meta = UNIT_META[currentUnit];
+      await supa.from('unidades').upsert({ nome: currentUnit, cor: meta.cor, status: meta.status }, { onConflict: 'nome' });
+    }
+
+    document.querySelectorAll('#unColorPicker .un-color-swatch').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if(!currentUnit) return;
+        UNIT_META[currentUnit].cor = btn.getAttribute('data-color');
+        await saveUnitMeta();
+        renderSettings();
+        renderHub();
+      });
+    });
+    document.querySelectorAll('#unStatusPicker .cl-status-pick-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if(!currentUnit) return;
+        UNIT_META[currentUnit].status = btn.getAttribute('data-status');
+        await saveUnitMeta();
+        renderSettings();
+        renderHub();
+      });
+    });
+    document.getElementById('unDeactivateBtn').addEventListener('click', async (e) => {
+      e.preventDefault();
+      if(!currentUnit) return;
+      if(!confirm('Marcar "' + currentUnit + '" como inativa?')) return;
+      UNIT_META[currentUnit].status = 'inativa';
+      await saveUnitMeta();
+      renderSettings();
+      renderHub();
+    });
+    document.getElementById('unSettingsMembers').addEventListener('click', (e) => { e.preventDefault(); showView('view-admin'); });
+
+    // ---------------------------------------------------------------
+    // Navegação: hub <-> detalhe, abas, atalhos "Ver todas"/"Ver relatório"
+    // ---------------------------------------------------------------
+    document.querySelectorAll('[data-un-goto]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        setTab(el.getAttribute('data-un-goto'));
+      });
+    });
+
+    document.querySelectorAll('#unTabs .un-tab').forEach(btn => {
+      btn.addEventListener('click', () => setTab(btn.getAttribute('data-un-tab')));
+    });
+
+    function setTab(tab){
+      currentTab = tab;
+      document.querySelectorAll('#unTabs .un-tab').forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-un-tab') === tab));
+      document.querySelectorAll('#unContent .un-panel').forEach(panel => { panel.style.display = panel.getAttribute('data-un-panel') === tab ? '' : 'none'; });
+
+      fab.style.display = 'none';
+      editBtn.style.display = 'none';
+      if(tab === 'activities') fab.style.display = '';
+      else if(tab === 'achievements') fab.style.display = '';
+      else if(tab === 'corner') editBtn.style.display = '';
+
+      if(tab === 'members') loadMembers(currentUnit);
+      else if(tab === 'roles') loadRoles(currentUnit);
+      else if(tab === 'activities') renderActivities();
+      else if(tab === 'evaluations') { /* já carregado ao abrir a unidade */ }
+      else if(tab === 'achievements') loadAchievements(currentUnit);
+      else if(tab === 'settings') renderSettings();
+      else if(tab === 'corner') renderCornerDetail(currentUnit);
+      else if(tab === 'overview') { renderOverviewStats(); renderOverviewUpcoming(); }
+    }
+
+    fab.addEventListener('click', () => {
+      if(currentTab === 'activities') openActModal(null);
+      else if(currentTab === 'achievements') openAchModal(null);
+    });
+
+    async function openUnit(name){
+      currentUnit = name;
+      currentEvalMonth = mesRefOf(new Date());
+      hub.style.display = 'none';
+      detail.style.display = '';
+      titleEl.textContent = name;
+      await Promise.all([loadUnitMeta(), loadMemberCounts()]);
+      renderHub();
+      await loadEvaluations(name);
+      await loadActivities(name);
+      await loadSpecialties(name);
+      setTab('overview');
+    }
+
+    function showHub(){
+      currentUnit = null;
+      hub.style.display = '';
+      detail.style.display = 'none';
+      titleEl.textContent = 'Unidades';
+      fab.style.display = 'none';
+      editBtn.style.display = 'none';
+    }
+
+    hub.querySelectorAll('.cl-hub-row').forEach(row => {
+      row.addEventListener('click', (e) => {
+        e.preventDefault();
+        openUnit(row.getAttribute('data-open-unit'));
+      });
+    });
+
+    backBtn.addEventListener('click', () => {
+      if(currentUnit !== null) showHub();
+      else showView('view-dashboard');
+    });
+
+    refreshHub();
     showHub();
     window.__unShowHub = showHub;
   })();
