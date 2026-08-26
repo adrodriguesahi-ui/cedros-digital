@@ -792,6 +792,31 @@
   .pl-stat-value.pl-stat-accent{ color:var(--gold); }
   .pl-stat-sub{ display:block; font-size:11.5px; font-weight:600; color:rgba(245,239,225,0.5); margin-top:2px; }
 
+  /* ---- Planejamento Anual: progresso do ano (concluídos x pendentes) ---- */
+  .pl-progress-card{
+    background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
+    border-radius:16px; padding:12px 14px; margin:0 0 16px;
+  }
+  .pl-progress-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:9px; }
+  .pl-progress-label{
+    font-size:10px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;
+    color:rgba(245,239,225,0.45);
+  }
+  .pl-progress-pct{ font-size:12.5px; font-weight:900; color:var(--accent); }
+  .pl-progress-track{
+    position:relative; height:7px; border-radius:999px; background:rgba(255,255,255,0.08); overflow:hidden;
+  }
+  .pl-progress-fill{
+    position:absolute; inset:0 auto 0 0; width:0%; border-radius:999px;
+    background:linear-gradient(90deg, var(--accent), #7FE0A6); transition:width .4s ease;
+  }
+  .pl-progress-legend{ display:flex; gap:18px; margin-top:10px; }
+  .pl-progress-item{ display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:rgba(245,239,225,0.65); }
+  .pl-progress-item b{ color:var(--cream); font-weight:900; }
+  .pl-progress-item i{ width:7px; height:7px; border-radius:50%; flex:none; display:inline-block; }
+  .pl-progress-done i{ background:var(--accent); }
+  .pl-progress-pending i{ background:rgba(245,239,225,0.3); }
+
   /* ---- Planejamento Anual: grade de calendário do mês ---- */
   .pl-calendar-card{
     margin:0 0 16px; padding:14px 12px 10px;
@@ -2853,6 +2878,20 @@
               <span class="pl-stat-label">Próximo evento</span>
               <span class="pl-stat-value pl-stat-accent" id="plStatNextName">—</span>
               <span class="pl-stat-sub" id="plStatNextWhen"></span>
+            </div>
+          </div>
+
+          <div class="pl-progress-card" id="plProgressCard">
+            <div class="pl-progress-head">
+              <span class="pl-progress-label">Progresso do ano</span>
+              <span class="pl-progress-pct" id="plProgressPct">0%</span>
+            </div>
+            <div class="pl-progress-track">
+              <div class="pl-progress-fill" id="plProgressFill"></div>
+            </div>
+            <div class="pl-progress-legend">
+              <span class="pl-progress-item pl-progress-done"><i></i><b id="plProgressDoneCount">0</b> concluídos</span>
+              <span class="pl-progress-item pl-progress-pending"><i></i><b id="plProgressPendingCount">0</b> pendentes</span>
             </div>
           </div>
 
@@ -8796,7 +8835,7 @@
       totalEl.textContent = cards.length === 1 ? '1 evento' : cards.length + ' eventos';
 
       const now = new Date();
-      let best = null, bestDate = null;
+      let best = null, bestDate = null, doneCount = 0;
       cards.forEach(card => {
         const day = parseInt(card.dataset.day, 10);
         const monIdx = parseInt(card.dataset.monIndex, 10);
@@ -8805,11 +8844,24 @@
         // Marca como "já ocorrido" com base no ciclo do ano corrente (sem rolar pro
         // ano seguinte) — é o que o usuário espera ver esmaecido ao olhar a lista.
         const thisYearDate = new Date(now.getFullYear(), monIdx - 1, day, hh, mm);
-        card.classList.toggle('pl-event-past', thisYearDate < now);
+        const isPast = thisYearDate < now;
+        card.classList.toggle('pl-event-past', isPast);
+        if(isPast) doneCount++;
         const candidate = new Date(thisYearDate);
         if(candidate < now) candidate.setFullYear(candidate.getFullYear() + 1);
         if(!bestDate || candidate < bestDate){ bestDate = candidate; best = card; }
       });
+
+      const pendingCount = cards.length - doneCount;
+      const pct = cards.length ? Math.round((doneCount / cards.length) * 100) : 0;
+      const pctEl = document.getElementById('plProgressPct');
+      const fillEl = document.getElementById('plProgressFill');
+      const doneEl = document.getElementById('plProgressDoneCount');
+      const pendingEl = document.getElementById('plProgressPendingCount');
+      if(pctEl) pctEl.textContent = pct + '%';
+      if(fillEl) fillEl.style.width = pct + '%';
+      if(doneEl) doneEl.textContent = doneCount;
+      if(pendingEl) pendingEl.textContent = pendingCount;
 
       if(best){
         nameEl.textContent = best.dataset.title || '—';
