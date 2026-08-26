@@ -817,6 +817,22 @@
   .pl-progress-done i{ background:var(--accent); }
   .pl-progress-pending i{ background:rgba(245,239,225,0.3); }
 
+  /* ---- Planejamento Anual: tipos de eventos (donut + contagem) ---- */
+  .pl-types-card{
+    background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
+    border-radius:16px; padding:14px; margin:0 0 16px;
+  }
+  .pl-types-body{ display:flex; align-items:center; gap:16px; margin-top:11px; }
+  .pl-donut{ width:96px; height:96px; flex:none; transform:rotate(-90deg); }
+  .pl-donut-track{ stroke:rgba(255,255,255,0.08); }
+  .pl-donut-seg{ transition:stroke-dasharray .4s ease; }
+  .pl-types-list{ flex:1; min-width:0; display:flex; flex-direction:column; gap:7px; }
+  .pl-types-item{ display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; color:rgba(245,239,225,0.75); }
+  .pl-types-dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+  .pl-types-name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pl-types-count{ color:var(--cream); font-weight:900; }
+  .pl-types-empty{ font-size:12px; font-weight:600; color:rgba(245,239,225,0.5); }
+
   /* ---- Planejamento Anual: grade de calendário do mês ---- */
   .pl-calendar-card{
     margin:0 0 16px; padding:14px 12px 10px;
@@ -2892,6 +2908,16 @@
             <div class="pl-progress-legend">
               <span class="pl-progress-item pl-progress-done"><i></i><b id="plProgressDoneCount">0</b> concluídos</span>
               <span class="pl-progress-item pl-progress-pending"><i></i><b id="plProgressPendingCount">0</b> pendentes</span>
+            </div>
+          </div>
+
+          <div class="pl-types-card" id="plTypesCard">
+            <span class="pl-progress-label">Tipos de eventos</span>
+            <div class="pl-types-body">
+              <svg class="pl-donut" id="plDonut" viewBox="0 0 36 36">
+                <circle class="pl-donut-track" cx="18" cy="18" r="15.5" fill="none" stroke-width="4"></circle>
+              </svg>
+              <div class="pl-types-list" id="plTypesList"></div>
             </div>
           </div>
 
@@ -8863,6 +8889,8 @@
       if(doneEl) doneEl.textContent = doneCount;
       if(pendingEl) pendingEl.textContent = pendingCount;
 
+      renderEventTypesDonut(cards);
+
       if(best){
         nameEl.textContent = best.dataset.title || '—';
         const diffDays = Math.round((bestDate - now) / 86400000);
@@ -8878,6 +8906,68 @@
       }
 
       renderCalendarGrid();
+    }
+
+    // Donut de "Tipos de eventos": agrupa os cards por rótulo da tag (ex.: Reunião,
+    // Curso...) e desenha os arcos via stroke-dasharray, um círculo <circle> por fatia.
+    const DONUT_TAG_COLOR = { green:'#3FCB6B', blue:'#5B9BFF', gold:'#D8A83E', red:'#FF6B5C', purple:'#B98BFF', gray:'#9AA3A0' };
+    const DONUT_R = 15.5;
+    const DONUT_CIRC = 2 * Math.PI * DONUT_R;
+
+    function renderEventTypesDonut(cards){
+      const svg = document.getElementById('plDonut');
+      const list = document.getElementById('plTypesList');
+      if(!svg || !list) return;
+
+      const byLabel = new Map();
+      cards.forEach(card => {
+        const label = card.dataset.tagLabel || 'Outro';
+        const color = DONUT_TAG_COLOR[card.dataset.tag] || DONUT_TAG_COLOR.gray;
+        const entry = byLabel.get(label);
+        if(entry) entry.count++;
+        else byLabel.set(label, { count: 1, color });
+      });
+      const types = Array.from(byLabel, ([label, v]) => ({ label, ...v })).sort((a, b) => b.count - a.count);
+
+      svg.querySelectorAll('.pl-donut-seg').forEach(seg => seg.remove());
+      list.innerHTML = '';
+
+      if(!cards.length){
+        list.innerHTML = '<span class="pl-types-empty">Nenhum evento cadastrado.</span>';
+        return;
+      }
+
+      let offset = 0;
+      types.forEach(t => {
+        const segLen = (t.count / cards.length) * DONUT_CIRC;
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('class', 'pl-donut-seg');
+        circle.setAttribute('cx', '18');
+        circle.setAttribute('cy', '18');
+        circle.setAttribute('r', String(DONUT_R));
+        circle.setAttribute('fill', 'none');
+        circle.setAttribute('stroke', t.color);
+        circle.setAttribute('stroke-width', '4');
+        circle.setAttribute('stroke-dasharray', segLen + ' ' + (DONUT_CIRC - segLen));
+        circle.setAttribute('stroke-dashoffset', String(-offset));
+        svg.appendChild(circle);
+        offset += segLen;
+
+        const item = document.createElement('div');
+        item.className = 'pl-types-item';
+        const pct = Math.round((t.count / cards.length) * 100);
+        const dot = document.createElement('span');
+        dot.className = 'pl-types-dot';
+        dot.style.background = t.color;
+        const name = document.createElement('span');
+        name.className = 'pl-types-name';
+        name.textContent = t.label;
+        const count = document.createElement('span');
+        count.className = 'pl-types-count';
+        count.textContent = t.count + ' · ' + pct + '%';
+        item.append(dot, name, count);
+        list.appendChild(item);
+      });
     }
 
     // Grade de calendário do mês (estilo agenda de celular): navega por mês,
