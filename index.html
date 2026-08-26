@@ -831,11 +831,11 @@
     border-radius:13px; padding:9px 10px;
   }
   .pl-type-badge{
-    flex:none; width:34px; height:34px; border-radius:50%;
+    flex:none; width:34px; height:34px; border-radius:11px;
     display:flex; align-items:center; justify-content:center;
-    border:1.5px solid rgba(255,255,255,0.18);
+    box-shadow:0 2px 5px rgba(0,0,0,0.25);
   }
-  .pl-type-badge svg{ width:16px; height:16px; }
+  .pl-type-badge svg{ width:17px; height:17px; }
   .pl-type-info{ min-width:0; display:flex; flex-direction:column; }
   .pl-type-count{ font-size:14px; font-weight:900; color:var(--cream); line-height:1.15; }
   .pl-type-name{
@@ -8920,12 +8920,12 @@
     // usadas no formulário de evento: reunião, culto/curso, acampamento, concurso,
     // cerimônia, outro), então cobre qualquer rótulo — inclusive os personalizados.
     const EVENT_TYPE_STYLE = {
-      green:  { color:'#3FCB6B', icon:'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="8" r="2.4"/><path d="M15.5 14.2c2.3.5 4 2.5 4 5.8"/>' },
-      blue:   { color:'#5B9BFF', icon:'<path d="m3 9 9-5 9 5-9 5-9-5Z"/><path d="M7 11.5V17c0 1.4 2.5 2.5 5 2.5s5-1.1 5-2.5v-5.5"/><path d="M21 9v6"/>' },
-      gold:   { color:'#D8A83E', icon:'<path d="M3.5 21 14 3"/><path d="M20.5 21 10 3"/><path d="M15.5 21 12 15l-3.5 6"/><path d="M2 21h20"/>' },
-      red:    { color:'#FF6B5C', icon:'<circle cx="12" cy="8" r="6"/><path d="m15.5 12.9 1.5 9.1-5-3-5 3 1.5-9.1"/>' },
-      purple: { color:'#B98BFF', icon:'<path d="M5 21V4"/><path d="M5 4h13l-3 4 3 4H5"/>' },
-      gray:   { color:'#9AA3A0', icon:'<circle cx="12" cy="12" r="9"/><path d="m14.5 9.5-2 5-5 2 2-5 5-2Z"/>' }
+      green:  { color:'#3FCB6B', text:'#08130A', icon:'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="8" r="2.4"/><path d="M15.5 14.2c2.3.5 4 2.5 4 5.8"/>' },
+      blue:   { color:'#5B9BFF', text:'#fff',    icon:'<path d="m3 9 9-5 9 5-9 5-9-5Z"/><path d="M7 11.5V17c0 1.4 2.5 2.5 5 2.5s5-1.1 5-2.5v-5.5"/><path d="M21 9v6"/>' },
+      gold:   { color:'#D8A83E', text:'#2B2010', icon:'<path d="M3.5 21 14 3"/><path d="M20.5 21 10 3"/><path d="M15.5 21 12 15l-3.5 6"/><path d="M2 21h20"/>' },
+      red:    { color:'#FF6B5C', text:'#fff',    icon:'<circle cx="12" cy="8" r="6"/><path d="m15.5 12.9 1.5 9.1-5-3-5 3 1.5-9.1"/>' },
+      purple: { color:'#B98BFF', text:'#fff',    icon:'<path d="M5 21V4"/><path d="M5 4h13l-3 4 3 4H5"/>' },
+      gray:   { color:'#9AA3A0', text:'#12160F', icon:'<circle cx="12" cy="12" r="9"/><path d="m14.5 9.5-2 5-5 2 2-5 5-2Z"/>' }
     };
 
     function renderEventTypesDonut(cards){
@@ -8957,8 +8957,8 @@
 
         const badge = document.createElement('span');
         badge.className = 'pl-type-badge';
-        badge.style.background = t.style.color + '26';
-        badge.style.color = t.style.color;
+        badge.style.background = t.style.color;
+        badge.style.color = t.style.text;
         badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + t.style.icon + '</svg>';
 
         const info = document.createElement('span');
