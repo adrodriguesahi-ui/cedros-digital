@@ -827,19 +827,67 @@
   .pl-cal-day-empty{ pointer-events:none; }
   .pl-cal-day.is-selected .pl-cal-day-num{ background:var(--accent); color:#08130A; font-weight:900; }
 
-  /* ---- Planejamento Anual: chip do filtro por dia (limpa ao tocar no x) ---- */
-  .pl-day-filter-chip{
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-    margin:0 0 14px; padding:9px 8px 9px 14px;
-    background:rgba(63,203,107,0.12); border:1px solid rgba(63,203,107,0.3); border-radius:14px;
-    font-size:12.5px; font-weight:800; color:var(--accent);
+  /* ---- Planejamento Anual: tela de dia (abre ao tocar um dia com evento na grade) ---- */
+  .pl-dayview-overlay{
+    position:absolute; inset:0; z-index:15;
+    background:var(--night);
+    display:flex; flex-direction:column;
+    transform:translateX(100%); opacity:0; visibility:hidden;
+    transition:transform .28s ease, opacity .28s ease, visibility 0s linear .28s;
   }
-  .pl-day-filter-chip button{
-    flex-shrink:0; width:24px; height:24px; border-radius:50%; border:none; cursor:pointer;
-    background:rgba(255,255,255,0.1); color:var(--cream);
+  .pl-dayview-overlay.show{
+    transform:translateX(0); opacity:1; visibility:visible;
+    transition:transform .28s ease, opacity .28s ease;
+  }
+  .pl-dayview-head{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:calc(14px + env(safe-area-inset-top,0px)) 16px 14px;
+    flex-shrink:0;
+  }
+  .pl-dayview-title{ margin:0; flex:1; text-align:center; font-size:15.5px; font-weight:900; color:var(--cream); text-transform:capitalize; }
+  .pl-dayview-icon-btn{
+    flex-shrink:0; width:36px; height:36px; border-radius:50%; border:none; cursor:pointer;
+    background:rgba(255,255,255,0.06); color:rgba(245,239,225,0.8);
     display:flex; align-items:center; justify-content:center;
   }
-  .pl-day-filter-chip button:active{ background:rgba(255,255,255,0.18); }
+  .pl-dayview-icon-btn:active{ background:rgba(255,255,255,0.12); }
+  .pl-dayview-week{
+    display:grid; grid-template-columns:repeat(7, 1fr); gap:4px;
+    padding:0 12px 14px;
+    flex-shrink:0;
+  }
+  .pl-dayview-week-day{
+    display:flex; flex-direction:column; align-items:center; gap:5px;
+    padding:8px 0 9px; border:none; border-radius:14px; cursor:pointer;
+    background:rgba(255,255,255,0.04); color:var(--cream);
+  }
+  .pl-dayview-week-dow{ font-size:10px; font-weight:800; letter-spacing:0.03em; color:rgba(245,239,225,0.45); }
+  .pl-dayview-week-num{ font-size:15px; font-weight:800; }
+  .pl-dayview-week-dot{ width:4px; height:4px; border-radius:50%; background:var(--gold); }
+  .pl-dayview-week-day.is-today .pl-dayview-week-num{ color:var(--gold); }
+  .pl-dayview-week-day.is-selected{ background:var(--accent); }
+  .pl-dayview-week-day.is-selected .pl-dayview-week-dow,
+  .pl-dayview-week-day.is-selected .pl-dayview-week-num{ color:#08130A; }
+  .pl-dayview-week-day.is-selected .pl-dayview-week-dot{ background:#08130A; }
+  .pl-dayview-list-wrap{ flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 16px calc(90px + env(safe-area-inset-bottom,0px)); }
+  .pl-dayview-subtitle{
+    margin:4px 2px 12px; font-size:12px; font-weight:800; letter-spacing:0.04em; text-transform:uppercase;
+    color:rgba(245,239,225,0.5);
+  }
+  .pl-dayview-item{
+    display:flex; gap:12px; align-items:stretch;
+    background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08); border-radius:16px;
+    padding:13px 14px; margin-bottom:10px; text-decoration:none;
+    transition:transform .15s ease;
+  }
+  .pl-dayview-item:active{ transform:scale(0.97); }
+  .pl-dayview-item-bar{ flex-shrink:0; width:4px; border-radius:2px; }
+  .pl-dayview-item-body{ flex:1; min-width:0; }
+  .pl-dayview-item-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:5px; }
+  .pl-dayview-item-title{ margin:0; font-size:14.5px; font-weight:800; color:var(--cream); }
+  .pl-dayview-item-time{ display:flex; align-items:center; gap:5px; margin:0 0 3px; font-size:12px; font-weight:700; color:rgba(245,239,225,0.6); }
+  .pl-dayview-item-local{ display:flex; align-items:center; gap:5px; margin:0; font-size:12px; font-weight:600; color:rgba(245,239,225,0.5); }
+  .pl-dayview-empty{ margin:30px 2px; text-align:center; font-size:13px; font-weight:600; color:rgba(245,239,225,0.45); }
 
   /* ---- Planejamento Anual: busca de eventos ---- */
   .pl-search-wrap{ position:relative; margin:0 0 14px; }
@@ -2872,13 +2920,6 @@
             <div class="pl-cal-grid" id="plCalGrid"></div>
           </div>
 
-          <div class="pl-day-filter-chip" id="plDayFilterChip" style="display:none;">
-            <span id="plDayFilterLabel"></span>
-            <button type="button" id="plDayFilterClear" aria-label="Limpar filtro de dia">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-
           <div class="pl-search-wrap">
             <svg class="pl-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="text" class="pl-input pl-search-input" id="plSearchInput" placeholder="Buscar evento por nome ou local...">
@@ -3766,14 +3807,17 @@
 
           <div class="pl-field-row">
             <div class="pl-field-col">
-              <label class="pl-field-label">Horário</label>
+              <label class="pl-field-label">Início</label>
               <input type="time" class="pl-input" id="plFieldTime" value="09:00">
             </div>
-            <div class="pl-field-col pl-field-col-wide">
-              <label class="pl-field-label">Local</label>
-              <input type="text" class="pl-input" id="plFieldLocal" placeholder="Local" maxlength="40">
+            <div class="pl-field-col">
+              <label class="pl-field-label">Término (opcional)</label>
+              <input type="time" class="pl-input" id="plFieldTimeEnd">
             </div>
           </div>
+
+          <label class="pl-field-label">Local</label>
+          <input type="text" class="pl-input" id="plFieldLocal" placeholder="Local" maxlength="40">
 
           <label class="pl-field-label">Responsável pelo evento</label>
           <input type="text" class="pl-input" id="plFieldResponsible" placeholder="Nome de quem organiza/responde pelo evento" maxlength="60">
@@ -3916,6 +3960,28 @@
             <p class="pl-view-text" id="plViewNote"></p>
           </div>
         </div>
+      </div>
+
+      <!-- Tela de dia: abre ao tocar um dia com evento na grade do calendário -->
+      <div class="pl-dayview-overlay" id="plDayViewOverlay">
+        <div class="pl-dayview-head">
+          <button type="button" class="pl-dayview-icon-btn" id="plDayViewBack" aria-label="Voltar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h3 class="pl-dayview-title" id="plDayViewTitle">—</h3>
+          <button type="button" class="pl-dayview-icon-btn" id="plDayViewToday" aria-label="Ir para hoje">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg>
+          </button>
+        </div>
+        <div class="pl-dayview-week" id="plDayViewWeek"></div>
+        <div class="pl-dayview-list-wrap">
+          <p class="pl-dayview-subtitle">Eventos do dia</p>
+          <div id="plDayViewList"></div>
+          <p class="pl-dayview-empty" id="plDayViewEmpty" style="display:none;">Nenhum evento neste dia.</p>
+        </div>
+        <button type="button" class="pl-fab" id="plDayViewFab" aria-label="Adicionar evento">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
       </div>
     </section>
 
@@ -8500,6 +8566,7 @@
     const fieldDay = document.getElementById('plFieldDay');
     const fieldMonth = document.getElementById('plFieldMonth');
     const fieldTime = document.getElementById('plFieldTime');
+    const fieldTimeEnd = document.getElementById('plFieldTimeEnd');
     const fieldLocal = document.getElementById('plFieldLocal');
     const fieldResponsible = document.getElementById('plFieldResponsible');
     const fieldTag = document.getElementById('plFieldTag');
@@ -8545,6 +8612,8 @@
 
     function applyRoleMode(){
       addBtn.style.display = readOnlyMode ? 'none' : '';
+      const dayViewFabEl = document.getElementById('plDayViewFab');
+      if(dayViewFabEl) dayViewFabEl.style.display = readOnlyMode ? 'none' : '';
       roleToggle.classList.toggle('readonly', readOnlyMode);
       roleLabel.textContent = readOnlyMode ? 'Somente visualização' : 'Editor';
       roleIcon.innerHTML = readOnlyMode
@@ -8565,7 +8634,7 @@
       viewTag.textContent = tagLabel;
       viewTag.className = 'pl-event-tag pl-tag-' + tagColor;
       viewDate.textContent = (card.dataset.day || '--') + ' de ' + (card.querySelector('.pl-event-date em') ? card.querySelector('.pl-event-date em').textContent : '');
-      viewTime.textContent = card.dataset.time || '—';
+      viewTime.textContent = card.dataset.time ? (card.dataset.time + (card.dataset.timeEnd ? ' – ' + card.dataset.timeEnd : '')) : '—';
       viewLocal.textContent = card.dataset.local || '—';
       const responsible = card.dataset.responsible || '';
       viewResponsibleRow.style.display = responsible ? '' : 'none';
@@ -8631,7 +8700,7 @@
     });
     setCustomColor('green');
 
-    function openModal(mode, card){
+    function openModal(mode, card, preset){
       editingCard = card || null;
       if(mode === 'edit' && card){
         modalTitle.textContent = 'Editar Evento';
@@ -8640,6 +8709,7 @@
         fieldDay.value = card.dataset.day || '';
         fieldMonth.value = card.dataset.monIndex || '5';
         fieldTime.value = card.dataset.time || '09:00';
+        fieldTimeEnd.value = card.dataset.timeEnd || '';
         fieldLocal.value = card.dataset.local || '';
         fieldResponsible.value = card.dataset.responsible || '';
         selectTagOption(card.dataset.tag || 'green', card.dataset.tagLabel || '');
@@ -8655,8 +8725,10 @@
         modalTitle.textContent = 'Novo Evento';
         deleteBtn.style.display = 'none';
         fieldTitle.value = '';
-        fieldDay.value = '';
+        fieldDay.value = preset ? preset.day : '';
+        if(preset) fieldMonth.value = preset.monIdx;
         fieldTime.value = '09:00';
+        fieldTimeEnd.value = '';
         fieldLocal.value = '';
         fieldResponsible.value = '';
         selectTagOption('green', 'Reunião');
@@ -8735,6 +8807,7 @@
       a.dataset.monIndex = data.monIdx;
       a.dataset.title = data.title;
       a.dataset.time = data.time;
+      a.dataset.timeEnd = data.timeEnd || '';
       a.dataset.local = data.local;
       a.dataset.responsible = data.responsible || '';
       a.dataset.tag = data.tag;
@@ -8766,7 +8839,8 @@
         '</div>' +
         '<span class="pl-event-tag"></span>';
       a.querySelector('.pl-event-title').textContent = data.title;
-      a.querySelector('.pl-event-meta').lastChild.textContent = data.time + ' · ' + data.local;
+      const timeLabel = data.time + (data.timeEnd ? ' – ' + data.timeEnd : '');
+      a.querySelector('.pl-event-meta').lastChild.textContent = timeLabel + ' · ' + data.local;
       if(data.responsible){
         const respEl = a.querySelector('.pl-event-responsible');
         respEl.lastChild.textContent = 'Responsável: ' + data.responsible;
@@ -8872,7 +8946,7 @@
         if(tags) btn.classList.add('has-event');
         else btn.disabled = true;
         if(isCurrentMonth && d === todayDay) btn.classList.add('is-today');
-        if(activeDayFilter && activeDayFilter.monIdx === calViewMonth && activeDayFilter.day === d) btn.classList.add('is-selected');
+        if(dayViewDate && dayViewDate.monIdx === calViewMonth && dayViewDate.day === d) btn.classList.add('is-selected');
 
         const numSpan = document.createElement('span');
         numSpan.className = 'pl-cal-day-num';
@@ -8888,42 +8962,132 @@
             dot.style.background = CAL_TAG_COLOR[tag] || CAL_TAG_COLOR.gray;
             dotsWrap.appendChild(dot);
           });
-          btn.addEventListener('click', () => jumpToDay(calViewMonth, d));
+          btn.addEventListener('click', () => openDayView(calViewMonth, d));
         }
         btn.appendChild(dotsWrap);
         grid.appendChild(btn);
       }
     }
 
-    let activeDayFilter = null; // { monIdx, day } — setado ao tocar um dia com evento no calendário
+    let dayViewDate = null; // { monIdx, day } — dia atualmente aberto na tela de dia
+    const WEEKDAY_LETTERS = ['D','S','T','Q','Q','S','S'];
+    const dayViewOverlay = document.getElementById('plDayViewOverlay');
+    const dayViewFab = document.getElementById('plDayViewFab');
 
-    function jumpToDay(monIdx, day){
-      activeDayFilter = { monIdx, day };
-      renderCalendarGrid();
-      applyPlanningFilters();
-
-      const dayFilterChip = document.getElementById('plDayFilterChip');
-      const dayFilterLabel = document.getElementById('plDayFilterLabel');
-      if(dayFilterChip && dayFilterLabel){
-        dayFilterLabel.textContent = 'Mostrando ' + String(day).padStart(2, '0') + ' de ' + MONTH_NAMES_PT[monIdx - 1];
-        dayFilterChip.style.display = '';
-      }
-
+    function dayHasEventOn(monIdx, day){
       const dayStr = String(day).padStart(2, '0');
-      const card = document.querySelector('#view-planning .pl-content .pl-event-card[data-mon-index="' + monIdx + '"][data-day="' + dayStr + '"]');
-      if(!card) return;
-      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      card.classList.add('pl-event-flash');
-      setTimeout(() => card.classList.remove('pl-event-flash'), 1400);
+      return !!document.querySelector('#view-planning .pl-content .pl-event-card[data-mon-index="' + monIdx + '"][data-day="' + dayStr + '"]');
     }
 
-    function clearDayFilter(){
-      activeDayFilter = null;
-      const dayFilterChip = document.getElementById('plDayFilterChip');
-      if(dayFilterChip) dayFilterChip.style.display = 'none';
+    function openDayView(monIdx, day){
+      dayViewDate = { monIdx, day };
       renderCalendarGrid();
-      applyPlanningFilters();
+      renderDayView();
+      dayViewOverlay.classList.add('show');
     }
+
+    function closeDayView(){
+      dayViewOverlay.classList.remove('show');
+      dayViewDate = null;
+      renderCalendarGrid();
+    }
+
+    function renderDayView(){
+      if(!dayViewDate) return;
+      const { monIdx, day } = dayViewDate;
+      const monthName = MONTH_NAMES_PT[monIdx - 1];
+      document.getElementById('plDayViewTitle').textContent =
+        String(day).padStart(2, '0') + ' de ' + monthName.charAt(0).toUpperCase() + monthName.slice(1) + ' de ' + calViewYear;
+      renderDayViewWeek();
+      renderDayViewList();
+    }
+
+    function renderDayViewWeek(){
+      const weekEl = document.getElementById('plDayViewWeek');
+      if(!weekEl || !dayViewDate) return;
+      const { monIdx, day } = dayViewDate;
+      const base = new Date(calViewYear, monIdx - 1, day);
+      const start = new Date(base);
+      start.setDate(base.getDate() - base.getDay());
+      const now = new Date();
+      weekEl.innerHTML = '';
+      for(let i = 0; i < 7; i++){
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        const dMon = d.getMonth() + 1;
+        const dDay = d.getDate();
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pl-dayview-week-day';
+        if(dMon === monIdx && dDay === day) btn.classList.add('is-selected');
+        if(d.getFullYear() === now.getFullYear() && dMon === now.getMonth() + 1 && dDay === now.getDate()) btn.classList.add('is-today');
+        const hasEvent = dayHasEventOn(dMon, dDay);
+        btn.innerHTML =
+          '<span class="pl-dayview-week-dow">' + WEEKDAY_LETTERS[i] + '</span>' +
+          '<span class="pl-dayview-week-num">' + dDay + '</span>' +
+          (hasEvent ? '<span class="pl-dayview-week-dot"></span>' : '');
+        btn.addEventListener('click', () => { dayViewDate = { monIdx: dMon, day: dDay }; renderCalendarGrid(); renderDayView(); });
+        weekEl.appendChild(btn);
+      }
+    }
+
+    function renderDayViewList(){
+      const listEl = document.getElementById('plDayViewList');
+      const emptyEl = document.getElementById('plDayViewEmpty');
+      if(!listEl || !dayViewDate) return;
+      const { monIdx, day } = dayViewDate;
+      const dayStr = String(day).padStart(2, '0');
+      const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'))
+        .filter(c => parseInt(c.dataset.monIndex, 10) === monIdx && c.dataset.day === dayStr)
+        .sort((a, b) => (a.dataset.time || '').localeCompare(b.dataset.time || ''));
+      listEl.innerHTML = '';
+      cards.forEach(card => listEl.appendChild(buildDayViewItem(card)));
+      emptyEl.style.display = cards.length ? 'none' : '';
+    }
+
+    function buildDayViewItem(card){
+      const item = document.createElement('a');
+      item.href = '#';
+      item.className = 'pl-dayview-item';
+      const tag = card.dataset.tag || 'gray';
+      const timeLabel = card.dataset.time + (card.dataset.timeEnd ? ' – ' + card.dataset.timeEnd : '');
+      item.innerHTML =
+        '<span class="pl-dayview-item-bar" style="background:' + (CAL_TAG_COLOR[tag] || CAL_TAG_COLOR.gray) + '"></span>' +
+        '<div class="pl-dayview-item-body">' +
+          '<div class="pl-dayview-item-top">' +
+            '<h5 class="pl-dayview-item-title"></h5>' +
+            '<span class="pl-event-tag pl-tag-' + tag + '"></span>' +
+          '</div>' +
+          '<p class="pl-dayview-item-time">' +
+            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>' +
+            ' ' +
+          '</p>' +
+          '<p class="pl-dayview-item-local">' +
+            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>' +
+            ' ' +
+          '</p>' +
+        '</div>';
+      item.querySelector('.pl-dayview-item-title').textContent = card.dataset.title || '';
+      item.querySelector('.pl-event-tag').textContent = card.dataset.tagLabel || '';
+      item.querySelector('.pl-dayview-item-time').lastChild.textContent = timeLabel;
+      item.querySelector('.pl-dayview-item-local').lastChild.textContent = card.dataset.local || '';
+      item.addEventListener('click', (e) => { e.preventDefault(); readOnlyMode ? openViewOnly(card) : openModal('edit', card); });
+      return item;
+    }
+
+    function refreshDayViewIfOpen(){
+      if(dayViewOverlay.classList.contains('show')) renderDayView();
+    }
+
+    document.getElementById('plDayViewBack').addEventListener('click', closeDayView);
+    document.getElementById('plDayViewToday').addEventListener('click', () => {
+      const now = new Date();
+      openDayView(now.getMonth() + 1, now.getDate());
+    });
+    dayViewFab.addEventListener('click', () => {
+      if(readOnlyMode || !dayViewDate) return;
+      openModal('create', null, dayViewDate);
+    });
 
     const calPrevBtn = document.getElementById('plCalPrev');
     const calNextBtn = document.getElementById('plCalNext');
@@ -8959,6 +9123,7 @@
       const monAbbr = monthOpt.getAttribute('data-abbr');
       const monName = monthOpt.textContent;
       const time = fieldTime.value || '09:00';
+      const timeEnd = fieldTimeEnd.value || '';
       const local = fieldLocal.value.trim() || 'Sede do Clube';
       const responsible = fieldResponsible.value.trim();
       const tagOpt = fieldTag.options[fieldTag.selectedIndex];
@@ -9004,13 +9169,14 @@
 
       if(editingCard) editingCard.remove();
       const newCard = buildCardHTML({
-        day: dayStr, monAbbr, monName, monIdx, title, time, local, responsible, tag, tagLabel,
+        day: dayStr, monAbbr, monName, monIdx, title, time, timeEnd, local, responsible, tag, tagLabel,
         desc, note, reminderOn, reminderDate, reminderMsg, reminderConfirmed,
         reminderRepeatOn, reminderRepeatDays, reminderRepeatCount,
         reminderConfirmedTimes, reminderLastConfirmedDate
       });
       insertCardChronologically(newCard, monIdx, parseInt(dayStr, 10));
       updatePlanningStats();
+      refreshDayViewIfOpen();
 
       closeModal();
       refreshReminderBell();
@@ -9020,6 +9186,7 @@
       if(!editingCard) return;
       editingCard.remove();
       updatePlanningStats();
+      refreshDayViewIfOpen();
       closeModal();
       refreshReminderBell();
     }
@@ -9047,8 +9214,7 @@
       document.querySelectorAll('#view-planning .pl-content .pl-event-card').forEach(card => {
         const matchesTerm = !term || normalizePl(card.dataset.title).includes(term) || normalizePl(card.dataset.local).includes(term);
         const matchesTag = activeTagFilters.size === 0 || activeTagFilters.has(card.dataset.tag);
-        const matchesDay = !activeDayFilter || (parseInt(card.dataset.monIndex, 10) === activeDayFilter.monIdx && parseInt(card.dataset.day, 10) === activeDayFilter.day);
-        card.style.display = (matchesTerm && matchesTag && matchesDay) ? '' : 'none';
+        card.style.display = (matchesTerm && matchesTag) ? '' : 'none';
       });
     }
 
@@ -9063,8 +9229,6 @@
         applyPlanningFilters();
       });
     });
-    const dayFilterClearBtn = document.getElementById('plDayFilterClear');
-    if(dayFilterClearBtn) dayFilterClearBtn.addEventListener('click', clearDayFilter);
 
     addBtn.addEventListener('click', () => openModal('create'));
     closeBtn.addEventListener('click', closeModal);
