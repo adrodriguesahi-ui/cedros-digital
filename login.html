@@ -13130,13 +13130,15 @@ const REQ_SUMMARIES = {
       dragActive = true;
       dragStartX = e.clientX;
       stopAutoplay();
-      // Garante que os próximos eventos desse dedo/ponteiro continuem chegando aqui,
-      // mesmo que o navegador tente reconhecer o gesto como algo próprio (ex.: um
-      // scroll) — sem isso, em alguns navegadores móveis o pointermove nunca chega a
-      // disparar de verdade e o arraste parece simplesmente não reagir a nada.
-      if(row.setPointerCapture){
-        try { row.setPointerCapture(e.pointerId); } catch(err) {}
-      }
+      // Importante: NÃO usar row.setPointerCapture aqui. Capturar o ponteiro faz o
+      // navegador redirecionar os eventos seguintes (inclusive o "click" sintético
+      // de um toque simples) para quem capturou (o row), em vez do elemento que o
+      // dedo realmente tocou (o <a class="bd-banner">) — isso fazia o próprio
+      // listener de clique do banner nunca disparar em alguns celulares reais,
+      // como se a foto/imagem simplesmente não reagisse a toque nenhum (só os
+      // pontinhos, que são <span> separados, continuavam funcionando). O
+      // touch-action:pan-y já presente no CSS do próprio .bd-banner é suficiente
+      // pro navegador entregar o pointermove horizontal pro JS sem precisar de captura.
     });
     row.addEventListener('pointermove', (e) => {
       if(!dragActive) return;
