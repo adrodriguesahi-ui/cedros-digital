@@ -2094,6 +2094,11 @@
     text-decoration:none;
     color:inherit;
     border:1px solid var(--lg-border);
+    /* Repetido aqui (além de .bd-banner-row) porque é o elemento que o dedo realmente
+       toca — depender só do pai pra isso é inconsistente entre navegadores/toolkits
+       de toque, e sem isso o próprio navegador pode "roubar" o gesto horizontal antes
+       de ele chegar no JS, fazendo o arraste parecer que não reage a nada. */
+    touch-action:pan-y;
   }
   .bd-banner-bg{
     position:absolute; inset:0;
@@ -13125,6 +13130,13 @@ const REQ_SUMMARIES = {
       dragActive = true;
       dragStartX = e.clientX;
       stopAutoplay();
+      // Garante que os próximos eventos desse dedo/ponteiro continuem chegando aqui,
+      // mesmo que o navegador tente reconhecer o gesto como algo próprio (ex.: um
+      // scroll) — sem isso, em alguns navegadores móveis o pointermove nunca chega a
+      // disparar de verdade e o arraste parece simplesmente não reagir a nada.
+      if(row.setPointerCapture){
+        try { row.setPointerCapture(e.pointerId); } catch(err) {}
+      }
     });
     row.addEventListener('pointermove', (e) => {
       if(!dragActive) return;
