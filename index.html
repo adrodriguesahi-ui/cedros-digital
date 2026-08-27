@@ -856,6 +856,22 @@
   .pl-legend-item.active{ background:rgba(255,255,255,0.09); border-color:rgba(255,255,255,0.16); color:var(--cream); }
   .pl-legend-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 
+  /* ---- Planejamento Anual: contagem de eventos do ano por categoria ---- */
+  .pl-cat-stats{
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;
+    margin:0 0 20px;
+  }
+  .pl-cat-stat{
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px; padding:10px 6px;
+  }
+  .pl-cat-stat-value{ font-size:18px; font-weight:900; line-height:1.15; }
+  .pl-cat-stat-label{
+    font-size:9.5px; font-weight:800; letter-spacing:0.03em; text-transform:uppercase;
+    color:rgba(245,239,225,0.5); text-align:center;
+  }
+
   /* ---- Planejamento Anual: evento já ocorrido ---- */
   #view-planning .pl-event-card.pl-event-past{ opacity:0.5; }
   #view-planning .pl-event-card.pl-event-past:active{ opacity:0.65; }
@@ -2880,6 +2896,8 @@
             <button type="button" class="pl-legend-item" data-tag-filter="red"><span class="pl-legend-dot" style="background:#FF6B5C"></span>Concurso</button>
             <button type="button" class="pl-legend-item" data-tag-filter="gray"><span class="pl-legend-dot" style="background:#9AA3A0"></span>Outro</button>
           </div>
+
+          <div class="pl-cat-stats" id="plCatStats"></div>
 
 <a href="#" class="pl-event-card" data-day="13" data-mon-abbr="JAN" data-mon-name="Janeiro" data-mon-index="1" data-title="Reunião Administrativa" data-time="09:00" data-local="Sede do Clube" data-tag="green" data-tag-label="Reunião">
             <div class="pl-event-date"><em>TER</em><b>13</b></div>
@@ -8776,8 +8794,11 @@
     }
 
     function updatePlanningStats(){
+      const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'));
+      if(!cards.length) return;
+
       const now = new Date();
-      document.querySelectorAll('#view-planning .pl-content .pl-event-card').forEach(card => {
+      cards.forEach(card => {
         const day = parseInt(card.dataset.day, 10);
         const monIdx = parseInt(card.dataset.monIndex, 10);
         if(!day || !monIdx) return;
@@ -8787,7 +8808,9 @@
         const thisYearDate = new Date(now.getFullYear(), monIdx - 1, day, hh, mm);
         card.classList.toggle('pl-event-past', thisYearDate < now);
       });
+
       renderCalendarGrid();
+      renderCategoryStats();
     }
 
     // Grade de calendário do mês (estilo agenda de celular): navega por mês,
@@ -8798,6 +8821,29 @@
     let calViewMonth = new Date().getMonth() + 1; // 1-12
     const MONTH_NAMES_PT = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
     const CAL_TAG_COLOR = { green:'var(--accent)', blue:'#5B9BFF', gold:'var(--gold)', red:'#FF6B5C', purple:'#B98BFF', gray:'#9AA3A0' };
+    const CAL_TAG_LABEL = { green:'Reuniões', blue:'Cursos', gold:'Acampamentos', red:'Concursos', purple:'Cerimônias', gray:'Outros' };
+
+    // Contagem de eventos do ano por categoria (barra abaixo da legenda).
+    function renderCategoryStats(){
+      const wrap = document.getElementById('plCatStats');
+      if(!wrap) return;
+      const counts = {};
+      document.querySelectorAll('#view-planning .pl-content .pl-event-card').forEach(card => {
+        const tag = card.dataset.tag || 'gray';
+        counts[tag] = (counts[tag] || 0) + 1;
+      });
+      wrap.innerHTML = '';
+      Object.keys(CAL_TAG_LABEL).forEach(tag => {
+        const count = counts[tag] || 0;
+        if(!count) return;
+        const cell = document.createElement('div');
+        cell.className = 'pl-cat-stat';
+        cell.innerHTML =
+          '<span class="pl-cat-stat-value" style="color:' + CAL_TAG_COLOR[tag] + '">' + count + '</span>' +
+          '<span class="pl-cat-stat-label">' + CAL_TAG_LABEL[tag] + '</span>';
+        wrap.appendChild(cell);
+      });
+    }
 
     function renderCalendarGrid(){
       const grid = document.getElementById('plCalGrid');
