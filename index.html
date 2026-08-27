@@ -774,24 +774,6 @@
   #view-planning .pl-event-card:has(.pl-tag-gray) .pl-event-date b,
   #view-planning .pl-event-card:has(.pl-tag-gray) .pl-event-date em{ color:#12160F; }
 
-  /* ---- Planejamento Anual: barra de resumo (total de eventos + próximo evento) ---- */
-  .pl-stats-bar{
-    display:flex; gap:10px; margin:2px 0 18px;
-  }
-  .pl-stat-card{
-    flex:1; min-width:0;
-    background:rgba(255,255,255,0.045);
-    border:1px solid rgba(255,255,255,0.08);
-    border-radius:16px; padding:12px 14px;
-  }
-  .pl-stat-label{
-    display:block; font-size:10px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase;
-    color:rgba(245,239,225,0.45); margin-bottom:5px;
-  }
-  .pl-stat-value{ display:block; font-size:15.5px; font-weight:900; color:var(--cream); line-height:1.25; }
-  .pl-stat-value.pl-stat-accent{ color:var(--gold); }
-  .pl-stat-sub{ display:block; font-size:11.5px; font-weight:600; color:rgba(245,239,225,0.5); margin-top:2px; }
-
   /* ---- Planejamento Anual: grade de calendário do mês ---- */
   .pl-calendar-card{
     margin:0 0 16px; padding:14px 12px 10px;
@@ -2856,18 +2838,6 @@
         </div>
 
         <div class="pl-content">
-
-          <div class="pl-stats-bar" id="plStatsBar">
-            <div class="pl-stat-card">
-              <span class="pl-stat-label">Total de eventos</span>
-              <span class="pl-stat-value" id="plStatTotal">—</span>
-            </div>
-            <div class="pl-stat-card">
-              <span class="pl-stat-label">Próximo evento</span>
-              <span class="pl-stat-value pl-stat-accent" id="plStatNextName">—</span>
-              <span class="pl-stat-sub" id="plStatNextWhen"></span>
-            </div>
-          </div>
 
           <div class="pl-calendar-card" id="plCalendarCard">
             <div class="pl-cal-head">
@@ -8806,16 +8776,8 @@
     }
 
     function updatePlanningStats(){
-      const totalEl = document.getElementById('plStatTotal');
-      const nameEl = document.getElementById('plStatNextName');
-      const whenEl = document.getElementById('plStatNextWhen');
-      if(!totalEl) return;
-      const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'));
-      totalEl.textContent = cards.length === 1 ? '1 evento' : cards.length + ' eventos';
-
       const now = new Date();
-      let best = null, bestDate = null;
-      cards.forEach(card => {
+      document.querySelectorAll('#view-planning .pl-content .pl-event-card').forEach(card => {
         const day = parseInt(card.dataset.day, 10);
         const monIdx = parseInt(card.dataset.monIndex, 10);
         if(!day || !monIdx) return;
@@ -8824,25 +8786,7 @@
         // ano seguinte) — é o que o usuário espera ver esmaecido ao olhar a lista.
         const thisYearDate = new Date(now.getFullYear(), monIdx - 1, day, hh, mm);
         card.classList.toggle('pl-event-past', thisYearDate < now);
-        const candidate = new Date(thisYearDate);
-        if(candidate < now) candidate.setFullYear(candidate.getFullYear() + 1);
-        if(!bestDate || candidate < bestDate){ bestDate = candidate; best = card; }
       });
-
-      if(best){
-        nameEl.textContent = best.dataset.title || '—';
-        const diffDays = Math.round((bestDate - now) / 86400000);
-        const dateStr = bestDate.toLocaleDateString('pt-BR', { day:'2-digit', month:'short' });
-        let whenText = dateStr;
-        if(diffDays <= 0) whenText = 'Hoje · ' + dateStr;
-        else if(diffDays === 1) whenText = 'Amanhã · ' + dateStr;
-        else whenText = 'Em ' + diffDays + ' dias · ' + dateStr;
-        whenEl.textContent = whenText;
-      } else {
-        nameEl.textContent = 'Nenhum evento';
-        whenEl.textContent = '';
-      }
-
       renderCalendarGrid();
     }
 
@@ -8919,12 +8863,17 @@
     // "Ver ano todo" desliga esse filtro sem perder o mês em exibição no calendário.
     let monthFilterOn = true;
 
+    function isPlSearchActive(){
+      const el = document.getElementById('plSearchInput');
+      return !!(el && el.value.trim());
+    }
+
     function updateMonthFilterChip(){
       const chip = document.getElementById('plMonthFilterChip');
       const label = document.getElementById('plMonthFilterLabel');
       const toggleBtn = document.getElementById('plMonthFilterToggle');
       if(!chip || !label || !toggleBtn) return;
-      if(activeDayFilter){ chip.style.display = 'none'; return; }
+      if(activeDayFilter || isPlSearchActive()){ chip.style.display = 'none'; return; }
       label.textContent = monthFilterOn
         ? 'Mostrando ' + MONTH_NAMES_PT[calViewMonth - 1]
         : 'Mostrando ano todo';
@@ -9104,13 +9053,13 @@
         const matchesTerm = !term || normalizePl(card.dataset.title).includes(term) || normalizePl(card.dataset.local).includes(term);
         const matchesTag = activeTagFilters.size === 0 || activeTagFilters.has(card.dataset.tag);
         const matchesDay = !activeDayFilter || (parseInt(card.dataset.monIndex, 10) === activeDayFilter.monIdx && parseInt(card.dataset.day, 10) === activeDayFilter.day);
-        const matchesMonth = !monthFilterOn || activeDayFilter || parseInt(card.dataset.monIndex, 10) === calViewMonth;
+        const matchesMonth = !monthFilterOn || activeDayFilter || term || parseInt(card.dataset.monIndex, 10) === calViewMonth;
         card.style.display = (matchesTerm && matchesTag && matchesDay && matchesMonth) ? '' : 'none';
       });
     }
 
     if(plSearchInput){
-      plSearchInput.addEventListener('input', applyPlanningFilters);
+      plSearchInput.addEventListener('input', () => { applyPlanningFilters(); updateMonthFilterChip(); });
     }
     document.querySelectorAll('#plLegend .pl-legend-item').forEach(btn => {
       btn.addEventListener('click', () => {
