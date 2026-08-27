@@ -8409,6 +8409,44 @@
     ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     : null;
 
+  // Storage — helpers para galerias de arquivos (ver supabase/storage.sql).
+  // Sobem o arquivo pro bucket 'arquivos' e guardam metadados na tabela
+  // 'arquivos' (usado por galerias: fotos do Cantinho, documentos de evento).
+  function safeFileName(name){
+    return name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  }
+
+  async function uploadArquivo(file, contexto, referencia){
+    if(!supa || !file) return null;
+    const path = contexto + '/' + encodeURIComponent(String(referencia)) + '/' + Date.now() + '-' + safeFileName(file.name);
+    const { error: upErr } = await supa.storage.from('arquivos').upload(path, file);
+    if(upErr){ console.error('Upload falhou:', upErr.message); return null; }
+    const { data: pub } = supa.storage.from('arquivos').getPublicUrl(path);
+    const { data: row, error: insErr } = await supa.from('arquivos').insert({
+      contexto, referencia: String(referencia), nome_original: file.name,
+      caminho: path, tipo: file.type || 'application/octet-stream', tamanho: file.size
+    }).select().single();
+    if(insErr){ console.error('Registro do arquivo falhou:', insErr.message); return null; }
+    return { id: row.id, url: pub.publicUrl, caminho: path, nome: file.name, tamanho: file.size, tipo: file.type };
+  }
+
+  async function listArquivos(contexto, referencia){
+    if(!supa) return [];
+    const { data, error } = await supa.from('arquivos').select('*')
+      .eq('contexto', contexto).eq('referencia', String(referencia)).order('created_at');
+    if(error || !data) return [];
+    return data.map(r => ({
+      id: r.id, caminho: r.caminho, nome: r.nome_original, tamanho: r.tamanho, tipo: r.tipo,
+      url: supa.storage.from('arquivos').getPublicUrl(r.caminho).data.publicUrl
+    }));
+  }
+
+  async function removeArquivo(id, caminho){
+    if(!supa) return;
+    await supa.storage.from('arquivos').remove([caminho]);
+    await supa.from('arquivos').delete().eq('id', id);
+  }
+
   const views = document.querySelectorAll('.view');
   function showView(id){
     views.forEach(v => v.classList.toggle('active', v.id === id));
@@ -9802,6 +9840,7 @@
 
     let editingCard = null;
     let currentPhotoData = '';
+    let currentPhotoFile = null;
 
     function setPhoto(dataUrl){
       currentPhotoData = dataUrl || '';
@@ -9816,6 +9855,7 @@
 
     function handleFile(file){
       if(!file) return;
+      currentPhotoFile = file;
       const reader = new FileReader();
       reader.onload = (e) => setPhoto(e.target.result);
       reader.readAsDataURL(file);
@@ -9825,12 +9865,14 @@
     photoUploadInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
     photoRemoveBtn.addEventListener('click', () => {
       setPhoto('');
+      currentPhotoFile = null;
       photoCameraInput.value = '';
       photoUploadInput.value = '';
     });
 
     function openModal(mode, card){
       editingCard = card || null;
+      currentPhotoFile = null;
       photoCameraInput.value = '';
       photoUploadInput.value = '';
       if(mode === 'edit' && card){
@@ -9866,12 +9908,14 @@
       a.href = '#';
       const colorName = CLASS_COLORS[data.className] || 'gray';
       a.className = 'pl-event-card cl-activity-card cl-border-' + colorName;
+      a.dataset.id = data.id || '';
       a.dataset.title = data.title;
       a.dataset.class = data.className;
       a.dataset.status = data.status;
       a.dataset.statusLabel = data.statusLabel;
       a.dataset.desc = data.desc;
       a.dataset.photo = data.photo || '';
+      a.dataset.fotoCaminho = data.fotoCaminho || '';
       a.dataset.area = data.area || 'Vida em Sociedade';
       const thumbContent = data.photo
         ? '<img src="' + data.photo + '" alt="Foto da atividade">'
@@ -9966,7 +10010,11 @@
       return group;
     }
 
-    function saveActivity(){
+    // Persiste no Supabase (tabela "atividades_classe", ver supabase/storage.sql)
+    // apenas os itens cadastrados/editados por aqui — o currículo padrão já vem
+    // fixo no HTML e não tem data-id, então uma edição nele cria um item novo
+    // (mesmo comportamento de sempre: a edição não sobrescreve o currículo fixo).
+    async function saveActivity(){
       const title = fieldTitle.value.trim();
       const className = fieldClass.value;
       const area = fieldArea.value;
@@ -9981,12 +10029,48 @@
         return;
       }
 
+      let id = editingCard ? editingCard.dataset.id : '';
+      const prevFotoCaminho = editingCard ? (editingCard.dataset.fotoCaminho || '') : '';
+      const photoRemoved = !currentPhotoData && !!prevFotoCaminho;
+      let fotoCaminho = prevFotoCaminho;
+      let fotoUrl = editingCard ? (editingCard.dataset.photo || '') : '';
+
+      if(supa){
+        const payload = { titulo: title, classe: className, area, status, status_label: statusLabel, status_color: statusColor, descricao: desc };
+        if(id){
+          const { error } = await supa.from('atividades_classe').update(payload).eq('id', id);
+          if(error) console.error('Erro ao salvar atividade:', error.message);
+        } else {
+          const { data, error } = await supa.from('atividades_classe').insert(payload).select('id').single();
+          if(error) console.error('Erro ao salvar atividade:', error.message);
+          else id = data.id;
+        }
+
+        if(id && currentPhotoFile){
+          if(prevFotoCaminho) await supa.storage.from('arquivos').remove([prevFotoCaminho]);
+          const path = 'atividade_classe/' + id + '/' + Date.now() + '-' + safeFileName(currentPhotoFile.name);
+          const { error: upErr } = await supa.storage.from('arquivos').upload(path, currentPhotoFile);
+          if(upErr){
+            console.error('Upload da foto falhou:', upErr.message);
+          } else {
+            fotoCaminho = path;
+            fotoUrl = supa.storage.from('arquivos').getPublicUrl(path).data.publicUrl;
+            await supa.from('atividades_classe').update({ foto_caminho: fotoCaminho, foto_url: fotoUrl }).eq('id', id);
+          }
+        } else if(id && photoRemoved){
+          if(prevFotoCaminho) await supa.storage.from('arquivos').remove([prevFotoCaminho]);
+          fotoCaminho = '';
+          fotoUrl = '';
+          await supa.from('atividades_classe').update({ foto_caminho: '', foto_url: '' }).eq('id', id);
+        }
+      }
+
       let oldGroup = null;
       if(editingCard){
         oldGroup = editingCard.closest('.pl-month-group');
         editingCard.remove();
       }
-      const newCard = buildCardHTML({ title, className, area, status, statusColor, statusLabel, desc, photo: currentPhotoData });
+      const newCard = buildCardHTML({ id, title, className, area, status, statusColor, statusLabel, desc, photo: fotoUrl, fotoCaminho });
       const targetGroup = findOrCreateClassGroup(className);
       targetGroup.appendChild(newCard);
 
@@ -10000,8 +10084,15 @@
       closeModal();
     }
 
-    function deleteActivity(){
+    async function deleteActivity(){
       if(!editingCard) return;
+      const id = editingCard.dataset.id;
+      const fotoCaminho = editingCard.dataset.fotoCaminho;
+      if(supa && id){
+        if(fotoCaminho) await supa.storage.from('arquivos').remove([fotoCaminho]);
+        const { error } = await supa.from('atividades_classe').delete().eq('id', id);
+        if(error) console.error('Erro ao excluir atividade:', error.message);
+      }
       const group = editingCard.closest('.pl-month-group');
       editingCard.remove();
       if(group) updateClassCount(group);
@@ -10028,6 +10119,28 @@
     document.querySelectorAll('#view-classes .pl-month-group').forEach(g => { updateClassCount(g); regroupByArea(g); });
     window.__clShowHub = showHub;
     loadClassDataFromSupabase();
+
+    // Injeta no currículo fixo os itens extras cadastrados via "+ Nova Atividade"
+    // (tabela "atividades_classe", ver supabase/storage.sql).
+    async function loadAtividadesClasseFromSupabase(){
+      if(!supa) return;
+      const { data, error } = await supa.from('atividades_classe').select('*').order('created_at');
+      if(error){ console.error('Erro ao carregar atividades:', error.message); return; }
+      (data || []).forEach(row => {
+        const card = buildCardHTML({
+          id: row.id, title: row.titulo, className: row.classe, area: row.area,
+          status: row.status, statusColor: row.status_color, statusLabel: row.status_label,
+          desc: row.descricao || '', photo: row.foto_url || '', fotoCaminho: row.foto_caminho || ''
+        });
+        const group = findOrCreateClassGroup(row.classe);
+        group.appendChild(card);
+        updateClassCount(group);
+        regroupByArea(group);
+      });
+      updateHubCounts();
+      applyClassFilter();
+    }
+    loadAtividadesClasseFromSupabase();
   })();
 
   // Unidades: hub + abas (Visão Geral, Membros, Funções, Atividades, Avaliações,
@@ -10607,8 +10720,10 @@
     });
 
     // ---------------------------------------------------------------
-    // Cantinho da Unidade (pontuação + decoração — funcionalidade original,
-    // continua guardada só na memória do app, como sempre foi)
+    // Cantinho da Unidade (pontuação + decoração). As fotos vão pro
+    // Supabase Storage (ver supabase/storage.sql) e ficam compartilhadas
+    // entre usuários/dispositivos; descrição/responsável e pontuação
+    // continuam só na memória do app, como sempre foi.
     // ---------------------------------------------------------------
     const SCORE_CATEGORIES = ['Participação', 'Pontualidade', 'Uniforme', 'Higiene', 'Disciplina', 'Atividades'];
     const CORNER_DATA = {};
@@ -10642,8 +10757,10 @@
     const modalClose = document.getElementById('unModalClose');
     const saveBtn = document.getElementById('unSaveBtn');
 
-    function renderGallery(name){
-      const photos = CORNER_DATA[name].photos;
+    async function renderGallery(name){
+      const photos = await listArquivos('unidade_cantinho', name);
+      CORNER_DATA[name].photos = photos;
+      if(name !== currentUnit) return; // usuário já trocou de unidade antes da resposta chegar
       gallery.innerHTML = '';
       if(!photos.length){
         const empty = document.createElement('div');
@@ -10652,14 +10769,14 @@
         gallery.appendChild(empty);
         return;
       }
-      photos.forEach((src, idx) => {
+      photos.forEach((photo) => {
         const cell = document.createElement('div');
         cell.className = 'un-photo';
         cell.innerHTML =
-          '<img src="' + src + '" alt="Foto do cantinho">' +
+          '<img src="' + photo.url + '" alt="Foto do cantinho">' +
           '<button type="button" class="un-photo-remove" aria-label="Remover foto"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
-        cell.querySelector('.un-photo-remove').addEventListener('click', () => {
-          CORNER_DATA[name].photos.splice(idx, 1);
+        cell.querySelector('.un-photo-remove').addEventListener('click', async () => {
+          await removeArquivo(photo.id, photo.caminho);
           renderGallery(name);
         });
         gallery.appendChild(cell);
@@ -10738,8 +10855,11 @@
       });
     }
 
-    function setStagedPhoto(dataUrl){
+    let stagedPhotoFile = null;
+
+    function setStagedPhoto(dataUrl, file){
       stagedPhoto = dataUrl || '';
+      stagedPhotoFile = file || null;
       if(stagedPhoto){
         photoPreviewImg.src = stagedPhoto;
         photoPreview.style.display = '';
@@ -10752,14 +10872,14 @@
     function handleFile(file){
       if(!file) return;
       const reader = new FileReader();
-      reader.onload = (e) => setStagedPhoto(e.target.result);
+      reader.onload = (e) => setStagedPhoto(e.target.result, file);
       reader.readAsDataURL(file);
     }
 
     photoCameraInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
     photoUploadInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
     photoRemoveBtn.addEventListener('click', () => {
-      setStagedPhoto('');
+      setStagedPhoto('', null);
       photoCameraInput.value = '';
       photoUploadInput.value = '';
     });
@@ -10781,14 +10901,19 @@
     modalClose.addEventListener('click', closeCornerModal);
     overlay.addEventListener('click', (e) => { if(e.target === overlay) closeCornerModal(); });
 
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
       if(!currentUnit) return;
-      const d = CORNER_DATA[currentUnit];
+      const unitName = currentUnit;
+      const d = CORNER_DATA[unitName];
       d.desc = fieldDesc.value.trim();
       d.resp = fieldResp.value.trim();
-      if(stagedPhoto) d.photos.push(stagedPhoto);
-      renderCornerDetail(currentUnit);
+      const photoFile = stagedPhotoFile;
       closeCornerModal();
+      if(photoFile){
+        const uploaded = await uploadArquivo(photoFile, 'unidade_cantinho', unitName);
+        if(!uploaded) alert('Não foi possível enviar a foto. Tente novamente.');
+      }
+      renderCornerDetail(unitName);
     });
 
     // ---------------------------------------------------------------
@@ -12628,7 +12753,7 @@ const REQ_SUMMARIES = {
       card.addEventListener('click', (e) => { e.preventDefault(); openTaskModal('edit', card); });
     });
 
-    // ---- Documentos do evento (upload local, sem servidor) ----
+    // ---- Documentos do evento (Supabase Storage, ver supabase/storage.sql) ----
     const docsSection = document.getElementById('eoDocsSection');
     const docsList = document.getElementById('eoDocsList');
     const docsEmpty = document.getElementById('eoDocsEmpty');
@@ -12647,11 +12772,14 @@ const REQ_SUMMARIES = {
       return 'file';
     }
 
-    function renderDocs(eventName){
-      const docs = EVENT_DOCS[eventName] || [];
+    async function renderDocs(eventName){
+      const list = await listArquivos('evento_doc', eventName);
+      const docs = list.map(a => ({ id: a.id, caminho: a.caminho, name: a.nome, size: a.tamanho, type: a.tipo, url: a.url }));
+      EVENT_DOCS[eventName] = docs;
+      if(eventName !== currentEvent) return; // usuário já trocou de evento antes da resposta chegar
       docsList.innerHTML = '';
       docsEmpty.style.display = docs.length ? 'none' : '';
-      docs.forEach((doc, idx) => {
+      docs.forEach((doc) => {
         const row = document.createElement('div');
         row.className = 'eo-doc-row';
         row.innerHTML =
@@ -12660,27 +12788,24 @@ const REQ_SUMMARIES = {
           '<button type="button" class="eo-doc-remove" aria-label="Remover"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
         row.querySelector('.eo-doc-name').textContent = doc.name;
         row.querySelector('.eo-doc-size').textContent = fmtSize(doc.size);
-        row.addEventListener('click', () => { window.open(doc.dataUrl, '_blank'); });
-        row.querySelector('.eo-doc-remove').addEventListener('click', (e) => {
+        row.addEventListener('click', () => { window.open(doc.url, '_blank'); });
+        row.querySelector('.eo-doc-remove').addEventListener('click', async (e) => {
           e.stopPropagation();
-          EVENT_DOCS[eventName].splice(idx, 1);
+          await removeArquivo(doc.id, doc.caminho);
           renderDocs(eventName);
         });
         docsList.appendChild(row);
       });
     }
 
-    docFileInput.addEventListener('change', () => {
+    docFileInput.addEventListener('change', async () => {
       const file = docFileInput.files[0];
+      docFileInput.value = '';
       if(!file || !currentEvent) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        if(!EVENT_DOCS[currentEvent]) EVENT_DOCS[currentEvent] = [];
-        EVENT_DOCS[currentEvent].push({ name: file.name, size: file.size, type: file.type, dataUrl: e.target.result });
-        renderDocs(currentEvent);
-        docFileInput.value = '';
-      };
-      reader.readAsDataURL(file);
+      const eventName = currentEvent;
+      const uploaded = await uploadArquivo(file, 'evento_doc', eventName);
+      if(!uploaded){ alert('Não foi possível enviar o arquivo. Tente novamente.'); return; }
+      renderDocs(eventName);
     });
 
     // ---- Programação do evento (ordem do dia + exportar PDF) ----
