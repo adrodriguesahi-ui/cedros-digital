@@ -13061,6 +13061,10 @@ const REQ_SUMMARIES = {
       if(Math.abs(deltaX) > SWIPE_THRESHOLD){
         dragActive = false;
         dragTriggeredSwipe = true;
+        // Só suprime o click que o próprio navegador possa disparar logo em seguida deste
+        // mesmo gesto (síncrono); sem isso a flag ficava "pendurada" e engolia o próximo
+        // toque de verdade no banner, mesmo sem relação nenhuma com este arraste.
+        setTimeout(() => { dragTriggeredSwipe = false; }, 0);
         goTo(deltaX < 0 ? index + 1 : index - 1); // arrastou pra esquerda -> próximo slide
         pauseThenResumeAutoplay();
       }
