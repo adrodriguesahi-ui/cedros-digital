@@ -262,3 +262,176 @@ create policy "unit_conquistas: acesso publico" on unit_conquistas for all using
 
 drop policy if exists "unit_mes_resumo: acesso publico" on unit_mes_resumo;
 create policy "unit_mes_resumo: acesso publico" on unit_mes_resumo for all using (true) with check (true);
+
+-- ---------------------------------------------------------------------
+-- eventos_agenda: eventos da Agenda Anual (Planejamento Anual). Antes
+-- viviam só como HTML estático em index.html/login.html — qualquer
+-- evento cadastrado ou editado pelo app se perdia ao recarregar a
+-- página, porque nada era salvo aqui. A carga abaixo recria os 69
+-- eventos da agenda oficial "AGENDA CEDROS DO LÍBANO 2026" que já
+-- estavam fixos no HTML (mesmos dados do commit "Import the real 2026
+-- club agenda...").
+-- ---------------------------------------------------------------------
+create table if not exists eventos_agenda (
+  id uuid primary key default gen_random_uuid(),
+  dia int not null,
+  mes_indice int not null check (mes_indice between 1 and 12),
+  titulo text not null,
+  horario text not null default '09:00',
+  horario_fim text,
+  local text not null default 'Sede do Clube',
+  responsavel text,
+  tag text not null default 'gray',
+  tag_label text not null default 'Outro',
+  descricao text,
+  observacao text,
+  foto text,
+  lembrete_on boolean not null default false,
+  lembrete_data date,
+  lembrete_mensagem text,
+  lembrete_confirmado boolean not null default false,
+  lembrete_confirmado_vezes int not null default 0,
+  lembrete_ultima_confirmacao date,
+  lembrete_repetir_on boolean not null default false,
+  lembrete_repetir_dias int,
+  lembrete_repetir_vezes int,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+-- Coluna adicionada depois da criação inicial da tabela (rodar de novo é seguro) —
+-- foto do evento (base64), mesmo padrão de Classes Regulares/Cantinho da Unidade.
+alter table eventos_agenda add column if not exists foto text;
+
+create or replace function set_updated_at_eventos_agenda()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_eventos_agenda_updated_at on eventos_agenda;
+create trigger trg_eventos_agenda_updated_at
+  before update on eventos_agenda
+  for each row execute function set_updated_at_eventos_agenda();
+
+alter table eventos_agenda enable row level security;
+
+drop policy if exists "eventos_agenda: acesso publico" on eventos_agenda;
+create policy "eventos_agenda: acesso publico" on eventos_agenda
+  for all using (true) with check (true);
+
+-- Só roda se a tabela ainda estiver vazia, pra não duplicar em execuções futuras
+-- deste arquivo (ex.: depois que a diretoria já tiver editado/adicionado eventos).
+insert into eventos_agenda (dia, mes_indice, titulo, horario, local, tag, tag_label)
+select * from (values
+  (13, 1, 'Reunião Administrativa', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (17, 1, 'Reunião Diretoria', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (8, 2, 'Limpeza da Sala do Clube', '09:00', 'Só diretoria.', 'gray', 'Evento'),
+  (14, 2, 'Feriado - Carnaval', '09:00', '14 a 17 de fevereiro (sábado a terça).', 'gray', 'Feriado'),
+  (22, 2, 'Início do Clube + Abertura', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
+  (1, 3, 'Reunião Regular + CTAD', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (8, 3, 'Reunião Regular + Reunião de Diretoria', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (14, 3, 'Encontro de Inclusão', '09:00', 'Sede do Clube', 'gray', 'Evento'),
+  (15, 3, 'Reunião Regular + Início da Classe Bíblica', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (22, 3, 'Reunião Regular + Curso de Brigadista', '09:00', 'Sede do Clube', 'blue', 'Curso'),
+  (28, 3, 'Impacto Esperança', '09:00', 'Sede do Clube', 'gray', 'Evento'),
+  (29, 3, 'Semana Santa + Reunião Regular + Desbravador por 1 Dia', '09:00', 'Início da Semana Santa.', 'purple', 'Cerimônia'),
+  (30, 3, 'Semana Santa (Recepção Companheiro)', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
+  (31, 3, 'Semana Santa (Recepção Guia)', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
+  (1, 4, 'Semana Santa (Recepção Excursionista)', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
+  (2, 4, 'Semana Santa (Recepção Pesquisador)', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
+  (3, 4, 'Semana Santa (Recepção Amigo)', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
+  (4, 4, 'Semana Santa (Recepção Pioneiro)', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
+  (5, 4, 'Folga - Páscoa', '09:00', 'Sede do Clube', 'gray', 'Folga'),
+  (11, 4, 'Evento - Pastel', '09:00', 'Sede do Clube', 'gray', 'Evento'),
+  (12, 4, 'Reunião Regular + Curso de Capitães e Conselheiros', '09:00', 'Sede do Clube', 'blue', 'Curso'),
+  (19, 4, 'Reunião Regular', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (26, 4, 'Reunião Regular + Prova de Líder', '09:00', 'Sede do Clube', 'red', 'Prova'),
+  (2, 5, 'Olimpori + 24H', '09:00', '2 a 3 de maio (sábado e domingo).', 'gold', 'Acampamento'),
+  (10, 5, 'Folga - Dia das Mães', '09:00', 'Sede do Clube', 'gray', 'Folga'),
+  (17, 5, 'Reunião Regular + Festa Dia das Mães + Evento Feijoada', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (24, 5, 'Reunião Regular', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (31, 5, 'Reunião Regular + Preparativos para o Acampamento + Concursos BB e Música', '09:00', 'Sede do Clube', 'red', 'Concurso'),
+  (4, 6, 'Acampamento de Instrução + Cedroflash', '09:00', '4 a 7 de junho (quinta a domingo).', 'gold', 'Acampamento'),
+  (13, 6, 'Evento - Festa do Milho', '09:00', 'Sede do Clube', 'gray', 'Evento'),
+  (14, 6, 'Reunião Regular + Prova de Líder', '09:00', 'Sede do Clube', 'red', 'Prova'),
+  (21, 6, 'Fase Regional Concurso de Ordem Unida e Fanfarra', '09:00', 'Sede do Clube', 'red', 'Concurso'),
+  (28, 6, 'Reunião Regular', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (1, 7, 'Calebe + Escola Cristã de Férias', '09:00', 'Durante todo o mês de julho.', 'gold', 'Acampamento'),
+  (9, 7, 'Maranata SP', '09:00', '9 a 12 de julho (quinta a domingo).', 'gold', 'Acampamento'),
+  (19, 7, 'Paulista Laranja', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
+  (26, 7, 'Reunião Regular', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (31, 7, 'Mega Líder', '09:00', '31/07 a 02/08 (sexta a domingo).', 'gold', 'Acampamento'),
+  (2, 8, 'Reunião Regular + Ensaio Dia Mundial', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (8, 8, 'Evento - Pizza', '09:00', 'Sede do Clube', 'gray', 'Evento'),
+  (9, 8, 'Folga - Dia dos Pais', '09:00', 'Sede do Clube', 'gray', 'Folga'),
+  (15, 8, 'Adolescer', '09:00', 'Sede do Clube', 'gray', 'Evento'),
+  (16, 8, 'Reunião Regular + Festa do Dia dos Pais + Ensaio Dia Mundial', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (22, 8, 'Quebrando o Silêncio + Passeata na Paulista', '09:00', 'Sede do Clube', 'gray', 'Evento'),
+  (23, 8, 'Reunião Regular + Ensaio Dia Mundial', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (30, 8, 'Reunião Regular + Ensaio Dia Mundial + CTAD', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (6, 9, 'Reunião Regular + Ensaio Dia Mundial + Prova de Líder', '09:00', 'Sede do Clube', 'red', 'Prova'),
+  (7, 9, 'Desfile Cívico', '09:00', '7 de setembro (segunda-feira).', 'purple', 'Cerimônia'),
+  (13, 9, 'Reunião Regular + Ensaio Dia Mundial', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (13, 9, 'Semana do Lenço', '09:00', '13 a 18 de setembro (domingo a sexta).', 'purple', 'Cerimônia'),
+  (19, 9, 'Dia Mundial DBV', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
+  (20, 9, 'Reunião Regular', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (27, 9, 'Concursos AP', '09:00', 'Sede do Clube', 'red', 'Concurso'),
+  (3, 10, 'Evento - Açaí', '09:00', 'Sede do Clube', 'gray', 'Evento'),
+  (4, 10, 'Reunião Regular', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (11, 10, 'Uniflash', '09:00', 'Sede do Clube', 'gold', 'Acampamento'),
+  (18, 10, 'Reunião Regular - Finalização e Entrega do Cartão', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (25, 10, 'Reunião Regular + Prova de Líder', '09:00', 'Sede do Clube', 'red', 'Prova'),
+  (1, 11, 'Folga', '09:00', 'Sede do Clube', 'gray', 'Folga'),
+  (7, 11, 'Evento - Esportes', '09:00', 'Sede do Clube', 'gray', 'Evento'),
+  (8, 11, 'Reunião Regular + Entrega de Apostilas', '09:00', 'Sede do Clube', 'green', 'Reunião'),
+  (14, 11, 'Investidura', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
+  (15, 11, 'Folga', '09:00', 'Sede do Clube', 'gray', 'Folga'),
+  (21, 11, 'CEDRORI (Acampamento de Recreação + Oscar)', '09:00', '21 e 22 de novembro (sábado e domingo).', 'gold', 'Acampamento'),
+  (29, 11, 'Preparativos para o Campori DSA', '09:00', 'Sede do Clube', 'gold', 'Acampamento'),
+  (5, 12, 'Culto de Ações de Graças', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
+  (6, 12, 'Preparativos para o Campori DSA', '09:00', 'Sede do Clube', 'gold', 'Acampamento'),
+  (13, 12, 'Preparativos para o Campori DSA', '09:00', 'Sede do Clube', 'gold', 'Acampamento'),
+  (20, 12, 'Férias', '09:00', '20/12 a 03/01 (previsão).', 'gray', 'Folga')
+) as seed(dia, mes_indice, titulo, horario, local, tag, tag_label)
+where not exists (select 1 from eventos_agenda);
+
+-- ---------------------------------------------------------------------
+-- event_confirmations: "Confirmar presença" no evento em destaque do
+-- dashboard. Referencia eventos_agenda(id) diretamente — editar o
+-- título de um evento não derruba as confirmações dele. user_id é o
+-- auth.uid() real (Supabase Auth), por isso as políticas usam
+-- auth.uid() em vez do padrão "acesso público" do resto deste arquivo:
+-- leitura é pública (pra mostrar quantos confirmaram), mas cada um só
+-- grava/apaga a própria confirmação.
+--
+-- Recriada aqui (drop + create) porque a versão anterior desta tabela
+-- guardava o evento por uma chave de texto (mês-dia-título em slug) em
+-- vez de referenciar eventos_agenda — na época a tabela de eventos
+-- ainda não existia. Seguro rodar de novo: a tabela antiga acabou de
+-- ser criada e ainda não tem confirmações reais.
+-- ---------------------------------------------------------------------
+drop table if exists event_confirmations;
+create table event_confirmations (
+  id uuid primary key default gen_random_uuid(),
+  event_id uuid not null references eventos_agenda(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (event_id, user_id)
+);
+
+alter table event_confirmations enable row level security;
+
+drop policy if exists "event_confirmations: leitura publica" on event_confirmations;
+create policy "event_confirmations: leitura publica" on event_confirmations
+  for select using (true);
+
+drop policy if exists "event_confirmations: inserir a propria" on event_confirmations;
+create policy "event_confirmations: inserir a propria" on event_confirmations
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "event_confirmations: remover a propria" on event_confirmations;
+create policy "event_confirmations: remover a propria" on event_confirmations
+  for delete using (auth.uid() = user_id);
