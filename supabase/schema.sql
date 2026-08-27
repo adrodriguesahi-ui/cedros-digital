@@ -262,3 +262,36 @@ create policy "unit_conquistas: acesso publico" on unit_conquistas for all using
 
 drop policy if exists "unit_mes_resumo: acesso publico" on unit_mes_resumo;
 create policy "unit_mes_resumo: acesso publico" on unit_mes_resumo for all using (true) with check (true);
+
+-- ---------------------------------------------------------------------
+-- event_confirmations: "Confirmar presença" no evento em destaque do
+-- dashboard. Os eventos da Agenda Anual ainda não têm tabela própria
+-- (vivem como HTML estático em index.html), então event_key identifica
+-- o evento de forma estável: "{mês}-{dia}-{título em slug}" — ver a
+-- função eventKeyFor() no card do dashboard. user_id é o auth.uid() real
+-- (Supabase Auth), por isso as políticas usam auth.uid() em vez do
+-- padrão "acesso público" do resto deste arquivo: leitura é pública
+-- (pra mostrar quantos confirmaram), mas cada um só grava/apaga a
+-- própria confirmação.
+-- ---------------------------------------------------------------------
+create table if not exists event_confirmations (
+  id uuid primary key default gen_random_uuid(),
+  event_key text not null,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (event_key, user_id)
+);
+
+alter table event_confirmations enable row level security;
+
+drop policy if exists "event_confirmations: leitura publica" on event_confirmations;
+create policy "event_confirmations: leitura publica" on event_confirmations
+  for select using (true);
+
+drop policy if exists "event_confirmations: inserir a propria" on event_confirmations;
+create policy "event_confirmations: inserir a propria" on event_confirmations
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "event_confirmations: remover a propria" on event_confirmations;
+create policy "event_confirmations: remover a propria" on event_confirmations
+  for delete using (auth.uid() = user_id);
