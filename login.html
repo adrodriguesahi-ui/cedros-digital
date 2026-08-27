@@ -1866,7 +1866,7 @@
   .bd-section-more:hover{ background:var(--lg-green-bg); }
 
   /* Banner carousel: timed slideshow, slides right-to-left ("apresentação") */
-  .bd-banner-row{ position:relative; height:172px; margin:0 0 12px; overflow:hidden; border-radius:16px; }
+  .bd-banner-row{ position:relative; height:172px; margin:0 0 12px; overflow:hidden; border-radius:16px; touch-action:pan-y; }
   .bd-banner-row .bd-banner{
     position:absolute; inset:0;
     transform:translateX(100%);
@@ -13010,6 +13010,12 @@ const REQ_SUMMARIES = {
     let resumeTimeout = null;
     let confirmToken = 0; // ignora resposta do Supabase se o slide já mudou nesse meio tempo
 
+    function pauseThenResumeAutoplay(){
+      stopAutoplay();
+      clearTimeout(resumeTimeout);
+      resumeTimeout = setTimeout(startAutoplay, 4000);
+    }
+
     function goTo(i){
       if(!slides.length) return;
       const newIndex = (i + slides.length) % slides.length;
@@ -13035,6 +13041,38 @@ const REQ_SUMMARIES = {
     function stopAutoplay(){
       if(autoplay){ clearInterval(autoplay); autoplay = null; }
     }
+
+    // Arrastar/deslizar com o dedo (ou mouse) pra trocar de slide, além dos pontinhos.
+    // touch-action:pan-y no CSS deixa o scroll vertical da página passar reto por cima.
+    const SWIPE_THRESHOLD = 40;
+    let dragActive = false;
+    let dragStartX = 0;
+    let dragTriggeredSwipe = false;
+
+    row.addEventListener('pointerdown', (e) => {
+      if(slides.length < 2) return;
+      dragActive = true;
+      dragStartX = e.clientX;
+      stopAutoplay();
+    });
+    row.addEventListener('pointermove', (e) => {
+      if(!dragActive) return;
+      const deltaX = e.clientX - dragStartX;
+      if(Math.abs(deltaX) > SWIPE_THRESHOLD){
+        dragActive = false;
+        dragTriggeredSwipe = true;
+        goTo(deltaX < 0 ? index + 1 : index - 1); // arrastou pra esquerda -> próximo slide
+        pauseThenResumeAutoplay();
+      }
+    });
+    function endDrag(){
+      if(!dragActive) return;
+      dragActive = false;
+      pauseThenResumeAutoplay();
+    }
+    row.addEventListener('pointerup', endDrag);
+    row.addEventListener('pointercancel', endDrag);
+    row.addEventListener('pointerleave', endDrag);
 
     async function refreshConfirmUI(){
       if(!confirmBtn || !confirmLabel) return;
@@ -13101,6 +13139,7 @@ const REQ_SUMMARIES = {
         banner.querySelector('.bd-banner-meta').lastChild.textContent = card.dataset.local || 'Sede do Clube';
         banner.addEventListener('click', (e) => {
           e.preventDefault();
+          if(dragTriggeredSwipe){ dragTriggeredSwipe = false; return; } // arraste, não é toque
           if(window.__plOpenEventCard) window.__plOpenEventCard(card);
         });
         row.appendChild(banner);
@@ -13109,10 +13148,8 @@ const REQ_SUMMARIES = {
         const dot = document.createElement('span');
         dot.className = 'bd-banner-dot' + (i === 0 ? ' active' : '');
         dot.addEventListener('click', () => {
-          stopAutoplay();
           goTo(i);
-          clearTimeout(resumeTimeout);
-          resumeTimeout = setTimeout(startAutoplay, 4000);
+          pauseThenResumeAutoplay();
         });
         dotsWrap.appendChild(dot);
         dots.push(dot);
