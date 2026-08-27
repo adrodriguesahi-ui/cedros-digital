@@ -10374,8 +10374,23 @@
       setTab('overview');
     }
 
+    // Só Administrador e Diretoria Executiva (gestão do clube todo) veem as 7 unidades.
+    // Os demais papéis (Diretoria, Conselheiros, Instrutores, Coordenador de Classes) só
+    // veem a própria unidade (usuarios.unidade) — as outras somem do hub, não ficam só
+    // bloqueadas.
+    const UNIT_FULL_ACCESS_ROLES = ['Administrador', 'Diretoria Executiva'];
+    function applyUnitAccessRestriction(){
+      const usuario = window.__currentUsuario;
+      const fullAccess = !usuario || UNIT_FULL_ACCESS_ROLES.indexOf(usuario.papel) !== -1;
+      hub.querySelectorAll('.cl-hub-row').forEach(row => {
+        const name = row.getAttribute('data-open-unit');
+        row.style.display = (fullAccess || name === usuario.unidade) ? '' : 'none';
+      });
+    }
+
     function showHub(){
       currentUnit = null;
+      applyUnitAccessRestriction();
       hub.style.display = '';
       detail.style.display = 'none';
       titleEl.textContent = 'Unidades';
