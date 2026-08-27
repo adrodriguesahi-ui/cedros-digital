@@ -1,0 +1,19 @@
+{
+  "name": "cedros-digital",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Wrapper nativo Android (Capacitor) do PWA Cedros Digital. O site em si (index.html, login.html) continua sendo servido direto pelo Cloudflare Workers — isto aqui só empacota o mesmo HTML/CSS/JS dentro de um app Android de verdade.",
+  "scripts": {
+    "www:build": "node scripts/build-www.mjs",
+    "cap:sync": "npm run www:build && npx cap sync",
+    "android:open": "npm run cap:sync && npx cap open android"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/camera": "^6.1.2",
+    "@capacitor/cli": "^6.2.0",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/haptics": "^6.0.2",
+    "@capacitor/status-bar": "^6.0.2"
+  }
+}

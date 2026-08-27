@@ -23,4 +23,36 @@ Login, cadastro e o painel de Administração usam o Supabase (Postgres + Auth) 
 
 ## Gerar APK
 
-Depois de publicado, use https://www.pwabuilder.com/ com a URL do site publicado para gerar o APK Android.
+Duas formas, dependendo do que você precisa:
+
+**PWABuilder (mais simples, sem recursos nativos)** — depois de publicado, use
+https://www.pwabuilder.com/ com a URL do site publicado pra gerar o APK.
+
+**App nativo Android via Capacitor (recursos nativos: vibração, câmera, barra
+de status)** — o mesmo HTML/CSS/JS é empacotado num app Android de verdade,
+usando [Capacitor](https://capacitorjs.com). O site publicado no Cloudflare
+não muda em nada — isso só gera o APK.
+
+Pré-requisitos: Node.js, [Android Studio](https://developer.android.com/studio)
+(ou Android SDK + Gradle) instalados.
+
+```bash
+npm install          # instala o Capacitor e os plugins (uma vez só)
+npm run android:open # gera www/, sincroniza o projeto android/ e abre no Android Studio
+```
+
+No Android Studio: **Build → Build Bundle(s) / APK(s) → Build APK(s)**.
+
+Sempre que mudar `index.html`/`login.html`/etc., rode `npm run cap:sync`
+antes de gerar um novo APK (ou simplesmente `npm run android:open` de novo).
+
+O app nativo já vem com:
+- Vibração leve (haptics) ao tocar em botões e na navegação inferior
+- Barra de status com a cor do tema do app
+- Câmera/galeria nos uploads de foto (já funcionam via `<input type="file">`,
+  sem precisar do plugin de câmera nativo)
+
+O projeto Android fica em `android/` (versionado no repositório — só os
+diretórios de build/cache são ignorados, ver `.gitignore`). `package.json`,
+`android/`, `scripts/` e `capacitor.config.json` ficam de fora do site
+publicado (ver `.assetsignore`).

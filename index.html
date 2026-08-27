@@ -8452,6 +8452,33 @@
 </div>
 
 <script>
+  // Ponte com o app nativo Android (Capacitor, ver capacitor.config.json e
+  // package.json). window.Capacitor só existe quando o app roda dentro do
+  // wrapper nativo gerado por "npm run cap:sync" — no navegador/PWA normal
+  // (o site publicado no Cloudflare), isNative fica false e tudo aqui vira
+  // no-op, sem afetar o funcionamento web de hoje.
+  const Native = (() => {
+    const isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+    const plugins = isNative ? (window.Capacitor.Plugins || {}) : {};
+
+    if(isNative && plugins.StatusBar){
+      plugins.StatusBar.setBackgroundColor({ color: '#0A130C' }).catch(() => {});
+      plugins.StatusBar.setStyle({ style: 'LIGHT' }).catch(() => {}); // ícones claros, combina com o tema escuro do app
+    }
+
+    function haptic(style){
+      if(isNative && plugins.Haptics) plugins.Haptics.impact({ style: style || 'LIGHT' }).catch(() => {});
+    }
+
+    if(isNative){
+      document.addEventListener('click', (e) => {
+        if(e.target.closest('.tab-item, .pl-btn-primary, .bd-qn-item, .bd-action-btn, .pl-fab')) haptic('LIGHT');
+      }, true);
+    }
+
+    return { isNative, haptic };
+  })();
+
   // Breakpoints — espelha os media queries do CSS (max-width:360px / min-width:900px)
   // para que a lógica JS possa reagir ao tamanho de tela sem duplicar os valores.
   const Breakpoints = (() => {
@@ -13966,7 +13993,9 @@ const REQ_SUMMARIES = {
   })();
 
   // Registers the service worker so the app can be installed and opened offline.
-  if('serviceWorker' in navigator){
+  // Não registra dentro do app nativo (Capacitor) — lá quem serve os arquivos
+  // é o próprio wrapper Android, e um service worker só atrapalharia o cache.
+  if('serviceWorker' in navigator && !Native.isNative){
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('sw.js').catch(() => {});
     });
