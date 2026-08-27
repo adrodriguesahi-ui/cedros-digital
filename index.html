@@ -1836,6 +1836,20 @@
   .bd-banner-desbravadores{ background:linear-gradient(135deg, #8A6A1E, #2B2010); }
   .bd-banner-desfile{ background:linear-gradient(135deg, #1F7A3D 0%, #D8A83E 100%); }
   .bd-banner-icon svg{ opacity:0.5; }
+  .bd-banner-add-btn{
+    position:absolute; top:10px; right:10px; z-index:5;
+    width:32px; height:32px; border-radius:50%;
+    background:rgba(6,12,8,0.55); border:1px solid rgba(255,255,255,0.3);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; cursor:pointer;
+  }
+  .bd-banner-remove-btn{
+    position:absolute; top:10px; left:10px; z-index:3;
+    width:26px; height:26px; border-radius:50%;
+    background:rgba(6,12,8,0.55); border:1px solid rgba(255,255,255,0.3);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; cursor:pointer;
+  }
 
   /* Category tabs */
   .bd-tabs{ display:flex; gap:6px; overflow-x:auto; padding:2px 16px 12px; scrollbar-width:none; }
@@ -8196,6 +8210,9 @@
             </p>
           </div>
         </a>
+        <button type="button" class="bd-banner-add-btn" id="bdBannerAddBtn" aria-label="Novo destaque" style="display:none;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
         </div>
         <div class="bd-banner-dots" id="bdBannerDots">
           <span class="bd-banner-dot active"></span>
@@ -8203,6 +8220,60 @@
           <span class="bd-banner-dot"></span>
           <span class="bd-banner-dot"></span>
         </div>
+
+        <!-- Novo destaque do carrossel (banners_home, ver supabase/storage.sql) -->
+        <div class="pl-modal-overlay" id="bnModalOverlay">
+          <div class="pl-modal">
+            <div class="pl-modal-head">
+              <h4 class="pl-modal-title">Novo Destaque</h4>
+              <button type="button" class="pl-modal-close" id="bnModalClose" aria-label="Fechar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <label class="pl-field-label">Título / descrição do evento</label>
+            <input type="text" class="pl-input" id="bnFieldTitle" placeholder="Ex.: Acampamento de Unidade" maxlength="60">
+
+            <div class="pl-field-row">
+              <div class="pl-field-col">
+                <label class="pl-field-label">Data</label>
+                <input type="date" class="pl-input" id="bnFieldDate">
+              </div>
+              <div class="pl-field-col">
+                <label class="pl-field-label">Horário</label>
+                <input type="time" class="pl-input" id="bnFieldTime">
+              </div>
+            </div>
+
+            <label class="pl-field-label">Local</label>
+            <input type="text" class="pl-input" id="bnFieldLocal" placeholder="Sede do Clube" maxlength="40">
+
+            <label class="pl-field-label">Imagem de propaganda (opcional)</label>
+            <div class="cl-photo-row">
+              <label class="cl-photo-btn" for="bnPhotoCamera">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h7l1 1.5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg>
+                Tirar foto
+                <input type="file" accept="image/*" capture="environment" id="bnPhotoCamera" hidden>
+              </label>
+              <label class="cl-photo-btn" for="bnPhotoUpload">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4 7 9M12 4l5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+                Enviar da galeria
+                <input type="file" accept="image/*" id="bnPhotoUpload" hidden>
+              </label>
+            </div>
+            <div class="cl-photo-preview" id="bnPhotoPreview" style="display:none;">
+              <img id="bnPhotoPreviewImg" alt="Pré-visualização da imagem">
+              <button type="button" class="cl-photo-remove" id="bnPhotoRemove" aria-label="Remover imagem">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <div class="pl-modal-actions">
+              <button type="button" class="pl-btn pl-btn-primary" id="bnSaveBtn">Salvar</button>
+            </div>
+          </div>
+        </div>
+
         <div class="bd-action-row">
           <span class="bd-action-btn" data-goto="view-planning">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg>
@@ -13648,20 +13719,22 @@ const REQ_SUMMARIES = {
     });
   }
 
-  // Auto-rotating activities banner: timed fade slideshow ("apresentação")
+  // Auto-rotating activities banner: timed fade slideshow ("apresentação").
+  // Os 4 slides fixos vêm no HTML; destaques extras (tabela "banners_home",
+  // ver supabase/storage.sql) são carregados e anexados antes de iniciar.
   (function(){
     const row = document.getElementById('bdBannerRow');
     const dotsWrap = document.getElementById('bdBannerDots');
     if(!row || !dotsWrap) return;
-    const slides = Array.from(row.querySelectorAll('.bd-banner'));
-    const dots = Array.from(dotsWrap.querySelectorAll('.bd-banner-dot'));
-    if(slides.length < 2) return;
-    let index = slides.findIndex(s => s.classList.contains('active'));
-    if(index < 0) index = 0;
+
+    let slides = [];
+    let dots = [];
+    let index = 0;
     let autoplay = null;
     let resumeTimeout = null;
 
     function goTo(i){
+      if(slides.length < 2) return;
       const newIndex = (i + slides.length) % slides.length;
       if(newIndex === index) return;
       const current = slides[index];
@@ -13679,20 +13752,217 @@ const REQ_SUMMARIES = {
 
     function startAutoplay(){
       stopAutoplay();
-      autoplay = setInterval(next, 4500);
+      if(slides.length > 1) autoplay = setInterval(next, 4500);
     }
     function stopAutoplay(){
       if(autoplay){ clearInterval(autoplay); autoplay = null; }
     }
 
-    dots.forEach((d, di) => d.addEventListener('click', () => {
-      stopAutoplay();
-      goTo(di);
-      clearTimeout(resumeTimeout);
-      resumeTimeout = setTimeout(startAutoplay, 4000);
-    }));
+    function bindDots(){
+      dots.forEach((d, di) => {
+        d.onclick = () => {
+          stopAutoplay();
+          goTo(di);
+          clearTimeout(resumeTimeout);
+          resumeTimeout = setTimeout(startAutoplay, 4000);
+        };
+      });
+    }
 
-    startAutoplay();
+    // Releitura dos slides/dots atuais do DOM (chamada depois de adicionar
+    // ou remover um destaque) e reinício do carrossel.
+    function refreshRefs(){
+      slides = Array.from(row.querySelectorAll('.bd-banner'));
+      dots = Array.from(dotsWrap.querySelectorAll('.bd-banner-dot'));
+      if(!slides.length) return;
+      index = slides.findIndex(s => s.classList.contains('active'));
+      if(index < 0) index = 0;
+      slides.forEach((s, i) => s.classList.toggle('active', i === index));
+      dots.forEach((d, i) => d.classList.toggle('active', i === index));
+      bindDots();
+      startAutoplay();
+    }
+
+    // ---- Novo destaque (tabela "banners_home", ver supabase/storage.sql) ----
+    const GRADIENTS = ['linear-gradient(135deg, #1F7A3D, #0A130C)', 'linear-gradient(135deg, #8A6A1E, #2B2010)', 'linear-gradient(135deg, #1F7A3D 0%, #D8A83E 100%)'];
+    let gradientTurn = 0;
+
+    function canManageBanners(){
+      const u = window.__currentUsuario;
+      return !!(u && (u.papel === 'Administrador' || u.papel === 'Diretoria Executiva'));
+    }
+
+    function fmtDateLabel(isoDate){
+      if(!isoDate) return '';
+      const [y, m, d] = isoDate.split('-');
+      return d + '/' + m;
+    }
+
+    function isSoon(isoDate){
+      if(!isoDate) return false;
+      const diffMs = new Date(isoDate + 'T00:00:00') - new Date(new Date().toDateString());
+      const diffDays = diffMs / (24 * 60 * 60 * 1000);
+      return diffDays >= 0 && diffDays <= 3;
+    }
+
+    function buildBannerSlide(rowData){
+      const a = document.createElement('a');
+      a.href = '#';
+      a.className = 'bd-banner';
+      a.dataset.id = rowData.id;
+      a.dataset.caminho = rowData.imagem_caminho || '';
+      a.addEventListener('click', (e) => e.preventDefault());
+
+      const bgHtml = rowData.imagem_url
+        ? '<div class="bd-banner-bg" style="background-image:url(\'' + rowData.imagem_url + '\')"></div>'
+        : '<div class="bd-banner-icon"><svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15 9 22 10 17 15 18 22 12 18.5 6 22 7 15 2 10 9 9Z"/></svg></div>';
+      if(!rowData.imagem_url){
+        a.style.background = GRADIENTS[gradientTurn % GRADIENTS.length];
+        gradientTurn++;
+      }
+
+      a.innerHTML =
+        bgHtml +
+        '<div class="bd-banner-top">' +
+          '<span class="bd-live-badge"><span class="bd-live-pulse"></span> ' + (isSoon(rowData.data) ? 'ACONTECENDO EM BREVE' : 'EM BREVE') + '</span>' +
+          '<span class="bd-live-time"></span>' +
+        '</div>' +
+        '<div class="bd-banner-body">' +
+          '<h3 class="bd-banner-title"></h3>' +
+          '<p class="bd-banner-meta"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg><span></span></p>' +
+        '</div>';
+      a.querySelector('.bd-live-time').textContent = fmtDateLabel(rowData.data) + (rowData.hora ? ' · ' + rowData.hora : '');
+      a.querySelector('.bd-banner-title').textContent = rowData.titulo;
+      a.querySelector('.bd-banner-meta span').textContent = rowData.local || 'Sede do Clube';
+
+      if(canManageBanners()){
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'bd-banner-remove-btn';
+        del.setAttribute('aria-label', 'Remover destaque');
+        del.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+        del.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if(!confirm('Remover este destaque?')) return;
+          stopAutoplay();
+          const dotIndex = slides.indexOf(a);
+          if(a.dataset.caminho) await supa.storage.from('arquivos').remove([a.dataset.caminho]);
+          await supa.from('banners_home').delete().eq('id', rowData.id);
+          a.remove();
+          if(dots[dotIndex]) dots[dotIndex].remove();
+          refreshRefs();
+        });
+        a.appendChild(del);
+      }
+      return a;
+    }
+
+    async function loadDynamicBanners(){
+      if(!supa) return;
+      const { data, error } = await supa.from('banners_home').select('*').order('data');
+      if(error){ console.error('Erro ao carregar destaques:', error.message); return; }
+      (data || []).forEach(rowData => {
+        row.insertBefore(buildBannerSlide(rowData), addBtn);
+        const dot = document.createElement('span');
+        dot.className = 'bd-banner-dot';
+        dotsWrap.appendChild(dot);
+      });
+    }
+
+    const addBtn = document.getElementById('bdBannerAddBtn');
+    const modalOverlay = document.getElementById('bnModalOverlay');
+    const fieldTitle = document.getElementById('bnFieldTitle');
+    const fieldDate = document.getElementById('bnFieldDate');
+    const fieldTime = document.getElementById('bnFieldTime');
+    const fieldLocal = document.getElementById('bnFieldLocal');
+    const photoCameraInput = document.getElementById('bnPhotoCamera');
+    const photoUploadInput = document.getElementById('bnPhotoUpload');
+    const photoPreview = document.getElementById('bnPhotoPreview');
+    const photoPreviewImg = document.getElementById('bnPhotoPreviewImg');
+    const photoRemoveBtn = document.getElementById('bnPhotoRemove');
+    const modalClose = document.getElementById('bnModalClose');
+    const saveBtn = document.getElementById('bnSaveBtn');
+    let photoFile = null;
+
+    function setPhoto(dataUrl, file){
+      photoFile = file || null;
+      if(dataUrl){
+        photoPreviewImg.src = dataUrl;
+        photoPreview.style.display = '';
+      } else {
+        photoPreviewImg.src = '';
+        photoPreview.style.display = 'none';
+      }
+    }
+    function handleFile(file){
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => setPhoto(e.target.result, file);
+      reader.readAsDataURL(file);
+    }
+    photoCameraInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+    photoUploadInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+    photoRemoveBtn.addEventListener('click', () => setPhoto('', null));
+
+    function openBannerModal(){
+      fieldTitle.value = '';
+      fieldDate.value = '';
+      fieldTime.value = '';
+      fieldLocal.value = '';
+      photoCameraInput.value = '';
+      photoUploadInput.value = '';
+      setPhoto('', null);
+      modalOverlay.classList.add('show');
+      setTimeout(() => fieldTitle.focus(), 150);
+    }
+    function closeBannerModal(){ modalOverlay.classList.remove('show'); }
+
+    if(addBtn) addBtn.addEventListener('click', openBannerModal);
+    modalClose.addEventListener('click', closeBannerModal);
+    modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) closeBannerModal(); });
+
+    saveBtn.addEventListener('click', async () => {
+      const titulo = fieldTitle.value.trim();
+      const data = fieldDate.value;
+      if(!titulo){ fieldTitle.style.borderColor = '#FF6B5C'; return; }
+      if(!data){ fieldDate.style.borderColor = '#FF6B5C'; return; }
+      if(!supa) return;
+
+      const payload = { titulo, data, hora: fieldTime.value || null, local: fieldLocal.value.trim() || 'Sede do Clube' };
+      const { data: inserted, error } = await supa.from('banners_home').insert(payload).select().single();
+      if(error){ console.error('Erro ao salvar destaque:', error.message); alert('Não foi possível salvar o destaque.'); return; }
+
+      closeBannerModal();
+
+      if(photoFile){
+        const path = 'banner_home/' + inserted.id + '/' + Date.now() + '-' + safeFileName(photoFile.name);
+        const { error: upErr } = await supa.storage.from('arquivos').upload(path, photoFile);
+        if(!upErr){
+          const imagemUrl = supa.storage.from('arquivos').getPublicUrl(path).data.publicUrl;
+          await supa.from('banners_home').update({ imagem_caminho: path, imagem_url: imagemUrl }).eq('id', inserted.id);
+          inserted.imagem_caminho = path;
+          inserted.imagem_url = imagemUrl;
+        } else {
+          console.error('Upload da imagem falhou:', upErr.message);
+        }
+      }
+
+      stopAutoplay();
+      row.insertBefore(buildBannerSlide(inserted), addBtn);
+      const dot = document.createElement('span');
+      dot.className = 'bd-banner-dot';
+      dotsWrap.appendChild(dot);
+      refreshRefs();
+    });
+
+    function updateAddBtnVisibility(){
+      if(addBtn) addBtn.style.display = canManageBanners() ? '' : 'none';
+    }
+    document.addEventListener('cedros:loggedin', updateAddBtnVisibility);
+    updateAddBtnVisibility();
+
+    loadDynamicBanners().then(refreshRefs);
   })();
 
   // Registers the service worker so the app can be installed and opened offline.

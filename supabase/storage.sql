@@ -80,3 +80,28 @@ alter table atividades_classe enable row level security;
 drop policy if exists "atividades_classe: acesso publico" on atividades_classe;
 create policy "atividades_classe: acesso publico" on atividades_classe
   for all using (true) with check (true);
+
+-- ---------------------------------------------------------------------
+-- banners_home: destaques extras do carrossel na tela Início (botão "+"
+-- no canto do carrossel, só visível pra Administrador/Diretoria
+-- Executiva). Os 4 banners fixos que já vêm no HTML continuam intocados;
+-- esta tabela só guarda os adicionados manualmente. A foto é opcional —
+-- sem foto, o destaque usa um fundo em degradê + ícone, como os banners
+-- fixos sem imagem.
+-- ---------------------------------------------------------------------
+create table if not exists banners_home (
+  id uuid primary key default gen_random_uuid(),
+  titulo text not null,
+  data date not null,
+  hora text,
+  local text not null default 'Sede do Clube',
+  imagem_caminho text, -- caminho no bucket 'arquivos', null se sem imagem
+  imagem_url text,
+  created_at timestamptz not null default now()
+);
+
+alter table banners_home enable row level security;
+
+drop policy if exists "banners_home: acesso publico" on banners_home;
+create policy "banners_home: acesso publico" on banners_home
+  for all using (true) with check (true);
