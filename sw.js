@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cedros-digital-v5';
+const CACHE_NAME = 'cedros-digital-v6';
 const ASSETS = [
   './login.html',
   './manifest.json',
@@ -33,10 +33,13 @@ self.addEventListener('fetch', (event) => {
   // HTML: network-first. The app updates often (login, permissions, admin
   // panel), and a cache-first HTML response can get a visitor permanently
   // stuck on an old version — including old, less-restrictive login logic.
-  // Falls back to the cached copy only when offline.
+  // Falls back to the cached copy only when offline. cache:'reload' forces a
+  // real network round-trip instead of letting fetch() silently resolve from
+  // the browser's own HTTP cache — without it, "network-first" here was only
+  // nominal, and a visitor could stay on stale HTML indefinitely.
   if (event.request.mode === 'navigate' || event.request.destination === 'document') {
     event.respondWith(
-      fetch(event.request)
+      fetch(event.request, { cache: 'reload' })
         .then((response) => {
           const copy = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
