@@ -8498,6 +8498,21 @@
     views.forEach(v => v.classList.toggle('active', v.id === id));
   }
 
+  // ---- Modo imersivo: some com a barra de navegação do Android (3 riscos/quadrado/voltar),
+  // que volta a aparecer com um toque/gesto e some de novo sozinha em seguida. Precisa de um
+  // gesto do usuário pra funcionar, então dispara no primeiro toque em qualquer lugar do app.
+  (function(){
+    function tryFullscreen(){
+      const el = document.documentElement;
+      if(document.fullscreenElement || !el.requestFullscreen) return;
+      el.requestFullscreen().catch(() => {});
+    }
+    document.addEventListener('pointerdown', function once(){
+      document.removeEventListener('pointerdown', once);
+      tryFullscreen();
+    }, { once: true });
+  })();
+
   // ---- Barra de status do app (dashboard): horário ao vivo + indicador de conexão ----
   (function(){
     const bar = document.getElementById('bdDeviceBar');

@@ -4,7 +4,7 @@
   "description": "App do Clube de Desbravadores Cedros",
   "start_url": "./login.html",
   "scope": "./",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "portrait",
   "background_color": "#0A130C",
   "theme_color": "#0B120C",
