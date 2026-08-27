@@ -841,6 +841,19 @@
   }
   .pl-day-filter-chip button:active{ background:rgba(255,255,255,0.18); }
 
+  /* ---- Planejamento Anual: chip do filtro por mês (segue a navegação do calendário) ---- */
+  .pl-month-filter-chip{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin:0 0 14px; padding:9px 8px 9px 14px;
+    background:rgba(91,155,255,0.12); border:1px solid rgba(91,155,255,0.3); border-radius:14px;
+    font-size:12.5px; font-weight:800; color:#5B9BFF;
+  }
+  .pl-month-filter-chip button{
+    flex-shrink:0; border:none; cursor:pointer; padding:6px 12px; border-radius:20px;
+    background:rgba(255,255,255,0.1); color:var(--cream); font-size:11.5px; font-weight:800;
+  }
+  .pl-month-filter-chip button:active{ background:rgba(255,255,255,0.18); }
+
   /* ---- Planejamento Anual: busca de eventos ---- */
   .pl-search-wrap{ position:relative; margin:0 0 14px; }
   .pl-search-wrap .pl-search-icon{ position:absolute; left:12px; top:50%; transform:translateY(-50%); color:rgba(245,239,225,0.4); }
@@ -2870,6 +2883,11 @@
               <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
             </div>
             <div class="pl-cal-grid" id="plCalGrid"></div>
+          </div>
+
+          <div class="pl-month-filter-chip" id="plMonthFilterChip" style="display:none;">
+            <span id="plMonthFilterLabel"></span>
+            <button type="button" id="plMonthFilterToggle"></button>
           </div>
 
           <div class="pl-day-filter-chip" id="plDayFilterChip" style="display:none;">
@@ -8897,10 +8915,28 @@
 
     let activeDayFilter = null; // { monIdx, day } — setado ao tocar um dia com evento no calendário
 
+    // Lista de eventos acompanha o mês navegado no calendário (liga por padrão);
+    // "Ver ano todo" desliga esse filtro sem perder o mês em exibição no calendário.
+    let monthFilterOn = true;
+
+    function updateMonthFilterChip(){
+      const chip = document.getElementById('plMonthFilterChip');
+      const label = document.getElementById('plMonthFilterLabel');
+      const toggleBtn = document.getElementById('plMonthFilterToggle');
+      if(!chip || !label || !toggleBtn) return;
+      if(activeDayFilter){ chip.style.display = 'none'; return; }
+      label.textContent = monthFilterOn
+        ? 'Mostrando ' + MONTH_NAMES_PT[calViewMonth - 1]
+        : 'Mostrando ano todo';
+      toggleBtn.textContent = monthFilterOn ? 'Ver ano todo' : 'Ver só ' + MONTH_NAMES_PT[calViewMonth - 1];
+      chip.style.display = '';
+    }
+
     function jumpToDay(monIdx, day){
       activeDayFilter = { monIdx, day };
       renderCalendarGrid();
       applyPlanningFilters();
+      updateMonthFilterChip();
 
       const dayFilterChip = document.getElementById('plDayFilterChip');
       const dayFilterLabel = document.getElementById('plDayFilterLabel');
@@ -8923,6 +8959,7 @@
       if(dayFilterChip) dayFilterChip.style.display = 'none';
       renderCalendarGrid();
       applyPlanningFilters();
+      updateMonthFilterChip();
     }
 
     const calPrevBtn = document.getElementById('plCalPrev');
@@ -8930,12 +8967,29 @@
     if(calPrevBtn) calPrevBtn.addEventListener('click', () => {
       calViewMonth--;
       if(calViewMonth < 1){ calViewMonth = 12; calViewYear--; }
+      activeDayFilter = null;
+      const dayFilterChip = document.getElementById('plDayFilterChip');
+      if(dayFilterChip) dayFilterChip.style.display = 'none';
       renderCalendarGrid();
+      applyPlanningFilters();
+      updateMonthFilterChip();
     });
     if(calNextBtn) calNextBtn.addEventListener('click', () => {
       calViewMonth++;
       if(calViewMonth > 12){ calViewMonth = 1; calViewYear++; }
+      activeDayFilter = null;
+      const dayFilterChip = document.getElementById('plDayFilterChip');
+      if(dayFilterChip) dayFilterChip.style.display = 'none';
       renderCalendarGrid();
+      applyPlanningFilters();
+      updateMonthFilterChip();
+    });
+
+    const monthFilterToggleBtn = document.getElementById('plMonthFilterToggle');
+    if(monthFilterToggleBtn) monthFilterToggleBtn.addEventListener('click', () => {
+      monthFilterOn = !monthFilterOn;
+      updateMonthFilterChip();
+      applyPlanningFilters();
     });
 
     // Insere um card na posição cronologicamente correta da lista corrida
@@ -9011,6 +9065,7 @@
       });
       insertCardChronologically(newCard, monIdx, parseInt(dayStr, 10));
       updatePlanningStats();
+      applyPlanningFilters();
 
       closeModal();
       refreshReminderBell();
@@ -9020,6 +9075,7 @@
       if(!editingCard) return;
       editingCard.remove();
       updatePlanningStats();
+      applyPlanningFilters();
       closeModal();
       refreshReminderBell();
     }
@@ -9048,7 +9104,8 @@
         const matchesTerm = !term || normalizePl(card.dataset.title).includes(term) || normalizePl(card.dataset.local).includes(term);
         const matchesTag = activeTagFilters.size === 0 || activeTagFilters.has(card.dataset.tag);
         const matchesDay = !activeDayFilter || (parseInt(card.dataset.monIndex, 10) === activeDayFilter.monIdx && parseInt(card.dataset.day, 10) === activeDayFilter.day);
-        card.style.display = (matchesTerm && matchesTag && matchesDay) ? '' : 'none';
+        const matchesMonth = !monthFilterOn || activeDayFilter || parseInt(card.dataset.monIndex, 10) === calViewMonth;
+        card.style.display = (matchesTerm && matchesTag && matchesDay && matchesMonth) ? '' : 'none';
       });
     }
 
@@ -9065,6 +9122,10 @@
     });
     const dayFilterClearBtn = document.getElementById('plDayFilterClear');
     if(dayFilterClearBtn) dayFilterClearBtn.addEventListener('click', clearDayFilter);
+
+    // Estado inicial: lista já nasce filtrada pelo mês atual do calendário.
+    updateMonthFilterChip();
+    applyPlanningFilters();
 
     addBtn.addEventListener('click', () => openModal('create'));
     closeBtn.addEventListener('click', closeModal);
