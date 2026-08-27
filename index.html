@@ -654,6 +654,8 @@
     padding:5px 10px; border-radius:20px; margin-bottom:12px;
   }
   .pl-view-title{ margin:0 0 8px; font-size:18px; font-weight:900; color:var(--cream); }
+  .pl-view-photo{ margin:0 0 14px; border-radius:14px; overflow:hidden; }
+  .pl-view-photo img{ display:block; width:100%; height:160px; object-fit:cover; }
   .pl-view-row{ display:flex; align-items:center; gap:9px; margin-bottom:8px; color:rgba(245,239,225,0.8); font-size:13.5px; font-weight:600; }
   .pl-view-row svg{ flex-shrink:0; color:rgba(245,239,225,0.4); }
   .pl-view-block{ margin-top:14px; }
@@ -3054,6 +3056,27 @@
           <label class="pl-field-label">Observação</label>
           <textarea class="pl-input pl-textarea" id="plFieldNote" rows="2" placeholder="Observações internas, o que levar, etc." maxlength="300"></textarea>
 
+          <label class="pl-field-label">Foto do evento</label>
+          <div class="cl-photo-row">
+            <label class="cl-photo-btn" for="plPhotoCamera">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h7l1 1.5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg>
+              Tirar foto
+              <input type="file" accept="image/*" capture="environment" id="plPhotoCamera" hidden>
+            </label>
+            <label class="cl-photo-btn" for="plPhotoUpload">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4 7 9M12 4l5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+              Enviar da galeria
+              <input type="file" accept="image/*" id="plPhotoUpload" hidden>
+            </label>
+          </div>
+
+          <div class="cl-photo-preview" id="plPhotoPreview" style="display:none;">
+            <img id="plPhotoPreviewImg" alt="Pré-visualização da foto">
+            <button type="button" class="cl-photo-remove" id="plPhotoRemove" aria-label="Remover foto">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
           <div class="pl-reminder-box">
             <label class="pl-reminder-toggle-row" for="plFieldReminderOn">
               <span class="pl-reminder-toggle-text">
@@ -3128,6 +3151,10 @@
 
           <h3 class="pl-view-title" id="plViewTitle">—</h3>
           <span class="pl-event-tag" id="plViewTag" style="margin-bottom:14px;"></span>
+
+          <div class="pl-view-photo" id="plViewPhotoBlock" style="display:none;">
+            <img id="plViewPhotoImg" alt="Foto do evento">
+          </div>
 
           <div class="pl-view-row">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg>
@@ -7758,6 +7785,11 @@
     let customTagColor = 'green';
     const fieldDesc = document.getElementById('plFieldDesc');
     const fieldNote = document.getElementById('plFieldNote');
+    const photoCameraInput = document.getElementById('plPhotoCamera');
+    const photoUploadInput = document.getElementById('plPhotoUpload');
+    const photoPreview = document.getElementById('plPhotoPreview');
+    const photoPreviewImg = document.getElementById('plPhotoPreviewImg');
+    const photoRemoveBtn = document.getElementById('plPhotoRemove');
     const fieldReminderOn = document.getElementById('plFieldReminderOn');
     const fieldReminderDate = document.getElementById('plFieldReminderDate');
     const fieldReminderMsg = document.getElementById('plFieldReminderMsg');
@@ -7789,6 +7821,8 @@
     const viewDesc = document.getElementById('plViewDesc');
     const viewNoteBlock = document.getElementById('plViewNoteBlock');
     const viewNote = document.getElementById('plViewNote');
+    const viewPhotoBlock = document.getElementById('plViewPhotoBlock');
+    const viewPhotoImg = document.getElementById('plViewPhotoImg');
 
     let readOnlyMode = false;
 
@@ -7827,6 +7861,9 @@
       viewDesc.textContent = desc;
       viewNoteBlock.style.display = note ? '' : 'none';
       viewNote.textContent = note;
+      const foto = card.dataset.foto || '';
+      viewPhotoBlock.style.display = foto ? '' : 'none';
+      viewPhotoImg.src = foto || '';
       viewOverlay.classList.add('show');
     }
     function closeViewOnly(){ viewOverlay.classList.remove('show'); }
@@ -7834,6 +7871,33 @@
     viewOverlay.addEventListener('click', (e) => { if(e.target === viewOverlay) closeViewOnly(); });
 
     let editingCard = null; // null = creating new event
+    let currentPhotoData = '';
+
+    function setPhoto(dataUrl){
+      currentPhotoData = dataUrl || '';
+      if(currentPhotoData){
+        photoPreviewImg.src = currentPhotoData;
+        photoPreview.style.display = '';
+      } else {
+        photoPreviewImg.src = '';
+        photoPreview.style.display = 'none';
+      }
+    }
+
+    function handleFile(file){
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => setPhoto(e.target.result);
+      reader.readAsDataURL(file);
+    }
+
+    photoCameraInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+    photoUploadInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+    photoRemoveBtn.addEventListener('click', () => {
+      setPhoto('');
+      photoCameraInput.value = '';
+      photoUploadInput.value = '';
+    });
 
     function toggleReminderFields(){
       reminderFields.classList.toggle('show', fieldReminderOn.checked);
@@ -7884,6 +7948,8 @@
 
     function openModal(mode, card, preset){
       editingCard = card || null;
+      photoCameraInput.value = '';
+      photoUploadInput.value = '';
       if(mode === 'edit' && card){
         modalTitle.textContent = 'Editar Evento';
         deleteBtn.style.display = '';
@@ -7903,6 +7969,7 @@
         fieldRepeatOn.checked = card.dataset.reminderRepeatOn === '1';
         fieldRepeatDays.value = card.dataset.reminderRepeatDays || '';
         fieldRepeatCount.value = card.dataset.reminderRepeatCount || '';
+        setPhoto(card.dataset.foto || '');
       } else {
         modalTitle.textContent = 'Novo Evento';
         deleteBtn.style.display = 'none';
@@ -7922,6 +7989,7 @@
         fieldRepeatOn.checked = false;
         fieldRepeatDays.value = '';
         fieldRepeatCount.value = '';
+        setPhoto('');
       }
       toggleReminderFields();
       toggleRepeatFields();
@@ -7997,6 +8065,7 @@
       a.dataset.tagLabel = data.tagLabel;
       a.dataset.desc = data.desc;
       a.dataset.note = data.note;
+      a.dataset.foto = data.foto || '';
       a.dataset.reminderOn = data.reminderOn ? '1' : '0';
       a.dataset.reminderDate = data.reminderDate || '';
       a.dataset.reminderMsg = data.reminderMsg || '';
@@ -8092,6 +8161,7 @@
         tagLabel: row.tag_label,
         desc: row.descricao || '',
         note: row.observacao || '',
+        foto: row.foto || '',
         reminderOn: !!row.lembrete_on,
         reminderDate: row.lembrete_data || '',
         reminderMsg: row.lembrete_mensagem || '',
@@ -8428,6 +8498,7 @@
         tag_label: tagLabel,
         descricao: desc || null,
         observacao: note || null,
+        foto: currentPhotoData || null,
         lembrete_on: reminderOn,
         lembrete_data: reminderDate || null,
         lembrete_mensagem: reminderMsg || null,
@@ -13114,10 +13185,19 @@ const REQ_SUMMARIES = {
       const now = new Date();
       upcoming.forEach(({ card, date }, i) => {
         const tag = card.dataset.tag || 'gray';
+        const foto = card.dataset.foto || '';
         const banner = document.createElement('a');
         banner.href = '#';
         banner.className = 'bd-banner' + (i === 0 ? ' active' : '');
-        banner.style.background = TAG_GRADIENT[tag] || TAG_GRADIENT.gray;
+        // Com foto, ela preenche o card mantendo a proporção (cover) e centralizada, sem
+        // esticar/deformar; sem foto, cai no degradê + ícone decorativo de sempre.
+        if(foto){
+          banner.style.backgroundImage = 'url("' + foto.replace(/"/g, '%22') + '")';
+          banner.style.backgroundSize = 'cover';
+          banner.style.backgroundPosition = 'center';
+        } else {
+          banner.style.background = TAG_GRADIENT[tag] || TAG_GRADIENT.gray;
+        }
         banner.dataset.eventId = card.dataset.id;
         banner._sourceCard = card;
 
@@ -13127,7 +13207,7 @@ const REQ_SUMMARIES = {
         const timeStr = date.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
 
         banner.innerHTML =
-          '<div class="bd-banner-icon"><svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg></div>' +
+          (foto ? '' : '<div class="bd-banner-icon"><svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg></div>') +
           '<div class="bd-banner-top">' +
             '<span class="bd-live-badge"><span class="bd-live-pulse"></span> ' + badgeText + '</span>' +
             '<span class="bd-live-time">' + dateStr + ' · ' + timeStr + '</span>' +

@@ -285,6 +285,7 @@ create table if not exists eventos_agenda (
   tag_label text not null default 'Outro',
   descricao text,
   observacao text,
+  foto text,
   lembrete_on boolean not null default false,
   lembrete_data date,
   lembrete_mensagem text,
@@ -297,6 +298,10 @@ create table if not exists eventos_agenda (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Coluna adicionada depois da criação inicial da tabela (rodar de novo é seguro) —
+-- foto do evento (base64), mesmo padrão de Classes Regulares/Cantinho da Unidade.
+alter table eventos_agenda add column if not exists foto text;
 
 create or replace function set_updated_at_eventos_agenda()
 returns trigger language plpgsql as $$
