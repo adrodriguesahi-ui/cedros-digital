@@ -67,6 +67,10 @@ alter table usuarios add column if not exists aprovado boolean not null default 
 -- Cargo específico da pessoa (ex.: "Diretor Associado"), diferente do papel/permissão.
 -- Opcional: só quem tem um cargo definido mostra isso no painel em vez de presenças.
 alter table usuarios add column if not exists cargo text;
+-- Data de nascimento: alimenta a lista de Aniversariantes (mês atual) e o
+-- destaque de "aniversário hoje" no dashboard. Coletada no cadastro, mas
+-- editável em Administração → Usuários pra quem já tinha conta sem isso.
+alter table usuarios add column if not exists data_nascimento date;
 
 insert into usuarios (nome, email, unidade, papel) values
   ('Adrodrigues Santos', 'adrodrigues@cedrosdigital.org', 'Ype', 'Administrador'),

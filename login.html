@@ -1776,6 +1776,13 @@
   }
   .bd-reminder-banner-confirm:active{ transform:scale(0.9); background:rgba(255,255,255,0.35); }
 
+  .bd-birthday-banner{
+    background:linear-gradient(120deg, #B98BFF, #D8A83E);
+    box-shadow:0 10px 24px rgba(185,139,255,0.35);
+    animation:none;
+  }
+  .bd-birthday-banner .bd-reminder-banner-icon{ font-size:18px; animation:none; }
+
   .bd-access-sim-banner{
     display:flex; align-items:center; gap:9px; width:calc(100% - 32px); margin:8px 16px 4px;
     padding:10px 12px; border-radius:14px;
@@ -6864,69 +6871,11 @@
           <h3 class="pl-title">Aniversariantes</h3>
           <span class="pl-topbar-spacer" aria-hidden="true"></span>
         </div>
-        <div class="pl-content" id="btContent">
-            <a href="#" class="pl-event-card bt-card" data-name="Lucas Andrade" data-day="18" data-mon="AGO" data-unit="Ype" data-color="green">
-              <div class="pl-event-date"><b>18</b><em>AGO</em></div>
-              <div class="pl-event-body">
-                <h4 class="pl-event-title">Lucas Andrade</h4>
-                <p class="pl-event-meta">Unidade Ype</p>
-              </div>
-              <span class="pl-event-tag pl-tag-green">🎂</span>
-            </a>
-            <a href="#" class="pl-event-card bt-card" data-name="Mariana Souza" data-day="24" data-mon="AGO" data-unit="Pinheiro" data-color="blue">
-              <div class="pl-event-date"><b>24</b><em>AGO</em></div>
-              <div class="pl-event-body">
-                <h4 class="pl-event-title">Mariana Souza</h4>
-                <p class="pl-event-meta">Unidade Pinheiro</p>
-              </div>
-              <span class="pl-event-tag pl-tag-blue">🎂</span>
-            </a>
-            <a href="#" class="pl-event-card bt-card" data-name="Rafael Lima" data-day="02" data-mon="SET" data-unit="Cedros Rosa" data-color="red">
-              <div class="pl-event-date"><b>02</b><em>SET</em></div>
-              <div class="pl-event-body">
-                <h4 class="pl-event-title">Rafael Lima</h4>
-                <p class="pl-event-meta">Unidade Cedros Rosa</p>
-              </div>
-              <span class="pl-event-tag pl-tag-red">🎂</span>
-            </a>
-        </div>
-      </div>
-      <button type="button" class="pl-fab" id="btAddBtn" aria-label="Adicionar aniversariante">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      </button>
-      <div class="pl-modal-overlay" id="btModalOverlay">
-        <div class="pl-modal">
-          <div class="pl-modal-head">
-            <h4 class="pl-modal-title" id="btModalTitle">Novo Aniversariante</h4>
-            <button type="button" class="pl-modal-close" id="btModalClose" aria-label="Fechar">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-          <label class="pl-field-label">Nome</label>
-          <input type="text" class="pl-input" id="btFieldName" placeholder="Nome completo" maxlength="60">
-          <div class="pl-field-row">
-            <div class="pl-field-col">
-              <label class="pl-field-label">Dia</label>
-              <input type="number" class="pl-input" id="btFieldDay" min="1" max="31" placeholder="Dia">
-            </div>
-            <div class="pl-field-col pl-field-col-wide">
-              <label class="pl-field-label">Mês</label>
-              <select class="pl-input" id="btFieldMonth"><option value="JAN">Janeiro</option><option value="FEV">Fevereiro</option><option value="MAR">Março</option><option value="ABR">Abril</option><option value="MAI">Maio</option><option value="JUN">Junho</option><option value="JUL">Julho</option><option value="AGO" selected>Agosto</option><option value="SET">Setembro</option><option value="OUT">Outubro</option><option value="NOV">Novembro</option><option value="DEZ">Dezembro</option></select>
-            </div>
-          </div>
-          <label class="pl-field-label">Unidade</label>
-          <select class="pl-input" id="btFieldUnit">
-            <option value="Ype" data-color="green">Ype</option>
-            <option value="Ype Roxo" data-color="purple">Ype Roxo</option>
-            <option value="Pinheiro" data-color="blue">Pinheiro</option>
-            <option value="Cedros" data-color="gold">Cedros</option>
-            <option value="Cedros Rosa" data-color="red">Cedros Rosa</option>
-            <option value="Flanboyan" data-color="gold">Flanboyan</option>
-            <option value="Jacarandá" data-color="gray">Jacarandá</option>
-          </select>
-          <div class="pl-modal-actions">
-            <button type="button" class="pl-btn pl-btn-danger" id="btDeleteBtn" style="display:none;">Excluir</button>
-            <button type="button" class="pl-btn pl-btn-primary" id="btSaveBtn">Salvar</button>
+        <div class="pl-content">
+          <label class="pl-field-label" style="margin-top:0;">Mês</label>
+          <select class="pl-input" id="btMonthSelect" style="margin-bottom:14px;"></select>
+          <div id="btContent">
+            <p class="un-empty-hint">Carregando...</p>
           </div>
         </div>
       </div>
@@ -7274,9 +7223,17 @@
           </div>
           <p class="pl-reminder-hint" id="adRoleHint">Selecione a função do usuário.</p>
 
-          <label class="pl-field-label">Cargo (opcional)</label>
-          <input type="text" class="pl-input" id="adFieldCargo" placeholder="Ex.: Diretor Associado" maxlength="40">
-          <p class="pl-reminder-hint">Se preenchido, aparece no painel dessa pessoa no lugar da frequência de presenças.</p>
+          <div class="ad-field-row">
+            <div>
+              <label class="pl-field-label">Cargo (opcional)</label>
+              <input type="text" class="pl-input" id="adFieldCargo" placeholder="Ex.: Diretor Associado" maxlength="40">
+            </div>
+            <div>
+              <label class="pl-field-label">Data de nascimento</label>
+              <input type="date" class="pl-input" id="adFieldBirthdate">
+            </div>
+          </div>
+          <p class="pl-reminder-hint">Cargo, se preenchido, aparece no painel dessa pessoa no lugar da frequência de presenças. A data de nascimento alimenta a lista de Aniversariantes.</p>
 
           <button type="button" class="pl-btn" id="adUserAccessBtn" style="background:rgba(255,255,255,0.08); color:var(--cream); margin-top:4px; display:none;">
             Definir acesso por área deste usuário
@@ -7419,6 +7376,14 @@
           </button>
         </div>
 
+        <div class="bd-reminder-banner bd-birthday-banner" id="bdBirthdayBanner" role="button" tabindex="0" data-goto="view-birthdays" style="display:none;">
+          <span class="bd-reminder-banner-icon">🎂</span>
+          <span class="bd-reminder-banner-body">
+            <span class="bd-reminder-banner-title">Aniversário hoje</span>
+            <span class="bd-reminder-banner-msg" id="bdBirthdayBannerMsg"></span>
+          </span>
+        </div>
+
         <div class="bd-access-sim-banner" id="bdAccessSimBanner" style="display:none;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
           <span class="bd-access-sim-text">Pré-visualizando o menu de <b id="bdAccessSimName"></b></span>
@@ -7429,7 +7394,7 @@
           <a href="#" class="bd-chip" id="bdMembersChip"><b>56</b> Membros</a>
           <span class="bd-chip"><b>12</b> Especialidades</span>
           <span class="bd-chip"><b>18/20</b> Presença</span>
-          <span class="bd-chip"><b>3</b> Aniversariantes</span>
+          <a href="#" class="bd-chip" data-goto="view-birthdays" id="bdBirthdayChip"><b>3</b> Aniversariantes</a>
         </div>
 
         <div class="toast" id="bdAccessToast" role="status" aria-live="polite">
@@ -11341,22 +11306,119 @@
     }
   });
 
-  // Aniversariantes
-  setupSimpleListScreen({
-    prefix: 'bt', cardClass: 'bt-card', required: 'Name',
-    createTitle: 'Novo Aniversariante', editTitle: 'Editar Aniversariante',
-    fields: [
-      {key:'Name', dataKey:'name'}, {key:'Day', dataKey:'day'}, {key:'Month', dataKey:'mon', default:'AGO'}, {key:'Unit', dataKey:'unit', default:'Ype'}
-    ],
-    buildCard(data){
-      const day = data.Day ? (data.Day.length === 1 ? '0' + data.Day : data.Day) : '--';
-      const unitOpt = document.querySelector('#btFieldUnit option[value="' + data.Unit + '"]');
-      const color = unitOpt ? unitOpt.getAttribute('data-color') : 'gray';
-      const card = dayMonthCard('pl-event-card bt-card', '<span class="pl-event-tag pl-tag-' + color + '">🎂</span>', day, data.Month, data.Name, 'Unidade ' + data.Unit);
-      card.dataset.name = data.Name; card.dataset.day = day; card.dataset.mon = data.Month; card.dataset.unit = data.Unit;
-      return card;
+  // Aniversariantes: lista real a partir de `usuarios.data_nascimento` (mês
+  // selecionável), destaque de "hoje" na lista, contador real no dashboard e
+  // saudação especial pro usuário logado no dia do próprio aniversário.
+  (function(){
+    const content = document.getElementById('btContent');
+    const monthSelect = document.getElementById('btMonthSelect');
+    if(!content || !monthSelect) return;
+
+    const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const MONTH_ABBR = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+    const UNIT_COLOR = { 'Ype':'green', 'Ype Roxo':'purple', 'Pinheiro':'blue', 'Cedros':'gold', 'Cedros Rosa':'red', 'Flanboyan':'orange', 'Jacarandá':'gray', 'Diretoria do Clube':'gray' };
+
+    const today = new Date();
+    let selectedMonth = today.getMonth() + 1;
+    let roster = [];
+
+    function birthdayParts(dateStr){
+      const p = dateStr.split('-').map(n => parseInt(n, 10));
+      return { month: p[1], day: p[2] };
     }
-  });
+
+    function populateMonths(){
+      monthSelect.innerHTML = '';
+      MONTH_NAMES.forEach((name, i) => {
+        const opt = document.createElement('option');
+        opt.value = i + 1;
+        opt.textContent = name;
+        if(i + 1 === selectedMonth) opt.selected = true;
+        monthSelect.appendChild(opt);
+      });
+    }
+
+    function render(){
+      const todayMonth = today.getMonth() + 1;
+      const todayDay = today.getDate();
+      const filtered = roster
+        .map(m => Object.assign({}, m, { parts: birthdayParts(m.data_nascimento) }))
+        .filter(m => m.parts.month === selectedMonth)
+        .sort((a, b) => a.parts.day - b.parts.day);
+
+      content.innerHTML = '';
+      if(!filtered.length){
+        content.innerHTML = '<p class="un-empty-hint">Nenhum aniversariante em ' + MONTH_NAMES[selectedMonth - 1] + '.</p>';
+      } else {
+        filtered.forEach(m => {
+          const isToday = m.parts.month === todayMonth && m.parts.day === todayDay;
+          const color = UNIT_COLOR[m.unidade] || 'gray';
+          const card = document.createElement('div');
+          card.className = 'pl-event-card bt-card';
+          card.innerHTML =
+            '<div class="pl-event-date"><b></b><em></em></div>' +
+            '<div class="pl-event-body"><h4 class="pl-event-title"></h4><p class="pl-event-meta"></p></div>' +
+            '<span class="pl-event-tag pl-tag-' + color + '"></span>';
+          card.querySelector('.pl-event-date b').textContent = String(m.parts.day).padStart(2, '0');
+          card.querySelector('.pl-event-date em').textContent = MONTH_ABBR[m.parts.month - 1];
+          card.querySelector('.pl-event-title').textContent = m.nome;
+          card.querySelector('.pl-event-meta').textContent = (m.unidade === 'Diretoria do Clube' ? 'Diretoria do Clube' : 'Unidade ' + m.unidade);
+          card.querySelector('.pl-event-tag').textContent = isToday ? '🎉 Hoje' : '🎂';
+          content.appendChild(card);
+        });
+      }
+      const hint = document.createElement('p');
+      hint.className = 'pl-reminder-hint';
+      hint.textContent = 'Lista sincronizada com Administração → Usuários (data de nascimento). Pra adicionar ou corrigir alguém, gerencie o cadastro por lá.';
+      content.appendChild(hint);
+    }
+
+    function updateDashboardWidgets(){
+      const todayMonth = today.getMonth() + 1;
+      const todayDay = today.getDate();
+      const thisMonthCount = roster.filter(m => birthdayParts(m.data_nascimento).month === todayMonth).length;
+      const chip = document.getElementById('bdBirthdayChip');
+      if(chip){ const b = chip.querySelector('b'); if(b) b.textContent = thisMonthCount; }
+
+      const todays = roster.filter(m => { const p = birthdayParts(m.data_nascimento); return p.month === todayMonth && p.day === todayDay; });
+      const banner = document.getElementById('bdBirthdayBanner');
+      const bannerMsg = document.getElementById('bdBirthdayBannerMsg');
+      if(banner && bannerMsg){
+        if(todays.length){
+          const names = todays.map(m => (m.nome || '').split(' ')[0]).join(', ');
+          bannerMsg.textContent = todays.length === 1 ? names + ' está de aniversário hoje! 🎉' : names + ' estão de aniversário hoje! 🎉';
+          banner.style.display = '';
+        } else {
+          banner.style.display = 'none';
+        }
+      }
+
+      const me = window.__currentUsuario;
+      if(me && me.data_nascimento){
+        const p = birthdayParts(me.data_nascimento);
+        if(p.month === todayMonth && p.day === todayDay){
+          const greetingEl = document.getElementById('bdGreeting');
+          if(greetingEl && greetingEl.childNodes[0]) greetingEl.childNodes[0].textContent = '🎉 Feliz aniversário, ' + (me.nome || '').split(' ')[0] + '! ';
+        }
+      }
+    }
+
+    async function loadRoster(){
+      roster = [];
+      if(supa){
+        const { data } = await supa.from('usuarios').select('id, nome, unidade, data_nascimento').not('data_nascimento', 'is', null);
+        roster = data || [];
+      }
+      render();
+      updateDashboardWidgets();
+    }
+
+    monthSelect.addEventListener('change', () => { selectedMonth = parseInt(monthSelect.value, 10); render(); });
+    document.addEventListener('cedros:loggedin', updateDashboardWidgets);
+
+    populateMonths();
+    loadRoster();
+  })();
 
   // Manual de Especialidades — base local de referência + busca
   const SPECIALTY_DB = {
@@ -12464,6 +12526,7 @@ const REQ_SUMMARIES = {
     const fieldUnit = document.getElementById('adFieldUnit');
     const fieldRole = document.getElementById('adFieldRole');
     const fieldCargo = document.getElementById('adFieldCargo');
+    const fieldBirthdate = document.getElementById('adFieldBirthdate');
     const userAccessBtn = document.getElementById('adUserAccessBtn');
     if(!content || !overlay) return;
 
@@ -12507,6 +12570,7 @@ const REQ_SUMMARIES = {
       card.dataset.role = row.papel;
       card.dataset.roleLabel = row.papel;
       card.dataset.cargo = row.cargo || '';
+      card.dataset.birthdate = row.data_nascimento || '';
       if(row.acesso) card.dataset.access = JSON.stringify(row.acesso);
       card.addEventListener('click', (e) => { e.preventDefault(); openModal('edit', card); });
       return card;
@@ -12604,6 +12668,7 @@ const REQ_SUMMARIES = {
       fieldUnit.value = card ? card.dataset.unit : 'Ype';
       fieldRole.value = card ? card.dataset.role : (fieldRole.options[0] ? fieldRole.options[0].value : '');
       fieldCargo.value = card ? (card.dataset.cargo || '') : '';
+      fieldBirthdate.value = card ? (card.dataset.birthdate || '') : '';
       userAccessBtn.style.display = (mode === 'edit') ? '' : 'none';
       window.__currentEditingUserCard = card || null;
       overlay.classList.add('show');
@@ -12619,7 +12684,8 @@ const REQ_SUMMARIES = {
         email: fieldEmail.value.trim(),
         unidade: fieldUnit.value,
         papel: fieldRole.value,
-        cargo: fieldCargo.value.trim() || null
+        cargo: fieldCargo.value.trim() || null,
+        data_nascimento: fieldBirthdate.value || null
       };
       if(editingCard) payload.id = editingCard.dataset.id;
       const { data, error } = await supa.from('usuarios').upsert(payload).select().single();
@@ -12893,7 +12959,7 @@ const REQ_SUMMARIES = {
   // (ou seja, ainda não foi liberado por um admin) — usado pra barrar o acesso.
   async function applyLoggedInUser(authUser){
     if(!supa || !authUser || !authUser.email) return { found: false };
-    const { data: row } = await supa.from('usuarios').select('id, nome, papel, acesso, aprovado, unidade, cargo').eq('email', authUser.email).maybeSingle();
+    const { data: row } = await supa.from('usuarios').select('id, nome, papel, acesso, aprovado, unidade, cargo, data_nascimento').eq('email', authUser.email).maybeSingle();
     if(!row || row.aprovado === false){ window.__currentUsuario = null; return { found: false }; }
     let access = row.acesso;
     if(!access){
@@ -12901,7 +12967,7 @@ const REQ_SUMMARIES = {
       access = def || (window.__ROLE_VISIBILITY && window.__ROLE_VISIBILITY[row.papel]) || {};
     }
     if(window.__applyAccessToDashboard) window.__applyAccessToDashboard(access, row.nome);
-    window.__currentUsuario = { id: row.id, nome: row.nome, email: authUser.email, papel: row.papel, unidade: row.unidade, cargo: row.cargo };
+    window.__currentUsuario = { id: row.id, nome: row.nome, email: authUser.email, papel: row.papel, unidade: row.unidade, cargo: row.cargo, data_nascimento: row.data_nascimento };
     window.__currentAuthUserId = authUser.id;
     document.dispatchEvent(new CustomEvent('cedros:loggedin', { detail: window.__currentUsuario }));
     if(window.__applyGreetingUnit) window.__applyGreetingUnit(window.__currentUsuario);
@@ -12957,7 +13023,8 @@ const REQ_SUMMARIES = {
       email: values.emailSignup.trim(),
       unidade: values.unidade,
       papel: 'Instrutores',
-      aprovado: false
+      aprovado: false,
+      data_nascimento: values.birthdate || null
     }, { onConflict: 'email', ignoreDuplicates: true });
     showView('view-success');
   }, 'signupAuthError');
