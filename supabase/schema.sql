@@ -466,3 +466,43 @@ alter table especialidades_concluidas enable row level security;
 drop policy if exists "especialidades_concluidas: acesso publico" on especialidades_concluidas;
 create policy "especialidades_concluidas: acesso publico" on especialidades_concluidas
   for all using (true) with check (true);
+
+-- ---------------------------------------------------------------------
+-- Presença real: `chamadas` é o cabeçalho de cada chamada (data, evento
+-- ligado à Agenda Anual quando aplicável, e se ela conta ou não pra
+-- frequência anual — chamadas de acampamento/evento avulso normalmente
+-- não devem contar). `chamada_presencas` é uma linha por desbravador
+-- por chamada. O `ano` fica gravado na própria chamada (eventos_agenda
+-- não tem ano — é um calendário recorrente por dia/mês), então a
+-- frequência de anos passados nunca muda.
+-- ---------------------------------------------------------------------
+create table if not exists chamadas (
+  id uuid primary key default gen_random_uuid(),
+  data date not null,
+  ano int not null,
+  evento_agenda_id uuid references eventos_agenda(id) on delete set null,
+  titulo text not null,
+  conta_presenca boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists chamada_presencas (
+  id uuid primary key default gen_random_uuid(),
+  chamada_id uuid not null references chamadas(id) on delete cascade,
+  usuario_id uuid not null references usuarios(id) on delete cascade,
+  presente boolean not null default true,
+  unique (chamada_id, usuario_id)
+);
+
+create index if not exists chamada_presencas_usuario_idx on chamada_presencas(usuario_id);
+
+alter table chamadas enable row level security;
+alter table chamada_presencas enable row level security;
+
+drop policy if exists "chamadas: acesso publico" on chamadas;
+create policy "chamadas: acesso publico" on chamadas
+  for all using (true) with check (true);
+
+drop policy if exists "chamada_presencas: acesso publico" on chamada_presencas;
+create policy "chamada_presencas: acesso publico" on chamada_presencas
+  for all using (true) with check (true);

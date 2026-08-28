@@ -6487,6 +6487,17 @@
                     <input type="text" class="pl-input" id="atCallEvent" placeholder="Ex.: Reunião de Sábado">
                   </div>
                 </div>
+                <label class="pl-reminder-toggle-row" for="atCallCountsToggle" style="margin-top:10px;">
+                  <span class="pl-reminder-toggle-text">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+                    Conta para a frequência anual
+                  </span>
+                  <span class="pl-switch">
+                    <input type="checkbox" id="atCallCountsToggle" checked>
+                    <span class="pl-switch-track"><span class="pl-switch-thumb"></span></span>
+                  </span>
+                </label>
+                <p class="pl-reminder-hint" style="margin-top:2px;">Desligue pra chamadas de eventos/acampamentos que não devem entrar no cálculo de presença de cada desbravador.</p>
                 <button type="button" class="pl-btn" id="atStartCallBtn" style="background:rgba(255,255,255,0.08); color:var(--cream); margin-top:10px;">Gerar lista de presença</button>
 
                 <div id="atChecklistWrap" style="display:none;">
@@ -7794,8 +7805,15 @@
         badgeEl.textContent = usuario.cargo;
         badgeEl.setAttribute('aria-label', 'Cargo: ' + usuario.cargo);
       } else {
-        badgeEl.textContent = '8/8 presenças';
-        badgeEl.setAttribute('aria-label', '8 de 8 reuniões frequentadas este ano');
+        badgeEl.textContent = '—/— presenças';
+        badgeEl.setAttribute('aria-label', 'Carregando frequência...');
+        if(window.__computeAttendanceLabel){
+          window.__computeAttendanceLabel(usuario.id).then(res => {
+            if(!res || usuario.cargo) return;
+            badgeEl.textContent = res.presentes + '/' + res.total + ' presenças';
+            badgeEl.setAttribute('aria-label', res.presentes + ' de ' + res.total + ' reuniões regulares frequentadas em ' + res.ano);
+          });
+        }
       }
     };
   })();
@@ -9840,6 +9858,19 @@
         r.querySelector('span').textContent = val || '—';
         wrap.appendChild(r);
       });
+      const attendRow = document.createElement('div');
+      attendRow.className = 'un-member-detail-row';
+      attendRow.innerHTML = '<b></b><span></span>';
+      attendRow.querySelector('b').textContent = 'Presença em ' + new Date().getFullYear();
+      attendRow.querySelector('span').textContent = 'Carregando...';
+      wrap.appendChild(attendRow);
+      if(window.__computeAttendanceLabel){
+        window.__computeAttendanceLabel(m.id).then(res => {
+          if(!res) return;
+          const pct = res.total ? Math.round(res.presentes / res.total * 100) : 0;
+          attendRow.querySelector('span').textContent = res.total ? (res.presentes + '/' + res.total + ' reuniões (' + pct + '%)') : 'Sem reuniões registradas ainda';
+        });
+      }
       document.getElementById('unMemberModalOverlay').classList.add('show');
     }
     document.getElementById('unMemberModalClose').addEventListener('click', () => document.getElementById('unMemberModalOverlay').classList.remove('show'));
@@ -10987,6 +11018,7 @@
     const historyEmpty = document.getElementById('atHistoryEmpty');
     const meetingSelect = document.getElementById('atCallMeetingSelect');
     const manualFields = document.getElementById('atCallManualFields');
+    const countsToggle = document.getElementById('atCallCountsToggle');
 
     const UNIT_COLOR = { 'Ype':'green', 'Ype Roxo':'purple', 'Pinheiro':'blue', 'Cedros':'gold', 'Cedros Rosa':'red', 'Flanboyan':'orange', 'Jacarandá':'gray' };
     const MONTHS_ABBR = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
@@ -10994,6 +11026,7 @@
     let roster = [];
     let history = [];
     let regularMeetings = [];
+    let selectedEventId = null;
 
     // "Nova Chamada" passa a partir das reuniões regulares reais da Agenda Anual
     // (supabase/schema.sql: eventos_agenda, títulos contendo "Reunião Regular"),
@@ -11009,7 +11042,7 @@
       if(error || !data) return;
       const year = new Date().getFullYear();
       regularMeetings = data.map(row => ({
-        day: row.dia, monIdx: row.mes_indice, title: row.titulo,
+        id: row.id, day: row.dia, monIdx: row.mes_indice, title: row.titulo,
         date: new Date(year, row.mes_indice - 1, row.dia)
       }));
       renderMeetingSelect();
@@ -11044,6 +11077,8 @@
         manualFields.style.display = '';
         callDate.value = '';
         callEvent.value = '';
+        selectedEventId = null;
+        if(countsToggle) countsToggle.checked = false;
         return;
       }
       manualFields.style.display = 'none';
@@ -11052,6 +11087,8 @@
       const iso = m.date.getFullYear() + '-' + String(m.monIdx).padStart(2, '0') + '-' + String(m.day).padStart(2, '0');
       callDate.value = iso;
       callEvent.value = m.title;
+      selectedEventId = m.id;
+      if(countsToggle) countsToggle.checked = true;
     }
     if(meetingSelect) meetingSelect.addEventListener('change', applyMeetingSelection);
     loadRegularMeetings();
@@ -11081,8 +11118,67 @@
       if(error || !data) return;
       roster = data.map(row => ({ id: row.id, name: row.nome, unit: row.unidade }));
       renderRoster();
+      loadHistoryFromSupabase();
     }
     loadRosterFromSupabase();
+
+    // Chamadas (cabeçalho) + chamada_presencas (por pessoa) — ver supabase/schema.sql.
+    // O ano fica gravado na própria chamada (não é derivado de "hoje"), então a
+    // frequência de anos anteriores nunca muda mesmo depois que o ano vira.
+    async function loadHistoryFromSupabase(){
+      if(!supa) return;
+      const { data: calls } = await supa.from('chamadas').select('id, data, titulo, conta_presenca, ano').order('data');
+      if(!calls){ history = []; renderHistory(); return; }
+      const ids = calls.map(c => c.id);
+      let presencas = [];
+      if(ids.length){
+        const { data } = await supa.from('chamada_presencas').select('chamada_id, usuario_id, presente').in('chamada_id', ids);
+        presencas = data || [];
+      }
+      const byChamada = {};
+      presencas.forEach(p => { (byChamada[p.chamada_id] = byChamada[p.chamada_id] || []).push(p); });
+      const rosterById = {};
+      roster.forEach(m => { rosterById[m.id] = m; });
+      history = calls.map(c => {
+        const parts = c.data.split('-').map(n => parseInt(n, 10));
+        const members = (byChamada[c.id] || []).map(p => {
+          const person = rosterById[p.usuario_id];
+          return { id: p.usuario_id, name: person ? person.name : '(removido)', unit: person ? person.unit : '—', present: p.presente };
+        });
+        return {
+          id: c.id,
+          day: String(parts[2]).padStart(2, '0'),
+          mon: MONTHS_ABBR[parts[1] - 1],
+          event: c.titulo,
+          contaPresenca: c.conta_presenca,
+          members,
+          presentCount: members.filter(m => m.present).length
+        };
+      });
+      renderHistory();
+    }
+
+    // Frequência real do usuário logado no ano atual: presenças em chamadas que
+    // contam pra frequência ÷ total de chamadas desse tipo já realizadas no ano.
+    async function computeAttendance(usuarioId, ano){
+      if(!supa) return { total: 0, presentes: 0, ano };
+      const { data: calls } = await supa.from('chamadas').select('id').eq('ano', ano).eq('conta_presenca', true);
+      const callIds = (calls || []).map(c => c.id);
+      if(!callIds.length) return { total: 0, presentes: 0, ano };
+      const { data: pres } = await supa.from('chamada_presencas').select('id').eq('usuario_id', usuarioId).eq('presente', true).in('chamada_id', callIds);
+      return { total: callIds.length, presentes: (pres || []).length, ano };
+    }
+    window.__computeAttendanceLabel = (usuarioId) => computeAttendance(usuarioId, new Date().getFullYear());
+
+    function refreshMyAttendanceBadge(){
+      const me = window.__currentUsuario;
+      const badgeEl = document.getElementById('bdAttendBadge');
+      if(!me || !badgeEl || me.cargo) return;
+      computeAttendance(me.id, new Date().getFullYear()).then(res => {
+        badgeEl.textContent = res.presentes + '/' + res.total + ' presenças';
+        badgeEl.setAttribute('aria-label', res.presentes + ' de ' + res.total + ' reuniões regulares frequentadas em ' + res.ano);
+      });
+    }
 
     function updateChecklistCount(){
       const total = checklist.querySelectorAll('.at-check-row').length;
@@ -11130,7 +11226,7 @@
         row.querySelector('.pl-event-date b').textContent = rec.day;
         row.querySelector('.pl-event-date em').textContent = rec.mon;
         row.querySelector('.pl-event-title').textContent = rec.event;
-        row.querySelector('.pl-event-meta').textContent = rec.members.length + ' desbravadores na lista';
+        row.querySelector('.pl-event-meta').textContent = rec.members.length + ' desbravadores na lista' + (rec.contaPresenca === false ? ' · não conta pra frequência' : '');
         row.querySelector('.pl-event-tag').textContent = rec.presentCount + '/' + rec.members.length + ' presentes';
         row.addEventListener('click', (e) => {
           e.preventDefault();
@@ -11186,20 +11282,26 @@
     function readEditChecklistMembers(){
       return editingRecord.members.map((m, i) => {
         const input = editChecklist.querySelector('input[data-idx="' + i + '"]');
-        return { name: m.name, unit: m.unit, present: input ? input.checked : m.present };
+        return { id: m.id, name: m.name, unit: m.unit, present: input ? input.checked : m.present };
       });
     }
 
     editCloseBtn.addEventListener('click', closeEditModal);
     editOverlay.addEventListener('click', (e) => { if(e.target === editOverlay) closeEditModal(); });
 
-    editSaveBtn.addEventListener('click', () => {
+    editSaveBtn.addEventListener('click', async () => {
       if(!editingRecord) return;
       const members = readEditChecklistMembers();
       editingRecord.members = members;
       editingRecord.presentCount = members.filter(m => m.present).length;
+      if(supa && editingRecord.id){
+        await Promise.all(members.filter(m => m.id).map(m =>
+          supa.from('chamada_presencas').update({ presente: m.present }).eq('chamada_id', editingRecord.id).eq('usuario_id', m.id)
+        ));
+      }
       renderHistory();
       closeEditModal();
+      refreshMyAttendanceBadge();
     });
 
     function buildAttendancePDF(rec, members){
@@ -11270,20 +11372,40 @@
       buildAttendancePDF(editingRecord, readEditChecklistMembers());
     });
 
-    saveCallBtn.addEventListener('click', () => {
+    saveCallBtn.addEventListener('click', async () => {
       const dateObj = new Date(callDate.value + 'T00:00:00');
       const monthsAbbr = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
       const members = Array.from(checklist.querySelectorAll('.at-check-row input')).map(input => ({
+        id: input.getAttribute('data-id'),
         name: input.getAttribute('data-name'),
         unit: input.getAttribute('data-unit'),
         present: input.checked
       }));
       const presentCount = members.filter(m => m.present).length;
+      const contaPresenca = countsToggle ? countsToggle.checked : true;
+
+      let chamadaId = null;
+      if(supa){
+        const { data: chamada, error } = await supa.from('chamadas').insert({
+          data: callDate.value,
+          ano: dateObj.getFullYear(),
+          evento_agenda_id: selectedEventId,
+          titulo: callEvent.value.trim(),
+          conta_presenca: contaPresenca
+        }).select().single();
+        if(!error && chamada){
+          chamadaId = chamada.id;
+          const rows = members.filter(m => m.id).map(m => ({ chamada_id: chamadaId, usuario_id: m.id, presente: m.present }));
+          if(rows.length) await supa.from('chamada_presencas').insert(rows);
+        }
+      }
 
       history.push({
+        id: chamadaId,
         day: String(dateObj.getDate()).padStart(2, '0'),
         mon: monthsAbbr[dateObj.getMonth()],
         event: callEvent.value.trim(),
+        contaPresenca,
         members,
         presentCount
       });
@@ -11293,6 +11415,7 @@
       callEvent.value = '';
       callDate.value = '';
       renderMeetingSelect();
+      refreshMyAttendanceBadge();
     });
 
     renderHistory();
