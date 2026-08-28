@@ -13075,6 +13075,14 @@ const REQ_SUMMARIES = {
     const row = document.getElementById('bdBannerRow');
     const dotsWrap = document.getElementById('bdBannerDots');
     const emptyMsg = document.getElementById('bdBannerEmpty');
+    // DEBUG TEMPORÁRIO: mostra ao vivo o que o toque está fazendo no banner, pra
+    // diagnosticar o arraste que não avança em pelo menos um aparelho real. Remover
+    // depois de identificar a causa.
+    const swipeDebug = document.createElement('div');
+    swipeDebug.style.cssText = 'position:absolute;top:6px;left:6px;z-index:50;background:rgba(0,0,0,.75);color:#7CFC7C;font:11px/1.3 monospace;padding:3px 7px;border-radius:6px;pointer-events:none;white-space:pre;';
+    swipeDebug.textContent = 'swipe debug: aguardando toque…';
+    if(row){ row.style.position = row.style.position || 'relative'; row.appendChild(swipeDebug); }
+    function debugSwipe(text){ swipeDebug.textContent = 'swipe debug: ' + text; }
     const actionRow = document.getElementById('bdActionRow');
     const confirmBtn = document.getElementById('bdConfirmBtn');
     const confirmLabel = document.getElementById('bdConfirmBtnLabel');
@@ -13135,19 +13143,25 @@ const REQ_SUMMARIES = {
     let dragActive = false;
     let dragStartX = 0;
     let dragTriggeredSwipe = false;
+    let moveCount = 0;
 
     function startDrag(x){
-      if(slides.length < 2) return;
+      moveCount = 0;
+      if(slides.length < 2){ debugSwipe('start x=' + Math.round(x) + ' (só 1 slide, ignorado)'); return; }
       dragActive = true;
       dragStartX = x;
       stopAutoplay();
+      debugSwipe('start x=' + Math.round(x) + ' slides=' + slides.length);
     }
     function moveDrag(x){
-      if(!dragActive) return;
+      if(!dragActive){ debugSwipe('move x=' + Math.round(x) + ' (dragActive=false, ignorado)'); return; }
+      moveCount++;
       const deltaX = x - dragStartX;
+      debugSwipe('move#' + moveCount + ' x=' + Math.round(x) + ' Δ=' + Math.round(deltaX));
       if(Math.abs(deltaX) > SWIPE_THRESHOLD){
         dragActive = false;
         dragTriggeredSwipe = true;
+        debugSwipe('THRESHOLD! Δ=' + Math.round(deltaX) + ' -> goTo(' + (deltaX < 0 ? index + 1 : index - 1) + ')');
         // Só suprime o click que o próprio navegador possa disparar logo em seguida deste
         // mesmo gesto (síncrono); sem isso a flag ficava "pendurada" e engolia o próximo
         // toque de verdade no banner, mesmo sem relação nenhuma com este arraste.
@@ -13156,7 +13170,8 @@ const REQ_SUMMARIES = {
         pauseThenResumeAutoplay();
       }
     }
-    function endDrag(){
+    function endDrag(evtName){
+      debugSwipe((evtName || 'end') + ' — moves=' + moveCount + ' dragActive=' + dragActive);
       if(!dragActive) return;
       dragActive = false;
       pauseThenResumeAutoplay();
@@ -13169,10 +13184,10 @@ const REQ_SUMMARIES = {
     // Touch events nativos são o caminho que qualquer carrossel de verdade usa e não têm
     // essa ambiguidade — passive:true porque não precisamos bloquear nada manualmente,
     // o touch-action:pan-y do CSS já garante que o navegador não rouba o gesto horizontal.
-    row.addEventListener('touchstart', (e) => { if(e.touches[0]) startDrag(e.touches[0].clientX); }, { passive: true });
-    row.addEventListener('touchmove', (e) => { if(e.touches[0]) moveDrag(e.touches[0].clientX); }, { passive: true });
-    row.addEventListener('touchend', endDrag);
-    row.addEventListener('touchcancel', endDrag);
+    row.addEventListener('touchstart', (e) => { if(e.touches[0]) startDrag(e.touches[0].clientX); else debugSwipe('touchstart sem e.touches[0]!'); }, { passive: true });
+    row.addEventListener('touchmove', (e) => { if(e.touches[0]) moveDrag(e.touches[0].clientX); else debugSwipe('touchmove sem e.touches[0]!'); }, { passive: true });
+    row.addEventListener('touchend', () => endDrag('touchend'));
+    row.addEventListener('touchcancel', () => endDrag('touchcancel'));
 
     // Mouse: só para teste com o ponteiro no desktop/navegador (o toque real já é
     // tratado acima pelos eventos touch nativos, não por Pointer Events).
@@ -13206,6 +13221,7 @@ const REQ_SUMMARIES = {
     function buildBanners(){
       stopAutoplay();
       row.innerHTML = '';
+      row.appendChild(swipeDebug); // reconstruído do zero acima, então recoloca o badge de debug
       dotsWrap.innerHTML = '';
       slides.length = 0;
       dots.length = 0;
