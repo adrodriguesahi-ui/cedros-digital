@@ -12742,6 +12742,17 @@ const REQ_SUMMARIES = {
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
     }
+    // Quantidade real de membros = total de linhas em `usuarios` (mesma fonte
+    // usada pela contagem por unidade em Unidades/loadMemberCounts).
+    async function refreshMemberCount(){
+      if(!supa) return;
+      const countEl = chip.querySelector('b');
+      if(!countEl) return;
+      const { count, error } = await supa.from('usuarios').select('id', { count: 'exact', head: true });
+      if(error || count == null) return;
+      countEl.textContent = count;
+    }
+    document.addEventListener('cedros:loggedin', refreshMemberCount);
     chip.addEventListener('click', (e) => {
       e.preventDefault();
       const restricted = window.__restrictedGotoViews && window.__restrictedGotoViews.indexOf('view-secretary') !== -1;
