@@ -2178,6 +2178,7 @@
   .bd-live-meta{ display:flex; align-items:center; gap:6px; margin:0 0 16px; font-size:13px; font-weight:600; color:var(--lg-muted); }
 
   .bd-action-row{ display:grid; grid-template-columns:1fr 1fr 1.3fr; gap:8px; }
+  .bd-action-row.bd-action-row-2col{ grid-template-columns:1fr 1.3fr; }
   .bd-action-btn{
     display:flex; align-items:center; justify-content:center; gap:6px;
     padding:11px 8px; border-radius:10px;
@@ -7480,18 +7481,18 @@
         <div class="bd-banner-row" id="bdBannerRow"></div>
         <div class="bd-banner-dots" id="bdBannerDots"></div>
         <p class="bd-banner-empty" id="bdBannerEmpty" style="display:none;">Nenhum evento agendado.</p>
-        <div class="bd-action-row" id="bdActionRow" style="display:none;">
+        <div class="bd-action-row bd-action-row-2col" id="bdActionRow" style="display:none;">
           <span class="bd-action-btn" data-goto="view-planning">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg>
             Agenda
           </span>
-          <span class="bd-action-btn" id="bdEditBtn">
+          <span class="bd-action-btn" id="bdEditBtn" style="display:none;">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
             Editar
           </span>
           <span class="bd-action-btn bd-action-primary" id="bdConfirmBtn">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span id="bdConfirmBtnLabel">Confirmar</span>
+            <span id="bdConfirmBtnLabel">Vou participar</span>
           </span>
         </div>
 
@@ -13717,8 +13718,19 @@ const REQ_SUMMARIES = {
       confirmBtn.classList.toggle('is-confirmed', confirmedByMe);
       const count = rows.length;
       confirmLabel.textContent = confirmedByMe
-        ? (count > 1 ? 'Confirmado (' + count + ')' : 'Confirmado')
-        : (count > 0 ? 'Confirmar (' + count + ')' : 'Confirmar');
+        ? (count > 1 ? 'Participação confirmada (' + count + ')' : 'Participação confirmada')
+        : (count > 0 ? 'Vou participar (' + count + ')' : 'Vou participar');
+    }
+
+    // Editar aqui abre o editor de verdade da Agenda Anual — só quem já tem acesso de
+    // gestão do clube (mesma dupla de papéis usada pra travar a Secretaria) deve ver
+    // esse atalho; o resto dos usuários via esse card nunca via checagem nenhuma antes.
+    const EDIT_ALLOWED_ROLES = ['Administrador', 'Diretoria Executiva'];
+    function applyEditPermission(usuario){
+      if(!editBtn) return;
+      const allowed = !!(usuario && EDIT_ALLOWED_ROLES.indexOf(usuario.papel) !== -1);
+      editBtn.style.display = allowed ? '' : 'none';
+      if(actionRow) actionRow.classList.toggle('bd-action-row-2col', !allowed);
     }
 
     function buildBanners(){
@@ -13814,12 +13826,14 @@ const REQ_SUMMARIES = {
 
     if(editBtn){
       editBtn.addEventListener('click', () => {
+        if(editBtn.style.display === 'none') return;
         const banner = slides[index];
         if(banner && banner._sourceCard && window.__plOpenEventCard) window.__plOpenEventCard(banner._sourceCard);
       });
     }
 
     document.addEventListener('cedros:loggedin', refreshConfirmUI);
+    document.addEventListener('cedros:loggedin', (e) => applyEditPermission(e.detail));
     window.__bdRefreshBanners = buildBanners;
     buildBanners();
   })();
