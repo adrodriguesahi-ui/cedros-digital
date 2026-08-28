@@ -6466,7 +6466,11 @@
                 <p class="pl-reminder-hint">Lista sincronizada com Administração → Usuários. Pra adicionar, editar ou remover alguém da chamada, gerencie o cadastro por lá.</p>
 
                 <div class="sp-area-heading">Nova Chamada</div>
-                <div class="pl-field-row">
+                <div class="pl-field-col">
+                  <label class="pl-field-label" style="margin-top:0;">Reunião</label>
+                  <select class="pl-input" id="atCallMeetingSelect"></select>
+                </div>
+                <div class="pl-field-row" id="atCallManualFields" style="display:none;">
                   <div class="pl-field-col">
                     <label class="pl-field-label" style="margin-top:0;">Data</label>
                     <input type="date" class="pl-input" id="atCallDate">
@@ -10955,11 +10959,76 @@
     const saveCallBtn = document.getElementById('atSaveCallBtn');
     const historyList = document.getElementById('atHistoryList');
     const historyEmpty = document.getElementById('atHistoryEmpty');
+    const meetingSelect = document.getElementById('atCallMeetingSelect');
+    const manualFields = document.getElementById('atCallManualFields');
 
     const UNIT_COLOR = { 'Ype':'green', 'Ype Roxo':'purple', 'Pinheiro':'blue', 'Cedros':'gold', 'Cedros Rosa':'red', 'Flanboyan':'orange', 'Jacarandá':'gray' };
+    const MONTHS_ABBR = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
 
     let roster = [];
     let history = [];
+    let regularMeetings = [];
+
+    // "Nova Chamada" passa a partir das reuniões regulares reais da Agenda Anual
+    // (supabase/schema.sql: eventos_agenda, títulos contendo "Reunião Regular"),
+    // em vez de a diretoria digitar data/evento à mão toda vez — evita erro de
+    // digitação e datas que não batem com o calendário oficial do clube. Quem
+    // precisar de uma chamada fora do calendário ainda pode escolher "Outro".
+    async function loadRegularMeetings(){
+      if(!supa || !meetingSelect) return;
+      const { data, error } = await supa.from('eventos_agenda')
+        .select('id, dia, mes_indice, titulo')
+        .ilike('titulo', '%Reunião Regular%')
+        .order('mes_indice', { ascending: true }).order('dia', { ascending: true });
+      if(error || !data) return;
+      const year = new Date().getFullYear();
+      regularMeetings = data.map(row => ({
+        day: row.dia, monIdx: row.mes_indice, title: row.titulo,
+        date: new Date(year, row.mes_indice - 1, row.dia)
+      }));
+      renderMeetingSelect();
+    }
+
+    function renderMeetingSelect(){
+      if(!meetingSelect) return;
+      meetingSelect.innerHTML = '';
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      let defaultIdx = -1;
+      regularMeetings.forEach((m, i) => {
+        const opt = document.createElement('option');
+        opt.value = String(i);
+        opt.textContent = String(m.day).padStart(2, '0') + '/' + MONTHS_ABBR[m.monIdx - 1] + ' — ' + m.title;
+        meetingSelect.appendChild(opt);
+        if(m.date <= today) defaultIdx = i; // última reunião já ocorrida (ou hoje) até agora
+      });
+      const outroOpt = document.createElement('option');
+      outroOpt.value = 'outro';
+      outroOpt.textContent = 'Outro (personalizar data e evento)';
+      meetingSelect.appendChild(outroOpt);
+      meetingSelect.value = defaultIdx >= 0 ? String(defaultIdx) : (regularMeetings.length ? '0' : 'outro');
+      applyMeetingSelection();
+    }
+
+    // Mantém callDate/callEvent como fonte única pro resto do código (gerar lista,
+    // salvar chamada) — quando uma reunião real é escolhida, só preenche esses
+    // campos por baixo dos panos e os esconde; "Outro" reexibe pra digitação manual.
+    function applyMeetingSelection(){
+      if(!meetingSelect) return;
+      if(meetingSelect.value === 'outro'){
+        manualFields.style.display = '';
+        callDate.value = '';
+        callEvent.value = '';
+        return;
+      }
+      manualFields.style.display = 'none';
+      const m = regularMeetings[parseInt(meetingSelect.value, 10)];
+      if(!m) return;
+      const iso = m.date.getFullYear() + '-' + String(m.monIdx).padStart(2, '0') + '-' + String(m.day).padStart(2, '0');
+      callDate.value = iso;
+      callEvent.value = m.title;
+    }
+    if(meetingSelect) meetingSelect.addEventListener('change', applyMeetingSelection);
+    loadRegularMeetings();
 
     function renderRoster(){
       rosterList.innerHTML = '';
@@ -11197,6 +11266,7 @@
       checklistWrap.style.display = 'none';
       callEvent.value = '';
       callDate.value = '';
+      renderMeetingSelect();
     });
 
     renderHistory();
