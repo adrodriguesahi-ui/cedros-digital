@@ -439,3 +439,30 @@ create policy "event_confirmations: inserir a propria" on event_confirmations
 drop policy if exists "event_confirmations: remover a propria" on event_confirmations;
 create policy "event_confirmations: remover a propria" on event_confirmations
   for delete using (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------
+-- especialidades_concluidas: registro de quando cada usuário concluiu
+-- cada especialidade. O ano fica explícito na própria linha (não é
+-- calculado a partir de "hoje"), então a virada de ano não apaga nada —
+-- o contador do ano atual simplesmente começa em zero até a primeira
+-- conclusão daquele ano, e o histórico de anos anteriores continua
+-- consultável para sempre.
+-- ---------------------------------------------------------------------
+create table if not exists especialidades_concluidas (
+  id uuid primary key default gen_random_uuid(),
+  usuario_id uuid not null references usuarios(id) on delete cascade,
+  especialidade text not null,
+  categoria text,
+  ano int not null,
+  data_conclusao date,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists especialidades_concluidas_usuario_ano_idx
+  on especialidades_concluidas(usuario_id, ano);
+
+alter table especialidades_concluidas enable row level security;
+
+drop policy if exists "especialidades_concluidas: acesso publico" on especialidades_concluidas;
+create policy "especialidades_concluidas: acesso publico" on especialidades_concluidas
+  for all using (true) with check (true);

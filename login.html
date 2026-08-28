@@ -6891,17 +6891,78 @@
           <h3 class="pl-title">Manual de Especialidades</h3>
           <span class="pl-topbar-spacer" aria-hidden="true"></span>
         </div>
-        <div class="sp-search-wrap">
-          <svg class="sp-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" class="pl-input sp-search-input" id="spSearchInput" placeholder="Buscar especialidade...">
-        </div>
-        <p class="sp-disclaimer">534 especialidades (518 especialidades + 16 mestrados) da edição 2025 do Manual de Especialidades da DSA, organizadas em 11 áreas, incluindo a nova área "Ensinos Bíblicos". Base local (sem conexão ao site oficial).</p>
 
-        <div class="pl-content" id="spContent"></div>
+        <div class="sc-pdf-tabs" style="margin:0 16px 12px;">
+          <button type="button" class="sc-pdf-tab active" id="spTabCatalog" data-sp-tab="catalog">Catálogo</button>
+          <button type="button" class="sc-pdf-tab" id="spTabAchievements" data-sp-tab="achievements">Conquistadas</button>
+        </div>
+
+        <div id="spCatalogPanel">
+          <div class="sp-search-wrap">
+            <svg class="sp-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="pl-input sp-search-input" id="spSearchInput" placeholder="Buscar especialidade...">
+          </div>
+          <p class="sp-disclaimer">534 especialidades (518 especialidades + 16 mestrados) da edição 2025 do Manual de Especialidades da DSA, organizadas em 11 áreas, incluindo a nova área "Ensinos Bíblicos". Base local (sem conexão ao site oficial).</p>
+
+          <div class="pl-content" id="spContent"></div>
+        </div>
+
+        <div id="spAchievementsPanel" class="pl-content" style="display:none;">
+          <div class="pl-field-row">
+            <div class="pl-field-col pl-field-col-wide">
+              <label class="pl-field-label" style="margin-top:0;">Membro</label>
+              <select class="pl-input" id="spAchMember"></select>
+            </div>
+            <div class="pl-field-col">
+              <label class="pl-field-label" style="margin-top:0;">Ano</label>
+              <select class="pl-input" id="spAchYear"></select>
+            </div>
+          </div>
+
+          <div class="un-score-total-card">
+            <span class="un-score-total-label" id="spAchTotalLabel">Especialidades em 2026</span>
+            <span class="un-score-total-value" id="spAchTotal">0</span>
+            <span class="un-score-total-max">concluídas</span>
+          </div>
+
+          <div class="un-mini-list" id="spAchList" style="margin-bottom:18px;">
+            <p class="un-empty-hint">Carregando...</p>
+          </div>
+
+          <h4 class="un-section-title">Histórico por ano</h4>
+          <div class="un-mini-list" id="spAchHistory">
+            <p class="un-empty-hint">Sem conquistas registradas ainda.</p>
+          </div>
+        </div>
       </div>
       <button type="button" class="pl-fab" id="spAddBtn" aria-label="Adicionar especialidade">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
+      <button type="button" class="pl-fab" id="spAchAddBtn" aria-label="Registrar conquista" style="display:none;">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+
+      <div class="pl-modal-overlay" id="spAchModalOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Registrar Conquista</h4>
+            <button type="button" class="pl-modal-close" id="spAchModalClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          <label class="pl-field-label" style="margin-top:0;">Especialidade</label>
+          <input type="text" class="pl-input" id="spAchFieldName" list="spCatalogDatalist" placeholder="Digite ou escolha da lista..." maxlength="80">
+          <datalist id="spCatalogDatalist"></datalist>
+
+          <label class="pl-field-label">Data de conclusão</label>
+          <input type="date" class="pl-input" id="spAchFieldDate">
+
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-primary" id="spAchSaveBtn">Salvar</button>
+          </div>
+        </div>
+      </div>
       <div class="pl-modal-overlay" id="spModalOverlay">
         <div class="pl-modal">
           <div class="pl-modal-head">
@@ -7392,7 +7453,7 @@
 
         <div class="bd-stats-ticker">
           <a href="#" class="bd-chip" id="bdMembersChip"><b>56</b> Membros</a>
-          <span class="bd-chip"><b>12</b> Especialidades</span>
+          <a href="#" class="bd-chip" data-goto="view-specialties" id="bdSpecialtiesChip"><b>12</b> Especialidades</a>
           <span class="bd-chip"><b>18/20</b> Presença</span>
           <a href="#" class="bd-chip" data-goto="view-birthdays" id="bdBirthdayChip"><b>3</b> Aniversariantes</a>
         </div>
@@ -12089,6 +12150,203 @@ const REQ_SUMMARIES = {
     ],
     buildCard(data){ return spBuildCardEl(data); }
   });
+
+  // Manual de Especialidades — aba "Conquistadas": quantas especialidades
+  // cada membro concluiu, por ano (tabela especialidades_concluidas). O ano
+  // fica gravado na própria linha, então virar o ano não apaga histórico —
+  // o contador do ano novo só começa em zero até a primeira conclusão.
+  (function(){
+    const tabCatalog = document.getElementById('spTabCatalog');
+    const tabAchievements = document.getElementById('spTabAchievements');
+    const catalogPanel = document.getElementById('spCatalogPanel');
+    const achPanel = document.getElementById('spAchievementsPanel');
+    const memberSelect = document.getElementById('spAchMember');
+    const yearSelect = document.getElementById('spAchYear');
+    const totalLabel = document.getElementById('spAchTotalLabel');
+    const totalValue = document.getElementById('spAchTotal');
+    const list = document.getElementById('spAchList');
+    const history = document.getElementById('spAchHistory');
+    const addBtn = document.getElementById('spAddBtn');
+    const achAddBtn = document.getElementById('spAchAddBtn');
+    const modalOverlay = document.getElementById('spAchModalOverlay');
+    const modalClose = document.getElementById('spAchModalClose');
+    const fieldName = document.getElementById('spAchFieldName');
+    const fieldDate = document.getElementById('spAchFieldDate');
+    const saveBtn = document.getElementById('spAchSaveBtn');
+    const datalist = document.getElementById('spCatalogDatalist');
+    if(!tabCatalog || !tabAchievements) return;
+
+    const CURRENT_YEAR = new Date().getFullYear();
+    let members = [];
+    let achievements = [];
+
+    // Nome -> área, pra marcar a categoria automaticamente quando a
+    // especialidade escolhida bate com o catálogo local.
+    const CATEGORY_BY_NAME = {};
+    Object.keys(SPECIALTY_DB).forEach(area => {
+      SPECIALTY_DB[area].forEach(name => { CATEGORY_BY_NAME[name] = area; });
+    });
+    if(datalist){
+      Object.keys(SPECIALTY_DB).forEach(area => {
+        SPECIALTY_DB[area].forEach(name => {
+          const opt = document.createElement('option');
+          opt.value = name;
+          datalist.appendChild(opt);
+        });
+      });
+    }
+
+    function populateYears(){
+      yearSelect.innerHTML = '';
+      for(let y = CURRENT_YEAR + 1; y >= CURRENT_YEAR - 4; y--){
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        if(y === CURRENT_YEAR) opt.selected = true;
+        yearSelect.appendChild(opt);
+      }
+    }
+
+    async function loadMembers(){
+      memberSelect.innerHTML = '';
+      if(!supa) return;
+      const { data } = await supa.from('usuarios').select('id, nome').order('nome');
+      members = data || [];
+      members.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = m.nome;
+        memberSelect.appendChild(opt);
+      });
+      const me = window.__currentUsuario;
+      if(me && members.some(m => m.id === me.id)) memberSelect.value = me.id;
+    }
+
+    function currentMemberName(){
+      const m = members.find(x => x.id === memberSelect.value);
+      return m ? m.nome.split(' ')[0] : '';
+    }
+
+    function render(){
+      const year = parseInt(yearSelect.value, 10);
+      totalLabel.textContent = 'Especialidades em ' + year;
+      const thisYear = achievements.filter(a => a.ano === year);
+      totalValue.textContent = thisYear.length;
+
+      list.innerHTML = '';
+      if(!thisYear.length){
+        list.innerHTML = '<p class="un-empty-hint">Nenhuma especialidade concluída em ' + year + '.</p>';
+      } else {
+        thisYear.slice().sort((a, b) => (b.data_conclusao || '').localeCompare(a.data_conclusao || '')).forEach(a => {
+          const row = document.createElement('div');
+          row.className = 'un-mini-row';
+          row.style.cursor = 'pointer';
+          row.innerHTML =
+            '<span class="un-mini-date"><b>🏅</b></span>' +
+            '<span class="un-mini-body"><span class="un-mini-title"></span><span class="un-mini-meta"></span></span>';
+          row.querySelector('.un-mini-title').textContent = a.especialidade;
+          row.querySelector('.un-mini-meta').textContent = (a.categoria || 'Sem área') + (a.data_conclusao ? ' · ' + new Date(a.data_conclusao + 'T00:00:00').toLocaleDateString('pt-BR') : '');
+          row.addEventListener('click', async () => {
+            if(!confirm('Remover "' + a.especialidade + '" das conquistas de ' + currentMemberName() + '?')) return;
+            if(supa) await supa.from('especialidades_concluidas').delete().eq('id', a.id);
+            achievements = achievements.filter(x => x.id !== a.id);
+            render();
+            if(window.__currentUsuario && window.__currentUsuario.id === memberSelect.value) updateDashboardChip();
+          });
+          list.appendChild(row);
+        });
+      }
+
+      const byYear = {};
+      achievements.forEach(a => { byYear[a.ano] = (byYear[a.ano] || 0) + 1; });
+      const years = Object.keys(byYear).map(y => parseInt(y, 10)).sort((a, b) => b - a);
+      history.innerHTML = '';
+      if(!years.length){
+        history.innerHTML = '<p class="un-empty-hint">Sem conquistas registradas ainda.</p>';
+      } else {
+        years.forEach(y => {
+          const row = document.createElement('div');
+          row.className = 'un-mini-row';
+          row.innerHTML = '<span class="un-mini-body"><span class="un-mini-title"></span></span><span class="un-mini-time"></span>';
+          row.querySelector('.un-mini-title').textContent = y;
+          row.querySelector('.un-mini-time').textContent = byYear[y] + (byYear[y] === 1 ? ' especialidade' : ' especialidades');
+          history.appendChild(row);
+        });
+      }
+    }
+
+    async function loadAchievements(){
+      achievements = [];
+      list.innerHTML = '<p class="un-empty-hint">Carregando...</p>';
+      if(supa && memberSelect.value){
+        const { data } = await supa.from('especialidades_concluidas').select('*').eq('usuario_id', memberSelect.value);
+        achievements = data || [];
+      }
+      render();
+    }
+
+    async function updateDashboardChip(){
+      const chip = document.getElementById('bdSpecialtiesChip');
+      const me = window.__currentUsuario;
+      if(!chip || !me || !supa) return;
+      const { data } = await supa.from('especialidades_concluidas').select('id').eq('usuario_id', me.id).eq('ano', CURRENT_YEAR);
+      const b = chip.querySelector('b');
+      if(b) b.textContent = (data || []).length;
+    }
+
+    function setTab(tab){
+      const isAch = tab === 'achievements';
+      tabCatalog.classList.toggle('active', !isAch);
+      tabAchievements.classList.toggle('active', isAch);
+      catalogPanel.style.display = isAch ? 'none' : '';
+      achPanel.style.display = isAch ? '' : 'none';
+      addBtn.style.display = isAch ? 'none' : '';
+      achAddBtn.style.display = isAch ? '' : 'none';
+    }
+    tabCatalog.addEventListener('click', () => setTab('catalog'));
+    tabAchievements.addEventListener('click', async () => {
+      setTab('achievements');
+      if(!members.length) await loadMembers();
+      loadAchievements();
+    });
+
+    memberSelect.addEventListener('change', loadAchievements);
+    yearSelect.addEventListener('change', render);
+
+    achAddBtn.addEventListener('click', () => {
+      fieldName.value = '';
+      fieldDate.value = new Date().toISOString().slice(0, 10);
+      modalOverlay.classList.add('show');
+      setTimeout(() => fieldName.focus(), 150);
+    });
+    modalClose.addEventListener('click', () => modalOverlay.classList.remove('show'));
+    modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) modalOverlay.classList.remove('show'); });
+
+    saveBtn.addEventListener('click', async () => {
+      const especialidade = fieldName.value.trim();
+      if(!especialidade || !memberSelect.value) return;
+      const dataConclusao = fieldDate.value || null;
+      const ano = dataConclusao ? parseInt(dataConclusao.slice(0, 4), 10) : parseInt(yearSelect.value, 10);
+      const payload = {
+        usuario_id: memberSelect.value,
+        especialidade,
+        categoria: CATEGORY_BY_NAME[especialidade] || null,
+        ano,
+        data_conclusao: dataConclusao
+      };
+      if(supa){
+        const { data, error } = await supa.from('especialidades_concluidas').insert(payload).select().single();
+        if(!error && data) achievements.push(data);
+      }
+      modalOverlay.classList.remove('show');
+      if(ano !== parseInt(yearSelect.value, 10)) yearSelect.value = ano;
+      render();
+      if(window.__currentUsuario && window.__currentUsuario.id === memberSelect.value) updateDashboardChip();
+    });
+
+    populateYears();
+    document.addEventListener('cedros:loggedin', updateDashboardChip);
+  })();
 
   // Organização de Eventos: tarefas, responsáveis e prazos por evento
   (function(){
