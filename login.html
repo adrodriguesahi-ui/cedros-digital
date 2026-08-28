@@ -7790,6 +7790,37 @@
     };
   })();
 
+  // Lê um arquivo de imagem e devolve (via callback) um JPEG normalizado em base64 —
+  // usado por todo campo de foto do app (Agenda Anual, Classes Regulares, Cantinho da
+  // Unidade). Redesenhar num canvas resolve dois problemas do jeito antigo (guardar o
+  // arquivo cru direto): (1) fotos de iPhone às vezes vêm em HEIC, formato que a
+  // maioria dos navegadores não decodifica num <img> — a prévia ficava em branco sem
+  // erro nenhum; agora isso vira uma mensagem clara em vez de falha silenciosa. (2)
+  // fotos de câmera de verdade saem enormes (10+ MB); redimensionar evita guardar tudo
+  // isso como texto base64 no banco.
+  function readPhotoAsJPEG(file, onDone){
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 1600;
+        const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.naturalWidth * scale);
+        canvas.height = Math.round(img.naturalHeight * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        onDone(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = () => {
+        alert('Não foi possível abrir essa foto (formato não suportado, como HEIC do iPhone). Tente uma imagem .jpg ou .png.');
+      };
+      img.src = e.target.result;
+    };
+    reader.onerror = () => { alert('Não foi possível ler o arquivo. Tente novamente.'); };
+    reader.readAsDataURL(file);
+  }
+
   // Planejamento Anual: criar / editar / excluir eventos + lembretes no sino
   (function(){
     const overlay = document.getElementById('plModalOverlay');
@@ -7910,10 +7941,7 @@
     }
 
     function handleFile(file){
-      if(!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => setPhoto(e.target.result);
-      reader.readAsDataURL(file);
+      readPhotoAsJPEG(file, setPhoto);
     }
 
     photoCameraInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
@@ -9351,10 +9379,7 @@
     }
 
     function handleFile(file){
-      if(!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => setPhoto(e.target.result);
-      reader.readAsDataURL(file);
+      readPhotoAsJPEG(file, setPhoto);
     }
 
     photoCameraInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
@@ -10299,10 +10324,7 @@
     }
 
     function handleFile(file){
-      if(!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => setStagedPhoto(e.target.result);
-      reader.readAsDataURL(file);
+      readPhotoAsJPEG(file, setStagedPhoto);
     }
 
     photoCameraInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
