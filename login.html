@@ -2177,30 +2177,10 @@
   .bd-live-title{ margin:0 0 8px; font-size:19px; font-weight:900; color:var(--lg-ink); }
   .bd-live-meta{ display:flex; align-items:center; gap:6px; margin:0 0 16px; font-size:13px; font-weight:600; color:var(--lg-muted); }
 
-  .bd-action-row{ display:grid; grid-template-columns:1fr 1fr 1.3fr; gap:8px; }
-  .bd-action-row.bd-action-row-2col{ grid-template-columns:1fr 1.3fr; }
-  .bd-action-btn{
-    display:flex; align-items:center; justify-content:center; gap:6px;
-    padding:11px 8px; border-radius:10px;
-    background:rgba(255,255,255,0.06);
-    border:1px solid var(--lg-border);
-    font-size:12.5px; font-weight:800;
-    color:var(--lg-ink);
-  }
   .bd-banner-empty{
     margin:0 0 12px; padding:28px 14px; text-align:center;
     font-size:13px; font-weight:700; color:var(--lg-muted);
     background:rgba(255,255,255,0.03); border:1px solid var(--lg-border); border-radius:16px;
-  }
-  .bd-action-primary.is-confirmed{
-    background:rgba(76,221,121,0.14);
-    border:1px solid rgba(76,221,121,0.4);
-    color:var(--lg-green);
-  }
-  .bd-action-primary{
-    background:linear-gradient(180deg, #4CDD79, var(--accent-deep));
-    border-color:transparent;
-    color:#06170C;
   }
 
   /* Fixture list ("Esta Semana") */
@@ -2584,7 +2564,6 @@
     .view-bdash .bd-content{ max-width:clamp(920px, 62vw, 1200px); margin:0 auto; padding-left:5vw; padding-right:5vw; padding-bottom:56px; }
     .bd-topbar, .bd-tabs, .bd-stats-ticker, .bd-greeting{ padding-left:5vw; padding-right:5vw; }
     .bd-tabbar{ display:none; }
-    .bd-action-row{ max-width:420px; }
     .bd-banner{ height:220px; }
 
     /* Planejamento Anual: centered reading column, floating dialog instead of bottom sheet */
@@ -6426,6 +6405,12 @@
                 <button type="button" class="sc-pdf-tab active" data-tab="doc">Documentos</button>
                 <button type="button" class="sc-pdf-tab" data-tab="pdf">Gerar Autorização (PDF)</button>
                 <button type="button" class="sc-pdf-tab" data-tab="attendance">Chamada de Presença</button>
+                <button type="button" class="sc-pdf-tab" data-tab="events">Postar Eventos</button>
+              </div>
+
+              <div class="sc-pdf-panel" id="scEventsPanel" style="display:none;">
+                <p class="pl-reminder-hint" style="margin-top:0;">Criar, editar ou remover eventos — tanto da Agenda Anual do clube quanto do banner de destaque no início do app — é tudo feito na Agenda Anual. Esse atalho leva direto pra lá.</p>
+                <button type="button" class="pl-btn pl-btn-primary" id="scOpenAgendaBtn">Abrir Agenda Anual</button>
               </div>
 
               <div class="sc-pdf-panel" id="scPdfPanel" style="display:none;">
@@ -7481,20 +7466,6 @@
         <div class="bd-banner-row" id="bdBannerRow"></div>
         <div class="bd-banner-dots" id="bdBannerDots"></div>
         <p class="bd-banner-empty" id="bdBannerEmpty" style="display:none;">Nenhum evento agendado.</p>
-        <div class="bd-action-row bd-action-row-2col" id="bdActionRow" style="display:none;">
-          <span class="bd-action-btn" data-goto="view-planning">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M8 2.5v4M16 2.5v4M3 9.5h18"/></svg>
-            Agenda
-          </span>
-          <span class="bd-action-btn" id="bdEditBtn" style="display:none;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-            Editar
-          </span>
-          <span class="bd-action-btn bd-action-primary" id="bdConfirmBtn">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span id="bdConfirmBtnLabel">Vou participar</span>
-          </span>
-        </div>
 
         <div class="bd-content">
 
@@ -8920,12 +8891,12 @@
       return withDates.slice(0, limit || 4);
     };
 
-    window.__plOpenEventCard = function(card){
-      // O modal de editar/detalhes vive dentro de #view-planning (só visível quando essa
-      // view está ativa) — navega pra lá primeiro pra ele aparecer de fato, chamado a
-      // partir do card "Evento em destaque" que fica na dashboard.
+    // Usado pelo card de destaque do dashboard: mostra os detalhes do evento sem
+    // abrir o formulário de edição, não importa o modo (Editor/Somente visualização)
+    // em que a Agenda Anual esteja no momento.
+    window.__plOpenEventReadOnly = function(card){
       showView('view-planning');
-      if(readOnlyMode) openViewOnly(card); else openModal('edit', card);
+      openViewOnly(card);
     };
   })();
 
@@ -10889,11 +10860,12 @@
     return a;
   }
 
-  // Secretaria: alternar aba (Documentos / Gerar Autorização / Chamada de Presença)
+  // Secretaria: alternar aba (Documentos / Gerar Autorização / Chamada de Presença / Postar Eventos)
   (function(){
     const tabs = document.querySelectorAll('.sc-pdf-tab');
     const pdfPanel = document.getElementById('scPdfPanel');
     const attendancePanel = document.getElementById('scAttendancePanel');
+    const eventsPanel = document.getElementById('scEventsPanel');
     const scContent = document.getElementById('scContent');
     if(!tabs.length || !pdfPanel || !scContent) return;
     tabs.forEach(tab => {
@@ -10903,10 +10875,20 @@
         const which = tab.getAttribute('data-tab');
         pdfPanel.style.display = (which === 'pdf') ? '' : 'none';
         if(attendancePanel) attendancePanel.style.display = (which === 'attendance') ? '' : 'none';
+        if(eventsPanel) eventsPanel.style.display = (which === 'events') ? '' : 'none';
         const isDoc = which === 'doc';
         scContent.querySelectorAll('.sc-card').forEach(card => { card.style.display = isDoc ? '' : 'none'; });
       });
     });
+  })();
+
+  // Secretaria → Postar Eventos: atalho pro editor de verdade da Agenda Anual
+  // (mesma tela/dados; não duplica nada, só dá outro caminho de acesso a quem
+  // já tem permissão de Secretaria).
+  (function(){
+    const btn = document.getElementById('scOpenAgendaBtn');
+    if(!btn) return;
+    btn.addEventListener('click', () => { showView('view-planning'); });
   })();
 
   // Secretaria: gerar PDF de autorização (modelo padrão até o clube enviar o oficial)
@@ -13587,17 +13569,13 @@ const REQ_SUMMARIES = {
 
   // Card "Evento em destaque" do dashboard: carrossel montado a partir dos próximos
   // eventos reais da Agenda Anual (window.__plGetUpcomingEvents, exposto pela IIFE do
-  // Planejamento Anual). Tocar no banner ou em "Editar" abre o mesmo editor de lá —
-  // não existe um evento "fantasma" separado. "Confirmar presença" grava no Supabase
-  // (tabela event_confirmations, ver supabase/schema.sql), ligado ao usuário logado.
+  // Planejamento Anual). É só uma vitrine — tocar no banner mostra os detalhes do
+  // evento em modo leitura; criar/editar/excluir evento é feito na Agenda Anual (ou
+  // pelo atalho "Postar Eventos" dentro de Secretaria).
   (function(){
     const row = document.getElementById('bdBannerRow');
     const dotsWrap = document.getElementById('bdBannerDots');
     const emptyMsg = document.getElementById('bdBannerEmpty');
-    const actionRow = document.getElementById('bdActionRow');
-    const confirmBtn = document.getElementById('bdConfirmBtn');
-    const confirmLabel = document.getElementById('bdConfirmBtnLabel');
-    const editBtn = document.getElementById('bdEditBtn');
     if(!row || !dotsWrap) return;
 
     const TAG_GRADIENT = {
@@ -13614,7 +13592,6 @@ const REQ_SUMMARIES = {
     let index = 0;
     let autoplay = null;
     let resumeTimeout = null;
-    let confirmToken = 0; // ignora resposta do Supabase se o slide já mudou nesse meio tempo
 
     function pauseThenResumeAutoplay(){
       stopAutoplay();
@@ -13635,7 +13612,6 @@ const REQ_SUMMARIES = {
       dots[newIndex].classList.add('active');
       setTimeout(() => { current.classList.remove('leaving'); }, 650);
       index = newIndex;
-      refreshConfirmUI();
     }
 
     function next(){ goTo(index + 1); }
@@ -13701,38 +13677,6 @@ const REQ_SUMMARIES = {
     row.addEventListener('pointercancel', (e) => { if(e.pointerType === 'mouse') endDrag(); });
     row.addEventListener('pointerleave', (e) => { if(e.pointerType === 'mouse') endDrag(); });
 
-    async function refreshConfirmUI(){
-      if(!confirmBtn || !confirmLabel) return;
-      const banner = slides[index];
-      if(!banner || !supa){
-        confirmBtn.style.display = 'none';
-        return;
-      }
-      confirmBtn.style.display = '';
-      const myToken = ++confirmToken;
-      const { data } = await supa.from('event_confirmations').select('user_id').eq('event_id', banner.dataset.eventId);
-      if(myToken !== confirmToken) return; // trocou de slide enquanto buscava
-      const rows = data || [];
-      const uid = window.__currentAuthUserId;
-      const confirmedByMe = !!(uid && rows.some(r => r.user_id === uid));
-      confirmBtn.classList.toggle('is-confirmed', confirmedByMe);
-      const count = rows.length;
-      confirmLabel.textContent = confirmedByMe
-        ? (count > 1 ? 'Participação confirmada (' + count + ')' : 'Participação confirmada')
-        : (count > 0 ? 'Vou participar (' + count + ')' : 'Vou participar');
-    }
-
-    // Editar aqui abre o editor de verdade da Agenda Anual — só quem já tem acesso de
-    // gestão do clube (mesma dupla de papéis usada pra travar a Secretaria) deve ver
-    // esse atalho; o resto dos usuários via esse card nunca via checagem nenhuma antes.
-    const EDIT_ALLOWED_ROLES = ['Administrador', 'Diretoria Executiva'];
-    function applyEditPermission(usuario){
-      if(!editBtn) return;
-      const allowed = !!(usuario && EDIT_ALLOWED_ROLES.indexOf(usuario.papel) !== -1);
-      editBtn.style.display = allowed ? '' : 'none';
-      if(actionRow) actionRow.classList.toggle('bd-action-row-2col', !allowed);
-    }
-
     function buildBanners(){
       stopAutoplay();
       row.innerHTML = '';
@@ -13743,7 +13687,6 @@ const REQ_SUMMARIES = {
 
       const upcoming = (window.__plGetUpcomingEvents && window.__plGetUpcomingEvents(4)) || [];
       if(emptyMsg) emptyMsg.style.display = upcoming.length ? 'none' : '';
-      if(actionRow) actionRow.style.display = upcoming.length ? '' : 'none';
 
       const now = new Date();
       upcoming.forEach(({ card, date }, i) => {
@@ -13761,7 +13704,6 @@ const REQ_SUMMARIES = {
         } else {
           banner.style.background = TAG_GRADIENT[tag] || TAG_GRADIENT.gray;
         }
-        banner.dataset.eventId = card.dataset.id;
         banner._sourceCard = card;
 
         const diffDays = Math.round((date - now) / 86400000);
@@ -13787,7 +13729,7 @@ const REQ_SUMMARIES = {
         banner.addEventListener('click', (e) => {
           e.preventDefault();
           if(dragTriggeredSwipe){ dragTriggeredSwipe = false; return; } // arraste, não é toque
-          if(window.__plOpenEventCard) window.__plOpenEventCard(card);
+          if(window.__plOpenEventReadOnly) window.__plOpenEventReadOnly(card);
         });
         row.appendChild(banner);
         slides.push(banner);
@@ -13802,38 +13744,9 @@ const REQ_SUMMARIES = {
         dots.push(dot);
       });
 
-      refreshConfirmUI();
       startAutoplay();
     }
 
-    if(confirmBtn){
-      confirmBtn.addEventListener('click', async () => {
-        const banner = slides[index];
-        const uid = window.__currentAuthUserId;
-        if(!banner || !uid || !supa) return;
-        const eventId = banner.dataset.eventId;
-        const wasConfirmed = confirmBtn.classList.contains('is-confirmed');
-        confirmBtn.style.pointerEvents = 'none';
-        if(wasConfirmed){
-          await supa.from('event_confirmations').delete().eq('event_id', eventId).eq('user_id', uid);
-        } else {
-          await supa.from('event_confirmations').insert({ event_id: eventId, user_id: uid });
-        }
-        await refreshConfirmUI();
-        confirmBtn.style.pointerEvents = '';
-      });
-    }
-
-    if(editBtn){
-      editBtn.addEventListener('click', () => {
-        if(editBtn.style.display === 'none') return;
-        const banner = slides[index];
-        if(banner && banner._sourceCard && window.__plOpenEventCard) window.__plOpenEventCard(banner._sourceCard);
-      });
-    }
-
-    document.addEventListener('cedros:loggedin', refreshConfirmUI);
-    document.addEventListener('cedros:loggedin', (e) => applyEditPermission(e.detail));
     window.__bdRefreshBanners = buildBanners;
     buildBanners();
   })();
