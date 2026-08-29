@@ -1682,17 +1682,7 @@
   .view-bdash .bd-table-row:hover{ background:rgba(255,255,255,0.03); }
 
   /* Top bar */
-  .bd-devicebar{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:calc(6px + env(safe-area-inset-top,0px)) 18px 0;
-    font-size:11px; font-weight:800; letter-spacing:0.02em;
-    color:rgba(245,239,225,0.5);
-  }
-  .bd-devicebar-time{ font-variant-numeric:tabular-nums; }
-  .bd-devicebar-conn{ display:flex; align-items:center; gap:5px; }
-  .bd-devicebar-conn svg{ display:block; }
-  .bd-devicebar.is-offline{ color:#FF6B5C; }
-  .bd-topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 16px 10px; }
+  .bd-topbar{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px; }
   .bd-icon-btn{
     width:36px; height:36px; border-radius:10px;
     display:flex; align-items:center; justify-content:center;
@@ -7419,14 +7409,6 @@
     <section class="view view-bdash" id="view-dashboard">
       <div class="bd-scroll">
 
-        <div class="bd-devicebar" id="bdDeviceBar">
-          <span class="bd-devicebar-time" id="bdDeviceTime">--:--</span>
-          <span class="bd-devicebar-conn">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-            <span id="bdDeviceConnLabel">Online</span>
-          </span>
-        </div>
-
         <div class="bd-topbar">
           <div class="bd-topbar-left">
             <div class="bd-brand">
@@ -7858,29 +7840,6 @@
       document.removeEventListener('pointerdown', once);
       tryFullscreen();
     }, { once: true });
-  })();
-
-  // ---- Barra de status do app (dashboard): horário ao vivo + indicador de conexão ----
-  (function(){
-    const bar = document.getElementById('bdDeviceBar');
-    const timeEl = document.getElementById('bdDeviceTime');
-    const connLabel = document.getElementById('bdDeviceConnLabel');
-    if(!bar || !timeEl || !connLabel) return;
-
-    function updateClock(){
-      timeEl.textContent = new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
-    }
-    updateClock();
-    setInterval(updateClock, 15000);
-
-    function updateConn(){
-      const online = navigator.onLine;
-      bar.classList.toggle('is-offline', !online);
-      connLabel.textContent = online ? 'Online' : 'Sem conexão';
-    }
-    updateConn();
-    window.addEventListener('online', updateConn);
-    window.addEventListener('offline', updateConn);
   })();
 
   // splash -> cover (auto + tap)
