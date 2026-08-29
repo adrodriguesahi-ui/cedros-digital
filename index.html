@@ -6580,7 +6580,7 @@
                 <button type="button" class="sc-pdf-tab" data-tab="pdf">Gerar Autorização (PDF)</button>
                 <button type="button" class="sc-pdf-tab" data-tab="attendance">Chamada de Presença</button>
                 <button type="button" class="sc-pdf-tab" data-tab="events">Postar Eventos</button>
-                <button type="button" class="sc-pdf-tab" data-tab="officers">Escala de Oficiais</button>
+                <button type="button" class="sc-pdf-tab" data-tab="officers" id="scOfficersTab" style="display:none;">Escala de Oficiais</button>
               </div>
 
               <div class="sc-pdf-panel" id="scEventsPanel" style="display:none;">
@@ -11409,6 +11409,31 @@
     const btn = document.getElementById('scOpenAgendaBtn');
     if(!btn) return;
     btn.addEventListener('click', () => { showView('view-planning'); });
+  })();
+
+  // Escala de Oficiais: restrito a quem tem um desses 3 cargos cadastrados (campo
+  // livre em Administração → Usuários, ex.: "Dir. Associado") — diferente do papel,
+  // que já controla o acesso à Secretaria como um todo. Some a aba pra quem não tem
+  // um desses cargos, mesmo que a pessoa já acesse o resto da Secretaria.
+  (function(){
+    const tab = document.getElementById('scOfficersTab');
+    if(!tab) return;
+    const ALLOWED_CARGOS = ['diretor', 'dir. associado', 'dir. associada'];
+    function normalizeCargo(s){
+      return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    }
+    function applyOfficersTabAccess(usuario){
+      const allowed = !!usuario && ALLOWED_CARGOS.includes(normalizeCargo(usuario.cargo));
+      tab.style.display = allowed ? '' : 'none';
+      // Se a aba estava ativa e a pessoa perdeu o acesso (ex.: trocou de usuário na
+      // mesma sessão), volta pra Documentos em vez de deixar um painel restrito aberto.
+      if(!allowed && tab.classList.contains('active')){
+        const docTab = document.querySelector('.sc-pdf-tab[data-tab="doc"]');
+        if(docTab) docTab.click();
+      }
+    }
+    document.addEventListener('cedros:loggedin', (e) => applyOfficersTabAccess(e.detail));
+    applyOfficersTabAccess(window.__currentUsuario);
   })();
 
   // Secretaria → Escala de Oficiais: lista as próximas Reuniões Regulares reais da
