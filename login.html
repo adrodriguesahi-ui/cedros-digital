@@ -2186,6 +2186,17 @@
   .bd-ranking-kicker{ display:block; font-size:10.5px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:var(--lg-gold); margin-bottom:2px; }
   .bd-ranking-text b{ color:var(--lg-ink); }
 
+  .bd-officer-chip{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:3px 11px 3px 9px; border-radius:20px;
+    background:rgba(63,203,107,0.16);
+    border:1px solid rgba(63,203,107,0.5);
+    color:var(--accent);
+    font-size:10.5px; font-weight:800;
+    text-decoration:none; cursor:pointer;
+    box-shadow:0 0 0 3px rgba(63,203,107,0.08);
+  }
+
   /* Descriptive quick-access grid ("Acesso Rápido") */
   .link-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; margin-bottom:28px; }
   .link-card{
@@ -3162,8 +3173,11 @@
           <textarea class="pl-input pl-textarea" id="plFieldNote" rows="2" placeholder="Observações internas, o que levar, etc." maxlength="300"></textarea>
 
           <div class="pl-schedule-section">
-            <label class="pl-field-label" style="margin-top:0;">Oficiais de Dia</label>
-            <input type="text" class="pl-input" id="plFieldOfficers" placeholder="Ex.: Thiago e Vitor" maxlength="80">
+            <label class="pl-field-label" style="margin-top:0;">Oficial de Dia (1)</label>
+            <select class="pl-input" id="plFieldOfficer1"><option value="">Nenhum</option></select>
+
+            <label class="pl-field-label">Oficial de Dia (2)</label>
+            <select class="pl-input" id="plFieldOfficer2"><option value="">Nenhum</option></select>
 
             <label class="pl-field-label">Programação do Dia</label>
             <div class="pl-schedule-list" id="plScheduleList"></div>
@@ -7561,6 +7575,13 @@
         <p class="bd-greeting-unit">
           <span id="bdGreetingUnit">Unidade Ype</span>
           <span class="bd-attend-badge" id="bdAttendBadge" aria-label="8 de 8 reuniões frequentadas este ano">8/8 presenças</span>
+          <!-- Só aparece pra quem está marcado como oficial de dia num evento (ver
+               oficiais_dia_ids em eventos_agenda) — populado por JS em
+               window.__plGetOfficerEvent, ver mais abaixo no arquivo. -->
+          <a href="#" class="bd-officer-chip" id="bdOfficerBanner" style="display:none;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4Z"/><path d="m9 12 2 2 4-4"/></svg>
+            <span id="bdOfficerEventInfo">Oficial de Dia</span>
+          </a>
         </p>
 
         <div class="bd-reminder-banner" id="bdReminderBanner" role="button" tabindex="0" style="display:none;">
@@ -7610,6 +7631,33 @@
         <p class="bd-banner-empty" id="bdBannerEmpty" style="display:none;">Nenhum evento agendado.</p>
 
         <div class="bd-content">
+
+          <div class="pl-modal-overlay" id="bdOfficerFillOverlay">
+            <div class="pl-modal">
+              <div class="pl-modal-head">
+                <h4 class="pl-modal-title">Programação da Reunião</h4>
+                <button type="button" class="pl-modal-close" id="bdOfficerFillClose" aria-label="Fechar">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+              <p class="pl-reminder-hint" style="margin:0 2px 14px;" id="bdOfficerFillEventLabel"></p>
+
+              <label class="pl-field-label" style="margin-top:0;">Programação do Dia</label>
+              <div class="pl-schedule-list" id="bdOfficerScheduleList"></div>
+              <button type="button" class="pl-list-add-btn" id="bdOfficerScheduleAddBtn">+ Adicionar horário</button>
+
+              <label class="pl-field-label">Aviso aos Membros</label>
+              <textarea class="pl-input pl-textarea" id="bdOfficerNotice" rows="3" placeholder="Mensagem para os membros (pode incluir um versículo)..." maxlength="400"></textarea>
+
+              <label class="pl-field-label">Checklist de Atividades</label>
+              <div class="pl-checklist-list" id="bdOfficerChecklistList"></div>
+              <button type="button" class="pl-list-add-btn" id="bdOfficerChecklistAddBtn">+ Adicionar item</button>
+
+              <div class="pl-modal-actions">
+                <button type="button" class="pl-btn pl-btn-primary" id="bdOfficerFillSaveBtn">Salvar Programação</button>
+              </div>
+            </div>
+          </div>
 
           <!-- Bento: progress ring + unit comparison chart + streak -->
           <div class="bento-grid">
@@ -8049,8 +8097,26 @@
     let customTagColor = 'green';
     const fieldDesc = document.getElementById('plFieldDesc');
     const fieldNote = document.getElementById('plFieldNote');
-    const fieldOfficers = document.getElementById('plFieldOfficers');
+    const fieldOfficer1 = document.getElementById('plFieldOfficer1');
+    const fieldOfficer2 = document.getElementById('plFieldOfficer2');
     const fieldNotice = document.getElementById('plFieldNotice');
+
+    // Carrega a lista de membros reais uma vez, pros dois seletores de Oficial de Dia —
+    // assim o app sabe QUEM é o oficial (por id), não só um nome digitado, e consegue
+    // mostrar o card "Você é Oficial de Dia" pra pessoa certa no dashboard.
+    async function loadOfficerOptions(){
+      if(!supa) return;
+      const { data } = await supa.from('usuarios').select('id, nome').order('nome');
+      (data || []).forEach(u => {
+        const opt1 = document.createElement('option');
+        opt1.value = u.id;
+        opt1.textContent = u.nome;
+        fieldOfficer1.appendChild(opt1);
+        const opt2 = opt1.cloneNode(true);
+        fieldOfficer2.appendChild(opt2);
+      });
+    }
+    loadOfficerOptions();
     const scheduleList = document.getElementById('plScheduleList');
     const scheduleAddBtn = document.getElementById('plScheduleAddBtn');
     const checklistList = document.getElementById('plChecklistList');
@@ -8228,9 +8294,9 @@
       viewDesc.textContent = desc;
       viewNoteBlock.style.display = note ? '' : 'none';
       viewNote.textContent = note;
-      const officers = card.dataset.officers || '';
-      viewOfficersBlock.style.display = officers ? '' : 'none';
-      viewOfficers.textContent = officers;
+      const officerNames = parseJSONSafe(card.dataset.officerNames);
+      viewOfficersBlock.style.display = officerNames.length ? '' : 'none';
+      viewOfficers.textContent = officerNames.join(' e ');
       const notice = card.dataset.notice || '';
       viewNoticeBlock.style.display = notice ? '' : 'none';
       viewNotice.textContent = notice;
@@ -8335,7 +8401,9 @@
         selectTagOption(card.dataset.tag || 'green', card.dataset.tagLabel || '');
         fieldDesc.value = card.dataset.desc || '';
         fieldNote.value = card.dataset.note || '';
-        fieldOfficers.value = card.dataset.officers || '';
+        const editOfficerIds = parseJSONSafe(card.dataset.officerIds);
+        fieldOfficer1.value = editOfficerIds[0] || '';
+        fieldOfficer2.value = editOfficerIds[1] || '';
         fieldNotice.value = card.dataset.notice || '';
         scheduleList.innerHTML = '';
         parseJSONSafe(card.dataset.schedule).forEach(item => addScheduleRowEl(item.horario, item.atividade));
@@ -8363,7 +8431,8 @@
         selectTagOption('green', 'Reunião');
         fieldDesc.value = '';
         fieldNote.value = '';
-        fieldOfficers.value = '';
+        fieldOfficer1.value = '';
+        fieldOfficer2.value = '';
         fieldNotice.value = '';
         scheduleList.innerHTML = '';
         checklistList.innerHTML = '';
@@ -8452,7 +8521,8 @@
       a.dataset.tagLabel = data.tagLabel;
       a.dataset.desc = data.desc;
       a.dataset.note = data.note;
-      a.dataset.officers = data.officers || '';
+      a.dataset.officerIds = JSON.stringify(data.officerIds || []);
+      a.dataset.officerNames = JSON.stringify(data.officerNames || []);
       a.dataset.notice = data.notice || '';
       a.dataset.schedule = JSON.stringify(data.schedule || []);
       a.dataset.checklist = JSON.stringify(data.checklist || []);
@@ -8554,7 +8624,8 @@
         tagLabel: row.tag_label,
         desc: row.descricao || '',
         note: row.observacao || '',
-        officers: row.oficiais_dia || '',
+        officerIds: Array.isArray(row.oficiais_dia_ids) ? row.oficiais_dia_ids : [],
+        officerNames: Array.isArray(row.oficiais_dia_nomes) ? row.oficiais_dia_nomes : [],
         notice: row.aviso_membros || '',
         schedule: Array.isArray(row.programacao_dia) ? row.programacao_dia : [],
         checklist: Array.isArray(row.checklist_atividades) ? row.checklist_atividades : [],
@@ -8846,7 +8917,12 @@
       const tagLabel = isCustomTag ? (fieldCustomTagName.value.trim() || 'Personalizada') : tagOpt.getAttribute('data-label');
       const desc = fieldDesc.value.trim();
       const note = fieldNote.value.trim();
-      const officers = fieldOfficers.value.trim();
+      const officer1Id = fieldOfficer1.value || '';
+      const officer1Name = officer1Id ? fieldOfficer1.options[fieldOfficer1.selectedIndex].textContent : '';
+      const officer2Id = fieldOfficer2.value || '';
+      const officer2Name = officer2Id ? fieldOfficer2.options[fieldOfficer2.selectedIndex].textContent : '';
+      const officerIds = [officer1Id, officer2Id].filter(Boolean);
+      const officerNames = [officer1Name, officer2Name].filter(Boolean);
       const notice = fieldNotice.value.trim();
       const schedule = Array.from(scheduleList.querySelectorAll('.pl-schedule-row')).map(row => ({
         horario: row.querySelector('.pl-schedule-time').value || '',
@@ -8907,7 +8983,8 @@
         tag_label: tagLabel,
         descricao: desc || null,
         observacao: note || null,
-        oficiais_dia: officers || null,
+        oficiais_dia_ids: officerIds,
+        oficiais_dia_nomes: officerNames,
         aviso_membros: notice || null,
         programacao_dia: schedule,
         checklist_atividades: checklist,
@@ -9288,6 +9365,28 @@
       }).filter(Boolean);
       withDates.sort((a, b) => a.date - b.date);
       return withDates.slice(0, limit || 5);
+    };
+
+    // Usado pelo card "Você é Oficial de Dia" do dashboard: acha o próximo evento (se
+    // houver) em que o usuário logado está marcado como oficial, mesma regra de datas
+    // do __plGetUpcomingEvents acima (sem filtro de galeria — o oficial precisa ver o
+    // card mesmo que o evento esteja marcado pra não entrar no carrossel de destaque).
+    window.__plGetOfficerEvent = function(userId){
+      if(!userId) return null;
+      const now = new Date();
+      const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'))
+        .filter(card => parseJSONSafe(card.dataset.officerIds).includes(userId));
+      const withDates = cards.map(card => {
+        const day = parseInt(card.dataset.day, 10);
+        const monIdx = parseInt(card.dataset.monIndex, 10);
+        if(!day || !monIdx) return null;
+        const [hh, mm] = (card.dataset.time || '00:00').split(':').map(n => parseInt(n, 10) || 0);
+        let date = new Date(now.getFullYear(), monIdx - 1, day, hh, mm);
+        if(date < now) date = new Date(now.getFullYear() + 1, monIdx - 1, day, hh, mm);
+        return { card, date };
+      }).filter(Boolean);
+      withDates.sort((a, b) => a.date - b.date);
+      return withDates[0] || null;
     };
 
     // Usado pelo card de destaque do dashboard: mostra os detalhes do evento sem
@@ -14145,8 +14244,123 @@ const REQ_SUMMARIES = {
       startAutoplay();
     }
 
-    window.__bdRefreshBanners = buildBanners;
+    // ---- Card "Você é Oficial de Dia" + preenchimento da Programação da Reunião ----
+    // Deixa a pessoa marcada como oficial preencher horários/aviso/checklist do evento
+    // direto do dashboard, sem precisar de permissão de edição na Agenda Anual/Secretaria
+    // — só essas 3 colunas são atualizadas (update direcionado), o resto do evento fica
+    // intocado.
+    const officerBanner = document.getElementById('bdOfficerBanner');
+    const officerEventInfo = document.getElementById('bdOfficerEventInfo');
+    const officerFillOverlay = document.getElementById('bdOfficerFillOverlay');
+    const officerFillClose = document.getElementById('bdOfficerFillClose');
+    const officerFillEventLabel = document.getElementById('bdOfficerFillEventLabel');
+    const officerScheduleList = document.getElementById('bdOfficerScheduleList');
+    const officerScheduleAddBtn = document.getElementById('bdOfficerScheduleAddBtn');
+    const officerNoticeField = document.getElementById('bdOfficerNotice');
+    const officerChecklistList = document.getElementById('bdOfficerChecklistList');
+    const officerChecklistAddBtn = document.getElementById('bdOfficerChecklistAddBtn');
+    const officerFillSaveBtn = document.getElementById('bdOfficerFillSaveBtn');
+    let officerCurrentCard = null;
+
+    function officerParseJSON(str){
+      if(!str) return [];
+      try { const p = JSON.parse(str); return Array.isArray(p) ? p : []; } catch(e){ return []; }
+    }
+
+    function addOfficerScheduleRow(horario, atividade){
+      const row = document.createElement('div');
+      row.className = 'pl-schedule-row';
+      row.innerHTML =
+        '<input type="time" class="pl-input pl-schedule-time">' +
+        '<input type="text" class="pl-input pl-schedule-activity" placeholder="Atividade" maxlength="60">' +
+        '<button type="button" class="pl-list-remove-btn" aria-label="Remover horário">×</button>';
+      row.querySelector('.pl-schedule-time').value = horario || '';
+      row.querySelector('.pl-schedule-activity').value = atividade || '';
+      row.querySelector('.pl-list-remove-btn').addEventListener('click', () => row.remove());
+      officerScheduleList.appendChild(row);
+    }
+    if(officerScheduleAddBtn) officerScheduleAddBtn.addEventListener('click', () => addOfficerScheduleRow('', ''));
+
+    function addOfficerChecklistRow(texto, feito){
+      const row = document.createElement('div');
+      row.className = 'pl-checklist-row';
+      row.innerHTML =
+        '<input type="checkbox" class="pl-checklist-done">' +
+        '<input type="text" class="pl-input pl-checklist-text" placeholder="Item do checklist" maxlength="80">' +
+        '<button type="button" class="pl-list-remove-btn" aria-label="Remover item">×</button>';
+      row.querySelector('.pl-checklist-done').checked = !!feito;
+      row.querySelector('.pl-checklist-text').value = texto || '';
+      row.querySelector('.pl-list-remove-btn').addEventListener('click', () => row.remove());
+      officerChecklistList.appendChild(row);
+    }
+    if(officerChecklistAddBtn) officerChecklistAddBtn.addEventListener('click', () => addOfficerChecklistRow('', false));
+
+    function refreshOfficerBanner(){
+      if(!officerBanner) return;
+      const user = window.__currentUsuario;
+      const result = (user && window.__plGetOfficerEvent) ? window.__plGetOfficerEvent(user.id) : null;
+      if(!result){
+        officerBanner.style.display = 'none';
+        officerCurrentCard = null;
+        return;
+      }
+      officerCurrentCard = result.card;
+      const dateStr = result.date.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
+      officerEventInfo.textContent = 'Oficial de Dia · ' + dateStr;
+      officerBanner.title = officerCurrentCard.dataset.title || '';
+      officerBanner.style.display = '';
+    }
+
+    if(officerBanner){
+      officerBanner.addEventListener('click', (e) => {
+        e.preventDefault();
+        if(!officerCurrentCard) return;
+        officerFillEventLabel.textContent = (officerCurrentCard.dataset.title || '') + ' · ' + (officerCurrentCard.dataset.local || '');
+        officerScheduleList.innerHTML = '';
+        officerParseJSON(officerCurrentCard.dataset.schedule).forEach(item => addOfficerScheduleRow(item.horario, item.atividade));
+        officerNoticeField.value = officerCurrentCard.dataset.notice || '';
+        officerChecklistList.innerHTML = '';
+        officerParseJSON(officerCurrentCard.dataset.checklist).forEach(item => addOfficerChecklistRow(item.texto, item.feito));
+        officerFillOverlay.classList.add('show');
+      });
+      officerFillClose.addEventListener('click', () => officerFillOverlay.classList.remove('show'));
+      officerFillOverlay.addEventListener('click', (e) => { if(e.target === officerFillOverlay) officerFillOverlay.classList.remove('show'); });
+
+      officerFillSaveBtn.addEventListener('click', async () => {
+        if(!officerCurrentCard || !supa) return;
+        const schedule = Array.from(officerScheduleList.querySelectorAll('.pl-schedule-row')).map(row => ({
+          horario: row.querySelector('.pl-schedule-time').value || '',
+          atividade: row.querySelector('.pl-schedule-activity').value.trim()
+        })).filter(item => item.horario || item.atividade);
+        const notice = officerNoticeField.value.trim();
+        const checklist = Array.from(officerChecklistList.querySelectorAll('.pl-checklist-row')).map(row => ({
+          texto: row.querySelector('.pl-checklist-text').value.trim(),
+          feito: row.querySelector('.pl-checklist-done').checked
+        })).filter(item => item.texto);
+
+        officerFillSaveBtn.disabled = true;
+        const { error } = await supa.from('eventos_agenda').update({
+          programacao_dia: schedule,
+          aviso_membros: notice || null,
+          checklist_atividades: checklist
+        }).eq('id', officerCurrentCard.dataset.id);
+        officerFillSaveBtn.disabled = false;
+        if(error){
+          alert('Não foi possível salvar a programação. Tente novamente.');
+          return;
+        }
+        officerCurrentCard.dataset.schedule = JSON.stringify(schedule);
+        officerCurrentCard.dataset.notice = notice;
+        officerCurrentCard.dataset.checklist = JSON.stringify(checklist);
+        officerFillOverlay.classList.remove('show');
+      });
+
+      document.addEventListener('cedros:loggedin', refreshOfficerBanner);
+    }
+
+    window.__bdRefreshBanners = function(){ buildBanners(); refreshOfficerBanner(); };
     buildBanners();
+    refreshOfficerBanner();
   })();
 
   // Registers the service worker so the app can be installed and opened offline.
