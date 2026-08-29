@@ -1609,6 +1609,36 @@
   .pl-reminder-fields.show{ display:block; }
   .pl-reminder-hint{ margin:6px 2px 0; font-size:11px; font-weight:600; color:rgba(245,239,225,0.5); line-height:1.4; }
 
+  .pl-schedule-section{ margin:16px 0 4px; padding:12px 14px; border-radius:16px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); }
+  .pl-schedule-list, .pl-checklist-list{ display:flex; flex-direction:column; gap:8px; }
+  .pl-schedule-row{ display:flex; gap:8px; align-items:center; }
+  .pl-schedule-row .pl-schedule-time{ flex:0 0 92px; }
+  .pl-schedule-row .pl-schedule-activity{ flex:1; min-width:0; }
+  .pl-checklist-row{ display:flex; gap:8px; align-items:center; }
+  .pl-checklist-row .pl-checklist-done{ flex-shrink:0; width:19px; height:19px; accent-color:var(--accent); }
+  .pl-checklist-row .pl-checklist-text{ flex:1; min-width:0; }
+  .pl-list-remove-btn{
+    flex-shrink:0; width:30px; height:30px; border-radius:50%; border:none; cursor:pointer;
+    background:rgba(255,107,92,0.14); color:#FF6B5C; font-size:16px; line-height:1; font-weight:700;
+  }
+  .pl-list-add-btn{
+    margin-top:8px; width:100%; border:1px dashed rgba(255,255,255,0.2); border-radius:12px;
+    background:transparent; color:var(--accent); font-size:13px; font-weight:800; padding:10px; cursor:pointer;
+  }
+
+  .pl-view-schedule{ display:flex; flex-direction:column; gap:6px; }
+  .pl-view-schedule-row{ display:flex; gap:10px; align-items:baseline; font-size:13.5px; }
+  .pl-view-schedule-time{ flex:0 0 52px; font-weight:800; color:var(--accent); font-variant-numeric:tabular-nums; }
+  .pl-view-schedule-activity{ flex:1; font-weight:600; color:rgba(245,239,225,0.8); }
+  .pl-view-notice-block{
+    margin-top:14px; padding:12px 14px; border-radius:16px;
+    background:rgba(216,168,62,0.08); border:1px solid rgba(216,168,62,0.22);
+  }
+  .pl-view-checklist{ display:flex; flex-direction:column; gap:10px; }
+  .pl-view-checklist-row{ display:flex; align-items:center; gap:10px; font-size:13.5px; font-weight:600; color:rgba(245,239,225,0.85); cursor:pointer; }
+  .pl-view-checklist-row input{ flex-shrink:0; width:19px; height:19px; accent-color:var(--accent); }
+  .pl-view-checklist-row.is-done span{ text-decoration:line-through; color:rgba(245,239,225,0.45); }
+
   .pl-repeat-fields{ display:none; margin-top:10px; padding-top:10px; border-top:1px dashed rgba(255,255,255,0.1); }
   .pl-repeat-fields.show{ display:block; }
   .pl-repeat-input-wrap{ position:relative; }
@@ -3131,6 +3161,23 @@
           <label class="pl-field-label">Observação</label>
           <textarea class="pl-input pl-textarea" id="plFieldNote" rows="2" placeholder="Observações internas, o que levar, etc." maxlength="300"></textarea>
 
+          <div class="pl-schedule-section">
+            <label class="pl-field-label" style="margin-top:0;">Oficiais de Dia</label>
+            <input type="text" class="pl-input" id="plFieldOfficers" placeholder="Ex.: Thiago e Vitor" maxlength="80">
+
+            <label class="pl-field-label">Programação do Dia</label>
+            <div class="pl-schedule-list" id="plScheduleList"></div>
+            <button type="button" class="pl-list-add-btn" id="plScheduleAddBtn">+ Adicionar horário</button>
+
+            <label class="pl-field-label">Aviso aos Membros</label>
+            <textarea class="pl-input pl-textarea" id="plFieldNotice" rows="3" placeholder="Mensagem para os membros (pode incluir um versículo)..." maxlength="400"></textarea>
+
+            <label class="pl-field-label">Checklist de Atividades</label>
+            <p class="pl-reminder-hint" style="margin:0 2px 8px;">Qualquer pessoa pode marcar os itens como feito ao ver o evento, sem precisar editar.</p>
+            <div class="pl-checklist-list" id="plChecklistList"></div>
+            <button type="button" class="pl-list-add-btn" id="plChecklistAddBtn">+ Adicionar item</button>
+          </div>
+
           <label class="pl-field-label">Foto do evento</label>
           <div class="cl-photo-row">
             <label class="cl-photo-btn" for="plPhotoCamera">
@@ -3255,6 +3302,26 @@
           <div class="pl-view-block" id="plViewNoteBlock" style="display:none;">
             <span class="pl-field-label">Observação</span>
             <p class="pl-view-text" id="plViewNote"></p>
+          </div>
+
+          <div class="pl-view-block" id="plViewOfficersBlock" style="display:none;">
+            <span class="pl-field-label">Oficiais de Dia</span>
+            <p class="pl-view-text" id="plViewOfficers"></p>
+          </div>
+
+          <div class="pl-view-block" id="plViewScheduleBlock" style="display:none;">
+            <span class="pl-field-label">Programação do Dia</span>
+            <div class="pl-view-schedule" id="plViewSchedule"></div>
+          </div>
+
+          <div class="pl-view-block pl-view-notice-block" id="plViewNoticeBlock" style="display:none;">
+            <span class="pl-field-label" style="margin-top:0;">Aviso aos Membros</span>
+            <p class="pl-view-text" id="plViewNotice"></p>
+          </div>
+
+          <div class="pl-view-block" id="plViewChecklistBlock" style="display:none;">
+            <span class="pl-field-label">Checklist de Atividades</span>
+            <div class="pl-view-checklist" id="plViewChecklist"></div>
           </div>
         </div>
       </div>
@@ -7982,6 +8049,51 @@
     let customTagColor = 'green';
     const fieldDesc = document.getElementById('plFieldDesc');
     const fieldNote = document.getElementById('plFieldNote');
+    const fieldOfficers = document.getElementById('plFieldOfficers');
+    const fieldNotice = document.getElementById('plFieldNotice');
+    const scheduleList = document.getElementById('plScheduleList');
+    const scheduleAddBtn = document.getElementById('plScheduleAddBtn');
+    const checklistList = document.getElementById('plChecklistList');
+    const checklistAddBtn = document.getElementById('plChecklistAddBtn');
+
+    function parseJSONSafe(str){
+      if(!str) return [];
+      try {
+        const parsed = JSON.parse(str);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch(e){
+        return [];
+      }
+    }
+
+    function addScheduleRowEl(horario, atividade){
+      const row = document.createElement('div');
+      row.className = 'pl-schedule-row';
+      row.innerHTML =
+        '<input type="time" class="pl-input pl-schedule-time">' +
+        '<input type="text" class="pl-input pl-schedule-activity" placeholder="Atividade" maxlength="60">' +
+        '<button type="button" class="pl-list-remove-btn" aria-label="Remover horário">×</button>';
+      row.querySelector('.pl-schedule-time').value = horario || '';
+      row.querySelector('.pl-schedule-activity').value = atividade || '';
+      row.querySelector('.pl-list-remove-btn').addEventListener('click', () => row.remove());
+      scheduleList.appendChild(row);
+    }
+    scheduleAddBtn.addEventListener('click', () => addScheduleRowEl('', ''));
+
+    function addChecklistRowEl(texto, feito){
+      const row = document.createElement('div');
+      row.className = 'pl-checklist-row';
+      row.innerHTML =
+        '<input type="checkbox" class="pl-checklist-done">' +
+        '<input type="text" class="pl-input pl-checklist-text" placeholder="Item do checklist" maxlength="80">' +
+        '<button type="button" class="pl-list-remove-btn" aria-label="Remover item">×</button>';
+      row.querySelector('.pl-checklist-done').checked = !!feito;
+      row.querySelector('.pl-checklist-text').value = texto || '';
+      row.querySelector('.pl-list-remove-btn').addEventListener('click', () => row.remove());
+      checklistList.appendChild(row);
+    }
+    checklistAddBtn.addEventListener('click', () => addChecklistRowEl('', false));
+
     const fieldShowGallery = document.getElementById('plFieldShowGallery');
     const fieldGalleryFrom = document.getElementById('plFieldGalleryFrom');
     const galleryFromWrap = document.getElementById('plGalleryFromWrap');
@@ -8025,8 +8137,59 @@
     const viewDesc = document.getElementById('plViewDesc');
     const viewNoteBlock = document.getElementById('plViewNoteBlock');
     const viewNote = document.getElementById('plViewNote');
+    const viewOfficersBlock = document.getElementById('plViewOfficersBlock');
+    const viewOfficers = document.getElementById('plViewOfficers');
+    const viewScheduleBlock = document.getElementById('plViewScheduleBlock');
+    const viewSchedule = document.getElementById('plViewSchedule');
+    const viewNoticeBlock = document.getElementById('plViewNoticeBlock');
+    const viewNotice = document.getElementById('plViewNotice');
+    const viewChecklistBlock = document.getElementById('plViewChecklistBlock');
+    const viewChecklist = document.getElementById('plViewChecklist');
     const viewPhotoBlock = document.getElementById('plViewPhotoBlock');
     const viewPhotoImg = document.getElementById('plViewPhotoImg');
+
+    async function toggleChecklistItem(card, idx, checked){
+      const list = parseJSONSafe(card.dataset.checklist);
+      if(!list[idx]) return;
+      list[idx].feito = checked;
+      card.dataset.checklist = JSON.stringify(list);
+      if(supa && card.dataset.id){
+        await supa.from('eventos_agenda').update({ checklist_atividades: list }).eq('id', card.dataset.id);
+      }
+    }
+
+    function renderViewChecklist(card){
+      const list = parseJSONSafe(card.dataset.checklist);
+      viewChecklistBlock.style.display = list.length ? '' : 'none';
+      viewChecklist.innerHTML = '';
+      list.forEach((item, idx) => {
+        const row = document.createElement('label');
+        row.className = 'pl-view-checklist-row' + (item.feito ? ' is-done' : '');
+        row.innerHTML = '<input type="checkbox"><span></span>';
+        const checkbox = row.querySelector('input');
+        checkbox.checked = !!item.feito;
+        row.querySelector('span').textContent = item.texto || '';
+        checkbox.addEventListener('change', () => {
+          row.classList.toggle('is-done', checkbox.checked);
+          toggleChecklistItem(card, idx, checkbox.checked);
+        });
+        viewChecklist.appendChild(row);
+      });
+    }
+
+    function renderViewSchedule(card){
+      const list = parseJSONSafe(card.dataset.schedule);
+      viewScheduleBlock.style.display = list.length ? '' : 'none';
+      viewSchedule.innerHTML = '';
+      list.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'pl-view-schedule-row';
+        row.innerHTML = '<span class="pl-view-schedule-time"></span><span class="pl-view-schedule-activity"></span>';
+        row.querySelector('.pl-view-schedule-time').textContent = item.horario || '';
+        row.querySelector('.pl-view-schedule-activity').textContent = item.atividade || '';
+        viewSchedule.appendChild(row);
+      });
+    }
 
     let readOnlyMode = false;
 
@@ -8065,6 +8228,14 @@
       viewDesc.textContent = desc;
       viewNoteBlock.style.display = note ? '' : 'none';
       viewNote.textContent = note;
+      const officers = card.dataset.officers || '';
+      viewOfficersBlock.style.display = officers ? '' : 'none';
+      viewOfficers.textContent = officers;
+      const notice = card.dataset.notice || '';
+      viewNoticeBlock.style.display = notice ? '' : 'none';
+      viewNotice.textContent = notice;
+      renderViewSchedule(card);
+      renderViewChecklist(card);
       const foto = card.dataset.foto || '';
       viewPhotoBlock.style.display = foto ? '' : 'none';
       viewPhotoImg.src = foto || '';
@@ -8164,6 +8335,12 @@
         selectTagOption(card.dataset.tag || 'green', card.dataset.tagLabel || '');
         fieldDesc.value = card.dataset.desc || '';
         fieldNote.value = card.dataset.note || '';
+        fieldOfficers.value = card.dataset.officers || '';
+        fieldNotice.value = card.dataset.notice || '';
+        scheduleList.innerHTML = '';
+        parseJSONSafe(card.dataset.schedule).forEach(item => addScheduleRowEl(item.horario, item.atividade));
+        checklistList.innerHTML = '';
+        parseJSONSafe(card.dataset.checklist).forEach(item => addChecklistRowEl(item.texto, item.feito));
         fieldShowGallery.checked = card.dataset.showGallery !== '0';
         fieldGalleryFrom.value = card.dataset.showGalleryFrom || '';
         fieldReminderOn.checked = card.dataset.reminderOn === '1';
@@ -8186,6 +8363,10 @@
         selectTagOption('green', 'Reunião');
         fieldDesc.value = '';
         fieldNote.value = '';
+        fieldOfficers.value = '';
+        fieldNotice.value = '';
+        scheduleList.innerHTML = '';
+        checklistList.innerHTML = '';
         fieldShowGallery.checked = true;
         fieldGalleryFrom.value = '';
         fieldReminderOn.checked = false;
@@ -8271,6 +8452,10 @@
       a.dataset.tagLabel = data.tagLabel;
       a.dataset.desc = data.desc;
       a.dataset.note = data.note;
+      a.dataset.officers = data.officers || '';
+      a.dataset.notice = data.notice || '';
+      a.dataset.schedule = JSON.stringify(data.schedule || []);
+      a.dataset.checklist = JSON.stringify(data.checklist || []);
       a.dataset.showGallery = data.showGallery === false ? '0' : '1';
       a.dataset.showGalleryFrom = data.showGalleryFrom || '';
       a.dataset.foto = data.foto || '';
@@ -8369,6 +8554,10 @@
         tagLabel: row.tag_label,
         desc: row.descricao || '',
         note: row.observacao || '',
+        officers: row.oficiais_dia || '',
+        notice: row.aviso_membros || '',
+        schedule: Array.isArray(row.programacao_dia) ? row.programacao_dia : [],
+        checklist: Array.isArray(row.checklist_atividades) ? row.checklist_atividades : [],
         showGallery: row.mostrar_galeria !== false,
         showGalleryFrom: row.mostrar_galeria_a_partir_de || '',
         foto: row.foto || '',
@@ -8657,6 +8846,16 @@
       const tagLabel = isCustomTag ? (fieldCustomTagName.value.trim() || 'Personalizada') : tagOpt.getAttribute('data-label');
       const desc = fieldDesc.value.trim();
       const note = fieldNote.value.trim();
+      const officers = fieldOfficers.value.trim();
+      const notice = fieldNotice.value.trim();
+      const schedule = Array.from(scheduleList.querySelectorAll('.pl-schedule-row')).map(row => ({
+        horario: row.querySelector('.pl-schedule-time').value || '',
+        atividade: row.querySelector('.pl-schedule-activity').value.trim()
+      })).filter(item => item.horario || item.atividade);
+      const checklist = Array.from(checklistList.querySelectorAll('.pl-checklist-row')).map(row => ({
+        texto: row.querySelector('.pl-checklist-text').value.trim(),
+        feito: row.querySelector('.pl-checklist-done').checked
+      })).filter(item => item.texto);
       const reminderOn = fieldReminderOn.checked;
       const reminderDate = reminderOn ? fieldReminderDate.value : '';
       const reminderMsg = reminderOn ? (fieldReminderMsg.value.trim() || defaultReminderMessage(title)) : '';
@@ -8708,6 +8907,10 @@
         tag_label: tagLabel,
         descricao: desc || null,
         observacao: note || null,
+        oficiais_dia: officers || null,
+        aviso_membros: notice || null,
+        programacao_dia: schedule,
+        checklist_atividades: checklist,
         mostrar_galeria: fieldShowGallery.checked,
         mostrar_galeria_a_partir_de: (fieldShowGallery.checked && fieldGalleryFrom.value) ? fieldGalleryFrom.value : null,
         foto: currentPhotoData || null,

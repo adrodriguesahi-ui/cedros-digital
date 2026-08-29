@@ -301,6 +301,10 @@ create table if not exists eventos_agenda (
   lembrete_repetir_on boolean not null default false,
   lembrete_repetir_dias int,
   lembrete_repetir_vezes int,
+  oficiais_dia text,
+  aviso_membros text,
+  programacao_dia jsonb not null default '[]'::jsonb,
+  checklist_atividades jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -318,6 +322,15 @@ alter table eventos_agenda add column if not exists mostrar_galeria boolean not 
 -- uma vaga no carrossel (em branco = sem restrição, só a data do evento em si
 -- já passar tira do carrossel, como sempre foi).
 alter table eventos_agenda add column if not exists mostrar_galeria_a_partir_de date;
+
+-- Colunas adicionadas depois: "Programação do Dia" de uma reunião — quem são os
+-- oficiais de dia, a lista de horário+atividade, um aviso pros membros (pode
+-- incluir um versículo) e um checklist de tarefas que qualquer pessoa pode marcar
+-- como feito ao visualizar o evento (não exige permissão de edição).
+alter table eventos_agenda add column if not exists oficiais_dia text;
+alter table eventos_agenda add column if not exists aviso_membros text;
+alter table eventos_agenda add column if not exists programacao_dia jsonb not null default '[]'::jsonb;
+alter table eventos_agenda add column if not exists checklist_atividades jsonb not null default '[]'::jsonb;
 
 create or replace function set_updated_at_eventos_agenda()
 returns trigger language plpgsql as $$
