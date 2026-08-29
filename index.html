@@ -1528,7 +1528,15 @@
   .pl-fab:active{ transform:scale(0.93); }
 
   .pl-modal-overlay{
-    position:absolute; inset:0; z-index:20;
+    /* position:fixed não adianta escapar pra viewport aqui: .view tem transform e
+       filter (efeito de transição entre telas), e isso faz QUALQUER descendente
+       fixed ficar preso ao tamanho da .view em vez da janela real — na prática se
+       comporta como absolute mesmo. Por isso a barra de navegação inferior global
+       (#appTabbar, fora de qualquer .view, essa sim escapa de verdade) ganhava e
+       cobria o rodapé do modal (ex.: botão "Salvar"). O que resolve de verdade é
+       esconder a barra enquanto um modal estiver aberto — ver `body:has(...)` logo
+       abaixo de `.bd-tabbar.show`. z-index mais alto aqui é só reforço/futuro-prova. */
+    position:absolute; inset:0; z-index:26;
     background:rgba(5,10,6,0.6);
     display:flex; align-items:flex-end; justify-content:center;
     opacity:0; visibility:hidden; transition:opacity .2s ease, visibility 0s linear .2s;
@@ -2246,6 +2254,13 @@
     flex-shrink:0;
   }
   .bd-tabbar.show{ display:flex; }
+  /* Com qualquer modal/sheet interno aberto (.pl-modal-overlay ou a tela de dia da
+     Agenda Anual), some com a barra: como essas telas vivem dentro de uma .view
+     (que tem transform/filter — ver comentário em .pl-modal-overlay acima), não dá
+     pra simplesmente empilhar a barra por cima com z-index; ela sempre "ganharia"
+     e cobriria o rodapé do modal (ex.: o botão "Salvar" ficava atrás dela, sem
+     jeito de tocar). Escondendo a barra o problema desaparece de vez. */
+  body:has(.pl-modal-overlay.show, .pl-dayview-overlay.show) .bd-tabbar{ display:none; }
   #appTabbar.tab-item, #appTabbar .tab-item{ color:var(--ink-dim); }
   #appTabbar .tab-item.active{ color:var(--accent); }
 
