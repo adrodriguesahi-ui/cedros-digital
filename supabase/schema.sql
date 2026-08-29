@@ -301,7 +301,8 @@ create table if not exists eventos_agenda (
   lembrete_repetir_on boolean not null default false,
   lembrete_repetir_dias int,
   lembrete_repetir_vezes int,
-  oficiais_dia text,
+  oficiais_dia_ids uuid[] not null default '{}'::uuid[],
+  oficiais_dia_nomes text[] not null default '{}'::text[],
   aviso_membros text,
   programacao_dia jsonb not null default '[]'::jsonb,
   checklist_atividades jsonb not null default '[]'::jsonb,
@@ -327,7 +328,14 @@ alter table eventos_agenda add column if not exists mostrar_galeria_a_partir_de 
 -- oficiais de dia, a lista de horário+atividade, um aviso pros membros (pode
 -- incluir um versículo) e um checklist de tarefas que qualquer pessoa pode marcar
 -- como feito ao visualizar o evento (não exige permissão de edição).
+-- oficiais_dia (texto livre) foi a primeira versão do campo — mantida aqui só
+-- por compatibilidade com bancos que já rodaram essa migração antes; o app não
+-- lê nem escreve mais nela, usa oficiais_dia_ids/oficiais_dia_nomes agora (liga
+-- o oficial a um membro cadastrado de verdade, pra dar pra saber quem é a pessoa
+-- logada e mostrar o card "Você é Oficial de Dia" só pra ela).
 alter table eventos_agenda add column if not exists oficiais_dia text;
+alter table eventos_agenda add column if not exists oficiais_dia_ids uuid[] not null default '{}'::uuid[];
+alter table eventos_agenda add column if not exists oficiais_dia_nomes text[] not null default '{}'::text[];
 alter table eventos_agenda add column if not exists aviso_membros text;
 alter table eventos_agenda add column if not exists programacao_dia jsonb not null default '[]'::jsonb;
 alter table eventos_agenda add column if not exists checklist_atividades jsonb not null default '[]'::jsonb;
