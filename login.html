@@ -953,9 +953,9 @@
   }
 
   .sc-pdf-card{ margin-bottom:14px; }
-  .sc-pdf-tabs{ display:flex; gap:8px; margin-bottom:12px; }
+  .sc-pdf-tabs{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
   .sc-pdf-tab{
-    flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+    flex:1 1 calc(50% - 4px); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
     color:rgba(245,239,225,0.7); border-radius:12px; padding:10px; text-align:center;
     font-size:12.5px; font-weight:800; cursor:pointer;
   }
@@ -964,6 +964,16 @@
     background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
     border-radius:16px; padding:16px;
   }
+
+  .sc-officers-list{ display:flex; flex-direction:column; gap:12px; }
+  .sc-officer-row{
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09);
+    border-radius:14px; padding:12px 14px;
+  }
+  .sc-officer-row-head{ display:flex; align-items:baseline; gap:10px; margin-bottom:10px; }
+  .sc-officer-date{ font-size:12.5px; font-weight:900; color:var(--accent); font-variant-numeric:tabular-nums; }
+  .sc-officer-title{ font-size:13px; font-weight:800; color:var(--cream); }
+  .sc-officer-save-btn{ width:100%; margin-top:10px; padding:9px; font-size:12.5px; }
 
   .at-section-head{ display:flex; align-items:center; justify-content:space-between; }
   .at-roster-count{ font-size:11px; font-weight:700; color:rgba(245,239,225,0.5); }
@@ -6570,11 +6580,18 @@
                 <button type="button" class="sc-pdf-tab" data-tab="pdf">Gerar Autorização (PDF)</button>
                 <button type="button" class="sc-pdf-tab" data-tab="attendance">Chamada de Presença</button>
                 <button type="button" class="sc-pdf-tab" data-tab="events">Postar Eventos</button>
+                <button type="button" class="sc-pdf-tab" data-tab="officers" id="scOfficersTab" style="display:none;">Escala de Oficiais</button>
               </div>
 
               <div class="sc-pdf-panel" id="scEventsPanel" style="display:none;">
                 <p class="pl-reminder-hint" style="margin-top:0;">Criar, editar ou remover eventos — tanto da Agenda Anual do clube quanto do banner de destaque no início do app — é tudo feito na Agenda Anual. Esse atalho leva direto pra lá.</p>
                 <button type="button" class="pl-btn pl-btn-primary" id="scOpenAgendaBtn">Abrir Agenda Anual</button>
+              </div>
+
+              <div class="sc-pdf-panel" id="scOfficersPanel" style="display:none;">
+                <p class="pl-reminder-hint" style="margin-top:0;">Escale os dois Oficiais de Dia de cada Reunião Regular. A pessoa escalada vê um aviso no próprio Início pra preencher a programação daquele dia.</p>
+                <div class="sc-officers-list" id="scOfficersList"></div>
+                <p class="pl-reminder-hint" id="scOfficersEmpty" style="display:none;">Nenhuma Reunião Regular futura cadastrada na Agenda Anual.</p>
               </div>
 
               <div class="sc-pdf-panel" id="scPdfPanel" style="display:none;">
@@ -11358,16 +11375,27 @@
     const pdfPanel = document.getElementById('scPdfPanel');
     const attendancePanel = document.getElementById('scAttendancePanel');
     const eventsPanel = document.getElementById('scEventsPanel');
+    const officersPanel = document.getElementById('scOfficersPanel');
     const scContent = document.getElementById('scContent');
+    // O FAB "Adicionar documento" só faz sentido na aba Documentos — nas outras
+    // (Escala de Oficiais, Chamada de Presença etc.) ele só sobrepõe conteúdo à
+    // toa, então some junto com a troca de aba (bug preexistente, não escondia
+    // em nenhuma aba antes).
+    const scAddBtn = document.getElementById('scAddBtn');
     if(!tabs.length || !pdfPanel || !scContent) return;
     tabs.forEach(tab => {
       tab.addEventListener('click', () => {
         tabs.forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
         const which = tab.getAttribute('data-tab');
+        if(scAddBtn) scAddBtn.style.display = (which === 'doc') ? '' : 'none';
         pdfPanel.style.display = (which === 'pdf') ? '' : 'none';
         if(attendancePanel) attendancePanel.style.display = (which === 'attendance') ? '' : 'none';
         if(eventsPanel) eventsPanel.style.display = (which === 'events') ? '' : 'none';
+        if(officersPanel){
+          officersPanel.style.display = (which === 'officers') ? '' : 'none';
+          if(which === 'officers' && window.__scLoadOfficersRoster) window.__scLoadOfficersRoster();
+        }
         const isDoc = which === 'doc';
         scContent.querySelectorAll('.sc-card').forEach(card => { card.style.display = isDoc ? '' : 'none'; });
       });
@@ -11381,6 +11409,183 @@
     const btn = document.getElementById('scOpenAgendaBtn');
     if(!btn) return;
     btn.addEventListener('click', () => { showView('view-planning'); });
+  })();
+
+  // Escala de Oficiais: restrito a quem tem um desses 3 cargos cadastrados (campo
+  // livre em Administração → Usuários, ex.: "Dir. Associado") — diferente do papel,
+  // que já controla o acesso à Secretaria como um todo. Some a aba pra quem não tem
+  // um desses cargos, mesmo que a pessoa já acesse o resto da Secretaria.
+  (function(){
+    const tab = document.getElementById('scOfficersTab');
+    if(!tab) return;
+    const ALLOWED_CARGOS = ['diretor', 'dir. associado', 'dir. associada'];
+    function normalizeCargo(s){
+      return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    }
+    function applyOfficersTabAccess(usuario){
+      const allowed = !!usuario && ALLOWED_CARGOS.includes(normalizeCargo(usuario.cargo));
+      tab.style.display = allowed ? '' : 'none';
+      // Se a aba estava ativa e a pessoa perdeu o acesso (ex.: trocou de usuário na
+      // mesma sessão), volta pra Documentos em vez de deixar um painel restrito aberto.
+      if(!allowed && tab.classList.contains('active')){
+        const docTab = document.querySelector('.sc-pdf-tab[data-tab="doc"]');
+        if(docTab) docTab.click();
+      }
+    }
+    document.addEventListener('cedros:loggedin', (e) => applyOfficersTabAccess(e.detail));
+    applyOfficersTabAccess(window.__currentUsuario);
+  })();
+
+  // Secretaria → Escala de Oficiais: lista as próximas Reuniões Regulares reais da
+  // Agenda Anual (mesmo critério da Chamada de Presença) com dois seletores de membro
+  // por reunião, pra Diretoria escalar a dupla de oficiais sem abrir o editor completo
+  // do evento. Salvar atualiza só oficiais_dia_ids/oficiais_dia_nomes daquele evento —
+  // e também o card já carregado na Agenda Anual, pra o chip "Oficial de Dia" do
+  // dashboard refletir na hora, sem precisar recarregar a página.
+  (function(){
+    const list = document.getElementById('scOfficersList');
+    const emptyMsg = document.getElementById('scOfficersEmpty');
+    if(!list) return;
+
+    const MONTHS_ABBR = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+    let members = [];
+    let membersLoaded = false;
+    let loaded = false;
+
+    async function ensureMembers(){
+      if(membersLoaded || !supa) return;
+      membersLoaded = true;
+      const { data } = await supa.from('usuarios').select('id, nome').order('nome');
+      members = data || [];
+    }
+
+    function buildOfficerSelect(selectedId){
+      const select = document.createElement('select');
+      select.className = 'pl-input sc-officer-select';
+      const noneOpt = document.createElement('option');
+      noneOpt.value = '';
+      noneOpt.textContent = 'Nenhum';
+      select.appendChild(noneOpt);
+      members.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.id;
+        opt.textContent = u.nome;
+        select.appendChild(opt);
+      });
+      select.value = selectedId || '';
+      return select;
+    }
+
+    function buildRow(meeting){
+      const row = document.createElement('div');
+      row.className = 'sc-officer-row';
+
+      const head = document.createElement('div');
+      head.className = 'sc-officer-row-head';
+      head.innerHTML =
+        '<span class="sc-officer-date">' + String(meeting.dia).padStart(2, '0') + '/' + MONTHS_ABBR[meeting.mes_indice - 1] + '</span>' +
+        '<span class="sc-officer-title"></span>';
+      head.querySelector('.sc-officer-title').textContent = meeting.titulo;
+      row.appendChild(head);
+
+      const fieldRow = document.createElement('div');
+      fieldRow.className = 'pl-field-row';
+      const officerIds = Array.isArray(meeting.oficiais_dia_ids) ? meeting.oficiais_dia_ids : [];
+
+      const col1 = document.createElement('div');
+      col1.className = 'pl-field-col';
+      const label1 = document.createElement('label');
+      label1.className = 'pl-field-label';
+      label1.style.marginTop = '0';
+      label1.textContent = 'Oficial 1';
+      const select1 = buildOfficerSelect(officerIds[0]);
+      col1.appendChild(label1);
+      col1.appendChild(select1);
+
+      const col2 = document.createElement('div');
+      col2.className = 'pl-field-col';
+      const label2 = document.createElement('label');
+      label2.className = 'pl-field-label';
+      label2.style.marginTop = '0';
+      label2.textContent = 'Oficial 2';
+      const select2 = buildOfficerSelect(officerIds[1]);
+      col2.appendChild(label2);
+      col2.appendChild(select2);
+
+      fieldRow.appendChild(col1);
+      fieldRow.appendChild(col2);
+      row.appendChild(fieldRow);
+
+      const saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.className = 'pl-btn pl-btn-primary sc-officer-save-btn';
+      saveBtn.textContent = 'Salvar';
+      row.appendChild(saveBtn);
+
+      saveBtn.addEventListener('click', async () => {
+        if(!supa) return;
+        const id1 = select1.value;
+        const name1 = id1 ? select1.options[select1.selectedIndex].textContent : '';
+        const id2 = select2.value;
+        const name2 = id2 ? select2.options[select2.selectedIndex].textContent : '';
+        const newIds = [id1, id2].filter(Boolean);
+        const newNames = [name1, name2].filter(Boolean);
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Salvando...';
+        const { error } = await supa.from('eventos_agenda')
+          .update({ oficiais_dia_ids: newIds, oficiais_dia_nomes: newNames })
+          .eq('id', meeting.id);
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Salvar';
+        if(error){
+          alert('Não foi possível salvar a escala. Tente novamente.');
+          return;
+        }
+
+        // Atualiza o card já carregado na Agenda Anual (se existir) pra o chip
+        // "Oficial de Dia" do dashboard refletir na hora, sem recarregar a página.
+        const card = document.querySelector('#view-planning .pl-content .pl-event-card[data-id="' + meeting.id + '"]');
+        if(card){
+          card.dataset.officerIds = JSON.stringify(newIds);
+          card.dataset.officerNames = JSON.stringify(newNames);
+        }
+        if(window.__bdRefreshBanners) window.__bdRefreshBanners();
+
+        saveBtn.textContent = 'Salvo!';
+        setTimeout(() => { saveBtn.textContent = 'Salvar'; }, 1500);
+      });
+
+      return row;
+    }
+
+    async function loadOfficersRoster(){
+      if(!supa) return;
+      await ensureMembers();
+      const { data, error } = await supa.from('eventos_agenda')
+        .select('id, dia, mes_indice, titulo, oficiais_dia_ids, oficiais_dia_nomes')
+        .ilike('titulo', '%Reunião Regular%')
+        .order('mes_indice', { ascending: true }).order('dia', { ascending: true });
+      if(error || !data) return;
+
+      const now = new Date();
+      const year = now.getFullYear();
+      const upcoming = data.map(row => {
+        let date = new Date(year, row.mes_indice - 1, row.dia);
+        if(date < now) date = new Date(year + 1, row.mes_indice - 1, row.dia);
+        return Object.assign({ resolvedDate: date }, row);
+      }).sort((a, b) => a.resolvedDate - b.resolvedDate).slice(0, 8);
+
+      list.innerHTML = '';
+      if(emptyMsg) emptyMsg.style.display = upcoming.length ? 'none' : '';
+      upcoming.forEach(meeting => list.appendChild(buildRow(meeting)));
+      loaded = true;
+    }
+
+    window.__scLoadOfficersRoster = function(){
+      if(loaded) return; // já carregado nesta sessão — evita refazer a consulta toda vez que troca de aba
+      loadOfficersRoster();
+    };
   })();
 
   // Secretaria: gerar PDF de autorização (modelo padrão até o clube enviar o oficial)
