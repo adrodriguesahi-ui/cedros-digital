@@ -290,6 +290,7 @@ create table if not exists eventos_agenda (
   descricao text,
   observacao text,
   mostrar_galeria boolean not null default true,
+  mostrar_galeria_a_partir_de date,
   foto text,
   lembrete_on boolean not null default false,
   lembrete_data date,
@@ -312,6 +313,11 @@ alter table eventos_agenda add column if not exists foto text;
 -- do Início, além de aparecer na Agenda Anual (default true = comportamento
 -- anterior, todo evento aparecia lá).
 alter table eventos_agenda add column if not exists mostrar_galeria boolean not null default true;
+
+-- Coluna adicionada depois: data a partir da qual o evento passa a concorrer a
+-- uma vaga no carrossel (em branco = sem restrição, só a data do evento em si
+-- já passar tira do carrossel, como sempre foi).
+alter table eventos_agenda add column if not exists mostrar_galeria_a_partir_de date;
 
 create or replace function set_updated_at_eventos_agenda()
 returns trigger language plpgsql as $$

@@ -3129,6 +3129,12 @@
           </label>
           <p class="pl-reminder-hint" style="margin:-10px 0 14px;">Desative pra este evento aparecer só na Agenda Anual, sem entrar no carrossel de destaque do Início.</p>
 
+          <div id="plGalleryFromWrap">
+            <label class="pl-field-label" style="margin-top:0;">Exibir no carrossel a partir de (opcional)</label>
+            <input type="date" class="pl-input" id="plFieldGalleryFrom">
+            <p class="pl-reminder-hint">Deixe em branco pra entrar no carrossel assim que houver vaga entre os 5 próximos eventos. Preenchendo, só passa a concorrer a partir dessa data — continua saindo sozinho depois que o evento passa.</p>
+          </div>
+
           <label class="pl-field-label">Descrição</label>
           <textarea class="pl-input pl-textarea" id="plFieldDesc" rows="2" placeholder="Descreva a atividade..." maxlength="300"></textarea>
 
@@ -8018,6 +8024,12 @@
     const fieldDesc = document.getElementById('plFieldDesc');
     const fieldNote = document.getElementById('plFieldNote');
     const fieldShowGallery = document.getElementById('plFieldShowGallery');
+    const fieldGalleryFrom = document.getElementById('plFieldGalleryFrom');
+    const galleryFromWrap = document.getElementById('plGalleryFromWrap');
+    function toggleGalleryFromField(){
+      galleryFromWrap.style.display = fieldShowGallery.checked ? '' : 'none';
+    }
+    fieldShowGallery.addEventListener('change', toggleGalleryFromField);
     const photoCameraInput = document.getElementById('plPhotoCamera');
     const photoUploadInput = document.getElementById('plPhotoUpload');
     const photoPreview = document.getElementById('plPhotoPreview');
@@ -8194,6 +8206,7 @@
         fieldDesc.value = card.dataset.desc || '';
         fieldNote.value = card.dataset.note || '';
         fieldShowGallery.checked = card.dataset.showGallery !== '0';
+        fieldGalleryFrom.value = card.dataset.showGalleryFrom || '';
         fieldReminderOn.checked = card.dataset.reminderOn === '1';
         fieldReminderDate.value = card.dataset.reminderDate || '';
         fieldReminderMsg.value = card.dataset.reminderMsg || '';
@@ -8215,6 +8228,7 @@
         fieldDesc.value = '';
         fieldNote.value = '';
         fieldShowGallery.checked = true;
+        fieldGalleryFrom.value = '';
         fieldReminderOn.checked = false;
         fieldReminderDate.value = '';
         fieldReminderMsg.value = '';
@@ -8226,6 +8240,7 @@
       toggleReminderFields();
       toggleRepeatFields();
       toggleCustomTagFields();
+      toggleGalleryFromField();
       overlay.classList.add('show');
       setTimeout(() => fieldTitle.focus(), 150);
     }
@@ -8298,6 +8313,7 @@
       a.dataset.desc = data.desc;
       a.dataset.note = data.note;
       a.dataset.showGallery = data.showGallery === false ? '0' : '1';
+      a.dataset.showGalleryFrom = data.showGalleryFrom || '';
       a.dataset.foto = data.foto || '';
       a.dataset.reminderOn = data.reminderOn ? '1' : '0';
       a.dataset.reminderDate = data.reminderDate || '';
@@ -8395,6 +8411,7 @@
         desc: row.descricao || '',
         note: row.observacao || '',
         showGallery: row.mostrar_galeria !== false,
+        showGalleryFrom: row.mostrar_galeria_a_partir_de || '',
         foto: row.foto || '',
         reminderOn: !!row.lembrete_on,
         reminderDate: row.lembrete_data || '',
@@ -8733,6 +8750,7 @@
         descricao: desc || null,
         observacao: note || null,
         mostrar_galeria: fieldShowGallery.checked,
+        mostrar_galeria_a_partir_de: (fieldShowGallery.checked && fieldGalleryFrom.value) ? fieldGalleryFrom.value : null,
         foto: currentPhotoData || null,
         lembrete_on: reminderOn,
         lembrete_data: reminderDate || null,
@@ -9088,7 +9106,15 @@
     window.__plGetUpcomingEvents = function(limit){
       const now = new Date();
       const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'))
-        .filter(card => card.dataset.showGallery !== '0');
+        .filter(card => {
+          if(card.dataset.showGallery === '0') return false;
+          // "Exibir no carrossel a partir de": em branco = sem restrição (só a data do
+          // evento já passar de fato tira do carrossel, como sempre foi); preenchida,
+          // o evento só concorre a uma vaga a partir dessa data.
+          const from = card.dataset.showGalleryFrom;
+          if(from && new Date(from + 'T00:00:00') > now) return false;
+          return true;
+        });
       const withDates = cards.map(card => {
         const day = parseInt(card.dataset.day, 10);
         const monIdx = parseInt(card.dataset.monIndex, 10);
@@ -9099,7 +9125,7 @@
         return { card, date };
       }).filter(Boolean);
       withDates.sort((a, b) => a.date - b.date);
-      return withDates.slice(0, limit || 4);
+      return withDates.slice(0, limit || 5);
     };
 
     // Usado pelo card de destaque do dashboard: mostra os detalhes do evento sem
@@ -13912,7 +13938,7 @@ const REQ_SUMMARIES = {
       dots.length = 0;
       index = 0;
 
-      const upcoming = (window.__plGetUpcomingEvents && window.__plGetUpcomingEvents(4)) || [];
+      const upcoming = (window.__plGetUpcomingEvents && window.__plGetUpcomingEvents(5)) || [];
       if(emptyMsg) emptyMsg.style.display = upcoming.length ? 'none' : '';
 
       const now = new Date();
