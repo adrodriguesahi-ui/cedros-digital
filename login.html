@@ -977,8 +977,17 @@
   }
   .sc-officer-row-head{ display:flex; align-items:baseline; gap:10px; margin-bottom:10px; }
   .sc-officer-date{ font-size:12.5px; font-weight:900; color:var(--accent); font-variant-numeric:tabular-nums; }
-  .sc-officer-title{ font-size:13px; font-weight:800; color:var(--cream); }
+  .sc-officer-title{ font-size:13px; font-weight:800; color:var(--cream); flex:1; }
   .sc-officer-save-btn{ width:100%; margin-top:10px; padding:9px; font-size:12.5px; }
+  .sc-officer-remove-btn{
+    flex-shrink:0; width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,0.08);
+    border:none; color:rgba(245,239,225,0.6); display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .sc-officer-remove-btn:active{ background:rgba(255,107,92,0.2); color:#FF6B5C; }
+  .sc-officer-new-form{
+    margin:10px 0 16px; padding:12px 14px; border-radius:14px;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09);
+  }
 
   .at-section-head{ display:flex; align-items:center; justify-content:space-between; }
   .at-roster-count{ font-size:11px; font-weight:700; color:rgba(245,239,225,0.5); }
@@ -1664,6 +1673,7 @@
   }
   .pl-btn-primary{ background:linear-gradient(160deg, var(--accent), var(--accent-deep)); color:#08130A; }
   .pl-btn-danger{ background:rgba(255,107,92,0.16); color:#FF6B5C; }
+  .pl-btn-neutral{ background:rgba(255,255,255,0.08); color:var(--cream); }
   .pl-btn:active{ transform:scale(0.97); }
 
   .pl-textarea{ resize:none; font-family:inherit; line-height:1.4; }
@@ -8807,6 +8817,38 @@
 
               <div class="sc-pdf-panel" id="scOfficersPanel" style="display:none;">
                 <p class="pl-reminder-hint" style="margin-top:0;">Escale os dois Oficiais de Dia de cada Reunião Regular. A pessoa escalada vê um aviso no próprio Início pra preencher a programação daquele dia.</p>
+                <button type="button" class="pl-list-add-btn" id="scOfficerNewBtn">+ Nova Reunião Regular</button>
+                <div class="sc-officer-new-form" id="scOfficerNewForm" style="display:none;">
+                  <label class="pl-field-label" style="margin-top:0;">Título</label>
+                  <input type="text" class="pl-input" id="scOfficerNewTitle" value="Reunião Regular" maxlength="60">
+                  <div class="pl-field-row">
+                    <div class="pl-field-col">
+                      <label class="pl-field-label">Dia</label>
+                      <input type="number" class="pl-input" id="scOfficerNewDay" min="1" max="31" placeholder="Dia">
+                    </div>
+                    <div class="pl-field-col pl-field-col-wide">
+                      <label class="pl-field-label">Mês</label>
+                      <select class="pl-input" id="scOfficerNewMonth">
+                        <option value="1" data-abbr="JAN">Janeiro</option>
+                        <option value="2" data-abbr="FEV">Fevereiro</option>
+                        <option value="3" data-abbr="MAR">Março</option>
+                        <option value="4" data-abbr="ABR">Abril</option>
+                        <option value="5" data-abbr="MAI" selected>Maio</option>
+                        <option value="6" data-abbr="JUN">Junho</option>
+                        <option value="7" data-abbr="JUL">Julho</option>
+                        <option value="8" data-abbr="AGO">Agosto</option>
+                        <option value="9" data-abbr="SET">Setembro</option>
+                        <option value="10" data-abbr="OUT">Outubro</option>
+                        <option value="11" data-abbr="NOV">Novembro</option>
+                        <option value="12" data-abbr="DEZ">Dezembro</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="pl-modal-actions">
+                    <button type="button" class="pl-btn pl-btn-neutral" id="scOfficerNewCancel">Cancelar</button>
+                    <button type="button" class="pl-btn pl-btn-primary" id="scOfficerNewSave">Criar</button>
+                  </div>
+                </div>
                 <div class="sc-officers-list" id="scOfficersList"></div>
                 <p class="pl-reminder-hint" id="scOfficersEmpty" style="display:none;">Nenhuma Reunião Regular futura cadastrada na Agenda Anual.</p>
               </div>
@@ -14602,9 +14644,25 @@
       head.className = 'sc-officer-row-head';
       head.innerHTML =
         '<span class="sc-officer-date">' + String(meeting.dia).padStart(2, '0') + '/' + MONTHS_ABBR[meeting.mes_indice - 1] + '</span>' +
-        '<span class="sc-officer-title"></span>';
+        '<span class="sc-officer-title"></span>' +
+        '<button type="button" class="sc-officer-remove-btn" aria-label="Remover da Escala de Oficiais">' +
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+        '</button>';
       head.querySelector('.sc-officer-title').textContent = meeting.titulo;
       row.appendChild(head);
+
+      head.querySelector('.sc-officer-remove-btn').addEventListener('click', async () => {
+        if(!confirm('Remover "' + meeting.titulo + '" da Escala de Oficiais?\n\nO evento continua normalmente na Agenda Anual — só deixa de aparecer nessa lista.')) return;
+        if(supa){
+          const { error } = await supa.from('eventos_agenda').update({ escala_oculta: true }).eq('id', meeting.id);
+          if(error){
+            alert('Não foi possível remover. Tente novamente.');
+            return;
+          }
+        }
+        row.remove();
+        if(emptyMsg) emptyMsg.style.display = list.children.length ? 'none' : '';
+      });
 
       const fieldRow = document.createElement('div');
       fieldRow.className = 'pl-field-row';
@@ -14683,6 +14741,7 @@
       const { data, error } = await supa.from('eventos_agenda')
         .select('id, dia, mes_indice, titulo, oficiais_dia_ids, oficiais_dia_nomes')
         .ilike('titulo', '%Reunião Regular%')
+        .eq('escala_oculta', false)
         .order('mes_indice', { ascending: true }).order('dia', { ascending: true });
       if(error || !data) return;
 
@@ -14704,6 +14763,54 @@
       if(loaded) return; // já carregado nesta sessão — evita refazer a consulta toda vez que troca de aba
       loadOfficersRoster();
     };
+
+    // "+ Nova Reunião Regular": cria o evento direto daqui (sem precisar abrir a
+    // Agenda Anual) — mesma tabela eventos_agenda, então já aparece nos dois lugares.
+    const newBtn = document.getElementById('scOfficerNewBtn');
+    const newForm = document.getElementById('scOfficerNewForm');
+    const newTitle = document.getElementById('scOfficerNewTitle');
+    const newDay = document.getElementById('scOfficerNewDay');
+    const newMonth = document.getElementById('scOfficerNewMonth');
+    const newCancel = document.getElementById('scOfficerNewCancel');
+    const newSave = document.getElementById('scOfficerNewSave');
+    if(newBtn && newForm){
+      newBtn.addEventListener('click', () => {
+        newForm.style.display = '';
+        newBtn.style.display = 'none';
+      });
+      newCancel.addEventListener('click', () => {
+        newForm.style.display = 'none';
+        newBtn.style.display = '';
+        newTitle.value = 'Reunião Regular';
+        newDay.value = '';
+      });
+      newSave.addEventListener('click', async () => {
+        const titulo = newTitle.value.trim() || 'Reunião Regular';
+        const dia = parseInt(newDay.value, 10);
+        const mesIndice = parseInt(newMonth.value, 10);
+        if(!dia || dia < 1 || dia > 31){
+          newDay.style.borderColor = '#FF6B5C';
+          return;
+        }
+        newDay.style.borderColor = '';
+        if(!supa) return;
+        newSave.disabled = true;
+        newSave.textContent = 'Criando...';
+        const { error } = await supa.from('eventos_agenda').insert({ titulo, dia, mes_indice: mesIndice });
+        newSave.disabled = false;
+        newSave.textContent = 'Criar';
+        if(error){
+          alert('Não foi possível criar. Tente novamente.');
+          return;
+        }
+        newForm.style.display = 'none';
+        newBtn.style.display = '';
+        newTitle.value = 'Reunião Regular';
+        newDay.value = '';
+        loaded = false;
+        loadOfficersRoster();
+      });
+    }
   })();
 
   // Secretaria: gerar PDF de autorização (modelo padrão até o clube enviar o oficial)
