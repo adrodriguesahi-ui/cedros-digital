@@ -12578,8 +12578,16 @@
     const qrCopyBtn = document.getElementById('clQrCopyBtn');
     const qrDownloadBtn = document.getElementById('clQrDownloadBtn');
 
+    // Dentro do app nativo (Capacitor), window.location.origin é "https://localhost"
+    // — um endereço que só existe dentro do WebView daquele aparelho específico,
+    // então um QR Code gerado com ele não abre em nenhum outro celular. Nesse caso
+    // usa sempre o link público real do site publicado (ver README para a URL).
+    const PUBLIC_APP_URL = 'https://cedros-digital.adrodrigues-ahi.workers.dev/index.html';
     function buildComprovanteLink(desbravadorId, requisitoTitulo){
-      return window.location.origin + window.location.pathname + '#comprovante=' + encodeURIComponent(desbravadorId) + '|' + encodeURIComponent(requisitoTitulo);
+      const base = window.location.origin === 'https://localhost'
+        ? PUBLIC_APP_URL
+        : window.location.origin + window.location.pathname;
+      return base + '#comprovante=' + encodeURIComponent(desbravadorId) + '|' + encodeURIComponent(requisitoTitulo);
     }
 
     comprovanteQrBtn.addEventListener('click', () => {
