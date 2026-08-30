@@ -137,9 +137,19 @@ create table if not exists progresso_requisitos (
   desbravador_id uuid not null references desbravadores(id) on delete cascade,
   requisito_titulo text not null,
   status text not null default 'todo',
+  comprovante_foto text,
+  comprovante_nome text,
   updated_at timestamptz not null default now(),
   unique (desbravador_id, requisito_titulo)
 );
+
+-- Colunas adicionadas depois da criação inicial da tabela (rodar de novo é
+-- seguro) — comprovação (foto ou arquivo, em base64) de que o desbravador
+-- cumpriu aquele requisito, com QR Code de acesso público (ver window.__
+-- comprovanteRoute no index.html) pra quem verifica a ficha (ex.: pastor,
+-- diretoria da Associação/Missão) conferir sem precisar login no app.
+alter table progresso_requisitos add column if not exists comprovante_foto text;
+alter table progresso_requisitos add column if not exists comprovante_nome text;
 
 create or replace function set_updated_at_progresso()
 returns trigger language plpgsql as $$
