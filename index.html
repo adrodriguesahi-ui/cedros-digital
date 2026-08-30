@@ -3189,18 +3189,18 @@
           <textarea class="pl-input pl-textarea" id="plFieldNote" rows="2" placeholder="Observações internas, o que levar, etc." maxlength="300"></textarea>
 
           <div class="pl-schedule-section">
-            <label class="pl-field-label" style="margin-top:0;">Oficial de Dia (1)</label>
+            <label class="pl-field-label" style="margin-top:0;">👮 Oficial de Dia (1)</label>
             <select class="pl-input" id="plFieldOfficer1"><option value="">Nenhum</option></select>
 
-            <label class="pl-field-label">Oficial de Dia (2)</label>
+            <label class="pl-field-label">👮 Oficial de Dia (2)</label>
             <select class="pl-input" id="plFieldOfficer2"><option value="">Nenhum</option></select>
 
-            <label class="pl-field-label">Programação do Dia</label>
+            <label class="pl-field-label">📋 Programação do Dia</label>
             <button type="button" class="pl-list-add-btn pl-list-template-btn" id="plScheduleTemplateBtn">📋 Carregar modelo padrão da Reunião Regular</button>
             <div class="pl-schedule-list" id="plScheduleList"></div>
             <button type="button" class="pl-list-add-btn" id="plScheduleAddBtn">+ Adicionar horário</button>
 
-            <label class="pl-field-label">Aviso aos Membros</label>
+            <label class="pl-field-label">🤝 Aviso aos Membros</label>
             <textarea class="pl-input pl-textarea" id="plFieldNotice" rows="3" placeholder="Mensagem para os membros (pode incluir um versículo)..." maxlength="400"></textarea>
 
             <label class="pl-field-label">Checklist de Atividades</label>
@@ -3336,18 +3336,18 @@
           </div>
 
           <div class="pl-view-block" id="plViewOfficersBlock" style="display:none;">
-            <span class="pl-field-label">Oficiais de Dia</span>
+            <span class="pl-field-label">👮 Oficiais de Dia</span>
             <p class="pl-view-text" id="plViewOfficers"></p>
           </div>
 
           <div class="pl-view-block" id="plViewScheduleBlock" style="display:none;">
-            <span class="pl-field-label">Programação do Dia</span>
+            <span class="pl-field-label">📋 Programação do Dia</span>
             <div class="pl-view-schedule" id="plViewSchedule"></div>
             <button type="button" class="pl-btn pl-btn-primary" id="plViewPdfBtn" style="width:100%; margin-top:10px;">📄 Gerar PDF da Programação</button>
           </div>
 
           <div class="pl-view-block pl-view-notice-block" id="plViewNoticeBlock" style="display:none;">
-            <span class="pl-field-label" style="margin-top:0;">Aviso aos Membros</span>
+            <span class="pl-field-label" style="margin-top:0;">🤝 Aviso aos Membros</span>
             <p class="pl-view-text" id="plViewNotice"></p>
           </div>
 
@@ -7667,12 +7667,12 @@
               </div>
               <p class="pl-reminder-hint" style="margin:0 2px 14px;" id="bdOfficerFillEventLabel"></p>
 
-              <label class="pl-field-label" style="margin-top:0;">Programação do Dia</label>
+              <label class="pl-field-label" style="margin-top:0;">📋 Programação do Dia</label>
               <button type="button" class="pl-list-add-btn pl-list-template-btn" id="bdOfficerScheduleTemplateBtn">📋 Carregar modelo padrão da Reunião Regular</button>
               <div class="pl-schedule-list" id="bdOfficerScheduleList"></div>
               <button type="button" class="pl-list-add-btn" id="bdOfficerScheduleAddBtn">+ Adicionar horário</button>
 
-              <label class="pl-field-label">Aviso aos Membros</label>
+              <label class="pl-field-label">🤝 Aviso aos Membros</label>
               <textarea class="pl-input pl-textarea" id="bdOfficerNotice" rows="3" placeholder="Mensagem para os membros (pode incluir um versículo)..." maxlength="400"></textarea>
 
               <label class="pl-field-label">Checklist de Atividades</label>
@@ -8130,6 +8130,8 @@
     'Estudo Bíblico',
     'Cartão de Classes',
     'Ensaio para o Dia Mundial dos Desbravadores',
+    'Ensaio de Fanfarra',
+    'Pelotão de Ordem Unida',
     'Encerramento'
   ];
 
@@ -8143,6 +8145,8 @@
     'Estudo Bíblico': '📖',
     'Cartão de Classes': '📒',
     'Ensaio para o Dia Mundial dos Desbravadores': '🥁',
+    'Ensaio de Fanfarra': '🥁',
+    'Pelotão de Ordem Unida': '🫡',
     'Encerramento': '🏁'
   };
   const SCHEDULE_ACTIVITY_ICON_DEFAULT = '📌';
@@ -8312,10 +8316,14 @@
     doc.setFontSize(12.5);
     doc.text('CLUBE DE DESBRAVADORES', textStartX, 15);
     doc.text('CEDROS DO LÍBANO', textStartX, 21.5);
+    try {
+      const kickerIcon = emojiToPngDataURL('📋', 64);
+      doc.addImage(kickerIcon, 'PNG', textStartX, 24, 5, 5);
+    } catch(e){}
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9.5);
     doc.setTextColor(120, 220, 150);
-    doc.text('PROGRAMAÇÃO DA REUNIÃO', textStartX, 28);
+    doc.text('PROGRAMAÇÃO DA REUNIÃO', textStartX + 7, 28);
 
     y = 48;
     doc.setTextColor(20, 24, 20);
@@ -8335,12 +8343,17 @@
       const label = 'OFICIAIS DE DIA: ' + data.officerNames.join(' e ').toUpperCase();
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(11);
-      const boxW = doc.getTextWidth(label) + 16;
+      const iconSize = 6;
+      const boxW = doc.getTextWidth(label) + iconSize + 22;
       const boxX = (pageWidth - boxW) / 2;
       doc.setFillColor(226, 246, 232);
       doc.roundedRect(boxX, y - 6, boxW, 10, 3, 3, 'F');
+      try {
+        const iconData = emojiToPngDataURL('👮', 64);
+        doc.addImage(iconData, 'PNG', boxX + 6, y - iconSize / 2 - 1, iconSize, iconSize);
+      } catch(e){}
       doc.setTextColor(20, 110, 55);
-      doc.text(label, pageWidth / 2, y, { align: 'center' });
+      doc.text(label, boxX + 6 + iconSize + 4, y);
       y += 16;
     } else {
       y += 4;
@@ -8375,10 +8388,14 @@
       const boxH = lines.length * 5.5 + 14;
       doc.setFillColor(252, 244, 224);
       doc.roundedRect(marginX, y, pageWidth - marginX * 2, boxH, 3, 3, 'F');
+      try {
+        const iconData = emojiToPngDataURL('🤝', 64);
+        doc.addImage(iconData, 'PNG', marginX + 6, y + 8 - 4.5, 6, 6);
+      } catch(e){}
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9);
       doc.setTextColor(150, 110, 20);
-      doc.text('AVISO AOS MEMBROS', marginX + 6, y + 8);
+      doc.text('AVISO AOS MEMBROS', marginX + 14, y + 8);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10.5);
       doc.setTextColor(70, 55, 20);
@@ -11787,7 +11804,7 @@
       const label1 = document.createElement('label');
       label1.className = 'pl-field-label';
       label1.style.marginTop = '0';
-      label1.textContent = 'Oficial 1';
+      label1.textContent = '👮 Oficial 1';
       const select1 = buildOfficerSelect(officerIds[0]);
       col1.appendChild(label1);
       col1.appendChild(select1);
@@ -11797,7 +11814,7 @@
       const label2 = document.createElement('label');
       label2.className = 'pl-field-label';
       label2.style.marginTop = '0';
-      label2.textContent = 'Oficial 2';
+      label2.textContent = '👮 Oficial 2';
       const select2 = buildOfficerSelect(officerIds[1]);
       col2.appendChild(label2);
       col2.appendChild(select2);
