@@ -14620,7 +14620,8 @@ const REQ_SUMMARIES = {
         }).eq('id', officerCurrentCard.dataset.id);
         officerFillSaveBtn.disabled = false;
         if(error){
-          alert('Não foi possível salvar a programação. Tente novamente.');
+          console.error('Erro ao salvar Programação do Dia (Oficial de Dia):', error);
+          alert('Não foi possível salvar a programação.\n\nDetalhe: ' + (error.message || error.hint || error.code || 'erro desconhecido') + '\n\nTente novamente ou avise a diretoria com esse detalhe.');
           return;
         }
         officerCurrentCard.dataset.schedule = JSON.stringify(schedule);
