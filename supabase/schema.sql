@@ -137,19 +137,44 @@ create table if not exists progresso_requisitos (
   desbravador_id uuid not null references desbravadores(id) on delete cascade,
   requisito_titulo text not null,
   status text not null default 'todo',
-  comprovante_foto text,
-  comprovante_nome text,
   updated_at timestamptz not null default now(),
   unique (desbravador_id, requisito_titulo)
 );
 
--- Colunas adicionadas depois da criação inicial da tabela (rodar de novo é
--- seguro) — comprovação (foto ou arquivo, em base64) de que o desbravador
--- cumpriu aquele requisito, com QR Code de acesso público (ver window.__
--- comprovanteRoute no index.html) pra quem verifica a ficha (ex.: pastor,
--- diretoria da Associação/Missão) conferir sem precisar login no app.
-alter table progresso_requisitos add column if not exists comprovante_foto text;
-alter table progresso_requisitos add column if not exists comprovante_nome text;
+-- Comprovação (uma ou mais fotos/arquivos, em base64) de que o desbravador
+-- cumpriu um requisito, com QR Code de acesso público (ver isComprovanteRoute
+-- no index.html) pra quem verifica a ficha (ex.: pastor, diretoria da
+-- Associação/Missão) conferir sem precisar login no app. Tabela própria (em
+-- vez de colunas em progresso_requisitos) porque um requisito pode ter
+-- vários comprovantes anexados.
+create table if not exists comprovante_arquivos (
+  id uuid primary key default gen_random_uuid(),
+  desbravador_id uuid not null references desbravadores(id) on delete cascade,
+  requisito_titulo text not null,
+  arquivo_data text not null,
+  arquivo_nome text,
+  created_at timestamptz not null default now()
+);
+
+-- Migração pra quem já tinha rodado a versão anterior (colunas comprovante_foto/
+-- comprovante_nome direto em progresso_requisitos): copia o que já tinha sido
+-- anexado pra tabela nova e remove as colunas antigas. Seguro rodar de novo —
+-- na segunda vez as colunas já não existem mais e o bloco não faz nada.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_name = 'progresso_requisitos' and column_name = 'comprovante_foto'
+  ) then
+    insert into comprovante_arquivos (desbravador_id, requisito_titulo, arquivo_data, arquivo_nome)
+    select desbravador_id, requisito_titulo, comprovante_foto, comprovante_nome
+    from progresso_requisitos
+    where comprovante_foto is not null;
+
+    alter table progresso_requisitos drop column comprovante_foto;
+    alter table progresso_requisitos drop column comprovante_nome;
+  end if;
+end $$;
 
 create or replace function set_updated_at_progresso()
 returns trigger language plpgsql as $$
@@ -166,6 +191,7 @@ create trigger trg_progresso_requisitos_updated_at
 
 alter table desbravadores enable row level security;
 alter table progresso_requisitos enable row level security;
+alter table comprovante_arquivos enable row level security;
 
 drop policy if exists "desbravadores: acesso publico" on desbravadores;
 create policy "desbravadores: acesso publico" on desbravadores
@@ -173,6 +199,10 @@ create policy "desbravadores: acesso publico" on desbravadores
 
 drop policy if exists "progresso_requisitos: acesso publico" on progresso_requisitos;
 create policy "progresso_requisitos: acesso publico" on progresso_requisitos
+  for all using (true) with check (true);
+
+drop policy if exists "comprovante_arquivos: acesso publico" on comprovante_arquivos;
+create policy "comprovante_arquivos: acesso publico" on comprovante_arquivos
   for all using (true) with check (true);
 
 -- ---------------------------------------------------------------------
