@@ -9449,7 +9449,8 @@
       const { data: row, error } = await query;
       saveBtn.disabled = false;
       if(error || !row){
-        alert('Não foi possível salvar o evento. Tente novamente.');
+        console.error('Erro ao salvar evento:', error);
+        alert('Não foi possível salvar o evento.\n\nDetalhe: ' + (error ? (error.message || error.hint || error.code || 'erro desconhecido') : 'nenhum dado retornado') + '\n\nTente novamente ou avise a diretoria com esse detalhe.');
         return;
       }
 
