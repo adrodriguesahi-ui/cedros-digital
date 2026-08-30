@@ -166,6 +166,58 @@ create policy "progresso_requisitos: acesso publico" on progresso_requisitos
   for all using (true) with check (true);
 
 -- ---------------------------------------------------------------------
+-- Planejamento de Classes: o instrutor prepara a aula em si (separado do
+-- progresso por desbravador acima, que só marca quem já cumpriu o quê).
+-- requisito_titulo é texto livre (sugerido por um datalist no app, tirado
+-- dos cards de requisito já existentes em Classes Regulares) — não há FK
+-- porque o catálogo de requisitos vive só no HTML, não numa tabela.
+-- ---------------------------------------------------------------------
+create table if not exists planejamentos_aula (
+  id uuid primary key default gen_random_uuid(),
+  classe text not null,
+  requisito_titulo text,
+  data date,
+  horario text,
+  instrutor_responsavel text,
+  quantidade_desbravadores int,
+  local text,
+  tema text,
+  objetivo text,
+  duracao text,
+  materiais_necessarios text,
+  texto_biblico text,
+  introducao text,
+  desenvolvimento text,
+  atividade text,
+  aplicacao_espiritual text,
+  avaliacao_participou boolean not null default false,
+  avaliacao_compreendeu boolean not null default false,
+  avaliacao_cumpriu_requisito boolean not null default false,
+  observacoes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create or replace function set_updated_at_planejamentos_aula()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_planejamentos_aula_updated_at on planejamentos_aula;
+create trigger trg_planejamentos_aula_updated_at
+  before update on planejamentos_aula
+  for each row execute function set_updated_at_planejamentos_aula();
+
+alter table planejamentos_aula enable row level security;
+
+drop policy if exists "planejamentos_aula: acesso publico" on planejamentos_aula;
+create policy "planejamentos_aula: acesso publico" on planejamentos_aula
+  for all using (true) with check (true);
+
+-- ---------------------------------------------------------------------
 -- Unidades: cadastro central (cor/status) + funções, atividades,
 -- avaliações mensais e conquistas de cada unidade. `usuarios.unidade`
 -- (texto livre) é o elo com os membros — não há FK ali para não quebrar
