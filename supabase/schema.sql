@@ -395,6 +395,7 @@ create table if not exists eventos_agenda (
   lembrete_repetir_vezes int,
   oficiais_dia_ids uuid[] not null default '{}'::uuid[],
   oficiais_dia_nomes text[] not null default '{}'::text[],
+  escala_oculta boolean not null default false,
   aviso_membros text,
   programacao_dia jsonb not null default '[]'::jsonb,
   checklist_atividades jsonb not null default '[]'::jsonb,
@@ -431,6 +432,11 @@ alter table eventos_agenda add column if not exists oficiais_dia_nomes text[] no
 alter table eventos_agenda add column if not exists aviso_membros text;
 alter table eventos_agenda add column if not exists programacao_dia jsonb not null default '[]'::jsonb;
 alter table eventos_agenda add column if not exists checklist_atividades jsonb not null default '[]'::jsonb;
+
+-- Coluna adicionada depois: permite "remover" uma Reunião Regular da lista da
+-- Escala de Oficiais (Secretaria) sem apagar o evento em si da Agenda Anual —
+-- só deixa de aparecer nessa lista específica.
+alter table eventos_agenda add column if not exists escala_oculta boolean not null default false;
 
 create or replace function set_updated_at_eventos_agenda()
 returns trigger language plpgsql as $$
