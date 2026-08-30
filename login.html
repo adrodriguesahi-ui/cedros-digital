@@ -1468,6 +1468,19 @@
   .cl-hub-row-count{ font-size:12px; font-weight:600; color:rgba(245,239,225,0.45); flex-shrink:0; }
   .cl-hub-row-arrow{ color:rgba(245,239,225,0.3); flex-shrink:0; }
 
+  .cl-planning-list{ display:flex; flex-direction:column; gap:8px; }
+  .cl-planning-row{
+    display:flex; align-items:center; gap:10px;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+    border-radius:14px; padding:12px 14px; text-decoration:none; cursor:pointer;
+  }
+  .cl-planning-row:active{ background:rgba(255,255,255,0.07); }
+  .cl-planning-row-dot{ font-size:14px; flex-shrink:0; }
+  .cl-planning-row-body{ flex:1; min-width:0; }
+  .cl-planning-row-title{ font-size:14px; font-weight:700; color:var(--cream); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cl-planning-row-meta{ font-size:11.5px; font-weight:600; color:rgba(245,239,225,0.5); margin-top:2px; }
+  .cl-planning-row-arrow{ color:rgba(245,239,225,0.3); flex-shrink:0; }
+
   .cl-hub-row-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:7px; }
   .cl-hub-row-name{ font-size:14.5px; font-weight:800; color:var(--cream); line-height:1.28; }
   .cl-hub-row-progress{ display:flex; align-items:center; gap:9px; }
@@ -3390,7 +3403,7 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <h3 class="pl-title" id="clTitle">Classes Regulares</h3>
-          <span class="pl-topbar-spacer" aria-hidden="true"></span>
+          <button type="button" class="pl-back" id="clPlanningOpenBtn" aria-label="Planejamento de Aula" style="display:none;">📚</button>
         </div>
 
         <div class="cl-hub" id="clHub">
@@ -5838,6 +5851,109 @@
             <button type="button" class="cl-status-pick-btn" data-status="todo" data-color="gray" data-label="Não iniciada">Não iniciada</button>
             <button type="button" class="cl-status-pick-btn" data-status="progress" data-color="gold" data-label="Em andamento">Em andamento</button>
             <button type="button" class="cl-status-pick-btn" data-status="done" data-color="green" data-label="Concluída">Concluída</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Planejamento de Classes: módulo separado do progresso por desbravador acima —
+           aqui o instrutor prepara a aula em si (Meus Planejamentos + formulário com
+           Informações / Atividade / Modelo de Aula), ver window.__clOpenPlanning mais
+           abaixo no arquivo. -->
+      <div class="pl-dayview-overlay" id="clPlanningOverlay">
+        <div class="pl-dayview-head">
+          <button type="button" class="pl-dayview-icon-btn" id="clPlanningBack" aria-label="Voltar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h3 class="pl-dayview-title" id="clPlanningTitle">📚 Planejamento</h3>
+          <button type="button" class="pl-dayview-icon-btn" id="clPlanningClose" aria-label="Fechar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="pl-dayview-list-wrap" id="clPlanningListState">
+          <button type="button" class="pl-btn pl-btn-primary" id="clPlanningNewBtn" style="width:100%; margin:14px 0;">+ Novo Planejamento</button>
+          <p class="pl-reminder-hint" style="margin:0 2px 10px;">Meus Planejamentos</p>
+          <div class="cl-planning-list" id="clPlanningList"></div>
+          <p class="pl-reminder-hint" id="clPlanningEmpty" style="display:none;">Nenhum planejamento salvo ainda pra essa classe. Toque em "Novo Planejamento" pra criar o primeiro.</p>
+        </div>
+
+        <div class="pl-dayview-list-wrap" id="clPlanningFormState" style="display:none;">
+          <label class="pl-field-label" style="margin-top:0;">📋 1. Informações</label>
+          <div class="pl-field-row">
+            <div class="pl-field-col">
+              <label class="pl-field-label" style="margin-top:0;">📅 Data</label>
+              <input type="date" class="pl-input" id="clPlanField_data">
+            </div>
+            <div class="pl-field-col">
+              <label class="pl-field-label" style="margin-top:0;">⏰ Horário</label>
+              <input type="time" class="pl-input" id="clPlanField_horario">
+            </div>
+          </div>
+          <label class="pl-field-label">👨‍🏫 Instrutor responsável</label>
+          <input type="text" class="pl-input" id="clPlanField_instrutor" placeholder="Nome do instrutor" maxlength="60">
+          <div class="pl-field-row">
+            <div class="pl-field-col">
+              <label class="pl-field-label">👥 Qtd. de desbravadores</label>
+              <input type="number" class="pl-input" id="clPlanField_qtd" min="0" placeholder="Ex.: 12">
+            </div>
+            <div class="pl-field-col pl-field-col-wide">
+              <label class="pl-field-label">📍 Local</label>
+              <input type="text" class="pl-input" id="clPlanField_local" placeholder="Ex.: Sede do Clube" maxlength="60">
+            </div>
+          </div>
+
+          <label class="pl-field-label">🎯 2. Atividade</label>
+          <label class="pl-field-label" style="margin-top:0;">📖 Requisito da classe</label>
+          <input type="text" class="pl-input" id="clPlanField_requisito" list="clPlanningRequisitoOptions" placeholder="Selecione ou digite o requisito" maxlength="120">
+          <datalist id="clPlanningRequisitoOptions"></datalist>
+          <label class="pl-field-label">📝 Tema</label>
+          <input type="text" class="pl-input" id="clPlanField_tema" placeholder="Ex.: Conhecendo a Bíblia" maxlength="80">
+          <div class="pl-field-row">
+            <div class="pl-field-col pl-field-col-wide">
+              <label class="pl-field-label">🎯 Objetivo da aula</label>
+              <input type="text" class="pl-input" id="clPlanField_objetivo" placeholder="Ao final, o desbravador deverá..." maxlength="200">
+            </div>
+            <div class="pl-field-col">
+              <label class="pl-field-label">⏱️ Duração</label>
+              <input type="text" class="pl-input" id="clPlanField_duracao" placeholder="Ex.: 45 min" maxlength="20">
+            </div>
+          </div>
+          <label class="pl-field-label">🧰 Materiais necessários</label>
+          <textarea class="pl-input pl-textarea" id="clPlanField_materiais" rows="2" placeholder="Bíblia, cartolina, canetinha..." maxlength="300"></textarea>
+
+          <label class="pl-field-label">📚 3. Modelo de Aula</label>
+          <label class="pl-field-label" style="margin-top:0;">📖 Texto bíblico</label>
+          <input type="text" class="pl-input" id="clPlanField_textoBiblico" placeholder="Ex.: Salmo 119:105" maxlength="80">
+          <label class="pl-field-label">💬 Introdução</label>
+          <textarea class="pl-input pl-textarea" id="clPlanField_introducao" rows="2" placeholder="Pergunta inicial pra envolver os desbravadores..." maxlength="500"></textarea>
+          <label class="pl-field-label">📚 Desenvolvimento</label>
+          <textarea class="pl-input pl-textarea" id="clPlanField_desenvolvimento" rows="3" placeholder="Explicação do conteúdo..." maxlength="800"></textarea>
+          <label class="pl-field-label">🎲 Atividade prática</label>
+          <textarea class="pl-input pl-textarea" id="clPlanField_atividade" rows="2" placeholder="Dinâmica ou exercício relacionado ao requisito..." maxlength="500"></textarea>
+          <label class="pl-field-label">🙏 Aplicação espiritual</label>
+          <textarea class="pl-input pl-textarea" id="clPlanField_aplicacao" rows="2" placeholder="Como podemos aplicar isso no nosso dia a dia?" maxlength="500"></textarea>
+
+          <label class="pl-field-label">✅ Avaliação</label>
+          <label class="pl-checklist-row" style="margin-bottom:8px;">
+            <input type="checkbox" class="pl-checklist-done" id="clPlanField_avParticipou">
+            <span style="color:var(--cream); font-size:13.5px; font-weight:600;">Participou</span>
+          </label>
+          <label class="pl-checklist-row" style="margin-bottom:8px;">
+            <input type="checkbox" class="pl-checklist-done" id="clPlanField_avCompreendeu">
+            <span style="color:var(--cream); font-size:13.5px; font-weight:600;">Compreendeu o conteúdo</span>
+          </label>
+          <label class="pl-checklist-row" style="margin-bottom:8px;">
+            <input type="checkbox" class="pl-checklist-done" id="clPlanField_avCumpriu">
+            <span style="color:var(--cream); font-size:13.5px; font-weight:600;">Cumpriu o requisito</span>
+          </label>
+
+          <label class="pl-field-label">📝 Observações do instrutor</label>
+          <textarea class="pl-input pl-textarea" id="clPlanField_observacoes" rows="2" placeholder="Observações gerais sobre a aula..." maxlength="400"></textarea>
+
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-danger" id="clPlanningDeleteBtn" style="display:none;">Excluir</button>
+            <button type="button" class="pl-btn" id="clPlanningDuplicateBtn" style="display:none; background:rgba(255,255,255,0.08); color:var(--cream);">Duplicar</button>
+            <button type="button" class="pl-btn pl-btn-primary" id="clPlanningSaveBtn">Salvar Planejamento</button>
           </div>
         </div>
       </div>
@@ -9805,6 +9921,8 @@
       });
     }
 
+    const planningOpenBtn = document.getElementById('clPlanningOpenBtn');
+
     function showHub(){
       currentClass = null;
       hub.style.display = '';
@@ -9814,6 +9932,7 @@
       if(studentBar) studentBar.style.display = 'none';
       selectedStudent = null;
       updateHubCounts();
+      if(planningOpenBtn) planningOpenBtn.style.display = 'none';
     }
 
     function openClassDetail(className){
@@ -9830,7 +9949,12 @@
         renderStudentBar(className);
         applyStudentProgressToCards();
       }
+      if(planningOpenBtn) planningOpenBtn.style.display = '';
     }
+
+    // Exposto pro módulo separado de Planejamento de Classes (ver window.__clOpenPlanning
+    // mais abaixo no arquivo) saber pra qual classe abrir a lista de planejamentos.
+    window.__clGetCurrentClass = function(){ return currentClass; };
 
     hub.querySelectorAll('.cl-hub-row').forEach(tile => {
       tile.addEventListener('click', (e) => {
@@ -10366,6 +10490,235 @@
     document.querySelectorAll('#view-classes .pl-month-group').forEach(g => { updateClassCount(g); regroupByArea(g); });
     window.__clShowHub = showHub;
     loadClassDataFromSupabase();
+  })();
+
+  // Planejamento de Classes: módulo separado do progresso por desbravador acima —
+  // aqui o instrutor prepara a aula em si (o quê vai ensinar, como, com quê),
+  // salva e reutiliza (duplicar) em vez de montar tudo do zero toda semana.
+  // Tabela nova: planejamentos_aula (ver supabase/schema.sql). O requisito é um
+  // campo de texto com sugestões (datalist) tiradas dos cards de requisito já
+  // existentes na própria tela de Classes Regulares — não duplica esse catálogo.
+  (function(){
+    const overlay = document.getElementById('clPlanningOverlay');
+    const openBtn = document.getElementById('clPlanningOpenBtn');
+    if(!overlay || !openBtn) return;
+
+    const backBtn = document.getElementById('clPlanningBack');
+    const closeBtn = document.getElementById('clPlanningClose');
+    const titleEl = document.getElementById('clPlanningTitle');
+    const listState = document.getElementById('clPlanningListState');
+    const formState = document.getElementById('clPlanningFormState');
+    const newBtn = document.getElementById('clPlanningNewBtn');
+    const list = document.getElementById('clPlanningList');
+    const emptyMsg = document.getElementById('clPlanningEmpty');
+    const requisitoOptions = document.getElementById('clPlanningRequisitoOptions');
+    const saveBtn = document.getElementById('clPlanningSaveBtn');
+    const deleteBtn = document.getElementById('clPlanningDeleteBtn');
+    const duplicateBtn = document.getElementById('clPlanningDuplicateBtn');
+
+    const FIELD_IDS = [
+      'data', 'horario', 'instrutor', 'qtd', 'local', 'requisito', 'tema',
+      'objetivo', 'duracao', 'materiais', 'textoBiblico', 'introducao',
+      'desenvolvimento', 'atividade', 'aplicacao', 'observacoes'
+    ];
+    const fields = {};
+    FIELD_IDS.forEach(key => { fields[key] = document.getElementById('clPlanField_' + key); });
+    const avParticipou = document.getElementById('clPlanField_avParticipou');
+    const avCompreendeu = document.getElementById('clPlanField_avCompreendeu');
+    const avCumpriu = document.getElementById('clPlanField_avCumpriu');
+
+    const CLASS_DOT = {
+      'Amigo': '🟢', 'Companheiro': '🔵', 'Pesquisador': '🟠',
+      'Pioneiro': '🟣', 'Excursionista': '🔴', 'Guia': '🟡'
+    };
+
+    let planningClass = null;
+    let plans = [];
+    let editingPlan = null; // null = criando um planejamento novo
+
+    function classDot(classe){ return CLASS_DOT[classe] || '📚'; }
+
+    // Sugestões de requisito: reaproveita os cards já cadastrados em Classes
+    // Regulares pra essa classe (data-title em .cl-activity-card), sem duplicar
+    // esse catálogo numa tabela própria.
+    function populateRequisitoOptions(classe){
+      requisitoOptions.innerHTML = '';
+      const seen = new Set();
+      document.querySelectorAll('#view-classes .cl-activity-card[data-class="' + CSS.escape(classe) + '"]').forEach(card => {
+        const title = card.dataset.title;
+        if(!title || seen.has(title)) return;
+        seen.add(title);
+        const opt = document.createElement('option');
+        opt.value = title;
+        requisitoOptions.appendChild(opt);
+      });
+    }
+
+    function formatPlanDate(dateStr){
+      if(!dateStr) return '';
+      const [y, m, d] = dateStr.split('-');
+      return d + '/' + m;
+    }
+
+    function renderList(){
+      list.innerHTML = '';
+      emptyMsg.style.display = plans.length ? 'none' : '';
+      plans.forEach(plan => {
+        const row = document.createElement('div');
+        row.className = 'cl-planning-row';
+        const dateLabel = formatPlanDate(plan.data);
+        row.innerHTML =
+          '<span class="cl-planning-row-dot">' + classDot(plan.classe) + '</span>' +
+          '<div class="cl-planning-row-body">' +
+            '<div class="cl-planning-row-title"></div>' +
+            '<div class="cl-planning-row-meta"></div>' +
+          '</div>' +
+          '<svg class="cl-planning-row-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+        row.querySelector('.cl-planning-row-title').textContent = plan.classe + (plan.tema ? ' — ' + plan.tema : ' — Sem tema');
+        row.querySelector('.cl-planning-row-meta').textContent = [dateLabel, plan.requisito_titulo].filter(Boolean).join(' · ') || 'Sem data';
+        row.addEventListener('click', () => openForm(plan));
+        list.appendChild(row);
+      });
+    }
+
+    async function loadPlans(classe){
+      if(!supa) return;
+      const { data, error } = await supa.from('planejamentos_aula').select('*')
+        .eq('classe', classe).order('data', { ascending: false });
+      if(error || !data) return;
+      plans = data;
+      renderList();
+    }
+
+    function resetFields(){
+      FIELD_IDS.forEach(key => { if(fields[key]) fields[key].value = ''; });
+      avParticipou.checked = false;
+      avCompreendeu.checked = false;
+      avCumpriu.checked = false;
+    }
+
+    function fillFields(plan){
+      fields.data.value = plan.data || '';
+      fields.horario.value = plan.horario || '';
+      fields.instrutor.value = plan.instrutor_responsavel || '';
+      fields.qtd.value = plan.quantidade_desbravadores != null ? plan.quantidade_desbravadores : '';
+      fields.local.value = plan.local || '';
+      fields.requisito.value = plan.requisito_titulo || '';
+      fields.tema.value = plan.tema || '';
+      fields.objetivo.value = plan.objetivo || '';
+      fields.duracao.value = plan.duracao || '';
+      fields.materiais.value = plan.materiais_necessarios || '';
+      fields.textoBiblico.value = plan.texto_biblico || '';
+      fields.introducao.value = plan.introducao || '';
+      fields.desenvolvimento.value = plan.desenvolvimento || '';
+      fields.atividade.value = plan.atividade || '';
+      fields.aplicacao.value = plan.aplicacao_espiritual || '';
+      fields.observacoes.value = plan.observacoes || '';
+      avParticipou.checked = !!plan.avaliacao_participou;
+      avCompreendeu.checked = !!plan.avaliacao_compreendeu;
+      avCumpriu.checked = !!plan.avaliacao_cumpriu_requisito;
+    }
+
+    function openList(){
+      editingPlan = null;
+      titleEl.textContent = classDot(planningClass) + ' Planejamento — ' + planningClass;
+      listState.style.display = '';
+      formState.style.display = 'none';
+      backBtn.style.visibility = 'hidden';
+    }
+
+    function openForm(plan){
+      editingPlan = plan || null;
+      resetFields();
+      if(plan) fillFields(plan);
+      titleEl.textContent = plan ? 'Editar Planejamento' : 'Novo Planejamento';
+      listState.style.display = 'none';
+      formState.style.display = '';
+      backBtn.style.visibility = '';
+      deleteBtn.style.display = plan ? '' : 'none';
+      duplicateBtn.style.display = plan ? '' : 'none';
+      formState.scrollTop = 0;
+    }
+
+    openBtn.addEventListener('click', () => {
+      planningClass = window.__clGetCurrentClass ? window.__clGetCurrentClass() : null;
+      if(!planningClass) return;
+      populateRequisitoOptions(planningClass);
+      openList();
+      overlay.classList.add('show');
+      loadPlans(planningClass);
+    });
+
+    closeBtn.addEventListener('click', () => overlay.classList.remove('show'));
+    backBtn.addEventListener('click', () => {
+      if(formState.style.display === 'none'){ overlay.classList.remove('show'); }
+      else { openList(); }
+    });
+    newBtn.addEventListener('click', () => openForm(null));
+
+    saveBtn.addEventListener('click', async () => {
+      if(!supa || !planningClass) return;
+      const payload = {
+        classe: planningClass,
+        data: fields.data.value || null,
+        horario: fields.horario.value || null,
+        instrutor_responsavel: fields.instrutor.value.trim() || null,
+        quantidade_desbravadores: fields.qtd.value ? parseInt(fields.qtd.value, 10) : null,
+        local: fields.local.value.trim() || null,
+        requisito_titulo: fields.requisito.value.trim() || null,
+        tema: fields.tema.value.trim() || null,
+        objetivo: fields.objetivo.value.trim() || null,
+        duracao: fields.duracao.value.trim() || null,
+        materiais_necessarios: fields.materiais.value.trim() || null,
+        texto_biblico: fields.textoBiblico.value.trim() || null,
+        introducao: fields.introducao.value.trim() || null,
+        desenvolvimento: fields.desenvolvimento.value.trim() || null,
+        atividade: fields.atividade.value.trim() || null,
+        aplicacao_espiritual: fields.aplicacao.value.trim() || null,
+        avaliacao_participou: avParticipou.checked,
+        avaliacao_compreendeu: avCompreendeu.checked,
+        avaliacao_cumpriu_requisito: avCumpriu.checked,
+        observacoes: fields.observacoes.value.trim() || null
+      };
+      saveBtn.disabled = true;
+      const query = editingPlan
+        ? supa.from('planejamentos_aula').update(payload).eq('id', editingPlan.id).select().single()
+        : supa.from('planejamentos_aula').insert(payload).select().single();
+      const { error } = await query;
+      saveBtn.disabled = false;
+      if(error){
+        alert('Não foi possível salvar o planejamento: ' + (error.message || 'erro desconhecido'));
+        return;
+      }
+      await loadPlans(planningClass);
+      openList();
+    });
+
+    duplicateBtn.addEventListener('click', () => {
+      if(!editingPlan) return;
+      const copy = Object.assign({}, editingPlan, { data: '' });
+      delete copy.id;
+      editingPlan = null;
+      resetFields();
+      fillFields(copy);
+      titleEl.textContent = 'Novo Planejamento (cópia)';
+      deleteBtn.style.display = 'none';
+      duplicateBtn.style.display = 'none';
+    });
+
+    deleteBtn.addEventListener('click', async () => {
+      if(!editingPlan || !supa) return;
+      if(!confirm('Excluir este planejamento? Essa ação não pode ser desfeita.')) return;
+      deleteBtn.disabled = true;
+      const { error } = await supa.from('planejamentos_aula').delete().eq('id', editingPlan.id);
+      deleteBtn.disabled = false;
+      if(error){
+        alert('Não foi possível excluir o planejamento. Tente novamente.');
+        return;
+      }
+      await loadPlans(planningClass);
+      openList();
+    });
   })();
 
   // Unidades: hub + abas (Visão Geral, Membros, Funções, Atividades, Avaliações,
