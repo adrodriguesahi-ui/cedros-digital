@@ -1637,9 +1637,13 @@
     margin-top:8px; width:100%; border:1px dashed rgba(255,255,255,0.2); border-radius:12px;
     background:transparent; color:var(--accent); font-size:13px; font-weight:800; padding:10px; cursor:pointer;
   }
+  .pl-list-template-btn{
+    border-style:solid; background:rgba(63,203,107,0.1); border-color:rgba(63,203,107,0.35); margin-top:0; margin-bottom:10px;
+  }
 
   .pl-view-schedule{ display:flex; flex-direction:column; gap:6px; }
-  .pl-view-schedule-row{ display:flex; gap:10px; align-items:baseline; font-size:13.5px; }
+  .pl-view-schedule-row{ display:flex; gap:8px; align-items:baseline; font-size:13.5px; }
+  .pl-view-schedule-icon{ flex:0 0 18px; font-size:14px; }
   .pl-view-schedule-time{ flex:0 0 52px; font-weight:800; color:var(--accent); font-variant-numeric:tabular-nums; }
   .pl-view-schedule-activity{ flex:1; font-weight:600; color:rgba(245,239,225,0.8); }
   .pl-view-notice-block{
@@ -3192,6 +3196,7 @@
             <select class="pl-input" id="plFieldOfficer2"><option value="">Nenhum</option></select>
 
             <label class="pl-field-label">Programação do Dia</label>
+            <button type="button" class="pl-list-add-btn pl-list-template-btn" id="plScheduleTemplateBtn">📋 Carregar modelo padrão da Reunião Regular</button>
             <div class="pl-schedule-list" id="plScheduleList"></div>
             <button type="button" class="pl-list-add-btn" id="plScheduleAddBtn">+ Adicionar horário</button>
 
@@ -3338,6 +3343,7 @@
           <div class="pl-view-block" id="plViewScheduleBlock" style="display:none;">
             <span class="pl-field-label">Programação do Dia</span>
             <div class="pl-view-schedule" id="plViewSchedule"></div>
+            <button type="button" class="pl-btn pl-btn-primary" id="plViewPdfBtn" style="width:100%; margin-top:10px;">📄 Gerar PDF da Programação</button>
           </div>
 
           <div class="pl-view-block pl-view-notice-block" id="plViewNoticeBlock" style="display:none;">
@@ -7662,6 +7668,7 @@
               <p class="pl-reminder-hint" style="margin:0 2px 14px;" id="bdOfficerFillEventLabel"></p>
 
               <label class="pl-field-label" style="margin-top:0;">Programação do Dia</label>
+              <button type="button" class="pl-list-add-btn pl-list-template-btn" id="bdOfficerScheduleTemplateBtn">📋 Carregar modelo padrão da Reunião Regular</button>
               <div class="pl-schedule-list" id="bdOfficerScheduleList"></div>
               <button type="button" class="pl-list-add-btn" id="bdOfficerScheduleAddBtn">+ Adicionar horário</button>
 
@@ -7673,6 +7680,7 @@
               <button type="button" class="pl-list-add-btn" id="bdOfficerChecklistAddBtn">+ Adicionar item</button>
 
               <div class="pl-modal-actions">
+                <button type="button" class="pl-btn" id="bdOfficerFillPdfBtn" style="background:rgba(255,255,255,0.08); color:var(--cream);">📄 PDF</button>
                 <button type="button" class="pl-btn pl-btn-primary" id="bdOfficerFillSaveBtn">Salvar Programação</button>
               </div>
             </div>
@@ -8096,6 +8104,19 @@
     reader.readAsDataURL(file);
   }
 
+  // Faz parse seguro de um JSON de array guardado num dataset (ex.: schedule,
+  // checklist, officerIds) — usado por vários pontos deste arquivo, todos
+  // compartilhando este mesmo escopo do <script>.
+  function parseJSONSafe(str){
+    if(!str) return [];
+    try {
+      const parsed = JSON.parse(str);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch(e){
+      return [];
+    }
+  }
+
   // Atividades comuns de uma Reunião Regular, oferecidas como lista de seleção na
   // Programação do Dia — tanto no editor de evento (Secretaria/Agenda Anual) quanto
   // no modal "Preencher Programação" do Oficial de Dia no dashboard, ambos usando o
@@ -8107,10 +8128,45 @@
     'Abertura, Ideais',
     'Cantinho da Unidade',
     'Estudo Bíblico',
-    'Atividade de Cartão de Classes',
+    'Cartão de Classes',
     'Ensaio para o Dia Mundial dos Desbravadores',
     'Encerramento'
   ];
+
+  // Ícone por atividade — usado no seletor, na tela de detalhes do evento e no PDF
+  // da programação (ver generateProgramacaoPDF() mais abaixo).
+  const SCHEDULE_ACTIVITY_ICONS = {
+    'Chegada da Diretoria': '🕗',
+    'Meditação da Diretoria': '🙏',
+    'Abertura, Ideais': '📢',
+    'Cantinho da Unidade': '🏕️',
+    'Estudo Bíblico': '📖',
+    'Cartão de Classes': '📒',
+    'Ensaio para o Dia Mundial dos Desbravadores': '🥁',
+    'Encerramento': '🏁'
+  };
+  const SCHEDULE_ACTIVITY_ICON_DEFAULT = '📌';
+  function scheduleActivityIcon(atividade){
+    return SCHEDULE_ACTIVITY_ICONS[atividade] || SCHEDULE_ACTIVITY_ICON_DEFAULT;
+  }
+
+  // Modelo pronto da Reunião Regular padrão do clube — "Carregar modelo padrão"
+  // preenche a Programação do Dia com isso de uma vez, pra só ajustar detalhes
+  // (horários, trocar uma atividade) em vez de montar tudo do zero toda semana.
+  const SCHEDULE_TEMPLATE_REGULAR = [
+    { horario: '08:00', atividade: 'Chegada da Diretoria' },
+    { horario: '08:30', atividade: 'Abertura, Ideais' },
+    { horario: '08:45', atividade: 'Cantinho da Unidade' },
+    { horario: '09:00', atividade: 'Estudo Bíblico' },
+    { horario: '09:30', atividade: 'Cartão de Classes' },
+    { horario: '10:30', atividade: 'Ensaio para o Dia Mundial dos Desbravadores' },
+    { horario: '12:30', atividade: 'Encerramento' }
+  ];
+  function loadScheduleTemplate(container){
+    if(container.children.length && !confirm('Isso substitui os horários já preenchidos pelo modelo padrão da Reunião Regular. Continuar?')) return;
+    container.innerHTML = '';
+    SCHEDULE_TEMPLATE_REGULAR.forEach(item => buildScheduleRow(container, item.horario, item.atividade));
+  }
 
   function buildScheduleRow(container, horario, atividade){
     const row = document.createElement('div');
@@ -8133,7 +8189,7 @@
     SCHEDULE_ACTIVITY_PRESETS.forEach(label => {
       const opt = document.createElement('option');
       opt.value = label;
-      opt.textContent = label;
+      opt.textContent = scheduleActivityIcon(label) + ' ' + label;
       select.appendChild(opt);
     });
     const customOpt = document.createElement('option');
@@ -8187,6 +8243,158 @@
     return select.value;
   }
 
+  // Desenha um emoji num <canvas> e devolve como PNG (data URL) — jsPDF não
+  // consegue renderizar emoji com as fontes padrão dele (helvetica etc. não têm
+  // esses glifos), mas o navegador sabe desenhar emoji nativamente. Assim os
+  // ícones da Programação do Dia saem coloridos de verdade no PDF.
+  function emojiToPngDataURL(emoji, px){
+    const canvas = document.createElement('canvas');
+    canvas.width = px;
+    canvas.height = px;
+    const ctx = canvas.getContext('2d');
+    ctx.font = Math.round(px * 0.82) + 'px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(emoji, px / 2, px / 2 + px * 0.06);
+    return canvas.toDataURL('image/png');
+  }
+
+  const WEEKDAY_NAMES_PT = ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+
+  // Monta os dados pro PDF a partir de um card de evento da Agenda Anual (mesmo
+  // dataset usado por openViewOnly/__plGetOfficerEvent) — reaproveitado tanto pela
+  // tela de detalhes do evento quanto pelo modal "Preencher Programação".
+  function buildProgramacaoPDFDataFromCard(card){
+    const day = parseInt(card.dataset.day, 10);
+    const monIdx = parseInt(card.dataset.monIndex, 10);
+    const monName = card.dataset.monName || '';
+    let dateLabel = '';
+    if(day && monIdx){
+      const now = new Date();
+      let dateObj = new Date(now.getFullYear(), monIdx - 1, day);
+      dateLabel = WEEKDAY_NAMES_PT[dateObj.getDay()] + ', ' + String(day).padStart(2, '0') + ' de ' + monName;
+    }
+    return {
+      title: card.dataset.title || 'Reunião',
+      subtitle: dateLabel + (card.dataset.local ? (dateLabel ? ' · ' : '') + card.dataset.local : ''),
+      officerNames: parseJSONSafe(card.dataset.officerNames),
+      schedule: parseJSONSafe(card.dataset.schedule),
+      notice: card.dataset.notice || ''
+    };
+  }
+
+  // Gera o PDF "chamativo" da Programação do Dia: faixa colorida com o logo do
+  // clube, oficiais de dia em destaque, horários com ícone e o aviso aos membros
+  // numa caixa no fim. data: { title, subtitle, officerNames[], schedule[], notice }
+  function generateProgramacaoPDF(data){
+    const jsPDFLib = window.jspdf && window.jspdf.jsPDF;
+    if(!jsPDFLib){
+      alert('Não foi possível carregar a biblioteca de PDF. Verifique sua conexão com a internet e tente novamente.');
+      return;
+    }
+    const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const marginX = 16;
+    let y;
+
+    doc.setFillColor(13, 19, 12);
+    doc.rect(0, 0, pageWidth, 36, 'F');
+    doc.setFillColor(63, 203, 107);
+    doc.rect(0, 36, pageWidth, 1.5, 'F');
+
+    const logoImg = document.querySelector('.bd-brand img');
+    let textStartX = marginX;
+    if(logoImg && logoImg.src){
+      try { doc.addImage(logoImg.src, 'PNG', marginX, 8, 20, 20); textStartX = marginX + 26; } catch(e){}
+    }
+    doc.setTextColor(245, 239, 225);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12.5);
+    doc.text('CLUBE DE DESBRAVADORES', textStartX, 15);
+    doc.text('CEDROS DO LÍBANO', textStartX, 21.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor(120, 220, 150);
+    doc.text('PROGRAMAÇÃO DA REUNIÃO', textStartX, 28);
+
+    y = 48;
+    doc.setTextColor(20, 24, 20);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(17);
+    doc.text(data.title, pageWidth / 2, y, { align: 'center' });
+    if(data.subtitle){
+      y += 7;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      doc.setTextColor(100, 100, 100);
+      doc.text(data.subtitle, pageWidth / 2, y, { align: 'center' });
+    }
+    y += 12;
+
+    if(data.officerNames && data.officerNames.length){
+      const label = 'OFICIAIS DE DIA: ' + data.officerNames.join(' e ').toUpperCase();
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      const boxW = doc.getTextWidth(label) + 16;
+      const boxX = (pageWidth - boxW) / 2;
+      doc.setFillColor(226, 246, 232);
+      doc.roundedRect(boxX, y - 6, boxW, 10, 3, 3, 'F');
+      doc.setTextColor(20, 110, 55);
+      doc.text(label, pageWidth / 2, y, { align: 'center' });
+      y += 16;
+    } else {
+      y += 4;
+    }
+
+    const rowH = 12;
+    (data.schedule || []).forEach((item, i) => {
+      if(y > 265){ doc.addPage(); y = 24; }
+      if(i % 2 === 0){
+        doc.setFillColor(240, 248, 242);
+        doc.rect(marginX, y - 7.5, pageWidth - marginX * 2, rowH, 'F');
+      }
+      try {
+        const iconData = emojiToPngDataURL(scheduleActivityIcon(item.atividade), 64);
+        doc.addImage(iconData, 'PNG', marginX + 2, y - 6, 7.5, 7.5);
+      } catch(e){}
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(20, 130, 70);
+      doc.text(item.horario || '--:--', marginX + 14, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      doc.setTextColor(30, 30, 30);
+      doc.text(item.atividade || '', marginX + 36, y);
+      y += rowH;
+    });
+
+    y += 6;
+    if(data.notice){
+      if(y > 245){ doc.addPage(); y = 24; }
+      const lines = doc.splitTextToSize(data.notice, pageWidth - marginX * 2 - 12);
+      const boxH = lines.length * 5.5 + 14;
+      doc.setFillColor(252, 244, 224);
+      doc.roundedRect(marginX, y, pageWidth - marginX * 2, boxH, 3, 3, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(150, 110, 20);
+      doc.text('AVISO AOS MEMBROS', marginX + 6, y + 8);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10.5);
+      doc.setTextColor(70, 55, 20);
+      doc.text(lines, marginX + 6, y + 15);
+      y += boxH + 8;
+    }
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text('Gerado pelo Cedros Digital', pageWidth / 2, 290, { align: 'center' });
+
+    const safeTitle = (data.title || 'reuniao').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    doc.save('programacao-' + safeTitle + '.pdf');
+  }
+
   // Planejamento Anual: criar / editar / excluir eventos + lembretes no sino
   (function(){
     const overlay = document.getElementById('plModalOverlay');
@@ -8232,17 +8440,9 @@
     const checklistList = document.getElementById('plChecklistList');
     const checklistAddBtn = document.getElementById('plChecklistAddBtn');
 
-    function parseJSONSafe(str){
-      if(!str) return [];
-      try {
-        const parsed = JSON.parse(str);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch(e){
-        return [];
-      }
-    }
-
     scheduleAddBtn.addEventListener('click', () => buildScheduleRow(scheduleList, '', ''));
+    const scheduleTemplateBtn = document.getElementById('plScheduleTemplateBtn');
+    if(scheduleTemplateBtn) scheduleTemplateBtn.addEventListener('click', () => loadScheduleTemplate(scheduleList));
 
     function addChecklistRowEl(texto, feito){
       const row = document.createElement('div');
@@ -8311,6 +8511,13 @@
     const viewChecklist = document.getElementById('plViewChecklist');
     const viewPhotoBlock = document.getElementById('plViewPhotoBlock');
     const viewPhotoImg = document.getElementById('plViewPhotoImg');
+    const viewPdfBtn = document.getElementById('plViewPdfBtn');
+    let viewingCard = null;
+    if(viewPdfBtn){
+      viewPdfBtn.addEventListener('click', () => {
+        if(viewingCard) generateProgramacaoPDF(buildProgramacaoPDFDataFromCard(viewingCard));
+      });
+    }
 
     async function toggleChecklistItem(card, idx, checked){
       const list = parseJSONSafe(card.dataset.checklist);
@@ -8348,7 +8555,8 @@
       list.forEach(item => {
         const row = document.createElement('div');
         row.className = 'pl-view-schedule-row';
-        row.innerHTML = '<span class="pl-view-schedule-time"></span><span class="pl-view-schedule-activity"></span>';
+        row.innerHTML = '<span class="pl-view-schedule-icon"></span><span class="pl-view-schedule-time"></span><span class="pl-view-schedule-activity"></span>';
+        row.querySelector('.pl-view-schedule-icon').textContent = scheduleActivityIcon(item.atividade);
         row.querySelector('.pl-view-schedule-time').textContent = item.horario || '';
         row.querySelector('.pl-view-schedule-activity').textContent = item.atividade || '';
         viewSchedule.appendChild(row);
@@ -8375,6 +8583,7 @@
     applyRoleMode();
 
     function openViewOnly(card){
+      viewingCard = card;
       viewTitle.textContent = card.dataset.title || '';
       const tagLabel = card.dataset.tagLabel || '';
       const tagColor = card.dataset.tag || 'green';
@@ -14546,6 +14755,7 @@ const REQ_SUMMARIES = {
     const officerChecklistList = document.getElementById('bdOfficerChecklistList');
     const officerChecklistAddBtn = document.getElementById('bdOfficerChecklistAddBtn');
     const officerFillSaveBtn = document.getElementById('bdOfficerFillSaveBtn');
+    const officerFillPdfBtn = document.getElementById('bdOfficerFillPdfBtn');
     let officerCurrentCard = null;
 
     function officerParseJSON(str){
@@ -14554,6 +14764,8 @@ const REQ_SUMMARIES = {
     }
 
     if(officerScheduleAddBtn) officerScheduleAddBtn.addEventListener('click', () => buildScheduleRow(officerScheduleList, '', ''));
+    const officerScheduleTemplateBtn = document.getElementById('bdOfficerScheduleTemplateBtn');
+    if(officerScheduleTemplateBtn) officerScheduleTemplateBtn.addEventListener('click', () => loadScheduleTemplate(officerScheduleList));
 
     function addOfficerChecklistRow(texto, feito){
       const row = document.createElement('div');
@@ -14599,6 +14811,19 @@ const REQ_SUMMARIES = {
       });
       officerFillClose.addEventListener('click', () => officerFillOverlay.classList.remove('show'));
       officerFillOverlay.addEventListener('click', (e) => { if(e.target === officerFillOverlay) officerFillOverlay.classList.remove('show'); });
+
+      if(officerFillPdfBtn){
+        officerFillPdfBtn.addEventListener('click', () => {
+          if(!officerCurrentCard) return;
+          const data = buildProgramacaoPDFDataFromCard(officerCurrentCard);
+          data.schedule = Array.from(officerScheduleList.querySelectorAll('.pl-schedule-row')).map(row => ({
+            horario: row.querySelector('.pl-schedule-time').value || '',
+            atividade: getScheduleRowActivity(row)
+          })).filter(item => item.horario || item.atividade);
+          data.notice = officerNoticeField.value.trim();
+          generateProgramacaoPDF(data);
+        });
+      }
 
       officerFillSaveBtn.addEventListener('click', async () => {
         if(!officerCurrentCard || !supa) return;
