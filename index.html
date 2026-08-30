@@ -1621,9 +1621,11 @@
 
   .pl-schedule-section{ margin:16px 0 4px; padding:12px 14px; border-radius:16px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); }
   .pl-schedule-list, .pl-checklist-list{ display:flex; flex-direction:column; gap:8px; }
-  .pl-schedule-row{ display:flex; gap:8px; align-items:center; }
-  .pl-schedule-row .pl-schedule-time{ flex:0 0 92px; }
-  .pl-schedule-row .pl-schedule-activity{ flex:1; min-width:0; }
+  .pl-schedule-row{ display:flex; flex-direction:column; gap:6px; }
+  .pl-schedule-row-main{ display:flex; gap:8px; align-items:center; }
+  .pl-schedule-row-main .pl-schedule-time{ flex:0 0 92px; }
+  .pl-schedule-row-main .pl-schedule-activity-select{ flex:1; min-width:0; }
+  .pl-schedule-activity-custom{ margin:0; }
   .pl-checklist-row{ display:flex; gap:8px; align-items:center; }
   .pl-checklist-row .pl-checklist-done{ flex-shrink:0; width:19px; height:19px; accent-color:var(--accent); }
   .pl-checklist-row .pl-checklist-text{ flex:1; min-width:0; }
@@ -8094,6 +8096,97 @@
     reader.readAsDataURL(file);
   }
 
+  // Atividades comuns de uma Reunião Regular, oferecidas como lista de seleção na
+  // Programação do Dia — tanto no editor de evento (Secretaria/Agenda Anual) quanto
+  // no modal "Preencher Programação" do Oficial de Dia no dashboard, ambos usando o
+  // buildScheduleRow() logo abaixo. "Outra (digitar)" ainda permite texto livre pra
+  // qualquer atividade fora dessa lista.
+  const SCHEDULE_ACTIVITY_PRESETS = [
+    'Chegada da Diretoria',
+    'Meditação da Diretoria',
+    'Abertura, Ideais',
+    'Cantinho da Unidade',
+    'Estudo Bíblico',
+    'Atividade de Cartão de Classes',
+    'Ensaio para o Dia Mundial dos Desbravadores',
+    'Encerramento'
+  ];
+
+  function buildScheduleRow(container, horario, atividade){
+    const row = document.createElement('div');
+    row.className = 'pl-schedule-row';
+
+    const mainRow = document.createElement('div');
+    mainRow.className = 'pl-schedule-row-main';
+
+    const timeInput = document.createElement('input');
+    timeInput.type = 'time';
+    timeInput.className = 'pl-input pl-schedule-time';
+    timeInput.value = horario || '';
+
+    const select = document.createElement('select');
+    select.className = 'pl-input pl-schedule-activity-select';
+    const blankOpt = document.createElement('option');
+    blankOpt.value = '';
+    blankOpt.textContent = 'Selecionar atividade';
+    select.appendChild(blankOpt);
+    SCHEDULE_ACTIVITY_PRESETS.forEach(label => {
+      const opt = document.createElement('option');
+      opt.value = label;
+      opt.textContent = label;
+      select.appendChild(opt);
+    });
+    const customOpt = document.createElement('option');
+    customOpt.value = '__custom__';
+    customOpt.textContent = 'Outra (digitar)';
+    select.appendChild(customOpt);
+
+    const customInput = document.createElement('input');
+    customInput.type = 'text';
+    customInput.className = 'pl-input pl-schedule-activity-custom';
+    customInput.placeholder = 'Digite a atividade...';
+    customInput.maxLength = 60;
+    customInput.style.display = 'none';
+
+    const isPreset = atividade && SCHEDULE_ACTIVITY_PRESETS.includes(atividade);
+    if(atividade && !isPreset){
+      select.value = '__custom__';
+      customInput.value = atividade;
+      customInput.style.display = '';
+    } else {
+      select.value = atividade || '';
+    }
+
+    select.addEventListener('change', () => {
+      const isCustom = select.value === '__custom__';
+      customInput.style.display = isCustom ? '' : 'none';
+      if(isCustom) customInput.focus();
+    });
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'pl-list-remove-btn';
+    removeBtn.setAttribute('aria-label', 'Remover horário');
+    removeBtn.textContent = '×';
+    removeBtn.addEventListener('click', () => row.remove());
+
+    mainRow.appendChild(timeInput);
+    mainRow.appendChild(select);
+    mainRow.appendChild(removeBtn);
+    row.appendChild(mainRow);
+    row.appendChild(customInput);
+    container.appendChild(row);
+    return row;
+  }
+
+  // Lê a atividade escolhida numa linha criada por buildScheduleRow (texto da lista
+  // ou o que foi digitado em "Outra").
+  function getScheduleRowActivity(row){
+    const select = row.querySelector('.pl-schedule-activity-select');
+    if(select.value === '__custom__') return row.querySelector('.pl-schedule-activity-custom').value.trim();
+    return select.value;
+  }
+
   // Planejamento Anual: criar / editar / excluir eventos + lembretes no sino
   (function(){
     const overlay = document.getElementById('plModalOverlay');
@@ -8149,19 +8242,7 @@
       }
     }
 
-    function addScheduleRowEl(horario, atividade){
-      const row = document.createElement('div');
-      row.className = 'pl-schedule-row';
-      row.innerHTML =
-        '<input type="time" class="pl-input pl-schedule-time">' +
-        '<input type="text" class="pl-input pl-schedule-activity" placeholder="Atividade" maxlength="60">' +
-        '<button type="button" class="pl-list-remove-btn" aria-label="Remover horário">×</button>';
-      row.querySelector('.pl-schedule-time').value = horario || '';
-      row.querySelector('.pl-schedule-activity').value = atividade || '';
-      row.querySelector('.pl-list-remove-btn').addEventListener('click', () => row.remove());
-      scheduleList.appendChild(row);
-    }
-    scheduleAddBtn.addEventListener('click', () => addScheduleRowEl('', ''));
+    scheduleAddBtn.addEventListener('click', () => buildScheduleRow(scheduleList, '', ''));
 
     function addChecklistRowEl(texto, feito){
       const row = document.createElement('div');
@@ -8423,7 +8504,7 @@
         fieldOfficer2.value = editOfficerIds[1] || '';
         fieldNotice.value = card.dataset.notice || '';
         scheduleList.innerHTML = '';
-        parseJSONSafe(card.dataset.schedule).forEach(item => addScheduleRowEl(item.horario, item.atividade));
+        parseJSONSafe(card.dataset.schedule).forEach(item => buildScheduleRow(scheduleList, item.horario, item.atividade));
         checklistList.innerHTML = '';
         parseJSONSafe(card.dataset.checklist).forEach(item => addChecklistRowEl(item.texto, item.feito));
         fieldShowGallery.checked = card.dataset.showGallery !== '0';
@@ -8943,7 +9024,7 @@
       const notice = fieldNotice.value.trim();
       const schedule = Array.from(scheduleList.querySelectorAll('.pl-schedule-row')).map(row => ({
         horario: row.querySelector('.pl-schedule-time').value || '',
-        atividade: row.querySelector('.pl-schedule-activity').value.trim()
+        atividade: getScheduleRowActivity(row)
       })).filter(item => item.horario || item.atividade);
       const checklist = Array.from(checklistList.querySelectorAll('.pl-checklist-row')).map(row => ({
         texto: row.querySelector('.pl-checklist-text').value.trim(),
@@ -14472,19 +14553,7 @@ const REQ_SUMMARIES = {
       try { const p = JSON.parse(str); return Array.isArray(p) ? p : []; } catch(e){ return []; }
     }
 
-    function addOfficerScheduleRow(horario, atividade){
-      const row = document.createElement('div');
-      row.className = 'pl-schedule-row';
-      row.innerHTML =
-        '<input type="time" class="pl-input pl-schedule-time">' +
-        '<input type="text" class="pl-input pl-schedule-activity" placeholder="Atividade" maxlength="60">' +
-        '<button type="button" class="pl-list-remove-btn" aria-label="Remover horário">×</button>';
-      row.querySelector('.pl-schedule-time').value = horario || '';
-      row.querySelector('.pl-schedule-activity').value = atividade || '';
-      row.querySelector('.pl-list-remove-btn').addEventListener('click', () => row.remove());
-      officerScheduleList.appendChild(row);
-    }
-    if(officerScheduleAddBtn) officerScheduleAddBtn.addEventListener('click', () => addOfficerScheduleRow('', ''));
+    if(officerScheduleAddBtn) officerScheduleAddBtn.addEventListener('click', () => buildScheduleRow(officerScheduleList, '', ''));
 
     function addOfficerChecklistRow(texto, feito){
       const row = document.createElement('div');
@@ -14522,7 +14591,7 @@ const REQ_SUMMARIES = {
         if(!officerCurrentCard) return;
         officerFillEventLabel.textContent = (officerCurrentCard.dataset.title || '') + ' · ' + (officerCurrentCard.dataset.local || '');
         officerScheduleList.innerHTML = '';
-        officerParseJSON(officerCurrentCard.dataset.schedule).forEach(item => addOfficerScheduleRow(item.horario, item.atividade));
+        officerParseJSON(officerCurrentCard.dataset.schedule).forEach(item => buildScheduleRow(officerScheduleList, item.horario, item.atividade));
         officerNoticeField.value = officerCurrentCard.dataset.notice || '';
         officerChecklistList.innerHTML = '';
         officerParseJSON(officerCurrentCard.dataset.checklist).forEach(item => addOfficerChecklistRow(item.texto, item.feito));
@@ -14535,7 +14604,7 @@ const REQ_SUMMARIES = {
         if(!officerCurrentCard || !supa) return;
         const schedule = Array.from(officerScheduleList.querySelectorAll('.pl-schedule-row')).map(row => ({
           horario: row.querySelector('.pl-schedule-time').value || '',
-          atividade: row.querySelector('.pl-schedule-activity').value.trim()
+          atividade: getScheduleRowActivity(row)
         })).filter(item => item.horario || item.atividade);
         const notice = officerNoticeField.value.trim();
         const checklist = Array.from(officerChecklistList.querySelectorAll('.pl-checklist-row')).map(row => ({
