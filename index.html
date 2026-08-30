@@ -2297,6 +2297,12 @@
     text-decoration:none; cursor:pointer;
     box-shadow:0 0 0 3px rgba(63,203,107,0.08);
   }
+  .bd-schedule-chip{
+    background:rgba(91,155,255,0.16);
+    border-color:rgba(91,155,255,0.5);
+    color:#5B9BFF;
+    box-shadow:0 0 0 3px rgba(91,155,255,0.08);
+  }
 
   /* Descriptive quick-access grid ("Acesso Rápido") */
   .link-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; margin-bottom:28px; }
@@ -9858,6 +9864,13 @@
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4Z"/><path d="m9 12 2 2 4-4"/></svg>
             <span id="bdOfficerEventInfo">Oficial de Dia</span>
           </a>
+          <!-- Só aparece pra quem é Diretoria (usuario.unidade === "Diretoria do Clube"),
+               quando o próximo evento já tem Programação do Dia preenchida pelo Oficial de
+               Dia (card.dataset.schedule não vazio) — ver window.__plGetNextScheduledEvent
+               mais abaixo no arquivo. Toca pra abrir o evento em modo leitura. -->
+          <a href="#" class="bd-officer-chip bd-schedule-chip" id="bdScheduleReadyBanner" style="display:none;">
+            <span id="bdScheduleReadyInfo">📋 Programação pronta</span>
+          </a>
         </p>
 
         <div class="bd-reminder-banner" id="bdReminderBanner" role="button" tabindex="0" style="display:none;">
@@ -12037,6 +12050,27 @@
       const now = new Date();
       const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'))
         .filter(card => parseJSONSafe(card.dataset.officerIds).includes(userId));
+      const withDates = cards.map(card => {
+        const day = parseInt(card.dataset.day, 10);
+        const monIdx = parseInt(card.dataset.monIndex, 10);
+        if(!day || !monIdx) return null;
+        const [hh, mm] = (card.dataset.time || '00:00').split(':').map(n => parseInt(n, 10) || 0);
+        let date = new Date(now.getFullYear(), monIdx - 1, day, hh, mm);
+        if(date < now) date = new Date(now.getFullYear() + 1, monIdx - 1, day, hh, mm);
+        return { card, date };
+      }).filter(Boolean);
+      withDates.sort((a, b) => a.date - b.date);
+      return withDates[0] || null;
+    };
+
+    // Usado pelo chip "Programação pronta" do dashboard, visível só pra Diretoria:
+    // acha o próximo evento (se houver) cujo Oficial de Dia já preencheu a
+    // Programação do Dia (card.dataset.schedule não vazio), mesma regra de datas
+    // do __plGetOfficerEvent acima.
+    window.__plGetNextScheduledEvent = function(){
+      const now = new Date();
+      const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'))
+        .filter(card => parseJSONSafe(card.dataset.schedule).length > 0);
       const withDates = cards.map(card => {
         const day = parseInt(card.dataset.day, 10);
         const monIdx = parseInt(card.dataset.monIndex, 10);
@@ -17794,9 +17828,45 @@ const REQ_SUMMARIES = {
       document.addEventListener('cedros:loggedin', refreshOfficerBanner);
     }
 
-    window.__bdRefreshBanners = function(){ buildBanners(); refreshOfficerBanner(); };
+    // ---- Chip "Programação pronta" (só Diretoria) ----
+    // Avisa a Diretoria assim que o Oficial de Dia preenche a Programação do Dia de
+    // um evento futuro, sem precisar entrar na Agenda Anual pra descobrir. Toca pra
+    // abrir o evento em modo leitura (window.__plOpenEventReadOnly, já usado pelo
+    // card de destaque do carrossel).
+    const scheduleReadyBanner = document.getElementById('bdScheduleReadyBanner');
+    const scheduleReadyInfo = document.getElementById('bdScheduleReadyInfo');
+    let scheduleReadyCard = null;
+
+    function refreshScheduleReadyBanner(){
+      if(!scheduleReadyBanner) return;
+      const user = window.__currentUsuario;
+      const isDiretoria = !!user && user.unidade === 'Diretoria do Clube';
+      const result = (isDiretoria && window.__plGetNextScheduledEvent) ? window.__plGetNextScheduledEvent() : null;
+      if(!result){
+        scheduleReadyBanner.style.display = 'none';
+        scheduleReadyCard = null;
+        return;
+      }
+      scheduleReadyCard = result.card;
+      const dateStr = result.date.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
+      scheduleReadyInfo.textContent = '📋 Programação pronta · ' + dateStr;
+      scheduleReadyBanner.title = scheduleReadyCard.dataset.title || '';
+      scheduleReadyBanner.style.display = '';
+    }
+
+    if(scheduleReadyBanner){
+      scheduleReadyBanner.addEventListener('click', (e) => {
+        e.preventDefault();
+        if(!scheduleReadyCard || !window.__plOpenEventReadOnly) return;
+        window.__plOpenEventReadOnly(scheduleReadyCard);
+      });
+      document.addEventListener('cedros:loggedin', refreshScheduleReadyBanner);
+    }
+
+    window.__bdRefreshBanners = function(){ buildBanners(); refreshOfficerBanner(); refreshScheduleReadyBanner(); };
     buildBanners();
     refreshOfficerBanner();
+    refreshScheduleReadyBanner();
   })();
 
   // Registers the service worker so the app can be installed and opened offline.
