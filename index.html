@@ -940,10 +940,15 @@
 
   /* ---- Classes Regulares: thumbnail, camera/upload buttons, photo preview ---- */
   .cl-thumb{
-    flex-shrink:0; width:46px; height:46px; border-radius:12px;
+    position:relative; flex-shrink:0; width:46px; height:46px; border-radius:12px;
     background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08);
     display:flex; align-items:center; justify-content:center;
-    color:rgba(245,239,225,0.4); overflow:hidden;
+    color:rgba(245,239,225,0.4); overflow:visible;
+  }
+  .cl-thumb-badge{
+    position:absolute; bottom:-4px; right:-4px; min-width:18px; height:18px; padding:0 3px;
+    border-radius:9px; background:var(--accent); color:#08130A; font-size:10px; font-weight:900;
+    display:flex; align-items:center; justify-content:center; border:2px solid var(--bg, #0B120C);
   }
   .am-thumb{
     flex-shrink:0; width:46px; height:46px; border-radius:12px;
@@ -1107,7 +1112,7 @@
   .un-score-row.c-purple{ border-left-color:#B98BFF; } .un-score-row.c-purple .un-score-icon{ background:#B98BFF; } .un-score-row.c-purple .un-score-bar-fill{ background:#B98BFF; }
   .un-score-row.c-orange{ border-left-color:#FF9F43; } .un-score-row.c-orange .un-score-icon{ background:#FF9F43; } .un-score-row.c-orange .un-score-bar-fill{ background:#FF9F43; }
 
-  .cl-thumb img{ width:100%; height:100%; object-fit:cover; }
+  .cl-thumb img{ width:100%; height:100%; object-fit:cover; border-radius:11px; }
   .cl-photo-row{ display:flex; gap:10px; margin-top:6px; }
   .cl-photo-btn{
     flex:1; display:flex; align-items:center; justify-content:center; gap:7px;
@@ -1127,15 +1132,20 @@
     display:flex; align-items:center; justify-content:center; cursor:pointer;
   }
 
-  /* ---- Comprovação de requisito (arquivo não-imagem) + QR Code ---- */
-  .cl-comprovante-file-chip{
-    display:flex; align-items:center; gap:8px; margin-top:12px; padding:10px 12px;
+  /* ---- Comprovação de requisito (pode ter várias fotos/arquivos) + QR Code ---- */
+  .cl-comprovante-list{ display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+  .cl-comprovante-item{
+    display:flex; align-items:center; gap:10px; padding:8px 10px;
     border-radius:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14);
     color:var(--cream);
   }
-  .cl-comprovante-file-chip svg{ flex-shrink:0; opacity:0.8; }
-  .cl-comprovante-file-chip span{ flex:1; font-size:12.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .cl-comprovante-file-chip button{
+  .cl-comprovante-item img{ width:40px; height:40px; border-radius:9px; object-fit:cover; flex-shrink:0; }
+  .cl-comprovante-item-icon{
+    width:40px; height:40px; border-radius:9px; background:rgba(255,255,255,0.08); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; opacity:0.8;
+  }
+  .cl-comprovante-item-name{ flex:1; font-size:12.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cl-comprovante-item button{
     flex-shrink:0; width:24px; height:24px; border-radius:50%; background:rgba(255,255,255,0.1);
     border:none; color:var(--cream); display:flex; align-items:center; justify-content:center; cursor:pointer;
   }
@@ -1158,6 +1168,7 @@
   .cv-status-tag.cv-status-todo{ background:rgba(245,239,225,0.12); color:rgba(245,239,225,0.7); }
   .cv-status-tag.cv-status-progress{ background:rgba(255,193,7,0.18); color:#FFC107; }
   .cv-status-tag.cv-status-done{ background:rgba(63,203,107,0.18); color:var(--accent); }
+  .cv-attachments{ width:100%; display:flex; flex-direction:column; gap:12px; }
   .cv-img{ width:100%; border-radius:16px; display:block; }
   .cv-file-link{
     display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:16px;
@@ -2855,8 +2866,7 @@
           <p class="cv-classe" id="cvClasse"></p>
           <p class="cv-requisito" id="cvRequisito"></p>
           <span class="cv-status-tag" id="cvStatus"></span>
-          <img class="cv-img" id="cvImg" alt="Comprovante" style="display:none;">
-          <a class="cv-file-link" id="cvFileLink" href="#" target="_blank" rel="noopener" style="display:none;"></a>
+          <div class="cv-attachments" id="cvAttachments"></div>
         </div>
       </div>
     </section>
@@ -7901,23 +7911,11 @@
             <label class="cl-photo-btn" for="clComprovanteFile">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4 7 9M12 4l5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
               Enviar arquivo
-              <input type="file" accept="image/*,.pdf,.doc,.docx" id="clComprovanteFile" hidden>
+              <input type="file" accept="image/*,.pdf,.doc,.docx" id="clComprovanteFile" multiple hidden>
             </label>
           </div>
-          <div class="cl-photo-preview" id="clComprovantePreview" style="display:none;">
-            <img id="clComprovantePreviewImg" alt="Pré-visualização do comprovante">
-            <button type="button" class="cl-photo-remove" id="clComprovanteRemove" aria-label="Remover comprovante">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-          <div class="cl-comprovante-file-chip" id="clComprovanteFileChip" style="display:none;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg>
-            <span id="clComprovanteFileName"></span>
-            <button type="button" id="clComprovanteFileRemove" aria-label="Remover comprovante">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-          </div>
-          <p class="pl-reminder-hint" id="clComprovanteHint" style="display:none;">Anexando um comprovante novo substitui o anterior.</p>
+          <p class="pl-reminder-hint">Pode anexar quantas fotos ou arquivos quiser — cada um vira um comprovante separado.</p>
+          <div class="cl-comprovante-list" id="clComprovanteList"></div>
           <button type="button" class="pl-btn pl-list-template-btn" id="clComprovanteQrBtn" style="display:none; width:100%; margin-top:10px;">🔳 Gerar QR Code de comprovação</button>
         </div>
       </div>
@@ -7937,7 +7935,10 @@
           <p class="pl-reminder-hint" id="clQrSubtitle" style="margin-top:0;"></p>
           <div class="cl-qr-box" id="clQrBox"></div>
           <p class="cl-qr-link" id="clQrLink"></p>
-          <button type="button" class="pl-btn pl-btn-primary" id="clQrCopyBtn" style="width:100%;">Copiar link</button>
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-list-template-btn" id="clQrDownloadBtn">Baixar QR Code</button>
+            <button type="button" class="pl-btn pl-btn-primary" id="clQrCopyBtn">Copiar link</button>
+          </div>
         </div>
       </div>
 
@@ -10151,12 +10152,13 @@
     const elBody = document.getElementById('cvBody');
     const elError = document.getElementById('cvError');
     if(!supa){ elLoading.style.display = 'none'; elError.style.display = ''; return; }
-    const [{ data: aluno, error: alunoErr }, { data: prog, error: progErr }] = await Promise.all([
+    const [{ data: aluno, error: alunoErr }, { data: prog, error: progErr }, { data: arquivos, error: arquivosErr }] = await Promise.all([
       supa.from('desbravadores').select('nome, classe').eq('id', desbravadorId).single(),
-      supa.from('progresso_requisitos').select('status, comprovante_foto, comprovante_nome').eq('desbravador_id', desbravadorId).eq('requisito_titulo', requisitoTitulo).single()
+      supa.from('progresso_requisitos').select('status').eq('desbravador_id', desbravadorId).eq('requisito_titulo', requisitoTitulo).single(),
+      supa.from('comprovante_arquivos').select('arquivo_data, arquivo_nome').eq('desbravador_id', desbravadorId).eq('requisito_titulo', requisitoTitulo).order('created_at')
     ]);
     elLoading.style.display = 'none';
-    if(alunoErr || progErr || !aluno || !prog || !prog.comprovante_foto){
+    if(alunoErr || progErr || arquivosErr || !aluno || !prog || !arquivos || !arquivos.length){
       elError.style.display = '';
       return;
     }
@@ -10168,20 +10170,27 @@
     const statusEl = document.getElementById('cvStatus');
     statusEl.textContent = statusLabels[prog.status] || prog.status;
     statusEl.className = 'cv-status-tag cv-status-' + (prog.status || 'todo');
-    const isImage = prog.comprovante_foto.indexOf('data:image') === 0;
-    const imgEl = document.getElementById('cvImg');
-    const fileEl = document.getElementById('cvFileLink');
-    if(isImage){
-      imgEl.src = prog.comprovante_foto;
-      imgEl.style.display = '';
-      fileEl.style.display = 'none';
-    } else {
-      imgEl.style.display = 'none';
-      fileEl.style.display = '';
-      fileEl.href = prog.comprovante_foto;
-      fileEl.download = prog.comprovante_nome || 'comprovante';
-      fileEl.textContent = '📎 ' + (prog.comprovante_nome || 'Abrir arquivo');
-    }
+    const attachmentsEl = document.getElementById('cvAttachments');
+    attachmentsEl.innerHTML = '';
+    arquivos.forEach(arquivo => {
+      const isImage = arquivo.arquivo_data.indexOf('data:image') === 0;
+      if(isImage){
+        const img = document.createElement('img');
+        img.className = 'cv-img';
+        img.alt = 'Comprovante';
+        img.src = arquivo.arquivo_data;
+        attachmentsEl.appendChild(img);
+      } else {
+        const link = document.createElement('a');
+        link.className = 'cv-file-link';
+        link.href = arquivo.arquivo_data;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.download = arquivo.arquivo_nome || 'comprovante';
+        link.textContent = '📎 ' + (arquivo.arquivo_nome || 'Abrir arquivo');
+        attachmentsEl.appendChild(link);
+      }
+    });
   }
   const views = document.querySelectorAll('.view');
   // Telas do app já logado que mostram a barra de navegação inferior global — as
@@ -12186,9 +12195,10 @@
     const CLASS_STUDENTS = {};
     const CLASS_PROGRESS = {}; // CLASS_PROGRESS[className][studentName][activityTitle] = status
     const STUDENT_IDS = {}; // STUDENT_IDS[className][studentName] = id na tabela "desbravadores" (Supabase)
-    // CLASS_COMPROVANTES[className][studentName][activityTitle] = { foto, nome } — cache
-    // separado do CLASS_PROGRESS acima (que só guarda status) pra não arriscar mexer no
-    // que já tá testado; alimentado pelo mesmo loadClassDataFromSupabase() abaixo.
+    // CLASS_COMPROVANTES[className][studentName][activityTitle] = [{ id, foto, nome }, ...]
+    // (um requisito pode ter vários comprovantes) — cache separado do CLASS_PROGRESS
+    // acima (que só guarda status) pra não arriscar mexer no que já tá testado;
+    // alimentado pelo mesmo loadClassDataFromSupabase() abaixo.
     const CLASS_COMPROVANTES = {};
     let selectedStudent = null;
     let statusPickCard = null;
@@ -12208,18 +12218,23 @@
       if(alunosErr){ console.error('Erro ao carregar desbravadores:', alunosErr.message); return; }
       if(!alunos || !alunos.length) return;
 
-      const { data: progresso, error: progressoErr } = await supa.from('progresso_requisitos').select('desbravador_id, requisito_titulo, status, comprovante_foto, comprovante_nome');
+      const { data: progresso, error: progressoErr } = await supa.from('progresso_requisitos').select('desbravador_id, requisito_titulo, status');
       if(progressoErr) console.error('Erro ao carregar progresso:', progressoErr.message);
 
+      const { data: arquivos, error: arquivosErr } = await supa.from('comprovante_arquivos').select('id, desbravador_id, requisito_titulo, arquivo_data, arquivo_nome').order('created_at');
+      if(arquivosErr) console.error('Erro ao carregar comprovantes:', arquivosErr.message);
+
       const progressoByAluno = {};
-      const comprovanteByAluno = {};
       (progresso || []).forEach(p => {
         if(!progressoByAluno[p.desbravador_id]) progressoByAluno[p.desbravador_id] = {};
         progressoByAluno[p.desbravador_id][p.requisito_titulo] = p.status;
-        if(p.comprovante_foto){
-          if(!comprovanteByAluno[p.desbravador_id]) comprovanteByAluno[p.desbravador_id] = {};
-          comprovanteByAluno[p.desbravador_id][p.requisito_titulo] = { foto: p.comprovante_foto, nome: p.comprovante_nome || '' };
-        }
+      });
+
+      const comprovanteByAluno = {};
+      (arquivos || []).forEach(a => {
+        if(!comprovanteByAluno[a.desbravador_id]) comprovanteByAluno[a.desbravador_id] = {};
+        if(!comprovanteByAluno[a.desbravador_id][a.requisito_titulo]) comprovanteByAluno[a.desbravador_id][a.requisito_titulo] = [];
+        comprovanteByAluno[a.desbravador_id][a.requisito_titulo].push({ id: a.id, foto: a.arquivo_data, nome: a.arquivo_nome || '' });
       });
 
       alunos.forEach(aluno => {
@@ -12319,6 +12334,24 @@
         tag.className = 'pl-event-tag pl-tag-' + color;
         totalCount++;
         if(status === 'done') doneCount++;
+
+        const thumbEl = card.querySelector('.cl-thumb[data-role="thumb"]');
+        if(thumbEl){
+          const comprovantes = progressForStudent ? ((CLASS_COMPROVANTES[currentClass][selectedStudent] || {})[card.dataset.title] || []) : [];
+          if(comprovantes.length){
+            const primeiro = comprovantes[0];
+            const isImage = primeiro.foto.indexOf('data:image') === 0;
+            const badgeContent = comprovantes.length > 1 ? String(comprovantes.length) : '📎';
+            thumbEl.innerHTML = (isImage
+              ? '<img src="' + primeiro.foto + '" alt="Comprovante anexado">'
+              : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg>') +
+              '<span class="cl-thumb-badge" title="Tem comprovante anexado">' + badgeContent + '</span>';
+          } else {
+            thumbEl.innerHTML = card.dataset.photo
+              ? '<img src="' + card.dataset.photo + '" alt="Foto da atividade">'
+              : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7 9.5 4h5L16 7"/><circle cx="12" cy="14" r="3.5"/></svg>';
+          }
+        }
       });
 
       if(studentProgressSummary){
@@ -12415,8 +12448,8 @@
         btn.classList.toggle('selected', btn.getAttribute('data-status') === currentStatus);
       });
       ensureClassData(currentClass);
-      const comprovante = (CLASS_COMPROVANTES[currentClass][selectedStudent] || {})[card.dataset.title] || null;
-      renderComprovante(comprovante);
+      const comprovantes = (CLASS_COMPROVANTES[currentClass][selectedStudent] || {})[card.dataset.title] || [];
+      renderComprovante(comprovantes);
       statusPickOverlay.classList.add('show');
     }
     statusPickClose.addEventListener('click', () => statusPickOverlay.classList.remove('show'));
@@ -12447,64 +12480,95 @@
     // rota que o link do QR Code abre (sem precisar login).
     const comprovanteCameraInput = document.getElementById('clComprovanteCamera');
     const comprovanteFileInput = document.getElementById('clComprovanteFile');
-    const comprovantePreview = document.getElementById('clComprovantePreview');
-    const comprovantePreviewImg = document.getElementById('clComprovantePreviewImg');
-    const comprovanteRemoveBtn = document.getElementById('clComprovanteRemove');
-    const comprovanteFileChip = document.getElementById('clComprovanteFileChip');
-    const comprovanteFileName = document.getElementById('clComprovanteFileName');
-    const comprovanteFileRemoveBtn = document.getElementById('clComprovanteFileRemove');
-    const comprovanteHint = document.getElementById('clComprovanteHint');
+    const comprovanteListEl = document.getElementById('clComprovanteList');
     const comprovanteQrBtn = document.getElementById('clComprovanteQrBtn');
 
-    function renderComprovante(comprovante){
-      const foto = comprovante && comprovante.foto;
-      const isImage = !!foto && foto.indexOf('data:image') === 0;
-      comprovantePreview.style.display = (foto && isImage) ? '' : 'none';
-      if(foto && isImage) comprovantePreviewImg.src = foto;
-      comprovanteFileChip.style.display = (foto && !isImage) ? '' : 'none';
-      if(foto && !isImage) comprovanteFileName.textContent = (comprovante && comprovante.nome) || 'Arquivo anexado';
-      comprovanteHint.style.display = foto ? '' : 'none';
-      comprovanteQrBtn.style.display = foto ? '' : 'none';
+    function renderComprovante(comprovantes){
+      const list = comprovantes || [];
+      comprovanteListEl.innerHTML = list.map(item => {
+        const isImage = item.foto.indexOf('data:image') === 0;
+        const thumb = isImage
+          ? '<img src="' + item.foto + '" alt="">'
+          : '<span class="cl-comprovante-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg></span>';
+        const nome = (item.nome || 'Comprovante').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return '<div class="cl-comprovante-item" data-id="' + item.id + '">' + thumb +
+          '<span class="cl-comprovante-item-name">' + nome + '</span>' +
+          '<button type="button" class="cl-comprovante-item-remove" aria-label="Remover comprovante">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+          '</button></div>';
+      }).join('');
+      comprovanteQrBtn.style.display = list.length ? '' : 'none';
+      applyStudentProgressToCards();
     }
 
-    async function saveComprovante(dataUrl, filename){
-      if(!statusPickCard || !selectedStudent) return;
+    async function addComprovante(dataUrl, filename){
+      if(!statusPickCard || !selectedStudent || !dataUrl) return;
       const requisitoTitulo = statusPickCard.dataset.title;
       ensureClassData(currentClass);
       if(!CLASS_COMPROVANTES[currentClass][selectedStudent]) CLASS_COMPROVANTES[currentClass][selectedStudent] = {};
-      const comprovante = dataUrl ? { foto: dataUrl, nome: filename || '' } : null;
-      CLASS_COMPROVANTES[currentClass][selectedStudent][requisitoTitulo] = comprovante;
-      renderComprovante(comprovante);
+      if(!CLASS_COMPROVANTES[currentClass][selectedStudent][requisitoTitulo]) CLASS_COMPROVANTES[currentClass][selectedStudent][requisitoTitulo] = [];
+      const list = CLASS_COMPROVANTES[currentClass][selectedStudent][requisitoTitulo];
 
+      let id = 'local-' + Date.now() + '-' + Math.random().toString(36).slice(2);
       const desbravadorId = STUDENT_IDS[currentClass] && STUDENT_IDS[currentClass][selectedStudent];
       if(supa && desbravadorId){
-        const { error } = await supa.from('progresso_requisitos')
-          .upsert({ desbravador_id: desbravadorId, requisito_titulo: requisitoTitulo, comprovante_foto: dataUrl || null, comprovante_nome: filename || null }, { onConflict: 'desbravador_id,requisito_titulo' });
+        const { data, error } = await supa.from('comprovante_arquivos')
+          .insert({ desbravador_id: desbravadorId, requisito_titulo: requisitoTitulo, arquivo_data: dataUrl, arquivo_nome: filename || null })
+          .select('id').single();
         if(error){
           console.error('Erro ao salvar comprovante:', error);
           alert('Não foi possível salvar o comprovante.\n\nDetalhe: ' + (error.message || error.hint || error.code || 'erro desconhecido'));
+          return;
+        }
+        if(data && data.id) id = data.id;
+      }
+      list.push({ id, foto: dataUrl, nome: filename || '' });
+      renderComprovante(list);
+    }
+
+    async function removeComprovante(id){
+      if(!statusPickCard || !selectedStudent) return;
+      const requisitoTitulo = statusPickCard.dataset.title;
+      ensureClassData(currentClass);
+      const list = (CLASS_COMPROVANTES[currentClass][selectedStudent] || {})[requisitoTitulo] || [];
+      const idx = list.findIndex(item => String(item.id) === String(id));
+      if(idx === -1) return;
+      list.splice(idx, 1);
+      renderComprovante(list);
+
+      if(supa && String(id).indexOf('local-') !== 0){
+        const { error } = await supa.from('comprovante_arquivos').delete().eq('id', id);
+        if(error){
+          console.error('Erro ao remover comprovante:', error);
+          alert('Não foi possível remover o comprovante.\n\nDetalhe: ' + (error.message || error.hint || error.code || 'erro desconhecido'));
         }
       }
     }
+
+    comprovanteListEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.cl-comprovante-item-remove');
+      if(!btn) return;
+      const row = btn.closest('.cl-comprovante-item');
+      if(row) removeComprovante(row.dataset.id);
+    });
 
     comprovanteCameraInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       comprovanteCameraInput.value = '';
       if(!file) return;
-      readPhotoAsJPEG(file, (dataUrl) => saveComprovante(dataUrl, file.name));
+      readPhotoAsJPEG(file, (dataUrl) => addComprovante(dataUrl, file.name));
     });
     comprovanteFileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
+      const files = Array.from(e.target.files || []);
       comprovanteFileInput.value = '';
-      if(!file) return;
-      if(file.type.indexOf('image/') === 0){
-        readPhotoAsJPEG(file, (dataUrl) => saveComprovante(dataUrl, file.name));
-      } else {
-        readFileAsDataURL(file, (dataUrl) => saveComprovante(dataUrl, file.name));
-      }
+      files.forEach(file => {
+        if(file.type.indexOf('image/') === 0){
+          readPhotoAsJPEG(file, (dataUrl) => addComprovante(dataUrl, file.name));
+        } else {
+          readFileAsDataURL(file, (dataUrl) => addComprovante(dataUrl, file.name));
+        }
+      });
     });
-    comprovanteRemoveBtn.addEventListener('click', () => saveComprovante('', ''));
-    comprovanteFileRemoveBtn.addEventListener('click', () => saveComprovante('', ''));
 
     const qrOverlay = document.getElementById('clQrOverlay');
     const qrClose = document.getElementById('clQrClose');
@@ -12512,6 +12576,7 @@
     const qrBox = document.getElementById('clQrBox');
     const qrLinkEl = document.getElementById('clQrLink');
     const qrCopyBtn = document.getElementById('clQrCopyBtn');
+    const qrDownloadBtn = document.getElementById('clQrDownloadBtn');
 
     function buildComprovanteLink(desbravadorId, requisitoTitulo){
       return window.location.origin + window.location.pathname + '#comprovante=' + encodeURIComponent(desbravadorId) + '|' + encodeURIComponent(requisitoTitulo);
@@ -12543,6 +12608,24 @@
       } catch(e){
         alert('Não foi possível copiar automaticamente. Copie o link manualmente:\n\n' + qrLinkEl.textContent);
       }
+    });
+    qrDownloadBtn.addEventListener('click', () => {
+      const canvas = qrBox.querySelector('canvas');
+      const img = qrBox.querySelector('img');
+      const dataUrl = canvas ? canvas.toDataURL('image/png') : (img ? img.src : null);
+      if(!dataUrl){
+        alert('O QR Code ainda não foi gerado. Toque em "Gerar QR Code de comprovação" primeiro.');
+        return;
+      }
+      const slug = (statusPickCard ? statusPickCard.dataset.title : 'comprovante')
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase();
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = 'qrcode-' + (slug || 'comprovante') + '.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     });
 
     function handleActivityCardClick(card){
