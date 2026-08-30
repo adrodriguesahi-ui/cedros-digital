@@ -11196,6 +11196,7 @@
       a.dataset.note = data.note;
       a.dataset.officerIds = JSON.stringify(data.officerIds || []);
       a.dataset.officerNames = JSON.stringify(data.officerNames || []);
+      a.dataset.escalaOculta = data.escalaOculta ? '1' : '';
       a.dataset.notice = data.notice || '';
       a.dataset.schedule = JSON.stringify(data.schedule || []);
       a.dataset.checklist = JSON.stringify(data.checklist || []);
@@ -11299,6 +11300,7 @@
         note: row.observacao || '',
         officerIds: Array.isArray(row.oficiais_dia_ids) ? row.oficiais_dia_ids : [],
         officerNames: Array.isArray(row.oficiais_dia_nomes) ? row.oficiais_dia_nomes : [],
+        escalaOculta: !!row.escala_oculta,
         notice: row.aviso_membros || '',
         schedule: Array.isArray(row.programacao_dia) ? row.programacao_dia : [],
         checklist: Array.isArray(row.checklist_atividades) ? row.checklist_atividades : [],
@@ -12045,11 +12047,14 @@
     // houver) em que o usuário logado está marcado como oficial, mesma regra de datas
     // do __plGetUpcomingEvents acima (sem filtro de galeria — o oficial precisa ver o
     // card mesmo que o evento esteja marcado pra não entrar no carrossel de destaque).
+    // Também pula eventos com escala_oculta (removidos da Escala de Oficiais na
+    // Secretaria) — se a Diretoria tirou aquela reunião da escala, o oficial não
+    // deve continuar vendo o aviso pra preencher a programação dela.
     window.__plGetOfficerEvent = function(userId){
       if(!userId) return null;
       const now = new Date();
       const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'))
-        .filter(card => parseJSONSafe(card.dataset.officerIds).includes(userId));
+        .filter(card => parseJSONSafe(card.dataset.officerIds).includes(userId) && card.dataset.escalaOculta !== '1');
       const withDates = cards.map(card => {
         const day = parseInt(card.dataset.day, 10);
         const monIdx = parseInt(card.dataset.monIndex, 10);
@@ -12070,7 +12075,7 @@
     window.__plGetNextScheduledEvent = function(){
       const now = new Date();
       const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'))
-        .filter(card => parseJSONSafe(card.dataset.schedule).length > 0);
+        .filter(card => parseJSONSafe(card.dataset.schedule).length > 0 && card.dataset.escalaOculta !== '1');
       const withDates = cards.map(card => {
         const day = parseInt(card.dataset.day, 10);
         const monIdx = parseInt(card.dataset.monIndex, 10);
@@ -14696,6 +14701,14 @@
         }
         row.remove();
         if(emptyMsg) emptyMsg.style.display = list.children.length ? 'none' : '';
+
+        // Sincroniza o card já carregado na Agenda Anual — sem isso, o chip "Você é
+        // Oficial de Dia" do oficial escalado continuava aparecendo pra ele mesmo
+        // depois de excluído da escala, porque __plGetOfficerEvent lê o dataset do
+        // card na hora, não busca de novo no Supabase.
+        const card = document.querySelector('#view-planning .pl-content .pl-event-card[data-id="' + meeting.id + '"]');
+        if(card) card.dataset.escalaOculta = '1';
+        if(window.__bdRefreshBanners) window.__bdRefreshBanners();
       });
 
       const fieldRow = document.createElement('div');
