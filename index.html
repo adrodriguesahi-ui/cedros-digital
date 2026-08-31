@@ -1301,6 +1301,9 @@
   .sd-table-row span:last-child{ font-weight:700; color:var(--cream); text-align:right; }
   .sd-req-text{ font-size:13.5px; line-height:1.6; color:rgba(245,239,225,0.85); white-space:pre-wrap; margin:0 0 8px; }
 
+  #sdPdfPreviewPages{ display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  #sdPdfPreviewPages canvas{ width:100%; height:auto; display:block; border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.35); }
+
   .un-mini-list{ display:flex; flex-direction:column; gap:8px; }
   .un-mini-row{
     display:flex; align-items:center; gap:11px;
@@ -9733,6 +9736,23 @@
             <button type="button" class="pl-btn pl-list-template-btn" id="sdQrDownloadBtn">Baixar QR Code</button>
             <button type="button" class="pl-btn pl-btn-primary" id="sdQrCopyBtn">Copiar link</button>
           </div>
+        </div>
+      </div>
+
+      <!-- Pré-visualização do PDF renderizada dentro do próprio app (pdf.js, ver
+           "Visualizar PDF" mais abaixo no arquivo) — não depende do visualizador
+           de PDF nativo do navegador/WebView, que em alguns aparelhos só baixa. -->
+      <div class="pl-modal-overlay" id="sdPdfPreviewOverlay">
+        <div class="pl-modal" style="max-width:520px;">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">👁️ Pré-visualização do PDF</h4>
+            <button type="button" class="pl-modal-close" id="sdPdfPreviewClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <p class="pl-reminder-hint" id="sdPdfPreviewLoading" style="margin-top:0;">Gerando pré-visualização...</p>
+          <div id="sdPdfPreviewPages"></div>
+          <button type="button" class="pl-btn pl-btn-primary" id="sdPdfPreviewDownloadBtn" style="width:100%; margin-top:14px;">📄 Baixar PDF</button>
         </div>
       </div>
     </section>
@@ -18590,6 +18610,11 @@ const REQ_SUMMARIES = {
     const reqTextEl = document.getElementById('sdReqText');
     const editReqBtn = document.getElementById('sdEditReqBtn');
     const previewBtn = document.getElementById('sdPreviewBtn');
+    const pdfPreviewOverlay = document.getElementById('sdPdfPreviewOverlay');
+    const pdfPreviewClose = document.getElementById('sdPdfPreviewClose');
+    const pdfPreviewLoading = document.getElementById('sdPdfPreviewLoading');
+    const pdfPreviewPages = document.getElementById('sdPdfPreviewPages');
+    const pdfPreviewDownloadBtn = document.getElementById('sdPdfPreviewDownloadBtn');
     const pdfBtn = document.getElementById('sdPdfBtn');
     const shareBtn = document.getElementById('sdShareBtn');
     const qrOverlay = document.getElementById('sdQrOverlay');
@@ -18990,22 +19015,69 @@ const REQ_SUMMARIES = {
       return { doc, safeName };
     }
 
+    // Último PDF montado, reaproveitado pelo botão "Baixar PDF" de dentro da
+    // pré-visualização (evita remontar o documento inteiro de novo).
+    let lastBuiltPdf = null;
+
+    // Renderiza cada página do PDF num <canvas> dentro do próprio app via pdf.js
+    // — abrir em nova aba (window.open/output) depende do visualizador de PDF do
+    // navegador/WebView, que em vários aparelhos só sabe baixar (relatado no Edge
+    // Android). Rendering local não depende disso.
+    async function renderPdfPreview(built){
+      pdfPreviewPages.innerHTML = '';
+      pdfPreviewLoading.textContent = 'Gerando pré-visualização...';
+      pdfPreviewLoading.style.display = '';
+      pdfPreviewOverlay.classList.add('show');
+      if(!window.pdfjsLib){
+        pdfPreviewLoading.textContent = 'Não foi possível carregar o visualizador de PDF. Verifique sua conexão com a internet e tente novamente.';
+        return;
+      }
+      try {
+        const arrayBuffer = built.doc.output('arraybuffer');
+        const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        for(let i = 1; i <= pdf.numPages; i++){
+          const page = await pdf.getPage(i);
+          const scale = Math.min(2, (window.devicePixelRatio || 1) * 1.5);
+          const viewport = page.getViewport({ scale });
+          const canvas = document.createElement('canvas');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+          pdfPreviewPages.appendChild(canvas);
+        }
+        pdfPreviewLoading.style.display = 'none';
+      } catch(e){
+        pdfPreviewLoading.textContent = 'Não foi possível gerar a pré-visualização.';
+        console.error('Erro ao pré-visualizar PDF:', e);
+      }
+    }
+
     if(previewBtn){
       previewBtn.addEventListener('click', () => {
         const built = buildSpecialtyPdfDoc();
         if(!built) return;
-        // bloburl em vez de dataurlnewwindow: um data URI gigante na barra de
-        // endereço quebra em alguns navegadores mobile (ex.: Edge Android mostrou
-        // "leitor de PDF desabilitado" e a URL veio cortada) — blob: é mais curto
-        // e mais bem suportado pra abrir em nova aba.
-        const blobUrl = built.doc.output('bloburl');
-        window.open(blobUrl, '_blank');
+        lastBuiltPdf = built;
+        renderPdfPreview(built);
+      });
+    }
+    if(pdfPreviewClose){
+      pdfPreviewClose.addEventListener('click', () => pdfPreviewOverlay.classList.remove('show'));
+    }
+    if(pdfPreviewOverlay){
+      pdfPreviewOverlay.addEventListener('click', (e) => { if(e.target === pdfPreviewOverlay) pdfPreviewOverlay.classList.remove('show'); });
+    }
+    if(pdfPreviewDownloadBtn){
+      pdfPreviewDownloadBtn.addEventListener('click', () => {
+        const built = lastBuiltPdf || buildSpecialtyPdfDoc();
+        if(!built) return;
+        built.doc.save('especialidade-' + built.safeName + '.pdf');
       });
     }
 
     pdfBtn.addEventListener('click', () => {
       const built = buildSpecialtyPdfDoc();
       if(!built) return;
+      lastBuiltPdf = built;
       built.doc.save('especialidade-' + built.safeName + '.pdf');
     });
   })();
@@ -19021,5 +19093,14 @@ const REQ_SUMMARIES = {
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- pdf.js: renderiza o PDF gerado direto num <canvas> dentro do próprio app
+       (view-specialty-detail → "Visualizar PDF"), sem depender do visualizador
+       nativo do navegador/WebView — que em alguns aparelhos só sabe baixar. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if(window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions){
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
 </body>
 </html>
