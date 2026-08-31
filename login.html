@@ -956,6 +956,17 @@
     display:flex; align-items:center; justify-content:center;
     color:rgba(245,239,225,0.4);
   }
+  /* Insígnia de especialidade (Manual de Especialidades): a miniatura vira um
+     botão pra tirar foto/enviar a imagem real, com um selo de câmera no canto
+     indicando que dá pra tocar. Escopado a .sp-card pra não afetar o mesmo
+     .am-thumb usado em Administração → Usuários (que não é editável). */
+  .sp-card .am-thumb{ position:relative; overflow:visible; cursor:pointer; }
+  .sp-card .am-thumb img{ width:100%; height:100%; object-fit:cover; border-radius:11px; }
+  .sp-card .am-thumb-badge{
+    position:absolute; bottom:-4px; right:-4px; width:18px; height:18px; border-radius:50%;
+    background:var(--accent); color:#08130A; display:flex; align-items:center; justify-content:center;
+    border:2px solid var(--bg, #0B120C);
+  }
 
   .sc-pdf-card{ margin-bottom:14px; }
   .sc-pdf-tabs{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
@@ -16233,19 +16244,81 @@ const REQ_SUMMARIES = {
   "Mestrado em Ensinos Bíblicos": "Completar 14 das 28 especialidades da área de Ensinos Bíblicos.",
 };
 
+  // Insígnia de cada especialidade (Manual de Especialidades): o catálogo local
+  // (SPECIALTY_DB) só tem nome + área, nenhuma imagem. Em vez de tentar buscar
+  // as 534 insígnias oficiais de algum lugar, dá pra tirar foto/enviar a
+  // imagem real direto no catálogo — fica salva por nome na tabela
+  // especialidade_fotos e mostrada no lugar do ícone genérico de fita. Um
+  // único input de arquivo escondido é reaproveitado por todos os cards.
+  const spThumbFileInput = document.createElement('input');
+  spThumbFileInput.type = 'file';
+  spThumbFileInput.accept = 'image/*';
+  spThumbFileInput.hidden = true;
+  spThumbFileInput.id = 'spThumbFileInput';
+  document.body.appendChild(spThumbFileInput);
+  let spThumbEditingCard = null;
+  let spPhotoMap = {}; // nome da especialidade -> foto (base64), preenchido pela consulta abaixo
+
+  function spThumbHTML(foto){
+    return (foto
+      ? '<img src="' + foto + '" alt="Insígnia">'
+      : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>') +
+      '<span class="am-thumb-badge"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h7l1 1.5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></span>';
+  }
+
+  spThumbFileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    spThumbFileInput.value = '';
+    if(!file || !spThumbEditingCard) return;
+    const card = spThumbEditingCard;
+    readPhotoAsJPEG(file, async (dataUrl) => {
+      card.dataset.foto = dataUrl;
+      card.querySelector('.am-thumb').innerHTML = spThumbHTML(dataUrl);
+      if(supa){
+        const { error } = await supa.from('especialidade_fotos').upsert({ nome: card.dataset.name, foto: dataUrl }, { onConflict: 'nome' });
+        if(error){
+          console.error('Erro ao salvar insígnia:', error);
+          alert('Não foi possível salvar a imagem.\n\nDetalhe: ' + (error.message || error.hint || error.code || 'erro desconhecido'));
+        }
+      }
+    });
+  });
+
+  if(supa){
+    supa.from('especialidade_fotos').select('nome, foto').then(({ data }) => {
+      (data || []).forEach(row => { spPhotoMap[row.nome] = row.foto; });
+      // Backfill pros cards que já tinham sido criados antes dessa consulta voltar
+      // (o catálogo local renderiza na hora, sem esperar o Supabase).
+      document.querySelectorAll('.sp-card').forEach(card => {
+        const foto = spPhotoMap[card.dataset.name];
+        if(foto && !card.dataset.foto){
+          card.dataset.foto = foto;
+          card.querySelector('.am-thumb').innerHTML = spThumbHTML(foto);
+        }
+      });
+    });
+  }
+
   function spBuildCardEl(data){
     const areaOpt = document.querySelector('#spFieldArea option[value="' + data.Area + '"]');
     const color = areaOpt ? areaOpt.getAttribute('data-color') : 'gray';
+    const foto = data.Foto || spPhotoMap[data.Name] || '';
     const card = document.createElement('a');
     card.href = '#'; card.className = 'pl-event-card sp-card';
     card.innerHTML =
-      '<div class="am-thumb"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg></div>' +
+      '<div class="am-thumb">' + spThumbHTML(foto) + '</div>' +
       '<div class="pl-event-body"><h4 class="pl-event-title"></h4><p class="pl-event-meta"></p></div>' +
       '<span class="pl-event-tag pl-tag-' + color + '"></span>';
     card.querySelector('.pl-event-title').textContent = data.Name;
     card.querySelector('.pl-event-meta').textContent = data.Area;
     card.querySelector('.pl-event-tag').textContent = data.Area;
-    card.dataset.name = data.Name; card.dataset.area = data.Area; card.dataset.req = data.Req || '';
+    card.dataset.name = data.Name; card.dataset.area = data.Area; card.dataset.req = data.Req || ''; card.dataset.foto = foto;
+    card.querySelector('.am-thumb').addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      spThumbEditingCard = card;
+      spThumbFileInput.click();
+    });
     return card;
   }
 

@@ -621,6 +621,22 @@ drop policy if exists "especialidades_concluidas: acesso publico" on especialida
 create policy "especialidades_concluidas: acesso publico" on especialidades_concluidas
   for all using (true) with check (true);
 
+-- Insígnia de cada especialidade do Manual de Especialidades (catálogo local,
+-- ver SPECIALTY_DB no index.html — não tem imagem nenhuma cadastrada por
+-- padrão). Qualquer um pode tirar foto/enviar a imagem real da insígnia direto
+-- no catálogo; fica salva aqui por nome da especialidade, uma linha por item.
+create table if not exists especialidade_fotos (
+  nome text primary key,
+  foto text not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table especialidade_fotos enable row level security;
+
+drop policy if exists "especialidade_fotos: acesso publico" on especialidade_fotos;
+create policy "especialidade_fotos: acesso publico" on especialidade_fotos
+  for all using (true) with check (true);
+
 -- ---------------------------------------------------------------------
 -- Presença real: `chamadas` é o cabeçalho de cada chamada (data, evento
 -- ligado à Agenda Anual quando aplicável, e se ela conta ou não pra
