@@ -637,6 +637,42 @@ drop policy if exists "especialidade_fotos: acesso publico" on especialidade_fot
 create policy "especialidade_fotos: acesso publico" on especialidade_fotos
   for all using (true) with check (true);
 
+-- Tela de detalhe de uma especialidade (ver view-specialty-detail no index.html):
+-- tabela de referência (código/nível/ano/instituição de origem) + o texto
+-- completo dos requisitos numerados — tudo em branco por padrão, preenchido
+-- aos poucos direto pelo app, igual a insígnia.
+create table if not exists especialidade_detalhes (
+  nome text primary key,
+  codigo text,
+  nivel text,
+  ano text,
+  instituicao text,
+  requisitos text,
+  updated_at timestamptz not null default now()
+);
+
+-- Arquivos de aula/avaliação anexados a uma especialidade (pode ter vários de
+-- cada tipo) — mesmo padrão de comprovante_arquivos (Classes Regulares).
+create table if not exists especialidade_arquivos (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null,
+  tipo text not null check (tipo in ('aula', 'avaliacao')),
+  arquivo_data text not null,
+  arquivo_nome text,
+  created_at timestamptz not null default now()
+);
+
+alter table especialidade_detalhes enable row level security;
+alter table especialidade_arquivos enable row level security;
+
+drop policy if exists "especialidade_detalhes: acesso publico" on especialidade_detalhes;
+create policy "especialidade_detalhes: acesso publico" on especialidade_detalhes
+  for all using (true) with check (true);
+
+drop policy if exists "especialidade_arquivos: acesso publico" on especialidade_arquivos;
+create policy "especialidade_arquivos: acesso publico" on especialidade_arquivos
+  for all using (true) with check (true);
+
 -- ---------------------------------------------------------------------
 -- Presença real: `chamadas` é o cabeçalho de cada chamada (data, evento
 -- ligado à Agenda Anual quando aplicável, e se ela conta ou não pra

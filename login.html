@@ -967,6 +967,11 @@
     background:var(--accent); color:#08130A; display:flex; align-items:center; justify-content:center;
     border:2px solid var(--bg, #0B120C);
   }
+  .sp-card-edit-btn{
+    flex-shrink:0; width:30px; height:30px; border-radius:50%; border:none; cursor:pointer;
+    background:rgba(255,255,255,0.06); color:rgba(245,239,225,0.55);
+    display:flex; align-items:center; justify-content:center;
+  }
 
   .sc-pdf-card{ margin-bottom:14px; }
   .sc-pdf-tabs{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
@@ -1165,6 +1170,10 @@
     display:flex; align-items:center; justify-content:center; opacity:0.8;
   }
   .cl-comprovante-item-name{ flex:1; font-size:12.5px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* Arquivos de aula/avaliação (Detalhe de Especialidade): reaproveita a mesma
+     linha .cl-comprovante-item, mas com um link de download em vez de só texto
+     (o botão de remover fica fora do link, pra não disparar o download junto). */
+  .sd-file-link{ display:flex; align-items:center; gap:10px; flex:1; min-width:0; text-decoration:none; color:inherit; }
   .cl-comprovante-item button{
     flex-shrink:0; width:24px; height:24px; border-radius:50%; background:rgba(255,255,255,0.1);
     border:none; color:var(--cream); display:flex; align-items:center; justify-content:center; cursor:pointer;
@@ -1272,6 +1281,25 @@
   .us-history-body{ flex:1; min-width:0; }
   .us-history-motivo{ font-size:12.5px; font-weight:700; color:var(--cream); display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .us-history-meta{ font-size:11px; color:rgba(245,239,225,0.5); }
+
+  /* ---- Detalhe de especialidade (view-specialty-detail) ---- */
+  .sd-header{ display:flex; flex-direction:column; align-items:center; gap:12px; margin:6px 0 20px; text-align:center; }
+  .sd-badge{
+    width:88px; height:88px; border-radius:20px; flex-shrink:0; cursor:pointer;
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+    display:flex; align-items:center; justify-content:center; color:rgba(245,239,225,0.4); overflow:hidden;
+  }
+  .sd-badge img{ width:100%; height:100%; object-fit:cover; }
+  .sd-name{ margin:0; font-size:19px; font-weight:900; color:var(--cream); }
+  .sd-table{
+    border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.1);
+    background:rgba(255,255,255,0.04);
+  }
+  .sd-table-row{ display:flex; justify-content:space-between; gap:10px; padding:11px 14px; font-size:13px; }
+  .sd-table-row + .sd-table-row{ border-top:1px solid rgba(255,255,255,0.08); }
+  .sd-table-row span:first-child{ font-weight:800; color:rgba(245,239,225,0.6); }
+  .sd-table-row span:last-child{ font-weight:700; color:var(--cream); text-align:right; }
+  .sd-req-text{ font-size:13.5px; line-height:1.6; color:rgba(245,239,225,0.85); white-space:pre-wrap; margin:0 0 8px; }
 
   .un-mini-list{ display:flex; flex-direction:column; gap:8px; }
   .un-mini-row{
@@ -9562,6 +9590,92 @@
       </div>
     </section>
 
+    <!-- ===== VIEW: DETALHE DE ESPECIALIDADE ===== aberta ao tocar no corpo de um
+         .sp-card no catálogo (ver spOpenDetail mais abaixo no arquivo) — tabela
+         de referência (Área/Código/Nível/Ano/Instituição), insígnia (reaproveita
+         especialidade_fotos, já usado no catálogo), requisitos completos em texto
+         livre, PDF, e arquivos de aula/avaliação anexáveis (especialidade_arquivos).
+         Tudo em branco por padrão — vai sendo preenchido aos poucos. -->
+    <section class="view view-planning" id="view-specialty-detail">
+      <div class="pl-scroll">
+
+        <div class="pl-topbar">
+          <button type="button" class="pl-back" id="sdBackBtn" aria-label="Voltar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h3 class="pl-title">Especialidade</h3>
+          <span class="pl-topbar-spacer" aria-hidden="true"></span>
+        </div>
+
+        <div class="sd-header">
+          <div class="sd-badge" id="sdBadge"></div>
+          <h2 class="sd-name" id="sdName"></h2>
+        </div>
+
+        <div class="sd-table" id="sdTable">
+          <div class="sd-table-row"><span>Área</span><span id="sdArea"></span></div>
+          <div class="sd-table-row"><span>Código</span><span id="sdCodigo">—</span></div>
+          <div class="sd-table-row"><span>Nível</span><span id="sdNivel">—</span></div>
+          <div class="sd-table-row"><span>Ano</span><span id="sdAno">—</span></div>
+          <div class="sd-table-row"><span>Instituição de Origem</span><span id="sdInstituicao">—</span></div>
+        </div>
+        <button type="button" class="pl-list-add-btn" id="sdEditMetaBtn">Editar informações</button>
+
+        <h4 class="un-section-title" style="margin-top:20px;">Requisitos</h4>
+        <p class="un-empty-hint" id="sdReqEmpty">Ainda não tem os requisitos completos cadastrados aqui.</p>
+        <p class="sd-req-text" id="sdReqText" style="display:none;"></p>
+        <button type="button" class="pl-list-add-btn" id="sdEditReqBtn">Editar requisitos</button>
+
+        <button type="button" class="pl-btn pl-btn-primary" id="sdPdfBtn" style="width:100%; margin:16px 0;">📄 Baixar PDF</button>
+
+        <h4 class="un-section-title">📚 Aula</h4>
+        <div class="cl-comprovante-list" id="sdAulaList"></div>
+        <button type="button" class="pl-list-add-btn" id="sdAulaAddBtn">+ Anexar arquivo de aula</button>
+
+        <h4 class="un-section-title" style="margin-top:20px;">📝 Avaliação</h4>
+        <div class="cl-comprovante-list" id="sdAvalList"></div>
+        <button type="button" class="pl-list-add-btn" id="sdAvalAddBtn" style="margin-bottom:20px;">+ Anexar arquivo de avaliação</button>
+
+      </div>
+
+      <input type="file" id="sdAulaFileInput" hidden>
+      <input type="file" id="sdAvalFileInput" hidden>
+
+      <div class="pl-modal-overlay" id="sdMetaOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Editar informações</h4>
+            <button type="button" class="pl-modal-close" id="sdMetaClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <label class="pl-field-label" style="margin-top:0;">Código</label>
+          <input type="text" class="pl-input" id="sdFieldCodigo" placeholder="Ex.: AR 021" maxlength="30">
+          <label class="pl-field-label">Nível</label>
+          <input type="text" class="pl-input" id="sdFieldNivel" placeholder="Ex.: 3" maxlength="10">
+          <label class="pl-field-label">Ano</label>
+          <input type="text" class="pl-input" id="sdFieldAno" placeholder="Ex.: 1956" maxlength="10">
+          <label class="pl-field-label">Instituição de Origem</label>
+          <input type="text" class="pl-input" id="sdFieldInstituicao" placeholder="Ex.: Associação Geral" maxlength="60">
+          <button type="button" class="pl-btn pl-btn-primary" id="sdMetaSaveBtn" style="width:100%; margin-top:14px;">Salvar</button>
+        </div>
+      </div>
+
+      <div class="pl-modal-overlay" id="sdReqOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Editar requisitos</h4>
+            <button type="button" class="pl-modal-close" id="sdReqClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <p class="pl-reminder-hint" style="margin-top:0;">Cole o texto oficial dos requisitos, numerado como no manual.</p>
+          <textarea class="pl-input pl-textarea" id="sdFieldReq" rows="14" placeholder="1. ...&#10;2. ...&#10;3. a) ... b) ..."></textarea>
+          <button type="button" class="pl-btn pl-btn-primary" id="sdReqSaveBtn" style="width:100%; margin-top:14px;">Salvar</button>
+        </div>
+      </div>
+    </section>
+
     <!-- ===== VIEW: ORGANIZAÇÃO DE EVENTOS (tarefas, responsáveis e prazos) ===== -->
     <section class="view view-planning" id="view-event-org">
       <div class="pl-scroll">
@@ -14655,7 +14769,9 @@
         return;
       }
       const card = cfg.buildCard(data, fields);
-      card.addEventListener('click', (e) => { e.preventDefault(); openModal('edit', card); });
+      if(!cfg.disableCardClick){
+        card.addEventListener('click', (e) => { e.preventDefault(); openModal('edit', card); });
+      }
       if(editingCard){ editingCard.replaceWith(card); } else { content.insertBefore(card, content.firstChild); }
       if(cfg.afterSave) cfg.afterSave();
       closeModal();
@@ -14667,15 +14783,18 @@
       closeModal();
     }
 
-    content.querySelectorAll('.' + cfg.cardClass).forEach(card => {
-      card.addEventListener('click', (e) => { e.preventDefault(); openModal('edit', card); });
-    });
+    if(!cfg.disableCardClick){
+      content.querySelectorAll('.' + cfg.cardClass).forEach(card => {
+        card.addEventListener('click', (e) => { e.preventDefault(); openModal('edit', card); });
+      });
+    }
     addBtn.addEventListener('click', () => openModal('create'));
     closeBtn.addEventListener('click', closeModal);
     overlay.addEventListener('click', (e) => { if(e.target === overlay) closeModal(); });
     saveBtn.addEventListener('click', save);
     deleteBtn.addEventListener('click', del);
     if(cfg.required){ fields[cfg.required].addEventListener('input', () => { fields[cfg.required].style.borderColor = ''; }); }
+    return { openModal };
   }
 
   function dayMonthCard(className, extraHTML, dayVal, monVal, titleVal, metaVal){
@@ -16256,7 +16375,7 @@ const REQ_SUMMARIES = {
   spThumbFileInput.hidden = true;
   spThumbFileInput.id = 'spThumbFileInput';
   document.body.appendChild(spThumbFileInput);
-  let spThumbEditingCard = null;
+  let spThumbEditingTarget = null; // { name, onDone(dataUrl) } — ver window.__spTriggerPhotoUpload
   let spPhotoMap = {}; // nome da especialidade -> foto (base64), preenchido pela consulta abaixo
 
   function spThumbHTML(foto){
@@ -16266,16 +16385,24 @@ const REQ_SUMMARIES = {
       '<span class="am-thumb-badge"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h7l1 1.5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg></span>';
   }
 
+  // Reaproveitado tanto pela miniatura do catálogo (spBuildCardEl) quanto pela
+  // insígnia grande da tela de detalhe (view-specialty-detail) — cada um passa
+  // seu próprio jeito de atualizar a própria UI depois que a imagem é salva.
+  window.__spTriggerPhotoUpload = function(name, onDone){
+    spThumbEditingTarget = { name, onDone };
+    spThumbFileInput.click();
+  };
+
   spThumbFileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
     spThumbFileInput.value = '';
-    if(!file || !spThumbEditingCard) return;
-    const card = spThumbEditingCard;
+    if(!file || !spThumbEditingTarget) return;
+    const target = spThumbEditingTarget;
     readPhotoAsJPEG(file, async (dataUrl) => {
-      card.dataset.foto = dataUrl;
-      card.querySelector('.am-thumb').innerHTML = spThumbHTML(dataUrl);
+      spPhotoMap[target.name] = dataUrl;
+      if(target.onDone) target.onDone(dataUrl);
       if(supa){
-        const { error } = await supa.from('especialidade_fotos').upsert({ nome: card.dataset.name, foto: dataUrl }, { onConflict: 'nome' });
+        const { error } = await supa.from('especialidade_fotos').upsert({ nome: target.name, foto: dataUrl }, { onConflict: 'nome' });
         if(error){
           console.error('Erro ao salvar insígnia:', error);
           alert('Não foi possível salvar a imagem.\n\nDetalhe: ' + (error.message || error.hint || error.code || 'erro desconhecido'));
@@ -16308,16 +16435,33 @@ const REQ_SUMMARIES = {
     card.innerHTML =
       '<div class="am-thumb">' + spThumbHTML(foto) + '</div>' +
       '<div class="pl-event-body"><h4 class="pl-event-title"></h4><p class="pl-event-meta"></p></div>' +
-      '<span class="pl-event-tag pl-tag-' + color + '"></span>';
+      '<span class="pl-event-tag pl-tag-' + color + '"></span>' +
+      '<button type="button" class="sp-card-edit-btn" aria-label="Editar nome, área e resumo no catálogo">' +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>' +
+      '</button>';
     card.querySelector('.pl-event-title').textContent = data.Name;
     card.querySelector('.pl-event-meta').textContent = data.Area;
     card.querySelector('.pl-event-tag').textContent = data.Area;
     card.dataset.name = data.Name; card.dataset.area = data.Area; card.dataset.req = data.Req || ''; card.dataset.foto = foto;
+    card.querySelector('.sp-card-edit-btn').addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      window.__spOpenCatalogEdit(card);
+    });
     card.querySelector('.am-thumb').addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      spThumbEditingCard = card;
-      spThumbFileInput.click();
+      window.__spTriggerPhotoUpload(data.Name, (dataUrl) => {
+        card.dataset.foto = dataUrl;
+        card.querySelector('.am-thumb').innerHTML = spThumbHTML(dataUrl);
+      });
+    });
+    // Tocar em qualquer outro lugar do card (fora da miniatura, que já abre o
+    // seletor de foto) abre a tela de detalhe — ver window.__spOpenDetail mais
+    // abaixo no arquivo, na seção "Detalhe de Especialidade".
+    card.addEventListener('click', (e) => {
+      e.preventDefault();
+      if(window.__spOpenDetail) window.__spOpenDetail(data.Name, data.Area);
     });
     return card;
   }
@@ -16402,14 +16546,18 @@ const REQ_SUMMARIES = {
     }
   })();
 
-  setupSimpleListScreen({
-    prefix: 'sp', cardClass: 'sp-card', required: 'Name',
+  // disableCardClick: tocar no corpo do card agora abre a tela de detalhe
+  // (ver spBuildCardEl/__spOpenDetail), não mais este modal rápido de
+  // editar nome/área/resumo — que continua acessível pelo lápis no card.
+  const spModalApi = setupSimpleListScreen({
+    prefix: 'sp', cardClass: 'sp-card', required: 'Name', disableCardClick: true,
     createTitle: 'Nova Especialidade', editTitle: 'Editar Especialidade',
     fields: [
       {key:'Name', dataKey:'name'}, {key:'Area', dataKey:'area', default:'Estudos da Natureza'}, {key:'Req', dataKey:'req'}
     ],
     buildCard(data){ return spBuildCardEl(data); }
   });
+  window.__spOpenCatalogEdit = function(card){ spModalApi.openModal('edit', card); };
 
   // Manual de Especialidades — aba "Conquistadas": quantas especialidades
   // cada membro concluiu, por ano (tabela especialidades_concluidas). O ano
@@ -18275,6 +18423,310 @@ const REQ_SUMMARIES = {
     applyScoringAccess(window.__currentUsuario);
 
     window.__usRefreshDashboardRanking();
+  })();
+
+  // ---------------------------------------------------------------------
+  // Detalhe de Especialidade (view-specialty-detail): tabela de referência
+  // (código/nível/ano/instituição de origem), requisitos completos em texto
+  // livre, PDF, e arquivos de aula/avaliação — tudo em branco por padrão,
+  // preenchido aos poucos direto pelo app. Aberta ao tocar no corpo de um
+  // card do catálogo (ver spBuildCardEl mais acima no arquivo).
+  // ---------------------------------------------------------------------
+  (function(){
+    const backBtn = document.getElementById('sdBackBtn');
+    if(!backBtn) return;
+
+    const badgeEl = document.getElementById('sdBadge');
+    const nameEl = document.getElementById('sdName');
+    const areaEl = document.getElementById('sdArea');
+    const codigoEl = document.getElementById('sdCodigo');
+    const nivelEl = document.getElementById('sdNivel');
+    const anoEl = document.getElementById('sdAno');
+    const instituicaoEl = document.getElementById('sdInstituicao');
+    const editMetaBtn = document.getElementById('sdEditMetaBtn');
+    const reqEmptyEl = document.getElementById('sdReqEmpty');
+    const reqTextEl = document.getElementById('sdReqText');
+    const editReqBtn = document.getElementById('sdEditReqBtn');
+    const pdfBtn = document.getElementById('sdPdfBtn');
+    const aulaList = document.getElementById('sdAulaList');
+    const avalList = document.getElementById('sdAvalList');
+    const aulaAddBtn = document.getElementById('sdAulaAddBtn');
+    const avalAddBtn = document.getElementById('sdAvalAddBtn');
+    const aulaFileInput = document.getElementById('sdAulaFileInput');
+    const avalFileInput = document.getElementById('sdAvalFileInput');
+
+    const metaOverlay = document.getElementById('sdMetaOverlay');
+    const metaClose = document.getElementById('sdMetaClose');
+    const fieldCodigo = document.getElementById('sdFieldCodigo');
+    const fieldNivel = document.getElementById('sdFieldNivel');
+    const fieldAno = document.getElementById('sdFieldAno');
+    const fieldInstituicao = document.getElementById('sdFieldInstituicao');
+    const metaSaveBtn = document.getElementById('sdMetaSaveBtn');
+
+    const reqOverlay = document.getElementById('sdReqOverlay');
+    const reqClose = document.getElementById('sdReqClose');
+    const fieldReq = document.getElementById('sdFieldReq');
+    const reqSaveBtn = document.getElementById('sdReqSaveBtn');
+
+    let currentName = null;
+    let currentArea = null;
+    let currentDetalhe = {};
+    let currentArquivos = []; // { id, tipo, arquivo_data, arquivo_nome }
+
+    function badgeHTML(){
+      const foto = (typeof spPhotoMap !== 'undefined' && spPhotoMap[currentName]) || '';
+      return foto
+        ? '<img src="' + foto + '" alt="Insígnia">'
+        : '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>';
+    }
+
+    function renderMeta(){
+      codigoEl.textContent = currentDetalhe.codigo || '—';
+      nivelEl.textContent = currentDetalhe.nivel || '—';
+      anoEl.textContent = currentDetalhe.ano || '—';
+      instituicaoEl.textContent = currentDetalhe.instituicao || '—';
+    }
+
+    function renderReq(){
+      const texto = (currentDetalhe.requisitos || '').trim();
+      reqEmptyEl.style.display = texto ? 'none' : '';
+      reqTextEl.style.display = texto ? '' : 'none';
+      reqTextEl.textContent = texto;
+    }
+
+    function fileIconHTML(){
+      return '<span class="cl-comprovante-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg></span>';
+    }
+
+    function renderFileList(listEl, tipo){
+      const rows = currentArquivos.filter(a => a.tipo === tipo);
+      listEl.innerHTML = rows.map(item => {
+        const isImage = item.arquivo_data.indexOf('data:image') === 0;
+        const thumb = isImage ? '<img src="' + item.arquivo_data + '" alt="">' : fileIconHTML();
+        const nome = (item.arquivo_nome || 'Arquivo').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return '<div class="cl-comprovante-item" data-id="' + item.id + '">' +
+          '<a href="' + item.arquivo_data + '" download="' + nome + '" class="sd-file-link">' + thumb +
+          '<span class="cl-comprovante-item-name">' + nome + '</span></a>' +
+          '<button type="button" class="cl-comprovante-item-remove" aria-label="Remover arquivo">' +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+          '</button></div>';
+      }).join('');
+    }
+
+    function renderFiles(){
+      renderFileList(aulaList, 'aula');
+      renderFileList(avalList, 'avaliacao');
+    }
+
+    async function loadDetalhe(){
+      currentDetalhe = {};
+      currentArquivos = [];
+      if(supa){
+        const [{ data: detalhe }, { data: arquivos }] = await Promise.all([
+          supa.from('especialidade_detalhes').select('*').eq('nome', currentName).maybeSingle(),
+          supa.from('especialidade_arquivos').select('*').eq('nome', currentName).order('created_at')
+        ]);
+        currentDetalhe = detalhe || {};
+        currentArquivos = arquivos || [];
+      }
+      renderMeta();
+      renderReq();
+      renderFiles();
+    }
+
+    window.__spOpenDetail = function(name, area){
+      currentName = name;
+      currentArea = area;
+      nameEl.textContent = name;
+      areaEl.textContent = area;
+      badgeEl.innerHTML = badgeHTML();
+      showView('view-specialty-detail');
+      loadDetalhe();
+    };
+
+    badgeEl.addEventListener('click', () => {
+      if(!window.__spTriggerPhotoUpload) return;
+      window.__spTriggerPhotoUpload(currentName, () => { badgeEl.innerHTML = badgeHTML(); });
+    });
+
+    backBtn.addEventListener('click', (e) => { e.preventDefault(); showView('view-specialties'); });
+
+    editMetaBtn.addEventListener('click', () => {
+      fieldCodigo.value = currentDetalhe.codigo || '';
+      fieldNivel.value = currentDetalhe.nivel || '';
+      fieldAno.value = currentDetalhe.ano || '';
+      fieldInstituicao.value = currentDetalhe.instituicao || '';
+      metaOverlay.classList.add('show');
+    });
+    metaClose.addEventListener('click', () => metaOverlay.classList.remove('show'));
+    metaOverlay.addEventListener('click', (e) => { if(e.target === metaOverlay) metaOverlay.classList.remove('show'); });
+    metaSaveBtn.addEventListener('click', async () => {
+      currentDetalhe.codigo = fieldCodigo.value.trim() || null;
+      currentDetalhe.nivel = fieldNivel.value.trim() || null;
+      currentDetalhe.ano = fieldAno.value.trim() || null;
+      currentDetalhe.instituicao = fieldInstituicao.value.trim() || null;
+      renderMeta();
+      metaOverlay.classList.remove('show');
+      if(supa){
+        const { error } = await supa.from('especialidade_detalhes').upsert(Object.assign({ nome: currentName }, currentDetalhe), { onConflict: 'nome' });
+        if(error){
+          console.error('Erro ao salvar informações da especialidade:', error);
+          alert('Não foi possível salvar.\n\nDetalhe: ' + (error.message || error.hint || error.code || 'erro desconhecido'));
+        }
+      }
+    });
+
+    editReqBtn.addEventListener('click', () => {
+      fieldReq.value = currentDetalhe.requisitos || '';
+      reqOverlay.classList.add('show');
+      setTimeout(() => fieldReq.focus(), 150);
+    });
+    reqClose.addEventListener('click', () => reqOverlay.classList.remove('show'));
+    reqOverlay.addEventListener('click', (e) => { if(e.target === reqOverlay) reqOverlay.classList.remove('show'); });
+    reqSaveBtn.addEventListener('click', async () => {
+      currentDetalhe.requisitos = fieldReq.value.trim() || null;
+      renderReq();
+      reqOverlay.classList.remove('show');
+      if(supa){
+        const { error } = await supa.from('especialidade_detalhes').upsert(Object.assign({ nome: currentName }, currentDetalhe), { onConflict: 'nome' });
+        if(error){
+          console.error('Erro ao salvar requisitos da especialidade:', error);
+          alert('Não foi possível salvar.\n\nDetalhe: ' + (error.message || error.hint || error.code || 'erro desconhecido'));
+        }
+      }
+    });
+
+    async function addArquivo(tipo, dataUrl, filename){
+      if(!currentName || !dataUrl) return;
+      let id = 'local-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+      if(supa){
+        const { data, error } = await supa.from('especialidade_arquivos')
+          .insert({ nome: currentName, tipo, arquivo_data: dataUrl, arquivo_nome: filename || null })
+          .select('id').single();
+        if(error){
+          console.error('Erro ao anexar arquivo:', error);
+          alert('Não foi possível anexar o arquivo.\n\nDetalhe: ' + (error.message || error.hint || error.code || 'erro desconhecido'));
+          return;
+        }
+        if(data && data.id) id = data.id;
+      }
+      currentArquivos.push({ id, tipo, arquivo_data: dataUrl, arquivo_nome: filename || '' });
+      renderFiles();
+    }
+
+    async function removeArquivo(id){
+      const idx = currentArquivos.findIndex(a => String(a.id) === String(id));
+      if(idx === -1) return;
+      currentArquivos.splice(idx, 1);
+      renderFiles();
+      if(supa && String(id).indexOf('local-') !== 0){
+        const { error } = await supa.from('especialidade_arquivos').delete().eq('id', id);
+        if(error) console.error('Erro ao remover arquivo:', error);
+      }
+    }
+
+    [aulaList, avalList].forEach(listEl => {
+      listEl.addEventListener('click', (e) => {
+        const btn = e.target.closest('.cl-comprovante-item-remove');
+        if(!btn) return;
+        e.preventDefault();
+        const row = btn.closest('.cl-comprovante-item');
+        if(row) removeArquivo(row.dataset.id);
+      });
+    });
+
+    aulaAddBtn.addEventListener('click', () => aulaFileInput.click());
+    avalAddBtn.addEventListener('click', () => avalFileInput.click());
+
+    aulaFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      aulaFileInput.value = '';
+      if(!file) return;
+      readFileAsDataURL(file, (dataUrl) => addArquivo('aula', dataUrl, file.name));
+    });
+    avalFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      avalFileInput.value = '';
+      if(!file) return;
+      readFileAsDataURL(file, (dataUrl) => addArquivo('avaliacao', dataUrl, file.name));
+    });
+
+    pdfBtn.addEventListener('click', () => {
+      const jsPDFLib = window.jspdf && window.jspdf.jsPDF;
+      if(!jsPDFLib){
+        alert('Não foi possível carregar a biblioteca de PDF. Verifique sua conexão com a internet e tente novamente.');
+        return;
+      }
+      const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const marginX = 18;
+      let y = 24;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.text('Clube de Desbravadores Cedros do Líbano', pageWidth / 2, y, { align: 'center' });
+      y += 6;
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Manual de Especialidades', pageWidth / 2, y, { align: 'center' });
+      y += 10;
+      doc.setDrawColor(180);
+      doc.line(marginX, y, pageWidth - marginX, y);
+      y += 12;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.text(currentName, pageWidth / 2, y, { align: 'center' });
+      y += 12;
+
+      const rows = [
+        ['Área', currentArea || '—'],
+        ['Código', currentDetalhe.codigo || '—'],
+        ['Nível', currentDetalhe.nivel || '—'],
+        ['Ano', currentDetalhe.ano || '—'],
+        ['Instituição de Origem', currentDetalhe.instituicao || '—']
+      ];
+      const rowH = 8;
+      rows.forEach((row, i) => {
+        if(i % 2 === 0){
+          doc.setFillColor(240, 248, 242);
+          doc.rect(marginX, y - 5.5, pageWidth - marginX * 2, rowH, 'F');
+        }
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(60, 60, 60);
+        doc.text(row[0], marginX + 3, y);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(20, 20, 20);
+        doc.text(row[1], pageWidth - marginX - 3, y, { align: 'right' });
+        y += rowH;
+      });
+      y += 8;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(20, 20, 20);
+      doc.text('Requisitos', marginX, y);
+      y += 7;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10.5);
+      doc.setTextColor(40, 40, 40);
+      const reqTexto = (currentDetalhe.requisitos || '').trim() || 'Requisitos ainda não cadastrados.';
+      const lines = doc.splitTextToSize(reqTexto, pageWidth - marginX * 2);
+      lines.forEach(line => {
+        if(y > 280){ doc.addPage(); y = 20; }
+        doc.text(line, marginX, y);
+        y += 5.5;
+      });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text('Gerado pelo Cedros Digital', pageWidth / 2, 290, { align: 'center' });
+
+      const safeName = currentName.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      doc.save('especialidade-' + safeName + '.pdf');
+    });
   })();
 
   // Registers the service worker so the app can be installed and opened offline.
