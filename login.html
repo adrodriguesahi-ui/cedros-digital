@@ -18659,65 +18659,120 @@ const REQ_SUMMARIES = {
       }
       const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
       const pageWidth = doc.internal.pageSize.getWidth();
-      const marginX = 18;
-      let y = 24;
+      const marginX = 16;
+      let y = 20;
 
+      // Título + linha, no mesmo padrão da referência oficial do manual (cabeçalho
+      // cinza com o nome da especialidade, seguido de um traço horizontal).
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(13);
-      doc.text('Clube de Desbravadores Cedros do Líbano', pageWidth / 2, y, { align: 'center' });
+      doc.setFontSize(18);
+      doc.setTextColor(70, 70, 70);
+      doc.text(currentName, marginX, y);
       y += 6;
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Manual de Especialidades', pageWidth / 2, y, { align: 'center' });
-      y += 10;
-      doc.setDrawColor(180);
+      doc.setDrawColor(200);
+      doc.setLineWidth(0.4);
       doc.line(marginX, y, pageWidth - marginX, y);
-      y += 12;
+      y += 10;
 
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(16);
-      doc.text(currentName, pageWidth / 2, y, { align: 'center' });
-      y += 12;
-
-      const rows = [
-        ['Área', currentArea || '—'],
-        ['Código', currentDetalhe.codigo || '—'],
-        ['Nível', currentDetalhe.nivel || '—'],
-        ['Ano', currentDetalhe.ano || '—'],
-        ['Instituição de Origem', currentDetalhe.instituicao || '—']
+      // Tabela de referência (Área/Código/Nível/Ano/Instituição de Origem), com o
+      // brasão do clube à esquerda e a insígnia da especialidade à direita — mesma
+      // estrutura da tabela oficial do manual, com a identidade do Cedros.
+      const logoImg = document.querySelector('.bd-brand img');
+      const insigniaFoto = (typeof spPhotoMap !== 'undefined' && spPhotoMap[currentName]) || '';
+      const sideW = 24;
+      const tableX = marginX + sideW;
+      const tableW = pageWidth - marginX * 2 - sideW * 2;
+      const cols = [
+        { label: 'Área', value: currentArea || '—', weight: 1 },
+        { label: 'Código', value: currentDetalhe.codigo || '—', weight: 1 },
+        { label: 'Nível', value: currentDetalhe.nivel || '—', weight: 1 },
+        { label: 'Ano', value: currentDetalhe.ano || '—', weight: 1 },
+        { label: 'Instituição de Origem', value: currentDetalhe.instituicao || '—', weight: 2 }
       ];
-      const rowH = 8;
-      rows.forEach((row, i) => {
-        if(i % 2 === 0){
-          doc.setFillColor(240, 248, 242);
-          doc.rect(marginX, y - 5.5, pageWidth - marginX * 2, rowH, 'F');
-        }
+      const totalWeight = cols.reduce((s, c) => s + c.weight, 0);
+      let colX = tableX;
+      cols.forEach(c => { c.x = colX; c.w = (tableW * c.weight) / totalWeight; colX += c.w; });
+
+      const tableTop = y;
+      const headH = 9;
+      const valueH = 11;
+      const bandH = headH + valueH;
+      doc.setFillColor(16, 66, 33);
+      doc.rect(tableX, tableTop, tableW, headH, 'F');
+      doc.setFillColor(24, 92, 46);
+      doc.rect(tableX, tableTop + headH, tableW, valueH, 'F');
+      doc.setDrawColor(255, 255, 255);
+      doc.setLineWidth(0.2);
+      cols.forEach(c => {
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.setTextColor(60, 60, 60);
-        doc.text(row[0], marginX + 3, y);
+        doc.setFontSize(7.5);
+        doc.setTextColor(255, 255, 255);
+        doc.text(c.label, c.x + c.w / 2, tableTop + headH - 3, { align: 'center' });
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(20, 20, 20);
-        doc.text(row[1], pageWidth - marginX - 3, y, { align: 'right' });
-        y += rowH;
+        doc.setFontSize(9.5);
+        doc.setTextColor(225, 245, 230);
+        doc.text(String(c.value), c.x + c.w / 2, tableTop + headH + valueH - 4, { align: 'center' });
+        if(c !== cols[cols.length - 1]) doc.line(c.x + c.w, tableTop, c.x + c.w, tableTop + bandH);
       });
-      y += 8;
+
+      if(logoImg && logoImg.src){
+        try {
+          const logoSize = Math.min(sideW - 6, bandH - 4);
+          doc.addImage(logoImg.src, 'PNG', marginX + (sideW - logoSize) / 2, tableTop + (bandH - logoSize) / 2, logoSize, logoSize);
+        } catch(e){}
+      }
+      if(insigniaFoto){
+        try {
+          const badgeSize = Math.min(sideW - 6, bandH - 4);
+          const badgeX = tableX + tableW + (sideW - badgeSize) / 2;
+          doc.addImage(insigniaFoto, 'JPEG', badgeX, tableTop + (bandH - badgeSize) / 2, badgeSize, badgeSize);
+        } catch(e){}
+      }
+
+      y = tableTop + bandH + 14;
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(12);
       doc.setTextColor(20, 20, 20);
       doc.text('Requisitos', marginX, y);
-      y += 7;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10.5);
-      doc.setTextColor(40, 40, 40);
-      const reqTexto = (currentDetalhe.requisitos || '').trim() || 'Requisitos ainda não cadastrados.';
-      const lines = doc.splitTextToSize(reqTexto, pageWidth - marginX * 2);
-      lines.forEach(line => {
-        if(y > 280){ doc.addPage(); y = 20; }
-        doc.text(line, marginX, y);
-        y += 5.5;
-      });
+      y += 8;
+
+      // Preserva a numeração/lettering já digitados (1., 2., a., b. …), no mesmo
+      // padrão do manual oficial, com os itens "a./b./c." recuados em relação aos
+      // itens numerados.
+      const reqTexto = (currentDetalhe.requisitos || '').trim();
+      if(!reqTexto){
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(10.5);
+        doc.setTextColor(130, 130, 130);
+        doc.text('Requisitos ainda não cadastrados.', marginX, y);
+      } else {
+        doc.setFontSize(10.5);
+        reqTexto.split('\n').forEach(rawLine => {
+          const line = rawLine.trim();
+          if(!line){ y += 3; return; }
+          const numMatch = line.match(/^(\d+\.)\s*(.*)$/);
+          const subMatch = !numMatch && line.match(/^([a-z]\.)\s*(.*)$/i);
+          let indent = marginX, marker = '', rest = line;
+          if(numMatch){ marker = numMatch[1]; rest = numMatch[2]; indent = marginX; }
+          else if(subMatch){ marker = subMatch[1]; rest = subMatch[2]; indent = marginX + 8; }
+          const markerW = marker ? doc.getTextWidth(marker + ' ') : 0;
+          const wrapW = pageWidth - marginX - indent - markerW;
+          const wrapped = doc.splitTextToSize(rest, wrapW);
+          wrapped.forEach((wLine, idx) => {
+            if(y > 280){ doc.addPage(); y = 20; }
+            if(idx === 0 && marker){
+              doc.setFont('helvetica', 'bold');
+              doc.setTextColor(20, 110, 55);
+              doc.text(marker, indent, y);
+            }
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(40, 40, 40);
+            doc.text(wLine, indent + markerW, y);
+            y += 5.5;
+          });
+        });
+      }
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
