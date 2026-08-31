@@ -71,6 +71,11 @@ alter table usuarios add column if not exists cargo text;
 -- destaque de "aniversário hoje" no dashboard. Coletada no cadastro, mas
 -- editável em Administração → Usuários pra quem já tinha conta sem isso.
 alter table usuarios add column if not exists data_nascimento date;
+-- Permissão pra tela de Pontuação de Unidades — independente do cargo/papel,
+-- porque uma pessoa pode acumular várias funções no clube (ex.: já é
+-- Conselheira de uma unidade e também Coordenadora de Unidades) e o campo
+-- cargo só guarda um valor por pessoa.
+alter table usuarios add column if not exists pode_pontuar_unidades boolean not null default false;
 
 insert into usuarios (nome, email, unidade, papel) values
   ('Adrodrigues Santos', 'adrodrigues@cedrosdigital.org', 'Ype', 'Administrador'),
@@ -334,12 +339,27 @@ create table if not exists unit_mes_resumo (
   primary key (unidade, mes_ref)
 );
 
+-- Lançamentos de pontos da tela "Pontuação de Unidades" (Início → Unidades →
+-- 🏆 Pontuação, restrito a quem tem usuarios.pode_pontuar_unidades). Cada linha
+-- é um ajuste (positivo ou negativo) com motivo obrigatório; o total de uma
+-- unidade é a soma de todos os lançamentos dela — alimenta tanto essa tela
+-- quanto o "Rank das Unidades" do dashboard.
+create table if not exists unidade_pontos (
+  id uuid primary key default gen_random_uuid(),
+  unidade text not null references unidades(nome) on update cascade on delete cascade,
+  pontos int not null,
+  motivo text not null,
+  criado_por text,
+  created_at timestamptz not null default now()
+);
+
 alter table unidades enable row level security;
 alter table unit_funcoes enable row level security;
 alter table unit_atividades enable row level security;
 alter table unit_avaliacoes enable row level security;
 alter table unit_conquistas enable row level security;
 alter table unit_mes_resumo enable row level security;
+alter table unidade_pontos enable row level security;
 
 drop policy if exists "unidades: acesso publico" on unidades;
 create policy "unidades: acesso publico" on unidades for all using (true) with check (true);
@@ -358,6 +378,9 @@ create policy "unit_conquistas: acesso publico" on unit_conquistas for all using
 
 drop policy if exists "unit_mes_resumo: acesso publico" on unit_mes_resumo;
 create policy "unit_mes_resumo: acesso publico" on unit_mes_resumo for all using (true) with check (true);
+
+drop policy if exists "unidade_pontos: acesso publico" on unidade_pontos;
+create policy "unidade_pontos: acesso publico" on unidade_pontos for all using (true) with check (true);
 
 -- ---------------------------------------------------------------------
 -- eventos_agenda: eventos da Agenda Anual (Planejamento Anual). Antes
