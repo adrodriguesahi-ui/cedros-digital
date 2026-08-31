@@ -2453,6 +2453,14 @@
      isso ícone/rótulo caem na cor padrão de link do navegador (azul). */
   .tab-more-grid .bd-qn-item{ width:auto; color:var(--cream); }
   .tab-more-grid .bd-qn-icon{ color:var(--cream); }
+  /* Folha "Mais opções da unidade" (#unTabsMoreOverlay): ícones com fundo colorido
+     sólido em vez do cinza translúcido padrão — visual mais vibrante/jovem, reaproveita
+     a mesma paleta já usada nos cards de "Resumo do Mês" (.un-stat-icon.c-*) acima. */
+  .tab-more-grid .bd-qn-icon.c-gold{ background:var(--gold); color:#2B2010; border-color:transparent; }
+  .tab-more-grid .bd-qn-icon.c-purple{ background:#B98BFF; color:#20123A; border-color:transparent; }
+  .tab-more-grid .bd-qn-icon.c-blue{ background:#5B9BFF; color:#0B1E3D; border-color:transparent; }
+  .tab-more-grid .bd-qn-icon.c-green{ background:var(--accent); color:#08130A; border-color:transparent; }
+  .tab-more-grid .bd-qn-icon.c-orange{ background:#FF9F43; color:#3A1E00; border-color:transparent; }
   .tab-more-grid .bd-qn-item span:last-child{ color:var(--cream); }
 
   /* ===== FORM SHEETS (email / signup) ===== */
@@ -8152,23 +8160,23 @@
               <h3 class="tab-more-title">Mais opções da unidade</h3>
               <div class="tab-more-grid">
                 <a href="#" class="bd-qn-item" data-un-tab="evaluations">
-                  <span class="bd-qn-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9 12 2"/></svg></span>
+                  <span class="bd-qn-icon c-gold"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9 12 2"/></svg></span>
                   <span>Avaliações</span>
                 </a>
                 <a href="#" class="bd-qn-item" data-un-tab="achievements">
-                  <span class="bd-qn-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v6a5 5 0 0 1-10 0Z"/><path d="M7 6H4a3 3 0 0 0 3 5"/><path d="M17 6h3a3 3 0 0 1-3 5"/></svg></span>
+                  <span class="bd-qn-icon c-purple"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v6a5 5 0 0 1-10 0Z"/><path d="M7 6H4a3 3 0 0 0 3 5"/><path d="M17 6h3a3 3 0 0 1-3 5"/></svg></span>
                   <span>Conquistas</span>
                 </a>
                 <a href="#" class="bd-qn-item" data-un-tab="corner">
-                  <span class="bd-qn-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><circle cx="8" cy="9" r="1.6"/><path d="m3 15 5-5 4 4 3-3 6 6"/></svg></span>
+                  <span class="bd-qn-icon c-blue"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><circle cx="8" cy="9" r="1.6"/><path d="m3 15 5-5 4 4 3-3 6 6"/></svg></span>
                   <span>Cantinho</span>
                 </a>
                 <a href="#" class="bd-qn-item" data-un-tab="reports">
-                  <span class="bd-qn-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12.5" y="8" width="3" height="10"/><rect x="18" y="5" width="3" height="13"/></svg></span>
+                  <span class="bd-qn-icon c-green"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12.5" y="8" width="3" height="10"/><rect x="18" y="5" width="3" height="13"/></svg></span>
                   <span>Relatórios</span>
                 </a>
                 <a href="#" class="bd-qn-item" data-un-tab="settings">
-                  <span class="bd-qn-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.36.4.66.72.87.32.2.7.31 1.1.31H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></span>
+                  <span class="bd-qn-icon c-orange"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.36.4.66.72.87.32.2.7.31 1.1.31H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></span>
                   <span>Configurações</span>
                 </a>
               </div>
