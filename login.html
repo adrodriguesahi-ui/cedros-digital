@@ -9665,7 +9665,8 @@
         <p class="sd-req-text" id="sdReqText" style="display:none;"></p>
         <button type="button" class="pl-list-add-btn" id="sdEditReqBtn">Editar requisitos</button>
 
-        <button type="button" class="pl-btn pl-btn-primary" id="sdPdfBtn" style="width:100%; margin:16px 0 8px;">📄 Baixar PDF</button>
+        <button type="button" class="pl-btn pl-btn-neutral" id="sdPreviewBtn" style="width:100%; margin:16px 0 8px;">👁️ Visualizar PDF</button>
+        <button type="button" class="pl-btn pl-btn-primary" id="sdPdfBtn" style="width:100%; margin:0 0 8px;">📄 Baixar PDF</button>
         <button type="button" class="pl-btn pl-btn-neutral" id="sdShareBtn" style="width:100%; margin:0 0 16px;">🔗 Compartilhar</button>
 
         <h4 class="un-section-title">📚 Aula</h4>
@@ -18588,6 +18589,7 @@ const REQ_SUMMARIES = {
     const reqEmptyEl = document.getElementById('sdReqEmpty');
     const reqTextEl = document.getElementById('sdReqText');
     const editReqBtn = document.getElementById('sdEditReqBtn');
+    const previewBtn = document.getElementById('sdPreviewBtn');
     const pdfBtn = document.getElementById('sdPdfBtn');
     const shareBtn = document.getElementById('sdShareBtn');
     const qrOverlay = document.getElementById('sdQrOverlay');
@@ -18854,11 +18856,13 @@ const REQ_SUMMARIES = {
       });
     }
 
-    pdfBtn.addEventListener('click', () => {
+    // Monta o documento (usado tanto por "Visualizar PDF" quanto por "Baixar PDF",
+    // pra não duplicar o layout inteiro) e devolve { doc, safeName }, sem salvar.
+    function buildSpecialtyPdfDoc(){
       const jsPDFLib = window.jspdf && window.jspdf.jsPDF;
       if(!jsPDFLib){
         alert('Não foi possível carregar a biblioteca de PDF. Verifique sua conexão com a internet e tente novamente.');
-        return;
+        return null;
       }
       const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
       const pageWidth = doc.internal.pageSize.getWidth();
@@ -18983,7 +18987,21 @@ const REQ_SUMMARIES = {
       doc.text('Gerado pelo Cedros Digital', pageWidth / 2, 290, { align: 'center' });
 
       const safeName = currentName.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-      doc.save('especialidade-' + safeName + '.pdf');
+      return { doc, safeName };
+    }
+
+    if(previewBtn){
+      previewBtn.addEventListener('click', () => {
+        const built = buildSpecialtyPdfDoc();
+        if(!built) return;
+        built.doc.output('dataurlnewwindow', { filename: 'especialidade-' + built.safeName + '.pdf' });
+      });
+    }
+
+    pdfBtn.addEventListener('click', () => {
+      const built = buildSpecialtyPdfDoc();
+      if(!built) return;
+      built.doc.save('especialidade-' + built.safeName + '.pdf');
     });
   })();
 
