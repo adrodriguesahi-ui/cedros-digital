@@ -18994,7 +18994,12 @@ const REQ_SUMMARIES = {
       previewBtn.addEventListener('click', () => {
         const built = buildSpecialtyPdfDoc();
         if(!built) return;
-        built.doc.output('dataurlnewwindow', { filename: 'especialidade-' + built.safeName + '.pdf' });
+        // bloburl em vez de dataurlnewwindow: um data URI gigante na barra de
+        // endereço quebra em alguns navegadores mobile (ex.: Edge Android mostrou
+        // "leitor de PDF desabilitado" e a URL veio cortada) — blob: é mais curto
+        // e mais bem suportado pra abrir em nova aba.
+        const blobUrl = built.doc.output('bloburl');
+        window.open(blobUrl, '_blank');
       });
     }
 
