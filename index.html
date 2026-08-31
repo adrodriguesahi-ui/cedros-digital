@@ -1241,6 +1241,27 @@
 
   .un-empty-hint{ font-size:12.5px; font-weight:600; color:rgba(245,239,225,0.4); padding:8px 0; margin:0; }
 
+  /* ---- Pontuação de Unidades (view-unit-scoring) ---- */
+  .us-unit-list{ display:flex; flex-direction:column; gap:10px; }
+  .us-sign-toggle{ display:flex; gap:8px; margin:12px 0 4px; }
+  .us-sign-btn{
+    flex:1; padding:10px; border-radius:12px; border:1.5px solid rgba(255,255,255,0.14);
+    background:rgba(255,255,255,0.05); color:var(--cream); font-size:13px; font-weight:800; cursor:pointer;
+  }
+  .us-sign-btn[data-sign="1"].active{ background:rgba(63,203,107,0.18); border-color:var(--accent); color:var(--accent); }
+  .us-sign-btn[data-sign="-1"].active{ background:rgba(255,107,92,0.18); border-color:#FF6B5C; color:#FF6B5C; }
+  .us-history-list{ display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto; }
+  .us-history-row{
+    display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:12px;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+  }
+  .us-history-points{ flex-shrink:0; font-size:13px; font-weight:900; font-variant-numeric:tabular-nums; }
+  .us-history-points.positive{ color:var(--accent); }
+  .us-history-points.negative{ color:#FF6B5C; }
+  .us-history-body{ flex:1; min-width:0; }
+  .us-history-motivo{ font-size:12.5px; font-weight:700; color:var(--cream); display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .us-history-meta{ font-size:11px; color:rgba(245,239,225,0.5); }
+
   .un-mini-list{ display:flex; flex-direction:column; gap:8px; }
   .un-mini-row{
     display:flex; align-items:center; gap:11px;
@@ -8077,7 +8098,7 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <h3 class="pl-title" id="unTitle">Unidades</h3>
-          <span class="pl-topbar-spacer" aria-hidden="true"></span>
+          <button type="button" class="pl-back" id="unScoringOpenBtn" aria-label="Pontuação de Unidades" style="display:none;">🏆</button>
         </div>
 
         <div class="cl-hub" id="unHub">
@@ -8555,6 +8576,59 @@
           <div class="pl-modal-actions">
             <button type="button" class="pl-btn pl-btn-primary" id="unSpecSaveBtn">Salvar</button>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== VIEW: PONTUAÇÃO DE UNIDADES ===== restrito a quem tem
+         usuarios.pode_pontuar_unidades (ver o botão 🏆 no topo do hub de
+         Unidades, #unScoringOpenBtn). Cada linha de unidade abre um modal pra
+         lançar um ajuste (+/-) com motivo obrigatório; o total de cada
+         unidade é a soma de todos os lançamentos dela na tabela
+         unidade_pontos. Esses mesmos totais alimentam o "Rank das Unidades"
+         do dashboard (ver window.__usRefreshDashboardRanking mais abaixo). -->
+    <section class="view view-planning" id="view-unit-scoring">
+      <div class="pl-scroll">
+
+        <div class="pl-topbar">
+          <button type="button" class="pl-back" id="usBackBtn" aria-label="Voltar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h3 class="pl-title">🏆 Pontuação de Unidades</h3>
+          <span class="pl-topbar-spacer" aria-hidden="true"></span>
+        </div>
+
+        <p class="pl-reminder-hint" style="margin-top:0;">Toque numa unidade pra lançar um ajuste de pontos — positivo ou negativo — com o motivo. O total vira o Rank das Unidades do Início.</p>
+
+        <div class="us-unit-list" id="usUnitList"></div>
+
+      </div>
+
+      <div class="pl-modal-overlay" id="usAdjustOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title" id="usAdjustTitle">Ajustar pontos</h4>
+            <button type="button" class="pl-modal-close" id="usAdjustClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <p class="pl-reminder-hint" id="usAdjustTotal" style="margin-top:0;"></p>
+
+          <div class="us-sign-toggle" id="usSignToggle">
+            <button type="button" class="us-sign-btn active" data-sign="1">+ Adicionar</button>
+            <button type="button" class="us-sign-btn" data-sign="-1">− Remover</button>
+          </div>
+
+          <label class="pl-field-label">Pontos</label>
+          <input type="number" class="pl-input" id="usAdjustPoints" min="1" step="1" placeholder="Ex.: 10">
+
+          <label class="pl-field-label">Motivo</label>
+          <textarea class="pl-input pl-textarea" id="usAdjustMotivo" rows="3" placeholder="Ex.: Participação no acampamento" maxlength="200"></textarea>
+
+          <button type="button" class="pl-btn pl-btn-primary" id="usAdjustSaveBtn" style="width:100%; margin-top:14px;">Salvar lançamento</button>
+
+          <h4 class="un-section-title" style="margin:20px 0 8px;">Histórico</h4>
+          <div class="us-history-list" id="usHistoryList"></div>
         </div>
       </div>
     </section>
@@ -9739,6 +9813,22 @@
           </div>
           <p class="pl-reminder-hint">Cargo, se preenchido, aparece no painel dessa pessoa no lugar da frequência de presenças. A data de nascimento alimenta a lista de Aniversariantes.</p>
 
+          <!-- Permissão independente do cargo/papel — uma pessoa pode acumular várias
+               funções no clube, então isso fica à parte em vez de "engolido" pelo campo
+               Cargo (que só guarda um valor por pessoa). Ver tela de Pontuação de
+               Unidades, acessível pelo hub de Unidades pra quem tiver isso ativado. -->
+          <label class="pl-reminder-toggle-row" for="adFieldCanScore" style="margin:14px 0;">
+            <span class="pl-reminder-toggle-text">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15 9 22 9.5 17 14.5 18.5 22 12 18 5.5 22 7 14.5 2 9.5 9 9 12 2"/></svg>
+              Pode ajustar pontuação das unidades
+            </span>
+            <span class="pl-switch">
+              <input type="checkbox" id="adFieldCanScore">
+              <span class="pl-switch-track"><span class="pl-switch-thumb"></span></span>
+            </span>
+          </label>
+          <p class="pl-reminder-hint" style="margin:-10px 0 14px;">Libera o atalho "🏆 Pontuação" no hub de Unidades pra essa pessoa, independente do cargo ou papel dela.</p>
+
           <button type="button" class="pl-btn" id="adUserAccessBtn" style="background:rgba(255,255,255,0.08); color:var(--cream); margin-top:4px; display:none;">
             Definir acesso por área deste usuário
           </button>
@@ -9954,50 +10044,11 @@
           <div class="bento-grid">
             <div class="bento-card bento-chart-card">
               <p class="bento-chart-title">Rank das Unidades</p>
-              <div class="bento-bars">
-                <div class="bento-bar-row is-first">
-                  <span class="bento-bar-rank r1">1</span>
-                  <span class="bento-bar-label">Ype</span>
-                  <span class="bento-bar-track"><span class="bento-bar-fill f1" style="width:100%;"></span></span>
-                  <span class="bento-bar-val">320</span>
-                </div>
-                <div class="bento-bar-row">
-                  <span class="bento-bar-rank r2">2</span>
-                  <span class="bento-bar-label">Ype Roxo</span>
-                  <span class="bento-bar-track"><span class="bento-bar-fill f2" style="width:93%;"></span></span>
-                  <span class="bento-bar-val">298</span>
-                </div>
-                <div class="bento-bar-row">
-                  <span class="bento-bar-rank r3">3</span>
-                  <span class="bento-bar-label">Pinheiro</span>
-                  <span class="bento-bar-track"><span class="bento-bar-fill f3" style="width:86%;"></span></span>
-                  <span class="bento-bar-val">276</span>
-                </div>
-                <div class="bento-bar-row">
-                  <span class="bento-bar-rank">4</span>
-                  <span class="bento-bar-label">Cedros</span>
-                  <span class="bento-bar-track"><span class="bento-bar-fill" style="width:78%;"></span></span>
-                  <span class="bento-bar-val">251</span>
-                </div>
-                <div class="bento-bar-row">
-                  <span class="bento-bar-rank">5</span>
-                  <span class="bento-bar-label">Cedros Rosa</span>
-                  <span class="bento-bar-track"><span class="bento-bar-fill" style="width:72%;"></span></span>
-                  <span class="bento-bar-val">230</span>
-                </div>
-                <div class="bento-bar-row">
-                  <span class="bento-bar-rank">6</span>
-                  <span class="bento-bar-label">Flanboyan</span>
-                  <span class="bento-bar-track"><span class="bento-bar-fill" style="width:66%;"></span></span>
-                  <span class="bento-bar-val">210</span>
-                </div>
-                <div class="bento-bar-row">
-                  <span class="bento-bar-rank">7</span>
-                  <span class="bento-bar-label">Jacarandá</span>
-                  <span class="bento-bar-track"><span class="bento-bar-fill" style="width:0%;"></span></span>
-                  <span class="bento-bar-val">0</span>
-                </div>
-              </div>
+              <!-- Preenchido por window.__usRefreshDashboardRanking() a partir da soma real
+                   de unidade_pontos por unidade — ver a tela de Pontuação de Unidades
+                   (view-unit-scoring). Antes disso rodar (ex.: sem Supabase configurado)
+                   fica vazio em vez de mostrar números inventados. -->
+              <div class="bento-bars" id="bentoUnitRank"></div>
             </div>
 
           </div>
@@ -16859,6 +16910,7 @@ const REQ_SUMMARIES = {
     const fieldUnit = document.getElementById('adFieldUnit');
     const fieldRole = document.getElementById('adFieldRole');
     const fieldCargo = document.getElementById('adFieldCargo');
+    const fieldCanScore = document.getElementById('adFieldCanScore');
     const fieldBirthdate = document.getElementById('adFieldBirthdate');
     const userAccessBtn = document.getElementById('adUserAccessBtn');
     if(!content || !overlay) return;
@@ -16903,6 +16955,7 @@ const REQ_SUMMARIES = {
       card.dataset.role = row.papel;
       card.dataset.roleLabel = row.papel;
       card.dataset.cargo = row.cargo || '';
+      card.dataset.canScore = row.pode_pontuar_unidades ? '1' : '';
       card.dataset.birthdate = row.data_nascimento || '';
       if(row.acesso) card.dataset.access = JSON.stringify(row.acesso);
       card.addEventListener('click', (e) => { e.preventDefault(); openModal('edit', card); });
@@ -17001,6 +17054,7 @@ const REQ_SUMMARIES = {
       fieldUnit.value = card ? card.dataset.unit : 'Ype';
       fieldRole.value = card ? card.dataset.role : (fieldRole.options[0] ? fieldRole.options[0].value : '');
       fieldCargo.value = card ? (card.dataset.cargo || '') : '';
+      fieldCanScore.checked = !!(card && card.dataset.canScore === '1');
       fieldBirthdate.value = card ? (card.dataset.birthdate || '') : '';
       userAccessBtn.style.display = (mode === 'edit') ? '' : 'none';
       window.__currentEditingUserCard = card || null;
@@ -17018,6 +17072,7 @@ const REQ_SUMMARIES = {
         unidade: fieldUnit.value,
         papel: fieldRole.value,
         cargo: fieldCargo.value.trim() || null,
+        pode_pontuar_unidades: fieldCanScore.checked,
         data_nascimento: fieldBirthdate.value || null
       };
       if(editingCard) payload.id = editingCard.dataset.id;
@@ -17292,7 +17347,7 @@ const REQ_SUMMARIES = {
   // (ou seja, ainda não foi liberado por um admin) — usado pra barrar o acesso.
   async function applyLoggedInUser(authUser){
     if(!supa || !authUser || !authUser.email) return { found: false };
-    const { data: row } = await supa.from('usuarios').select('id, nome, papel, acesso, aprovado, unidade, cargo, data_nascimento').eq('email', authUser.email).maybeSingle();
+    const { data: row } = await supa.from('usuarios').select('id, nome, papel, acesso, aprovado, unidade, cargo, pode_pontuar_unidades, data_nascimento').eq('email', authUser.email).maybeSingle();
     if(!row || row.aprovado === false){ window.__currentUsuario = null; return { found: false }; }
     let access = row.acesso;
     if(!access){
@@ -17300,7 +17355,7 @@ const REQ_SUMMARIES = {
       access = def || (window.__ROLE_VISIBILITY && window.__ROLE_VISIBILITY[row.papel]) || {};
     }
     if(window.__applyAccessToDashboard) window.__applyAccessToDashboard(access, row.nome);
-    window.__currentUsuario = { id: row.id, nome: row.nome, email: authUser.email, papel: row.papel, unidade: row.unidade, cargo: row.cargo, data_nascimento: row.data_nascimento };
+    window.__currentUsuario = { id: row.id, nome: row.nome, email: authUser.email, papel: row.papel, unidade: row.unidade, cargo: row.cargo, podePontuarUnidades: !!row.pode_pontuar_unidades, data_nascimento: row.data_nascimento };
     window.__currentAuthUserId = authUser.id;
     document.dispatchEvent(new CustomEvent('cedros:loggedin', { detail: window.__currentUsuario }));
     if(window.__applyGreetingUnit) window.__applyGreetingUnit(window.__currentUsuario);
@@ -17880,6 +17935,212 @@ const REQ_SUMMARIES = {
     buildBanners();
     refreshOfficerBanner();
     refreshScheduleReadyBanner();
+  })();
+
+  // ---------------------------------------------------------------------
+  // Pontuação de Unidades (view-unit-scoring): tela restrita a quem tem
+  // usuarios.pode_pontuar_unidades, alcançada pelo botão 🏆 no topo do hub de
+  // Unidades. Cada lançamento (+/-) fica na tabela unidade_pontos, com motivo
+  // obrigatório; o total de uma unidade é a soma de todos os lançamentos dela.
+  // Esses totais também alimentam o "Rank das Unidades" do dashboard (antes
+  // números fixos que nunca mudavam — ver #bentoUnitRank).
+  // ---------------------------------------------------------------------
+  (function(){
+    const openBtn = document.getElementById('unScoringOpenBtn');
+    const backBtn = document.getElementById('usBackBtn');
+    const unitList = document.getElementById('usUnitList');
+    const rankEl = document.getElementById('bentoUnitRank');
+    if(!unitList && !rankEl) return;
+
+    let units = [];         // [{ nome, cor }]
+    let pontosRows = [];    // linhas cruas de unidade_pontos
+    let currentUnit = null;
+    let currentSign = 1;
+    let loaded = false;
+
+    function totalsByUnit(){
+      const totals = {};
+      units.forEach(u => { totals[u.nome] = 0; });
+      pontosRows.forEach(r => { totals[r.unidade] = (totals[r.unidade] || 0) + r.pontos; });
+      return totals;
+    }
+
+    async function loadData(){
+      if(!supa) return;
+      const [{ data: unidadesData }, { data: pontosData }] = await Promise.all([
+        supa.from('unidades').select('nome, cor').eq('status', 'ativa').order('nome'),
+        supa.from('unidade_pontos').select('*').order('created_at', { ascending: false })
+      ]);
+      units = unidadesData || [];
+      pontosRows = pontosData || [];
+      loaded = true;
+    }
+
+    function renderUnitList(){
+      if(!unitList) return;
+      const totals = totalsByUnit();
+      const sorted = units.slice().sort((a, b) => (totals[b.nome] || 0) - (totals[a.nome] || 0));
+      unitList.innerHTML = '';
+      sorted.forEach(u => {
+        const row = document.createElement('a');
+        row.href = '#';
+        row.className = 'cl-hub-row un-hub-row';
+        row.innerHTML =
+          '<span class="cl-class-dot cl-color-' + (u.cor || 'gray') + '"></span>' +
+          '<span class="cl-hub-row-name"></span>' +
+          '<span class="cl-hub-row-count"></span>' +
+          '<svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+        row.querySelector('.cl-hub-row-name').textContent = u.nome;
+        const total = totals[u.nome] || 0;
+        row.querySelector('.cl-hub-row-count').textContent = total + (total === 1 ? ' ponto' : ' pontos');
+        row.addEventListener('click', (e) => { e.preventDefault(); openAdjust(u.nome); });
+        unitList.appendChild(row);
+      });
+    }
+
+    function renderRanking(){
+      if(!rankEl) return;
+      const totals = totalsByUnit();
+      const sorted = units.slice().sort((a, b) => (totals[b.nome] || 0) - (totals[a.nome] || 0));
+      const max = Math.max(1, ...sorted.map(u => totals[u.nome] || 0));
+      rankEl.innerHTML = '';
+      sorted.forEach((u, i) => {
+        const total = totals[u.nome] || 0;
+        const rank = i + 1;
+        const row = document.createElement('div');
+        row.className = 'bento-bar-row' + (rank === 1 ? ' is-first' : '');
+        row.innerHTML =
+          '<span class="bento-bar-rank' + (rank <= 3 ? ' r' + rank : '') + '"></span>' +
+          '<span class="bento-bar-label"></span>' +
+          '<span class="bento-bar-track"><span class="bento-bar-fill' + (rank <= 3 ? ' f' + rank : '') + '"></span></span>' +
+          '<span class="bento-bar-val"></span>';
+        row.querySelector('.bento-bar-rank').textContent = rank;
+        row.querySelector('.bento-bar-label').textContent = u.nome;
+        row.querySelector('.bento-bar-fill').style.width = Math.round((total / max) * 100) + '%';
+        row.querySelector('.bento-bar-val').textContent = total;
+        rankEl.appendChild(row);
+      });
+    }
+
+    window.__usRefreshDashboardRanking = async function(){
+      if(!rankEl) return;
+      await loadData();
+      renderRanking();
+    };
+
+    const adjustOverlay = document.getElementById('usAdjustOverlay');
+    const adjustClose = document.getElementById('usAdjustClose');
+    const adjustTitle = document.getElementById('usAdjustTitle');
+    const adjustTotal = document.getElementById('usAdjustTotal');
+    const signToggle = document.getElementById('usSignToggle');
+    const pointsInput = document.getElementById('usAdjustPoints');
+    const motivoInput = document.getElementById('usAdjustMotivo');
+    const saveBtn = document.getElementById('usAdjustSaveBtn');
+    const historyList = document.getElementById('usHistoryList');
+
+    function renderHistory(){
+      if(!historyList) return;
+      const rows = pontosRows.filter(r => r.unidade === currentUnit);
+      historyList.innerHTML = '';
+      if(!rows.length){
+        historyList.innerHTML = '<p class="un-empty-hint">Nenhum lançamento ainda.</p>';
+        return;
+      }
+      rows.forEach(r => {
+        const row = document.createElement('div');
+        row.className = 'us-history-row';
+        const dateStr = new Date(r.created_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+        row.innerHTML =
+          '<span class="us-history-points ' + (r.pontos >= 0 ? 'positive' : 'negative') + '"></span>' +
+          '<span class="us-history-body"><span class="us-history-motivo"></span><span class="us-history-meta"></span></span>';
+        row.querySelector('.us-history-points').textContent = (r.pontos >= 0 ? '+' : '') + r.pontos;
+        row.querySelector('.us-history-motivo').textContent = r.motivo;
+        row.querySelector('.us-history-meta').textContent = dateStr + (r.criado_por ? ' · ' + r.criado_por : '');
+        historyList.appendChild(row);
+      });
+    }
+
+    function openAdjust(unidade){
+      currentUnit = unidade;
+      currentSign = 1;
+      if(signToggle){
+        signToggle.querySelectorAll('.us-sign-btn').forEach(btn => btn.classList.toggle('active', btn.getAttribute('data-sign') === '1'));
+      }
+      pointsInput.value = '';
+      pointsInput.style.borderColor = '';
+      motivoInput.value = '';
+      motivoInput.style.borderColor = '';
+      adjustTitle.textContent = unidade;
+      const total = totalsByUnit()[unidade] || 0;
+      adjustTotal.textContent = 'Total atual: ' + total + (total === 1 ? ' ponto' : ' pontos');
+      renderHistory();
+      adjustOverlay.classList.add('show');
+    }
+
+    if(signToggle){
+      signToggle.querySelectorAll('.us-sign-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentSign = parseInt(btn.getAttribute('data-sign'), 10);
+          signToggle.querySelectorAll('.us-sign-btn').forEach(b => b.classList.toggle('active', b === btn));
+        });
+      });
+    }
+
+    if(adjustClose) adjustClose.addEventListener('click', () => adjustOverlay.classList.remove('show'));
+    if(adjustOverlay) adjustOverlay.addEventListener('click', (e) => { if(e.target === adjustOverlay) adjustOverlay.classList.remove('show'); });
+
+    if(saveBtn){
+      saveBtn.addEventListener('click', async () => {
+        const rawPoints = parseInt(pointsInput.value, 10);
+        const motivo = motivoInput.value.trim();
+        let valid = true;
+        if(!rawPoints || rawPoints <= 0){ pointsInput.style.borderColor = '#FF6B5C'; valid = false; } else { pointsInput.style.borderColor = ''; }
+        if(!motivo){ motivoInput.style.borderColor = '#FF6B5C'; valid = false; } else { motivoInput.style.borderColor = ''; }
+        if(!valid || !currentUnit || !supa) return;
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Salvando...';
+        const { error } = await supa.from('unidade_pontos').insert({
+          unidade: currentUnit,
+          pontos: rawPoints * currentSign,
+          motivo,
+          criado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
+        });
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Salvar lançamento';
+        if(error){
+          alert('Não foi possível salvar o lançamento.\n\nDetalhe: ' + (error.message || error.hint || error.code || 'erro desconhecido'));
+          return;
+        }
+
+        await loadData();
+        renderUnitList();
+        renderRanking();
+        pointsInput.value = '';
+        motivoInput.value = '';
+        const total = totalsByUnit()[currentUnit] || 0;
+        adjustTotal.textContent = 'Total atual: ' + total + (total === 1 ? ' ponto' : ' pontos');
+        renderHistory();
+      });
+    }
+
+    async function openScoringView(){
+      showView('view-unit-scoring');
+      if(!loaded) await loadData();
+      renderUnitList();
+    }
+
+    if(openBtn) openBtn.addEventListener('click', (e) => { e.preventDefault(); openScoringView(); });
+    if(backBtn) backBtn.addEventListener('click', (e) => { e.preventDefault(); showView('view-units'); });
+
+    function applyScoringAccess(usuario){
+      if(!openBtn) return;
+      openBtn.style.display = (usuario && usuario.podePontuarUnidades) ? '' : 'none';
+    }
+    document.addEventListener('cedros:loggedin', (e) => applyScoringAccess(e.detail));
+    applyScoringAccess(window.__currentUsuario);
+
+    window.__usRefreshDashboardRanking();
   })();
 
   // Registers the service worker so the app can be installed and opened offline.
