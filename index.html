@@ -14251,15 +14251,16 @@
         gallery.appendChild(empty);
         return;
       }
-      photos.forEach((src, idx) => {
+      photos.forEach((photo) => {
         const cell = document.createElement('div');
         cell.className = 'un-photo';
         cell.innerHTML =
-          '<img src="' + src + '" alt="Foto do cantinho">' +
+          '<img src="' + photo.src + '" alt="Foto do cantinho">' +
           '<button type="button" class="un-photo-remove" aria-label="Remover foto"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
-        cell.querySelector('.un-photo-remove').addEventListener('click', () => {
-          CORNER_DATA[name].photos.splice(idx, 1);
+        cell.querySelector('.un-photo-remove').addEventListener('click', async () => {
+          CORNER_DATA[name].photos = CORNER_DATA[name].photos.filter(p => p !== photo);
           renderGallery(name);
+          if(supa && photo.id) await supa.from('unit_cantinho_fotos').delete().eq('id', photo.id);
         });
         gallery.appendChild(cell);
       });
@@ -14296,6 +14297,9 @@
           const newTotal = SCORE_CATEGORIES.reduce((sum, c) => sum + (scores[c] || 0), 0);
           scoreTotal.textContent = newTotal;
         });
+        input.addEventListener('change', async () => {
+          if(supa && currentUnit === name) await supa.from('unit_cantinho_pontos').upsert({ unidade: name, categoria: cat, pontos: scores[cat] || 0 }, { onConflict: 'unidade,categoria' });
+        });
         scoreList.appendChild(row);
       });
       scoreTotal.textContent = total;
@@ -14307,6 +14311,26 @@
       respText.textContent = d.resp || '—';
       renderGallery(name);
       renderScores(name);
+    }
+
+    async function loadCorner(name){
+      const scores = {};
+      SCORE_CATEGORIES.forEach(c => { scores[c] = 0; });
+      CORNER_DATA[name] = { desc: '', resp: '', photos: [], scores };
+      if(supa){
+        const [{ data: meta }, { data: pontos }, { data: fotos }] = await Promise.all([
+          supa.from('unit_cantinho').select('descricao, responsavel').eq('unidade', name).maybeSingle(),
+          supa.from('unit_cantinho_pontos').select('categoria, pontos').eq('unidade', name),
+          supa.from('unit_cantinho_fotos').select('id, foto').eq('unidade', name).order('created_at')
+        ]);
+        if(meta){
+          CORNER_DATA[name].desc = meta.descricao || '';
+          CORNER_DATA[name].resp = meta.responsavel || '';
+        }
+        (pontos || []).forEach(r => { if(SCORE_CATEGORIES.indexOf(r.categoria) !== -1) scores[r.categoria] = r.pontos; });
+        CORNER_DATA[name].photos = (fotos || []).map(f => ({ id: f.id, src: f.foto }));
+      }
+      if(currentUnit === name) renderCornerDetail(name);
     }
 
     if(scoreExportBtn){
@@ -14377,14 +14401,27 @@
     modalClose.addEventListener('click', closeCornerModal);
     overlay.addEventListener('click', (e) => { if(e.target === overlay) closeCornerModal(); });
 
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
       if(!currentUnit) return;
-      const d = CORNER_DATA[currentUnit];
+      const name = currentUnit;
+      const d = CORNER_DATA[name];
       d.desc = fieldDesc.value.trim();
       d.resp = fieldResp.value.trim();
-      if(stagedPhoto) d.photos.push(stagedPhoto);
-      renderCornerDetail(currentUnit);
+      const photoToSave = stagedPhoto;
+      let newPhoto = null;
+      if(photoToSave){
+        newPhoto = { id: null, src: photoToSave };
+        d.photos.push(newPhoto);
+      }
+      renderCornerDetail(name);
       closeCornerModal();
+      if(supa){
+        await supa.from('unit_cantinho').upsert({ unidade: name, descricao: d.desc, responsavel: d.resp, updated_at: new Date().toISOString() }, { onConflict: 'unidade' });
+        if(newPhoto){
+          const { data } = await supa.from('unit_cantinho_fotos').insert({ unidade: name, foto: photoToSave }).select('id').single();
+          if(data) newPhoto.id = data.id;
+        }
+      }
     });
 
     // ---------------------------------------------------------------
@@ -14531,7 +14568,7 @@
       else if(tab === 'evaluations') { /* já carregado ao abrir a unidade */ }
       else if(tab === 'achievements') loadAchievements(currentUnit);
       else if(tab === 'settings') renderSettings();
-      else if(tab === 'corner') renderCornerDetail(currentUnit);
+      else if(tab === 'corner') loadCorner(currentUnit);
       else if(tab === 'overview') { renderOverviewStats(); renderOverviewUpcoming(); }
     }
 
