@@ -353,6 +353,34 @@ create table if not exists unidade_pontos (
   created_at timestamptz not null default now()
 );
 
+-- Cantinho da Unidade (Início → Unidades → aba "Cantinho"): descrição,
+-- responsável pela decoração, pontuação por categoria (0-10 cada, até 60) e
+-- fotos do cantinho. Era a última parte da tela de Unidades ainda guardada
+-- só na memória do app — sumia ao recarregar a página; agora persiste aqui,
+-- mesmo padrão de unit_avaliacoes (pontos por categoria) e especialidade_fotos
+-- (fotos em base64, uma linha por foto).
+create table if not exists unit_cantinho (
+  unidade text primary key references unidades(nome) on update cascade on delete cascade,
+  descricao text not null default '',
+  responsavel text not null default '',
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists unit_cantinho_pontos (
+  id uuid primary key default gen_random_uuid(),
+  unidade text not null references unidades(nome) on update cascade on delete cascade,
+  categoria text not null,
+  pontos int not null default 0,
+  unique (unidade, categoria)
+);
+
+create table if not exists unit_cantinho_fotos (
+  id uuid primary key default gen_random_uuid(),
+  unidade text not null references unidades(nome) on update cascade on delete cascade,
+  foto text not null,
+  created_at timestamptz not null default now()
+);
+
 alter table unidades enable row level security;
 alter table unit_funcoes enable row level security;
 alter table unit_atividades enable row level security;
@@ -360,6 +388,9 @@ alter table unit_avaliacoes enable row level security;
 alter table unit_conquistas enable row level security;
 alter table unit_mes_resumo enable row level security;
 alter table unidade_pontos enable row level security;
+alter table unit_cantinho enable row level security;
+alter table unit_cantinho_pontos enable row level security;
+alter table unit_cantinho_fotos enable row level security;
 
 drop policy if exists "unidades: acesso publico" on unidades;
 create policy "unidades: acesso publico" on unidades for all using (true) with check (true);
@@ -381,6 +412,15 @@ create policy "unit_mes_resumo: acesso publico" on unit_mes_resumo for all using
 
 drop policy if exists "unidade_pontos: acesso publico" on unidade_pontos;
 create policy "unidade_pontos: acesso publico" on unidade_pontos for all using (true) with check (true);
+
+drop policy if exists "unit_cantinho: acesso publico" on unit_cantinho;
+create policy "unit_cantinho: acesso publico" on unit_cantinho for all using (true) with check (true);
+
+drop policy if exists "unit_cantinho_pontos: acesso publico" on unit_cantinho_pontos;
+create policy "unit_cantinho_pontos: acesso publico" on unit_cantinho_pontos for all using (true) with check (true);
+
+drop policy if exists "unit_cantinho_fotos: acesso publico" on unit_cantinho_fotos;
+create policy "unit_cantinho_fotos: acesso publico" on unit_cantinho_fotos for all using (true) with check (true);
 
 -- ---------------------------------------------------------------------
 -- eventos_agenda: eventos da Agenda Anual (Planejamento Anual). Antes
