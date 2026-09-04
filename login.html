@@ -1063,7 +1063,7 @@
   }
   .eo-doc-icon.img{ background:rgba(91,155,255,0.16); color:#5B9BFF; }
   .eo-doc-icon.file{ background:rgba(255,255,255,0.08); color:rgba(245,239,225,0.6); }
-  .eo-doc-body{ flex:1; min-width:0; }
+  .eo-doc-body{ flex:1; min-width:0; display:flex; flex-direction:column; }
   .eo-doc-name{ font-size:13px; font-weight:700; color:var(--cream); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .eo-doc-size{ font-size:10.5px; font-weight:600; color:rgba(245,239,225,0.45); }
   .eo-doc-remove{
@@ -1083,7 +1083,7 @@
     border-radius:50%; background:var(--gold);
   }
   .eo-program-time{ flex-shrink:0; font-size:13px; font-weight:900; color:var(--gold); width:48px; }
-  .eo-program-body{ flex:1; min-width:0; }
+  .eo-program-body{ flex:1; min-width:0; display:flex; flex-direction:column; }
   .eo-program-activity{ font-size:13.5px; font-weight:700; color:var(--cream); }
   .eo-program-responsible{ font-size:11px; font-weight:600; color:rgba(245,239,225,0.5); margin-top:2px; }
   .eo-program-remove{
@@ -1119,9 +1119,9 @@
     flex-shrink:0; width:36px; height:36px; border-radius:10px;
     display:flex; align-items:center; justify-content:center; color:#fff;
   }
-  .un-score-body{ flex:1; min-width:0; }
+  .un-score-body{ flex:1; min-width:0; display:flex; flex-direction:column; }
   .un-score-name{ font-size:13px; font-weight:800; color:var(--cream); margin-bottom:6px; }
-  .un-score-bar{ height:6px; border-radius:4px; background:rgba(255,255,255,0.1); overflow:hidden; }
+  .un-score-bar{ display:block; height:6px; border-radius:4px; background:rgba(255,255,255,0.1); overflow:hidden; }
   .un-score-bar-fill{ display:block; height:100%; border-radius:4px; transition:width .25s ease; }
   .un-score-input{
     flex-shrink:0; width:44px; text-align:center; background:rgba(255,255,255,0.08);
@@ -1313,7 +1313,7 @@
   }
   .un-mini-date b{ font-size:14px; font-weight:900; color:var(--gold); }
   .un-mini-date em{ font-size:8.5px; font-weight:800; font-style:normal; letter-spacing:0.03em; color:rgba(216,168,62,0.75); text-transform:uppercase; }
-  .un-mini-body{ flex:1; min-width:0; }
+  .un-mini-body{ flex:1; min-width:0; display:flex; flex-direction:column; }
   .un-mini-title{ font-size:13px; font-weight:800; color:var(--cream); }
   .un-mini-meta{ font-size:11px; font-weight:600; color:rgba(245,239,225,0.5); margin-top:1px; }
   .un-mini-time{ flex-shrink:0; font-size:11.5px; font-weight:800; color:rgba(245,239,225,0.55); }
@@ -1348,7 +1348,7 @@
     flex-shrink:0; width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
     font-size:13px; font-weight:900; color:#08130A;
   }
-  .un-member-body{ flex:1; min-width:0; }
+  .un-member-body{ flex:1; min-width:0; display:flex; flex-direction:column; }
   .un-member-name{ font-size:13.5px; font-weight:800; color:var(--cream); }
   .un-member-role{ font-size:11px; font-weight:600; color:rgba(245,239,225,0.5); margin-top:1px; }
   .un-member-detail{ display:flex; flex-direction:column; gap:10px; padding:4px 2px 6px; }
@@ -1364,7 +1364,7 @@
     border-radius:14px; padding:12px 14px; box-shadow:0 6px 14px rgba(0,0,0,0.18);
   }
   .un-role-icon{ flex-shrink:0; width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; }
-  .un-role-body{ flex:1; min-width:0; }
+  .un-role-body{ flex:1; min-width:0; display:flex; flex-direction:column; }
   .un-role-name{ font-size:13px; font-weight:800; color:var(--cream); }
   .un-role-person{ font-size:12px; font-weight:600; color:rgba(245,239,225,0.5); margin-top:2px; }
   .un-role-row.c-green{ border-left-color:var(--accent); } .un-role-row.c-green .un-role-icon{ background:var(--accent); color:#08130A; }
@@ -1390,7 +1390,7 @@
   .un-activity-date em{ font-size:8.5px; font-weight:800; font-style:normal; letter-spacing:0.03em; color:rgba(8,19,10,0.7); text-transform:uppercase; }
   .un-activity-row.done .un-activity-date{ background:rgba(255,255,255,0.14); }
   .un-activity-row.done .un-activity-date b, .un-activity-row.done .un-activity-date em{ color:rgba(245,239,225,0.7); }
-  .un-activity-body{ flex:1; min-width:0; }
+  .un-activity-body{ flex:1; min-width:0; display:flex; flex-direction:column; }
   .un-activity-title{ font-size:13.5px; font-weight:800; color:var(--cream); }
   .un-activity-desc{ font-size:11.5px; font-weight:600; color:rgba(245,239,225,0.5); margin-top:2px; }
   .un-activity-time{ flex-shrink:0; font-size:12px; font-weight:800; color:rgba(245,239,225,0.6); }
