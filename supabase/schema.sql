@@ -502,6 +502,7 @@ create table if not exists eventos_agenda (
   lembrete_confirmado boolean not null default false,
   lembrete_confirmado_vezes int not null default 0,
   lembrete_ultima_confirmacao date,
+  lembrete_confirmado_por text,
   lembrete_repetir_on boolean not null default false,
   lembrete_repetir_dias int,
   lembrete_repetir_vezes int,
@@ -549,6 +550,12 @@ alter table eventos_agenda add column if not exists checklist_atividades jsonb n
 -- Escala de Oficiais (Secretaria) sem apagar o evento em si da Agenda Anual —
 -- só deixa de aparecer nessa lista específica.
 alter table eventos_agenda add column if not exists escala_oculta boolean not null default false;
+-- Quem confirmou o lembrete pela última vez (clique no ✓ do sino/banner) —
+-- registrado junto com lembrete_confirmado_vezes/lembrete_ultima_confirmacao,
+-- que até então só existiam na tela (nunca eram salvos no Supabase): o
+-- lembrete "esquecia" tudo a cada recarregamento e ignorava o limite de
+-- repetições configurado (lembrete_repetir_vezes).
+alter table eventos_agenda add column if not exists lembrete_confirmado_por text;
 
 create or replace function set_updated_at_eventos_agenda()
 returns trigger language plpgsql as $$

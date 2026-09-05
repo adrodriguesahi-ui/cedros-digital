@@ -3494,6 +3494,7 @@
                 </div>
                 <p class="pl-reminder-hint">Depois de você confirmar que viu o lembrete, ele volta a aparecer no sininho a cada intervalo definido, até atingir o número de vezes escolhido.</p>
               </div>
+              <p class="pl-reminder-hint" id="plReminderHistoryHint" style="display:none;"></p>
             </div>
           </div>
 
@@ -11469,6 +11470,18 @@
         fieldRepeatOn.checked = card.dataset.reminderRepeatOn === '1';
         fieldRepeatDays.value = card.dataset.reminderRepeatDays || '';
         fieldRepeatCount.value = card.dataset.reminderRepeatCount || '';
+        const historyHint = document.getElementById('plReminderHistoryHint');
+        const timesConfirmedSoFar = parseInt(card.dataset.reminderConfirmedTimes, 10) || 0;
+        if(historyHint){
+          if(timesConfirmedSoFar > 0){
+            historyHint.textContent = 'Já confirmado ' + timesConfirmedSoFar + 'x'
+              + (card.dataset.reminderLastConfirmedDate ? ' — última vez em ' + card.dataset.reminderLastConfirmedDate.split('-').reverse().join('/') : '')
+              + (card.dataset.reminderConfirmedPor ? ' por ' + card.dataset.reminderConfirmedPor : '') + '.';
+            historyHint.style.display = '';
+          } else {
+            historyHint.style.display = 'none';
+          }
+        }
         setPhoto(card.dataset.foto || '');
       } else {
         modalTitle.textContent = 'Novo Evento';
@@ -11496,6 +11509,8 @@
         fieldRepeatOn.checked = false;
         fieldRepeatDays.value = '';
         fieldRepeatCount.value = '';
+        const historyHintNew = document.getElementById('plReminderHistoryHint');
+        if(historyHintNew) historyHintNew.style.display = 'none';
         setPhoto('');
       }
       toggleReminderFields();
@@ -11591,6 +11606,7 @@
       a.dataset.reminderRepeatCount = data.reminderRepeatCount || '';
       a.dataset.reminderConfirmedTimes = data.reminderConfirmedTimes || '0';
       a.dataset.reminderLastConfirmedDate = data.reminderLastConfirmedDate || '';
+      a.dataset.reminderConfirmedPor = data.reminderConfirmedPor || '';
       const dowAbbr = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'][new Date(new Date().getFullYear(), data.monIdx - 1, parseInt(data.day, 10)).getDay()];
       a.innerHTML =
         '<div class="pl-event-date"><em>' + dowAbbr + '</em><b>' + data.day + '</b></div>' +
@@ -11694,7 +11710,8 @@
         reminderRepeatDays: row.lembrete_repetir_dias != null ? String(row.lembrete_repetir_dias) : '',
         reminderRepeatCount: row.lembrete_repetir_vezes != null ? String(row.lembrete_repetir_vezes) : '',
         reminderConfirmedTimes: String(row.lembrete_confirmado_vezes || 0),
-        reminderLastConfirmedDate: row.lembrete_ultima_confirmacao || ''
+        reminderLastConfirmedDate: row.lembrete_ultima_confirmacao || '',
+        reminderConfirmedPor: row.lembrete_confirmado_por || ''
       };
     }
 
@@ -12281,6 +12298,17 @@
       card.dataset.reminderConfirmedTimes = String(timesConfirmed);
       card.dataset.reminderLastConfirmedDate = todayStr;
       refreshReminderBell();
+      // Sem isso, a confirmação só existia na tela: recarregar a página
+      // esquecia tudo e o lembrete voltava a aparecer do zero, ignorando o
+      // limite de repetições já configurado (lembrete_repetir_vezes).
+      if(supa && card.dataset.id){
+        supa.from('eventos_agenda').update({
+          lembrete_confirmado: true,
+          lembrete_confirmado_vezes: timesConfirmed,
+          lembrete_ultima_confirmacao: todayStr,
+          lembrete_confirmado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
+        }).eq('id', card.dataset.id);
+      }
     }
 
     function openBellPanel(){
