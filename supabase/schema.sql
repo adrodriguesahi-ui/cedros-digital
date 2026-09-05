@@ -401,8 +401,12 @@ create table if not exists usuario_matricula_oficial (
   usuario_id uuid primary key references usuarios(id) on delete cascade,
   matriculado boolean not null default false,
   verificado_em timestamptz,
-  verificado_por text
+  verificado_por text,
+  numero_matricula text
 );
+
+-- Coluna adicionada depois da criação inicial da tabela (rodar de novo é seguro)
+alter table usuario_matricula_oficial add column if not exists numero_matricula text;
 
 alter table unidades enable row level security;
 alter table unit_funcoes enable row level security;

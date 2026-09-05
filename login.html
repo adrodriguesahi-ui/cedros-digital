@@ -13853,13 +13853,14 @@
         roster = data || [];
         if(roster.length){
           const ids = roster.map(m => m.id);
-          const { data: matriculas } = await supa.from('usuario_matricula_oficial').select('usuario_id, matriculado, verificado_em').in('usuario_id', ids);
+          const { data: matriculas } = await supa.from('usuario_matricula_oficial').select('usuario_id, matriculado, verificado_em, numero_matricula').in('usuario_id', ids);
           const byId = {};
           (matriculas || []).forEach(r => { byId[r.usuario_id] = r; });
           roster.forEach(m => {
             const r = byId[m.id];
             m.matriculado = r ? !!r.matriculado : false;
             m.matriculaVerificadoEm = r ? r.verificado_em : null;
+            m.matriculaNumero = r ? r.numero_matricula : null;
           });
         }
       }
@@ -13991,7 +13992,7 @@
 
       function updateMatriculaUI(){
         matRow.querySelector('span').textContent = m.matriculado
-          ? ('✅ Matriculado' + (m.matriculaVerificadoEm ? ' — conferido em ' + new Date(m.matriculaVerificadoEm).toLocaleDateString('pt-BR') : ''))
+          ? ('✅ Matriculado' + (m.matriculaNumero ? ' (nº ' + m.matriculaNumero + ')' : '') + (m.matriculaVerificadoEm ? ' — conferido em ' + new Date(m.matriculaVerificadoEm).toLocaleDateString('pt-BR') : ''))
           : '⚠️ Ainda não confirmado';
         matBtn.className = 'pl-btn ' + (m.matriculado ? 'pl-btn-neutral' : 'pl-btn-primary');
         matBtn.textContent = m.matriculado ? 'Desmarcar matrícula' : 'Marcar como matriculado';
