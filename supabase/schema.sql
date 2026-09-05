@@ -381,6 +381,19 @@ create table if not exists unit_cantinho_fotos (
   created_at timestamptz not null default now()
 );
 
+-- Verificação assistida de matrícula oficial (Início → Unidades → Membros):
+-- o app NÃO se conecta ao clubes.adventistas.org (não é uma API pública, é só
+-- o portal de login manual "Unit Control" com código do clube + senha por
+-- unidade — credenciais que não devem ficar guardadas aqui). Em vez disso,
+-- o líder confere manualmente lá e marca aqui, por desbravador, se já está
+-- matriculado no sistema oficial — vira uma lista de pendências por nome.
+create table if not exists usuario_matricula_oficial (
+  usuario_id uuid primary key references usuarios(id) on delete cascade,
+  matriculado boolean not null default false,
+  verificado_em timestamptz,
+  verificado_por text
+);
+
 alter table unidades enable row level security;
 alter table unit_funcoes enable row level security;
 alter table unit_atividades enable row level security;
@@ -391,6 +404,7 @@ alter table unidade_pontos enable row level security;
 alter table unit_cantinho enable row level security;
 alter table unit_cantinho_pontos enable row level security;
 alter table unit_cantinho_fotos enable row level security;
+alter table usuario_matricula_oficial enable row level security;
 
 drop policy if exists "unidades: acesso publico" on unidades;
 create policy "unidades: acesso publico" on unidades for all using (true) with check (true);
@@ -421,6 +435,9 @@ create policy "unit_cantinho_pontos: acesso publico" on unit_cantinho_pontos for
 
 drop policy if exists "unit_cantinho_fotos: acesso publico" on unit_cantinho_fotos;
 create policy "unit_cantinho_fotos: acesso publico" on unit_cantinho_fotos for all using (true) with check (true);
+
+drop policy if exists "usuario_matricula_oficial: acesso publico" on usuario_matricula_oficial;
+create policy "usuario_matricula_oficial: acesso publico" on usuario_matricula_oficial for all using (true) with check (true);
 
 -- ---------------------------------------------------------------------
 -- eventos_agenda: eventos da Agenda Anual (Planejamento Anual). Antes
