@@ -8355,8 +8355,12 @@
               <div class="un-member-list" id="unMemberList">
                 <p class="un-empty-hint">Nenhum membro cadastrado nesta unidade ainda.</p>
               </div>
+              <button type="button" class="pl-btn pl-btn-primary" id="unMatriculaExportBtn" style="margin-top:12px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:5px;"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+                Exportar lista de matrícula
+              </button>
               <p class="pl-reminder-hint">Lista sincronizada com Administração → Usuários. Pra adicionar, editar ou remover alguém desta unidade, gerencie o cadastro por lá.</p>
-              <p class="pl-reminder-hint">"Matrícula oficial" é conferida manualmente: o app não acessa o clubes.adventistas.org (não existe API pública, só o login da unidade). Abra o Unit Control lá, confira o nome e marque aqui.</p>
+              <p class="pl-reminder-hint">"Matrícula oficial" é conferida manualmente: o app não acessa o clubes.adventistas.org (não existe API pública, só o login da unidade). Abra o Unit Control lá, confira o nome e marque aqui. Use "Exportar" pra copiar a lista de pendentes e ajudar no cadastro por lá.</p>
             </div>
 
             <!-- ---- Funções ---- -->
@@ -13902,6 +13906,40 @@
         e.preventDefault();
         memberMatriculaFilter = !memberMatriculaFilter;
         renderMembers();
+      });
+    }
+
+    const matriculaExportBtn = document.getElementById('unMatriculaExportBtn');
+    if(matriculaExportBtn){
+      matriculaExportBtn.addEventListener('click', () => {
+        if(!currentUnit) return;
+        const pendentes = memberRoster.filter(m => !m.matriculado).map(m => m.nome).sort();
+        const matriculados = memberRoster.filter(m => m.matriculado).length;
+        const today = new Date().toLocaleDateString('pt-BR');
+        const lines = [
+          'Clube: Cedros do Líbano (Código 14534)',
+          'Unidade: ' + currentUnit,
+          'Data: ' + today,
+          '',
+          'Matrícula oficial: ' + matriculados + ' de ' + memberRoster.length,
+          ''
+        ];
+        if(pendentes.length){
+          lines.push('Pendentes de matrícula:');
+          pendentes.forEach(nome => lines.push('- ' + nome));
+        } else {
+          lines.push('Nenhuma pendência — todos já matriculados.');
+        }
+        const text = lines.join('\n');
+
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(text).then(() => {
+            matriculaExportBtn.textContent = 'Copiado! ✓';
+            setTimeout(() => { matriculaExportBtn.textContent = 'Exportar lista de matrícula'; }, 1800);
+          }).catch(() => { window.prompt('Copie o resumo abaixo:', text); });
+        } else {
+          window.prompt('Copie o resumo abaixo:', text);
+        }
       });
     }
 
