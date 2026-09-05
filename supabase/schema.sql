@@ -86,6 +86,10 @@ alter table usuarios add column if not exists data_nascimento date;
 -- Conselheira de uma unidade e também Coordenadora de Unidades) e o campo
 -- cargo só guarda um valor por pessoa.
 alter table usuarios add column if not exists pode_pontuar_unidades boolean not null default false;
+-- Ativar/Desativar Membro (Administração → editar usuário): desliga o acesso
+-- e some da contagem de membros das Unidades sem apagar o cadastro/histórico
+-- da pessoa — mesma ideia do status "inativa" já usado em unidades.status.
+alter table usuarios add column if not exists ativo boolean not null default true;
 
 insert into usuarios (nome, email, unidade, papel) values
   ('Adrodrigues Santos', 'adrodrigues@cedrosdigital.org', 'Ype', 'Administrador'),

@@ -10048,6 +10048,18 @@
           </label>
           <p class="pl-reminder-hint" style="margin:-10px 0 14px;">Libera o atalho "🏆 Pontuação" no hub de Unidades pra essa pessoa, independente do cargo ou papel dela.</p>
 
+          <label class="pl-reminder-toggle-row" for="adFieldAtivo" style="margin:14px 0;">
+            <span class="pl-reminder-toggle-text">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg>
+              Membro ativo
+            </span>
+            <span class="pl-switch">
+              <input type="checkbox" id="adFieldAtivo" checked>
+              <span class="pl-switch-track"><span class="pl-switch-thumb"></span></span>
+            </span>
+          </label>
+          <p class="pl-reminder-hint" style="margin:-10px 0 14px;">Desativado: a pessoa não consegue mais logar e some da contagem de membros das Unidades — sem apagar o cadastro nem o histórico.</p>
+
           <button type="button" class="pl-btn" id="adUserAccessBtn" style="background:rgba(255,255,255,0.08); color:var(--cream); margin-top:4px; display:none;">
             Definir acesso por área deste usuário
           </button>
@@ -13718,7 +13730,7 @@
     async function loadMemberCounts(){
       UNITS.forEach(u => { MEMBER_COUNT[u] = 0; });
       if(!supa) return;
-      const { data, error } = await supa.from('usuarios').select('unidade');
+      const { data, error } = await supa.from('usuarios').select('unidade, ativo').eq('ativo', true);
       if(error || !data) return;
       data.forEach(row => { if(MEMBER_COUNT.hasOwnProperty(row.unidade)) MEMBER_COUNT[row.unidade]++; });
     }
@@ -13849,7 +13861,7 @@
       memberMatriculaFilter = false;
       let roster = [];
       if(supa){
-        const { data } = await supa.from('usuarios').select('id, nome, email, unidade, papel, cargo').eq('unidade', name).order('nome');
+        const { data } = await supa.from('usuarios').select('id, nome, email, unidade, papel, cargo, ativo').eq('unidade', name).order('nome');
         roster = data || [];
         if(roster.length){
           const ids = roster.map(m => m.id);
@@ -13904,8 +13916,9 @@
           '<svg class="cl-hub-row-arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
         row.querySelector('.un-member-avatar').textContent = initials;
         row.querySelector('.un-member-name').textContent = m.nome;
-        row.querySelector('.un-member-role').textContent = m.cargo || m.papel || '—';
+        row.querySelector('.un-member-role').textContent = (m.cargo || m.papel || '—') + (m.ativo === false ? ' · Inativo' : '');
         row.querySelector('.pl-event-tag').textContent = m.matriculado ? 'Matriculado' : 'Pendente';
+        if(m.ativo === false) row.style.opacity = '0.55';
         row.addEventListener('click', () => openMemberDetail(m));
         list.appendChild(row);
       });
@@ -17508,6 +17521,7 @@ const REQ_SUMMARIES = {
     const fieldCargo = document.getElementById('adFieldCargo');
     const fieldCanScore = document.getElementById('adFieldCanScore');
     const fieldBirthdate = document.getElementById('adFieldBirthdate');
+    const fieldAtivo = document.getElementById('adFieldAtivo');
     const userAccessBtn = document.getElementById('adUserAccessBtn');
     if(!content || !overlay) return;
 
@@ -17542,8 +17556,9 @@ const REQ_SUMMARIES = {
         '<span class="ad-card-access-btn" title="Gerenciar acesso"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.5 12.5 8-8M16 5l2 2M13 8l2 2"/></svg></span>';
       card.querySelector('.pl-event-title').textContent = row.nome;
       card.querySelector('.ad-col-email').textContent = row.email;
-      card.querySelector('.ad-col-unit').textContent = (row.unidade === 'Diretoria do Clube' ? '' : 'Unidade ') + row.unidade;
+      card.querySelector('.ad-col-unit').textContent = (row.unidade === 'Diretoria do Clube' ? '' : 'Unidade ') + row.unidade + (row.ativo === false ? ' · Inativo' : '');
       card.querySelector('.pl-event-tag').textContent = row.papel;
+      if(row.ativo === false) card.style.opacity = '0.55';
       card.dataset.id = row.id;
       card.dataset.name = row.nome;
       card.dataset.email = row.email;
@@ -17553,6 +17568,7 @@ const REQ_SUMMARIES = {
       card.dataset.cargo = row.cargo || '';
       card.dataset.canScore = row.pode_pontuar_unidades ? '1' : '';
       card.dataset.birthdate = row.data_nascimento || '';
+      card.dataset.ativo = row.ativo === false ? '0' : '1';
       if(row.acesso) card.dataset.access = JSON.stringify(row.acesso);
       card.addEventListener('click', (e) => { e.preventDefault(); openModal('edit', card); });
       return card;
@@ -17652,6 +17668,7 @@ const REQ_SUMMARIES = {
       fieldCargo.value = card ? (card.dataset.cargo || '') : '';
       fieldCanScore.checked = !!(card && card.dataset.canScore === '1');
       fieldBirthdate.value = card ? (card.dataset.birthdate || '') : '';
+      fieldAtivo.checked = card ? card.dataset.ativo !== '0' : true;
       userAccessBtn.style.display = (mode === 'edit') ? '' : 'none';
       window.__currentEditingUserCard = card || null;
       overlay.classList.add('show');
@@ -17669,7 +17686,8 @@ const REQ_SUMMARIES = {
         papel: fieldRole.value,
         cargo: fieldCargo.value.trim() || null,
         pode_pontuar_unidades: fieldCanScore.checked,
-        data_nascimento: fieldBirthdate.value || null
+        data_nascimento: fieldBirthdate.value || null,
+        ativo: fieldAtivo.checked
       };
       if(editingCard) payload.id = editingCard.dataset.id;
       const { data, error } = await supa.from('usuarios').upsert(payload).select().single();
@@ -17943,8 +17961,9 @@ const REQ_SUMMARIES = {
   // (ou seja, ainda não foi liberado por um admin) — usado pra barrar o acesso.
   async function applyLoggedInUser(authUser){
     if(!supa || !authUser || !authUser.email) return { found: false };
-    const { data: row } = await supa.from('usuarios').select('id, nome, papel, acesso, aprovado, unidade, cargo, pode_pontuar_unidades, data_nascimento').eq('email', authUser.email).maybeSingle();
-    if(!row || row.aprovado === false){ window.__currentUsuario = null; return { found: false }; }
+    const { data: row } = await supa.from('usuarios').select('id, nome, papel, acesso, aprovado, ativo, unidade, cargo, pode_pontuar_unidades, data_nascimento').eq('email', authUser.email).maybeSingle();
+    if(!row || row.aprovado === false){ window.__currentUsuario = null; return { found: false, reason: 'aprovado' }; }
+    if(row.ativo === false){ window.__currentUsuario = null; return { found: false, reason: 'ativo' }; }
     let access = row.acesso;
     if(!access){
       const { data: def } = await supa.rpc('permissoes_padrao_papel', { papel_nome: row.papel });
@@ -17965,10 +17984,12 @@ const REQ_SUMMARIES = {
     if(!supa) return { error: 'Login indisponível: Supabase não configurado.' };
     const { data, error } = await supa.auth.signInWithPassword({ email: values.email, password: values.password });
     if(error) return { error: 'E-mail ou senha incorretos.' };
-    const { found } = await applyLoggedInUser(data.user);
+    const { found, reason } = await applyLoggedInUser(data.user);
     if(!found){
       await supa.auth.signOut();
-      return { error: 'Seu cadastro ainda não foi aprovado pela diretoria. Aguarde a liberação de acesso.' };
+      return { error: reason === 'ativo'
+        ? 'Seu acesso foi desativado. Fale com a diretoria do clube.'
+        : 'Seu cadastro ainda não foi aprovado pela diretoria. Aguarde a liberação de acesso.' };
     }
     // "Lembrar-me": pede pro navegador salvar a credencial (prompt nativo "Salvar senha?"),
     // pra autopreencher e-mail/senha da próxima vez. A senha só passa direto do formulário
