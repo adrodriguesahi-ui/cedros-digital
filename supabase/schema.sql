@@ -44,6 +44,16 @@ insert into papeis (nome, cor, permissoes_padrao) values
     "planning":true,"classes":true,"units":false,"devotional":false,
     "treasury":false,"secretary":false,"storage":false,"manuals":true,
     "birthdays":false,"specialties":true,"admin":false
+  }'::jsonb),
+  -- Membro do clube (a criança/adolescente em si) — diferente dos demais
+  -- papéis acima, que são todos de liderança. Sem acesso a telas
+  -- administrativas (tesouraria, secretaria, almoxarifado, unidades,
+  -- admin); só o que é do próprio desbravador: agenda, progresso nas
+  -- classes/especialidades, devocional e manuais.
+  ('Desbravador', 'orange', '{
+    "planning":true,"classes":true,"units":false,"devotional":true,
+    "treasury":false,"secretary":false,"storage":false,"manuals":true,
+    "birthdays":false,"specialties":true,"admin":false
   }'::jsonb)
 on conflict (nome) do nothing;
 
