@@ -10027,10 +10027,26 @@
             </div>
             <div>
               <label class="pl-field-label">Data de nascimento</label>
-              <input type="date" class="pl-input" id="adFieldBirthdate">
+              <input type="text" class="pl-input" id="adFieldBirthdate" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="bday" maxlength="10">
             </div>
           </div>
-          <p class="pl-reminder-hint">Cargo, se preenchido, aparece no painel dessa pessoa no lugar da frequência de presenças. A data de nascimento alimenta a lista de Aniversariantes.</p>
+          <p class="pl-reminder-hint">Cargo, se preenchido, aparece no painel dessa pessoa no lugar da frequência de presenças. A data de nascimento (digite DD/MM/AAAA) alimenta a lista de Aniversariantes.</p>
+
+          <label class="pl-field-label">Classe / Cartão (opcional)</label>
+          <select class="pl-input" id="adFieldClasse">
+            <option value="">Nenhuma</option>
+            <option value="Amigo">Amigo</option>
+            <option value="Companheiro">Companheiro</option>
+            <option value="Pesquisador">Pesquisador</option>
+            <option value="Pioneiro">Pioneiro</option>
+            <option value="Excursionista">Excursionista</option>
+            <option value="Guia">Guia</option>
+            <option value="Classe Agrupada">Classe Agrupada</option>
+            <option value="Cartão de Liderança">Cartão de Liderança</option>
+            <option value="Líder Master">Líder Master</option>
+            <option value="Líder Master Avançado">Líder Master Avançado</option>
+          </select>
+          <p class="pl-reminder-hint">Ao definir, essa pessoa já aparece pronta em Classes Regulares → esse cartão, pra marcar requisitos — sem precisar cadastrar de novo lá.</p>
 
           <!-- Permissão independente do cargo/papel — uma pessoa pode acumular várias
                funções no clube, então isso fica à parte em vez de "engolido" pelo campo
@@ -10047,6 +10063,18 @@
             </span>
           </label>
           <p class="pl-reminder-hint" style="margin:-10px 0 14px;">Libera o atalho "🏆 Pontuação" no hub de Unidades pra essa pessoa, independente do cargo ou papel dela.</p>
+
+          <label class="pl-reminder-toggle-row" for="adFieldAtivo" style="margin:14px 0;">
+            <span class="pl-reminder-toggle-text">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m9 12 2 2 4-4"/></svg>
+              Membro ativo
+            </span>
+            <span class="pl-switch">
+              <input type="checkbox" id="adFieldAtivo" checked>
+              <span class="pl-switch-track"><span class="pl-switch-thumb"></span></span>
+            </span>
+          </label>
+          <p class="pl-reminder-hint" style="margin:-10px 0 14px;">Desativado: a pessoa não consegue mais logar e some da contagem de membros das Unidades — sem apagar o cadastro nem o histórico.</p>
 
           <button type="button" class="pl-btn" id="adUserAccessBtn" style="background:rgba(255,255,255,0.08); color:var(--cream); margin-top:4px; display:none;">
             Definir acesso por área deste usuário
@@ -12650,6 +12678,14 @@
       if(alunosErr){ console.error('Erro ao carregar desbravadores:', alunosErr.message); return; }
       if(!alunos || !alunos.length) return;
 
+      // Recarrega do zero (não só soma) — chamado de novo depois que
+      // Administração muda o cartão de alguém; sem isso, quem trocou de
+      // classe ficava "fantasma" na lista da classe antiga.
+      Object.keys(CLASS_STUDENTS).forEach(k => { CLASS_STUDENTS[k] = []; });
+      Object.keys(STUDENT_IDS).forEach(k => { STUDENT_IDS[k] = {}; });
+      Object.keys(CLASS_PROGRESS).forEach(k => { CLASS_PROGRESS[k] = {}; });
+      Object.keys(CLASS_COMPROVANTES).forEach(k => { CLASS_COMPROVANTES[k] = {}; });
+
       const { data: progresso, error: progressoErr } = await supa.from('progresso_requisitos').select('desbravador_id, requisito_titulo, status');
       if(progressoErr) console.error('Erro ao carregar progresso:', progressoErr.message);
 
@@ -12683,6 +12719,22 @@
         applyStudentProgressToCards();
       }
     }
+
+    // Chamado por Administração (ver adFieldClasse) quando alguém define o
+    // cartão/classe de um usuário — cria ou atualiza a linha correspondente
+    // aqui em `desbravadores` (ligada por usuario_id), pra essa pessoa já
+    // aparecer pronta em Classes Regulares sem precisar cadastrar de novo.
+    async function syncDesbravadorFromUsuario(usuario){
+      if(!supa || !usuario || !usuario.classe) return;
+      const { data: existing } = await supa.from('desbravadores').select('id, classe').eq('usuario_id', usuario.id).maybeSingle();
+      if(existing){
+        await supa.from('desbravadores').update({ nome: usuario.nome, classe: usuario.classe }).eq('id', existing.id);
+      } else {
+        await supa.from('desbravadores').insert({ nome: usuario.nome, classe: usuario.classe, usuario_id: usuario.id });
+      }
+      await loadClassDataFromSupabase();
+    }
+    window.__syncDesbravadorFromUsuario = syncDesbravadorFromUsuario;
 
     function renderStudentBar(className){
       ensureClassData(className);
@@ -13718,7 +13770,7 @@
     async function loadMemberCounts(){
       UNITS.forEach(u => { MEMBER_COUNT[u] = 0; });
       if(!supa) return;
-      const { data, error } = await supa.from('usuarios').select('unidade');
+      const { data, error } = await supa.from('usuarios').select('unidade, ativo').eq('ativo', true);
       if(error || !data) return;
       data.forEach(row => { if(MEMBER_COUNT.hasOwnProperty(row.unidade)) MEMBER_COUNT[row.unidade]++; });
     }
@@ -13849,7 +13901,7 @@
       memberMatriculaFilter = false;
       let roster = [];
       if(supa){
-        const { data } = await supa.from('usuarios').select('id, nome, email, unidade, papel, cargo').eq('unidade', name).order('nome');
+        const { data } = await supa.from('usuarios').select('id, nome, email, unidade, papel, cargo, ativo').eq('unidade', name).order('nome');
         roster = data || [];
         if(roster.length){
           const ids = roster.map(m => m.id);
@@ -13904,8 +13956,9 @@
           '<svg class="cl-hub-row-arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
         row.querySelector('.un-member-avatar').textContent = initials;
         row.querySelector('.un-member-name').textContent = m.nome;
-        row.querySelector('.un-member-role').textContent = m.cargo || m.papel || '—';
+        row.querySelector('.un-member-role').textContent = (m.cargo || m.papel || '—') + (m.ativo === false ? ' · Inativo' : '');
         row.querySelector('.pl-event-tag').textContent = m.matriculado ? 'Matriculado' : 'Pendente';
+        if(m.ativo === false) row.style.opacity = '0.55';
         row.addEventListener('click', () => openMemberDetail(m));
         list.appendChild(row);
       });
@@ -17508,6 +17561,8 @@ const REQ_SUMMARIES = {
     const fieldCargo = document.getElementById('adFieldCargo');
     const fieldCanScore = document.getElementById('adFieldCanScore');
     const fieldBirthdate = document.getElementById('adFieldBirthdate');
+    const fieldAtivo = document.getElementById('adFieldAtivo');
+    const fieldClasse = document.getElementById('adFieldClasse');
     const userAccessBtn = document.getElementById('adUserAccessBtn');
     if(!content || !overlay) return;
 
@@ -17519,6 +17574,32 @@ const REQ_SUMMARIES = {
 
     function normalize(s){
       return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    }
+
+    // Data de nascimento digitada (DD/MM/AAAA) em vez do seletor nativo — mais
+    // rápido pra digitar uma data antiga do que rolar o calendário no celular.
+    function birthdateIsoToBr(iso){
+      if(!iso) return '';
+      const [y, m, d] = iso.split('-');
+      return d + '/' + m + '/' + y;
+    }
+    function birthdateBrToIso(br){
+      const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec((br || '').trim());
+      if(!m) return null;
+      const day = parseInt(m[1], 10), month = parseInt(m[2], 10), year = parseInt(m[3], 10);
+      const date = new Date(year, month - 1, day);
+      if(date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+      return m[3] + '-' + m[2] + '-' + m[1];
+    }
+    if(fieldBirthdate){
+      fieldBirthdate.addEventListener('input', () => {
+        fieldBirthdate.style.borderColor = '';
+        const digits = fieldBirthdate.value.replace(/\D/g, '').slice(0, 8);
+        let formatted = digits;
+        if(digits.length > 4) formatted = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+        else if(digits.length > 2) formatted = digits.slice(0, 2) + '/' + digits.slice(2);
+        fieldBirthdate.value = formatted;
+      });
     }
 
     function applyFilter(){
@@ -17542,8 +17623,9 @@ const REQ_SUMMARIES = {
         '<span class="ad-card-access-btn" title="Gerenciar acesso"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.5 12.5 8-8M16 5l2 2M13 8l2 2"/></svg></span>';
       card.querySelector('.pl-event-title').textContent = row.nome;
       card.querySelector('.ad-col-email').textContent = row.email;
-      card.querySelector('.ad-col-unit').textContent = (row.unidade === 'Diretoria do Clube' ? '' : 'Unidade ') + row.unidade;
+      card.querySelector('.ad-col-unit').textContent = (row.unidade === 'Diretoria do Clube' ? '' : 'Unidade ') + row.unidade + (row.ativo === false ? ' · Inativo' : '');
       card.querySelector('.pl-event-tag').textContent = row.papel;
+      if(row.ativo === false) card.style.opacity = '0.55';
       card.dataset.id = row.id;
       card.dataset.name = row.nome;
       card.dataset.email = row.email;
@@ -17553,6 +17635,8 @@ const REQ_SUMMARIES = {
       card.dataset.cargo = row.cargo || '';
       card.dataset.canScore = row.pode_pontuar_unidades ? '1' : '';
       card.dataset.birthdate = row.data_nascimento || '';
+      card.dataset.ativo = row.ativo === false ? '0' : '1';
+      card.dataset.classe = row.classe || '';
       if(row.acesso) card.dataset.access = JSON.stringify(row.acesso);
       card.addEventListener('click', (e) => { e.preventDefault(); openModal('edit', card); });
       return card;
@@ -17651,7 +17735,10 @@ const REQ_SUMMARIES = {
       fieldRole.value = card ? card.dataset.role : (fieldRole.options[0] ? fieldRole.options[0].value : '');
       fieldCargo.value = card ? (card.dataset.cargo || '') : '';
       fieldCanScore.checked = !!(card && card.dataset.canScore === '1');
-      fieldBirthdate.value = card ? (card.dataset.birthdate || '') : '';
+      fieldBirthdate.value = card ? birthdateIsoToBr(card.dataset.birthdate) : '';
+      fieldBirthdate.style.borderColor = '';
+      fieldAtivo.checked = card ? card.dataset.ativo !== '0' : true;
+      fieldClasse.value = card ? (card.dataset.classe || '') : '';
       userAccessBtn.style.display = (mode === 'edit') ? '' : 'none';
       window.__currentEditingUserCard = card || null;
       overlay.classList.add('show');
@@ -17661,6 +17748,11 @@ const REQ_SUMMARIES = {
 
     async function save(){
       if(!fieldName.value.trim()){ fieldName.style.borderColor = '#FF6B5C'; return; }
+      let birthdateIso = null;
+      if(fieldBirthdate.value.trim()){
+        birthdateIso = birthdateBrToIso(fieldBirthdate.value);
+        if(!birthdateIso){ fieldBirthdate.style.borderColor = '#FF6B5C'; return; }
+      }
       if(!supa) return;
       const payload = {
         nome: fieldName.value.trim(),
@@ -17669,11 +17761,14 @@ const REQ_SUMMARIES = {
         papel: fieldRole.value,
         cargo: fieldCargo.value.trim() || null,
         pode_pontuar_unidades: fieldCanScore.checked,
-        data_nascimento: fieldBirthdate.value || null
+        data_nascimento: birthdateIso,
+        ativo: fieldAtivo.checked,
+        classe: fieldClasse.value || null
       };
       if(editingCard) payload.id = editingCard.dataset.id;
       const { data, error } = await supa.from('usuarios').upsert(payload).select().single();
       if(error){ alert('Não foi possível salvar: ' + error.message); return; }
+      if(data.classe && window.__syncDesbravadorFromUsuario) await window.__syncDesbravadorFromUsuario(data);
       const card = buildCard(data);
       if(editingCard){ editingCard.replaceWith(card); } else { content.insertBefore(card, content.firstChild); }
       applyFilter();
@@ -17943,8 +18038,9 @@ const REQ_SUMMARIES = {
   // (ou seja, ainda não foi liberado por um admin) — usado pra barrar o acesso.
   async function applyLoggedInUser(authUser){
     if(!supa || !authUser || !authUser.email) return { found: false };
-    const { data: row } = await supa.from('usuarios').select('id, nome, papel, acesso, aprovado, unidade, cargo, pode_pontuar_unidades, data_nascimento').eq('email', authUser.email).maybeSingle();
-    if(!row || row.aprovado === false){ window.__currentUsuario = null; return { found: false }; }
+    const { data: row } = await supa.from('usuarios').select('id, nome, papel, acesso, aprovado, ativo, unidade, cargo, pode_pontuar_unidades, data_nascimento').eq('email', authUser.email).maybeSingle();
+    if(!row || row.aprovado === false){ window.__currentUsuario = null; return { found: false, reason: 'aprovado' }; }
+    if(row.ativo === false){ window.__currentUsuario = null; return { found: false, reason: 'ativo' }; }
     let access = row.acesso;
     if(!access){
       const { data: def } = await supa.rpc('permissoes_padrao_papel', { papel_nome: row.papel });
@@ -17965,10 +18061,12 @@ const REQ_SUMMARIES = {
     if(!supa) return { error: 'Login indisponível: Supabase não configurado.' };
     const { data, error } = await supa.auth.signInWithPassword({ email: values.email, password: values.password });
     if(error) return { error: 'E-mail ou senha incorretos.' };
-    const { found } = await applyLoggedInUser(data.user);
+    const { found, reason } = await applyLoggedInUser(data.user);
     if(!found){
       await supa.auth.signOut();
-      return { error: 'Seu cadastro ainda não foi aprovado pela diretoria. Aguarde a liberação de acesso.' };
+      return { error: reason === 'ativo'
+        ? 'Seu acesso foi desativado. Fale com a diretoria do clube.'
+        : 'Seu cadastro ainda não foi aprovado pela diretoria. Aguarde a liberação de acesso.' };
     }
     // "Lembrar-me": pede pro navegador salvar a credencial (prompt nativo "Salvar senha?"),
     // pra autopreencher e-mail/senha da próxima vez. A senha só passa direto do formulário

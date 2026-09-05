@@ -86,6 +86,16 @@ alter table usuarios add column if not exists data_nascimento date;
 -- Conselheira de uma unidade e também Coordenadora de Unidades) e o campo
 -- cargo só guarda um valor por pessoa.
 alter table usuarios add column if not exists pode_pontuar_unidades boolean not null default false;
+-- Ativar/Desativar Membro (Administração → editar usuário): desliga o acesso
+-- e some da contagem de membros das Unidades sem apagar o cadastro/histórico
+-- da pessoa — mesma ideia do status "inativa" já usado em unidades.status.
+alter table usuarios add column if not exists ativo boolean not null default true;
+-- Cartão/classe regular da pessoa (Amigo, Companheiro, ... ver CLASS list em
+-- Classes Regulares). Ao definir aqui em Administração, o app cria/atualiza
+-- automaticamente a linha correspondente em `desbravadores` (ligada por
+-- usuario_id) — assim a pessoa já aparece pronta em Classes Regulares pra
+-- marcar requisitos, sem precisar cadastrar de novo lá.
+alter table usuarios add column if not exists classe text;
 
 insert into usuarios (nome, email, unidade, papel) values
   ('Adrodrigues Santos', 'adrodrigues@cedrosdigital.org', 'Ype', 'Administrador'),
@@ -146,6 +156,14 @@ create table if not exists desbravadores (
   classe text not null,
   created_at timestamptz not null default now()
 );
+
+-- Liga um desbravador ao usuário correspondente em Administração (opcional —
+-- continua dando pra cadastrar alguém direto por Classes Regulares, sem
+-- conta no app, como sempre foi). Preenchido quando o cartão é definido em
+-- Administração → editar usuário (ver usuarios.classe abaixo); índice
+-- parcial porque a maioria das linhas antigas não tem esse vínculo.
+alter table desbravadores add column if not exists usuario_id uuid references usuarios(id) on delete set null;
+create unique index if not exists desbravadores_usuario_id_key on desbravadores(usuario_id) where usuario_id is not null;
 
 create table if not exists progresso_requisitos (
   id uuid primary key default gen_random_uuid(),
