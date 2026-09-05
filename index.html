@@ -10027,10 +10027,10 @@
             </div>
             <div>
               <label class="pl-field-label">Data de nascimento</label>
-              <input type="date" class="pl-input" id="adFieldBirthdate">
+              <input type="text" class="pl-input" id="adFieldBirthdate" placeholder="DD/MM/AAAA" inputmode="numeric" autocomplete="bday" maxlength="10">
             </div>
           </div>
-          <p class="pl-reminder-hint">Cargo, se preenchido, aparece no painel dessa pessoa no lugar da frequência de presenças. A data de nascimento alimenta a lista de Aniversariantes.</p>
+          <p class="pl-reminder-hint">Cargo, se preenchido, aparece no painel dessa pessoa no lugar da frequência de presenças. A data de nascimento (digite DD/MM/AAAA) alimenta a lista de Aniversariantes.</p>
 
           <label class="pl-field-label">Classe / Cartão (opcional)</label>
           <select class="pl-input" id="adFieldClasse">
@@ -17576,6 +17576,32 @@ const REQ_SUMMARIES = {
       return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
     }
 
+    // Data de nascimento digitada (DD/MM/AAAA) em vez do seletor nativo — mais
+    // rápido pra digitar uma data antiga do que rolar o calendário no celular.
+    function birthdateIsoToBr(iso){
+      if(!iso) return '';
+      const [y, m, d] = iso.split('-');
+      return d + '/' + m + '/' + y;
+    }
+    function birthdateBrToIso(br){
+      const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec((br || '').trim());
+      if(!m) return null;
+      const day = parseInt(m[1], 10), month = parseInt(m[2], 10), year = parseInt(m[3], 10);
+      const date = new Date(year, month - 1, day);
+      if(date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+      return m[3] + '-' + m[2] + '-' + m[1];
+    }
+    if(fieldBirthdate){
+      fieldBirthdate.addEventListener('input', () => {
+        fieldBirthdate.style.borderColor = '';
+        const digits = fieldBirthdate.value.replace(/\D/g, '').slice(0, 8);
+        let formatted = digits;
+        if(digits.length > 4) formatted = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+        else if(digits.length > 2) formatted = digits.slice(0, 2) + '/' + digits.slice(2);
+        fieldBirthdate.value = formatted;
+      });
+    }
+
     function applyFilter(){
       if(!searchInput) return;
       const term = normalize(searchInput.value.trim());
@@ -17709,7 +17735,8 @@ const REQ_SUMMARIES = {
       fieldRole.value = card ? card.dataset.role : (fieldRole.options[0] ? fieldRole.options[0].value : '');
       fieldCargo.value = card ? (card.dataset.cargo || '') : '';
       fieldCanScore.checked = !!(card && card.dataset.canScore === '1');
-      fieldBirthdate.value = card ? (card.dataset.birthdate || '') : '';
+      fieldBirthdate.value = card ? birthdateIsoToBr(card.dataset.birthdate) : '';
+      fieldBirthdate.style.borderColor = '';
       fieldAtivo.checked = card ? card.dataset.ativo !== '0' : true;
       fieldClasse.value = card ? (card.dataset.classe || '') : '';
       userAccessBtn.style.display = (mode === 'edit') ? '' : 'none';
@@ -17721,6 +17748,11 @@ const REQ_SUMMARIES = {
 
     async function save(){
       if(!fieldName.value.trim()){ fieldName.style.borderColor = '#FF6B5C'; return; }
+      let birthdateIso = null;
+      if(fieldBirthdate.value.trim()){
+        birthdateIso = birthdateBrToIso(fieldBirthdate.value);
+        if(!birthdateIso){ fieldBirthdate.style.borderColor = '#FF6B5C'; return; }
+      }
       if(!supa) return;
       const payload = {
         nome: fieldName.value.trim(),
@@ -17729,7 +17761,7 @@ const REQ_SUMMARIES = {
         papel: fieldRole.value,
         cargo: fieldCargo.value.trim() || null,
         pode_pontuar_unidades: fieldCanScore.checked,
-        data_nascimento: fieldBirthdate.value || null,
+        data_nascimento: birthdateIso,
         ativo: fieldAtivo.checked,
         classe: fieldClasse.value || null
       };
