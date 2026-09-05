@@ -10032,6 +10032,22 @@
           </div>
           <p class="pl-reminder-hint">Cargo, se preenchido, aparece no painel dessa pessoa no lugar da frequência de presenças. A data de nascimento alimenta a lista de Aniversariantes.</p>
 
+          <label class="pl-field-label">Classe / Cartão (opcional)</label>
+          <select class="pl-input" id="adFieldClasse">
+            <option value="">Nenhuma</option>
+            <option value="Amigo">Amigo</option>
+            <option value="Companheiro">Companheiro</option>
+            <option value="Pesquisador">Pesquisador</option>
+            <option value="Pioneiro">Pioneiro</option>
+            <option value="Excursionista">Excursionista</option>
+            <option value="Guia">Guia</option>
+            <option value="Classe Agrupada">Classe Agrupada</option>
+            <option value="Cartão de Liderança">Cartão de Liderança</option>
+            <option value="Líder Master">Líder Master</option>
+            <option value="Líder Master Avançado">Líder Master Avançado</option>
+          </select>
+          <p class="pl-reminder-hint">Ao definir, essa pessoa já aparece pronta em Classes Regulares → esse cartão, pra marcar requisitos — sem precisar cadastrar de novo lá.</p>
+
           <!-- Permissão independente do cargo/papel — uma pessoa pode acumular várias
                funções no clube, então isso fica à parte em vez de "engolido" pelo campo
                Cargo (que só guarda um valor por pessoa). Ver tela de Pontuação de
@@ -12662,6 +12678,14 @@
       if(alunosErr){ console.error('Erro ao carregar desbravadores:', alunosErr.message); return; }
       if(!alunos || !alunos.length) return;
 
+      // Recarrega do zero (não só soma) — chamado de novo depois que
+      // Administração muda o cartão de alguém; sem isso, quem trocou de
+      // classe ficava "fantasma" na lista da classe antiga.
+      Object.keys(CLASS_STUDENTS).forEach(k => { CLASS_STUDENTS[k] = []; });
+      Object.keys(STUDENT_IDS).forEach(k => { STUDENT_IDS[k] = {}; });
+      Object.keys(CLASS_PROGRESS).forEach(k => { CLASS_PROGRESS[k] = {}; });
+      Object.keys(CLASS_COMPROVANTES).forEach(k => { CLASS_COMPROVANTES[k] = {}; });
+
       const { data: progresso, error: progressoErr } = await supa.from('progresso_requisitos').select('desbravador_id, requisito_titulo, status');
       if(progressoErr) console.error('Erro ao carregar progresso:', progressoErr.message);
 
@@ -12695,6 +12719,22 @@
         applyStudentProgressToCards();
       }
     }
+
+    // Chamado por Administração (ver adFieldClasse) quando alguém define o
+    // cartão/classe de um usuário — cria ou atualiza a linha correspondente
+    // aqui em `desbravadores` (ligada por usuario_id), pra essa pessoa já
+    // aparecer pronta em Classes Regulares sem precisar cadastrar de novo.
+    async function syncDesbravadorFromUsuario(usuario){
+      if(!supa || !usuario || !usuario.classe) return;
+      const { data: existing } = await supa.from('desbravadores').select('id, classe').eq('usuario_id', usuario.id).maybeSingle();
+      if(existing){
+        await supa.from('desbravadores').update({ nome: usuario.nome, classe: usuario.classe }).eq('id', existing.id);
+      } else {
+        await supa.from('desbravadores').insert({ nome: usuario.nome, classe: usuario.classe, usuario_id: usuario.id });
+      }
+      await loadClassDataFromSupabase();
+    }
+    window.__syncDesbravadorFromUsuario = syncDesbravadorFromUsuario;
 
     function renderStudentBar(className){
       ensureClassData(className);
@@ -17522,6 +17562,7 @@ const REQ_SUMMARIES = {
     const fieldCanScore = document.getElementById('adFieldCanScore');
     const fieldBirthdate = document.getElementById('adFieldBirthdate');
     const fieldAtivo = document.getElementById('adFieldAtivo');
+    const fieldClasse = document.getElementById('adFieldClasse');
     const userAccessBtn = document.getElementById('adUserAccessBtn');
     if(!content || !overlay) return;
 
@@ -17569,6 +17610,7 @@ const REQ_SUMMARIES = {
       card.dataset.canScore = row.pode_pontuar_unidades ? '1' : '';
       card.dataset.birthdate = row.data_nascimento || '';
       card.dataset.ativo = row.ativo === false ? '0' : '1';
+      card.dataset.classe = row.classe || '';
       if(row.acesso) card.dataset.access = JSON.stringify(row.acesso);
       card.addEventListener('click', (e) => { e.preventDefault(); openModal('edit', card); });
       return card;
@@ -17669,6 +17711,7 @@ const REQ_SUMMARIES = {
       fieldCanScore.checked = !!(card && card.dataset.canScore === '1');
       fieldBirthdate.value = card ? (card.dataset.birthdate || '') : '';
       fieldAtivo.checked = card ? card.dataset.ativo !== '0' : true;
+      fieldClasse.value = card ? (card.dataset.classe || '') : '';
       userAccessBtn.style.display = (mode === 'edit') ? '' : 'none';
       window.__currentEditingUserCard = card || null;
       overlay.classList.add('show');
@@ -17687,11 +17730,13 @@ const REQ_SUMMARIES = {
         cargo: fieldCargo.value.trim() || null,
         pode_pontuar_unidades: fieldCanScore.checked,
         data_nascimento: fieldBirthdate.value || null,
-        ativo: fieldAtivo.checked
+        ativo: fieldAtivo.checked,
+        classe: fieldClasse.value || null
       };
       if(editingCard) payload.id = editingCard.dataset.id;
       const { data, error } = await supa.from('usuarios').upsert(payload).select().single();
       if(error){ alert('Não foi possível salvar: ' + error.message); return; }
+      if(data.classe && window.__syncDesbravadorFromUsuario) await window.__syncDesbravadorFromUsuario(data);
       const card = buildCard(data);
       if(editingCard){ editingCard.replaceWith(card); } else { content.insertBefore(card, content.firstChild); }
       applyFilter();
