@@ -8348,10 +8348,15 @@
                 <svg class="pl-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input type="text" class="pl-input pl-search-input" id="unMemberSearch" placeholder="Buscar membro...">
               </div>
+              <div class="un-summary-head" style="margin-bottom:10px;">
+                <span class="un-section-title" style="margin:0;" id="unMatriculaSummaryText">Matrícula oficial: —</span>
+                <a href="#" class="un-link-small" id="unMatriculaFilterBtn">Só pendentes</a>
+              </div>
               <div class="un-member-list" id="unMemberList">
                 <p class="un-empty-hint">Nenhum membro cadastrado nesta unidade ainda.</p>
               </div>
               <p class="pl-reminder-hint">Lista sincronizada com Administração → Usuários. Pra adicionar, editar ou remover alguém desta unidade, gerencie o cadastro por lá.</p>
+              <p class="pl-reminder-hint">"Matrícula oficial" é conferida manualmente: o app não acessa o clubes.adventistas.org (não existe API pública, só o login da unidade). Abra o Unit Control lá, confira o nome e marque aqui.</p>
             </div>
 
             <!-- ---- Funções ---- -->
@@ -13828,14 +13833,28 @@
     // Membros (lê de `usuarios`, mesma fonte da Chamada de Presença)
     // ---------------------------------------------------------------
     const memberSearchInput = document.getElementById('unMemberSearch');
+    const matriculaFilterBtn = document.getElementById('unMatriculaFilterBtn');
+    let memberMatriculaFilter = false;
 
     async function loadMembers(name){
       const list = document.getElementById('unMemberList');
       list.innerHTML = '<p class="un-empty-hint">Carregando...</p>';
       memberRoster = [];
+      memberMatriculaFilter = false;
       if(supa){
         const { data } = await supa.from('usuarios').select('id, nome, email, unidade, papel, cargo').eq('unidade', name).order('nome');
         memberRoster = data || [];
+        if(memberRoster.length){
+          const ids = memberRoster.map(m => m.id);
+          const { data: matriculas } = await supa.from('usuario_matricula_oficial').select('usuario_id, matriculado, verificado_em').in('usuario_id', ids);
+          const byId = {};
+          (matriculas || []).forEach(r => { byId[r.usuario_id] = r; });
+          memberRoster.forEach(m => {
+            const r = byId[m.id];
+            m.matriculado = r ? !!r.matriculado : false;
+            m.matriculaVerificadoEm = r ? r.verificado_em : null;
+          });
+        }
       }
       renderMembers();
     }
@@ -13843,10 +13862,19 @@
     function renderMembers(){
       const list = document.getElementById('unMemberList');
       const term = normalize(memberSearchInput.value.trim());
-      const filtered = memberRoster.filter(m => !term || normalize(m.nome).indexOf(term) !== -1);
+      let filtered = memberRoster.filter(m => !term || normalize(m.nome).indexOf(term) !== -1);
+      if(memberMatriculaFilter) filtered = filtered.filter(m => !m.matriculado);
+
+      const total = memberRoster.length;
+      const matriculados = memberRoster.filter(m => m.matriculado).length;
+      const summaryEl = document.getElementById('unMatriculaSummaryText');
+      if(summaryEl) summaryEl.textContent = 'Matrícula oficial: ' + (total ? (matriculados + ' de ' + total) : '—');
+      if(matriculaFilterBtn) matriculaFilterBtn.textContent = memberMatriculaFilter ? 'Ver todos' : 'Só pendentes';
+
       list.innerHTML = '';
       if(!filtered.length){
-        const msg = memberRoster.length ? 'Nenhum membro encontrado.' : 'Nenhum membro cadastrado nesta unidade ainda.';
+        const msg = !memberRoster.length ? 'Nenhum membro cadastrado nesta unidade ainda.'
+          : (memberMatriculaFilter ? 'Nenhuma pendência — todo mundo já está com a matrícula confirmada!' : 'Nenhum membro encontrado.');
         list.innerHTML = '<p class="un-empty-hint">' + msg + '</p>';
         return;
       }
@@ -13858,15 +13886,24 @@
         row.innerHTML =
           '<span class="un-member-avatar" style="background:' + (COLOR_HEX[meta.cor] || '#9AA3A0') + '"></span>' +
           '<span class="un-member-body"><span class="un-member-name"></span><span class="un-member-role"></span></span>' +
+          '<span class="pl-event-tag ' + (m.matriculado ? 'pl-tag-green' : 'pl-tag-gold') + '"></span>' +
           '<svg class="cl-hub-row-arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
         row.querySelector('.un-member-avatar').textContent = initials;
         row.querySelector('.un-member-name').textContent = m.nome;
         row.querySelector('.un-member-role').textContent = m.cargo || m.papel || '—';
+        row.querySelector('.pl-event-tag').textContent = m.matriculado ? 'Matriculado' : 'Pendente';
         row.addEventListener('click', () => openMemberDetail(m));
         list.appendChild(row);
       });
     }
     memberSearchInput.addEventListener('input', renderMembers);
+    if(matriculaFilterBtn){
+      matriculaFilterBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        memberMatriculaFilter = !memberMatriculaFilter;
+        renderMembers();
+      });
+    }
 
     function openMemberDetail(m){
       document.getElementById('unMemberModalTitle').textContent = m.nome;
@@ -13893,6 +13930,37 @@
           attendRow.querySelector('span').textContent = res.total ? (res.presentes + '/' + res.total + ' reuniões (' + pct + '%)') : 'Sem reuniões registradas ainda';
         });
       }
+
+      const matRow = document.createElement('div');
+      matRow.className = 'un-member-detail-row';
+      matRow.innerHTML = '<b></b><span></span>';
+      matRow.querySelector('b').textContent = 'Matrícula no clube oficial';
+      matRow.querySelector('span').textContent = m.matriculado
+        ? ('✅ Matriculado' + (m.matriculaVerificadoEm ? ' — conferido em ' + new Date(m.matriculaVerificadoEm).toLocaleDateString('pt-BR') : ''))
+        : '⚠️ Ainda não confirmado';
+      wrap.appendChild(matRow);
+
+      const matBtn = document.createElement('button');
+      matBtn.type = 'button';
+      matBtn.className = 'pl-btn ' + (m.matriculado ? 'pl-btn-neutral' : 'pl-btn-primary');
+      matBtn.style.marginTop = '4px';
+      matBtn.textContent = m.matriculado ? 'Desmarcar matrícula' : 'Marcar como matriculado';
+      matBtn.addEventListener('click', async () => {
+        m.matriculado = !m.matriculado;
+        m.matriculaVerificadoEm = m.matriculado ? new Date().toISOString() : null;
+        openMemberDetail(m);
+        renderMembers();
+        if(supa){
+          await supa.from('usuario_matricula_oficial').upsert({
+            usuario_id: m.id,
+            matriculado: m.matriculado,
+            verificado_em: m.matriculaVerificadoEm,
+            verificado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
+          }, { onConflict: 'usuario_id' });
+        }
+      });
+      wrap.appendChild(matBtn);
+
       document.getElementById('unMemberModalOverlay').classList.add('show');
     }
     document.getElementById('unMemberModalClose').addEventListener('click', () => document.getElementById('unMemberModalOverlay').classList.remove('show'));
@@ -15864,6 +15932,7 @@
     let roster = [];
 
     function birthdayParts(dateStr){
+      if(!dateStr) return { month: 0, day: 0 };
       const p = dateStr.split('-').map(n => parseInt(n, 10));
       return { month: p[1], day: p[2] };
     }
