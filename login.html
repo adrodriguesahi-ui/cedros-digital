@@ -577,6 +577,21 @@
   .notice-desc{ font-size:12.5px; font-weight:600; color:var(--lg-muted); line-height:1.4; }
   .notice-time{ flex-shrink:0; display:flex; align-items:center; gap:3px; font-size:11.5px; font-weight:700; color:var(--lg-muted); white-space:nowrap; margin-top:2px; }
 
+  /* ---- Ícones inline (substituem emojis usados como ícone em rótulos,
+     botões e títulos — ver .icon-inline abaixo). Estilo de linha (outline),
+     mesmo padrão dos SVGs da barra inferior. ---- */
+  .icon-inline{
+    width:1em; height:1em; flex:0 0 auto;
+    vertical-align:-0.16em;
+    margin-right:6px;
+    stroke:currentColor;
+  }
+  .icon-inline-lg{ width:1.15em; height:1.15em; margin-right:8px; }
+  .class-color-dot{
+    display:inline-block; width:10px; height:10px; border-radius:50%;
+    margin-right:6px; flex:0 0 auto; vertical-align:middle;
+  }
+
   /* ---- Bottom tab bar ---- */
   .dash-tabbar{
     display:flex; align-items:stretch; justify-content:space-around;
@@ -1355,6 +1370,8 @@
   .un-member-detail-row{ display:flex; flex-direction:column; gap:2px; }
   .un-member-detail-row b{ font-size:10.5px; font-weight:800; text-transform:uppercase; letter-spacing:0.03em; color:rgba(245,239,225,0.45); }
   .un-member-detail-row span{ font-size:14px; font-weight:700; color:var(--cream); }
+  .un-mat-status{ display:flex; align-items:center; }
+  .un-mat-status-icon{ display:flex; }
 
   /* ---- Funções ---- */
   .un-role-list{ display:flex; flex-direction:column; gap:10px; }
@@ -2942,7 +2959,7 @@
       <div class="cv-wrap">
         <img class="cv-logo" src="" alt="" id="cvLogo">
         <p class="cv-brand">CLUBE DE DESBRAVADORES CEDROS DO LÍBANO</p>
-        <h2 class="cv-title">📎 Comprovante de Requisito</h2>
+        <h2 class="cv-title"><svg class="icon-inline icon-inline-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Comprovante de Requisito</h2>
         <p class="cv-loading" id="cvLoading">Carregando...</p>
         <p class="cv-error" id="cvError" style="display:none;">Não foi possível encontrar esse comprovante. O link pode estar errado ou o comprovante foi removido.</p>
         <div class="cv-body" id="cvBody" style="display:none;">
@@ -2962,7 +2979,7 @@
       <div class="cv-wrap">
         <img class="cv-logo" src="" alt="" id="spubLogo">
         <p class="cv-brand">CLUBE DE DESBRAVADORES CEDROS DO LÍBANO</p>
-        <h2 class="cv-title">🏅 Especialidade</h2>
+        <h2 class="cv-title"><svg class="icon-inline icon-inline-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>Especialidade</h2>
         <p class="cv-loading" id="spubLoading">Carregando...</p>
         <p class="cv-error" id="spubError" style="display:none;">Não foi possível encontrar essa especialidade. O link pode estar errado.</p>
         <div class="cv-body" id="spubBody" style="display:none; max-width:420px;">
@@ -2983,11 +3000,11 @@
             <p class="sd-req-text" id="spubReqText" style="display:none;"></p>
           </div>
           <div class="pl-view-block" id="spubAulaBlock" style="width:100%; text-align:left; display:none;">
-            <h4 class="un-section-title">📚 Aula</h4>
+            <h4 class="un-section-title"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Aula</h4>
             <div class="cv-attachments" id="spubAulaList"></div>
           </div>
           <div class="pl-view-block" id="spubAvalBlock" style="width:100%; text-align:left; display:none;">
-            <h4 class="un-section-title">📝 Avaliação</h4>
+            <h4 class="un-section-title"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Avaliação</h4>
             <div class="cv-attachments" id="spubAvalList"></div>
           </div>
         </div>
@@ -3406,18 +3423,18 @@
           <textarea class="pl-input pl-textarea" id="plFieldNote" rows="2" placeholder="Observações internas, o que levar, etc." maxlength="300"></textarea>
 
           <div class="pl-schedule-section">
-            <label class="pl-field-label" style="margin-top:0;">👮 Oficial de Dia (1)</label>
+            <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Oficial de Dia (1)</label>
             <select class="pl-input" id="plFieldOfficer1"><option value="">Nenhum</option></select>
 
-            <label class="pl-field-label">👮 Oficial de Dia (2)</label>
+            <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Oficial de Dia (2)</label>
             <select class="pl-input" id="plFieldOfficer2"><option value="">Nenhum</option></select>
 
-            <label class="pl-field-label">📋 Programação do Dia</label>
-            <button type="button" class="pl-list-add-btn pl-list-template-btn" id="plScheduleTemplateBtn">📋 Carregar modelo padrão da Reunião Regular</button>
+            <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Programação do Dia</label>
+            <button type="button" class="pl-list-add-btn pl-list-template-btn" id="plScheduleTemplateBtn"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Carregar modelo padrão da Reunião Regular</button>
             <div class="pl-schedule-list" id="plScheduleList"></div>
             <button type="button" class="pl-list-add-btn" id="plScheduleAddBtn">+ Adicionar horário</button>
 
-            <label class="pl-field-label">🤝 Aviso aos Membros</label>
+            <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Aviso aos Membros</label>
             <textarea class="pl-input pl-textarea" id="plFieldNotice" rows="3" placeholder="Mensagem para os membros (pode incluir um versículo)..." maxlength="400"></textarea>
 
             <label class="pl-field-label">Checklist de Atividades</label>
@@ -3494,6 +3511,7 @@
                 </div>
                 <p class="pl-reminder-hint">Depois de você confirmar que viu o lembrete, ele volta a aparecer no sininho a cada intervalo definido, até atingir o número de vezes escolhido.</p>
               </div>
+              <p class="pl-reminder-hint" id="plReminderHistoryHint" style="display:none;"></p>
             </div>
           </div>
 
@@ -3553,18 +3571,18 @@
           </div>
 
           <div class="pl-view-block" id="plViewOfficersBlock" style="display:none;">
-            <span class="pl-field-label">👮 Oficiais de Dia</span>
+            <span class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Oficiais de Dia</span>
             <p class="pl-view-text" id="plViewOfficers"></p>
           </div>
 
           <div class="pl-view-block" id="plViewScheduleBlock" style="display:none;">
-            <span class="pl-field-label">📋 Programação do Dia</span>
+            <span class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Programação do Dia</span>
             <div class="pl-view-schedule" id="plViewSchedule"></div>
-            <button type="button" class="pl-btn pl-btn-primary" id="plViewPdfBtn" style="width:100%; margin-top:10px;">📄 Gerar PDF da Programação</button>
+            <button type="button" class="pl-btn pl-btn-primary" id="plViewPdfBtn" style="width:100%; margin-top:10px;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Gerar PDF da Programação</button>
           </div>
 
           <div class="pl-view-block pl-view-notice-block" id="plViewNoticeBlock" style="display:none;">
-            <span class="pl-field-label" style="margin-top:0;">🤝 Aviso aos Membros</span>
+            <span class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Aviso aos Membros</span>
             <p class="pl-view-text" id="plViewNotice"></p>
           </div>
 
@@ -3607,7 +3625,7 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <h3 class="pl-title" id="clTitle">Classes Regulares</h3>
-          <button type="button" class="pl-back" id="clPlanningOpenBtn" aria-label="Planejamento de Aula" style="display:none;">📚</button>
+          <button type="button" class="pl-back" id="clPlanningOpenBtn" aria-label="Planejamento de Aula" style="display:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></button>
         </div>
 
         <div class="cl-hub" id="clHub">
@@ -8024,7 +8042,7 @@
             <button type="button" class="cl-status-pick-btn" data-status="done" data-color="green" data-label="Concluída">Concluída</button>
           </div>
 
-          <label class="pl-field-label">📎 Comprovação (opcional)</label>
+          <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Comprovação (opcional)</label>
           <div class="cl-photo-row">
             <label class="cl-photo-btn" for="clComprovanteCamera">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h7l1 1.5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg>
@@ -8039,7 +8057,7 @@
           </div>
           <p class="pl-reminder-hint">Pode anexar quantas fotos ou arquivos quiser — cada um vira um comprovante separado.</p>
           <div class="cl-comprovante-list" id="clComprovanteList"></div>
-          <button type="button" class="pl-btn pl-list-template-btn" id="clComprovanteQrBtn" style="display:none; width:100%; margin-top:10px;">🔳 Gerar QR Code de comprovação</button>
+          <button type="button" class="pl-btn pl-list-template-btn" id="clComprovanteQrBtn" style="display:none; width:100%; margin-top:10px;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="17.5" y1="14" x2="17.5" y2="21"/><line x1="14" y1="17.5" x2="21" y2="17.5"/></svg>Gerar QR Code de comprovação</button>
         </div>
       </div>
 
@@ -8050,7 +8068,7 @@
       <div class="pl-modal-overlay" id="clQrOverlay">
         <div class="pl-modal">
           <div class="pl-modal-head">
-            <h4 class="pl-modal-title">🔳 QR Code de comprovação</h4>
+            <h4 class="pl-modal-title"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="17.5" y1="14" x2="17.5" y2="21"/><line x1="14" y1="17.5" x2="21" y2="17.5"/></svg>QR Code de comprovação</h4>
             <button type="button" class="pl-modal-close" id="clQrClose" aria-label="Fechar">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
@@ -8074,7 +8092,7 @@
           <button type="button" class="pl-dayview-icon-btn" id="clPlanningBack" aria-label="Voltar">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
-          <h3 class="pl-dayview-title" id="clPlanningTitle">📚 Planejamento</h3>
+          <h3 class="pl-dayview-title" id="clPlanningTitle"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Planejamento</h3>
           <button type="button" class="pl-dayview-icon-btn" id="clPlanningClose" aria-label="Fechar">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -8089,67 +8107,67 @@
 
         <div class="pl-dayview-list-wrap" id="clPlanningFormState" style="display:none;">
           <div id="clPlanningTemplateWrap" style="display:none;">
-            <label class="pl-field-label" style="margin-top:0;">📖 Modelo Pronto</label>
+            <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Modelo Pronto</label>
             <select class="pl-input" id="clPlanningTemplateSelect">
               <option value="">Carregar modelo do currículo anual (opcional)...</option>
             </select>
           </div>
-          <label class="pl-field-label" style="margin-top:0;">📋 1. Informações</label>
+          <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>1. Informações</label>
           <div class="pl-field-row">
             <div class="pl-field-col">
-              <label class="pl-field-label" style="margin-top:0;">📅 Data</label>
+              <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Data</label>
               <input type="date" class="pl-input" id="clPlanField_data">
             </div>
             <div class="pl-field-col">
-              <label class="pl-field-label" style="margin-top:0;">⏰ Horário</label>
+              <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Horário</label>
               <input type="time" class="pl-input" id="clPlanField_horario">
             </div>
           </div>
-          <label class="pl-field-label">👨‍🏫 Instrutor responsável</label>
+          <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Instrutor responsável</label>
           <input type="text" class="pl-input" id="clPlanField_instrutor" placeholder="Nome do instrutor" maxlength="60">
           <div class="pl-field-row">
             <div class="pl-field-col">
-              <label class="pl-field-label">👥 Qtd. de desbravadores</label>
+              <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Qtd. de desbravadores</label>
               <input type="number" class="pl-input" id="clPlanField_qtd" min="0" placeholder="Ex.: 12">
             </div>
             <div class="pl-field-col pl-field-col-wide">
-              <label class="pl-field-label">📍 Local</label>
+              <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Local</label>
               <input type="text" class="pl-input" id="clPlanField_local" placeholder="Ex.: Sede do Clube" maxlength="60">
             </div>
           </div>
 
-          <label class="pl-field-label">🎯 2. Atividade</label>
-          <label class="pl-field-label" style="margin-top:0;">📖 Requisito da classe</label>
+          <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>2. Atividade</label>
+          <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Requisito da classe</label>
           <input type="text" class="pl-input" id="clPlanField_requisito" list="clPlanningRequisitoOptions" placeholder="Selecione ou digite o requisito" maxlength="120">
           <datalist id="clPlanningRequisitoOptions"></datalist>
-          <label class="pl-field-label">📝 Tema</label>
+          <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Tema</label>
           <input type="text" class="pl-input" id="clPlanField_tema" placeholder="Ex.: Conhecendo a Bíblia" maxlength="80">
           <div class="pl-field-row">
             <div class="pl-field-col pl-field-col-wide">
-              <label class="pl-field-label">🎯 Objetivo da aula</label>
+              <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>Objetivo da aula</label>
               <input type="text" class="pl-input" id="clPlanField_objetivo" placeholder="Ao final, o desbravador deverá..." maxlength="200">
             </div>
             <div class="pl-field-col">
-              <label class="pl-field-label">⏱️ Duração</label>
+              <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 2h6"/></svg>Duração</label>
               <input type="text" class="pl-input" id="clPlanField_duracao" placeholder="Ex.: 45 min" maxlength="20">
             </div>
           </div>
-          <label class="pl-field-label">🧰 Materiais necessários</label>
+          <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/></svg>Materiais necessários</label>
           <textarea class="pl-input pl-textarea" id="clPlanField_materiais" rows="2" placeholder="Bíblia, cartolina, canetinha..." maxlength="300"></textarea>
 
-          <label class="pl-field-label">📚 3. Modelo de Aula</label>
-          <label class="pl-field-label" style="margin-top:0;">📖 Texto bíblico</label>
+          <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>3. Modelo de Aula</label>
+          <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Texto bíblico</label>
           <input type="text" class="pl-input" id="clPlanField_textoBiblico" placeholder="Ex.: Salmo 119:105" maxlength="80">
-          <label class="pl-field-label">💬 Introdução</label>
+          <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Introdução</label>
           <textarea class="pl-input pl-textarea" id="clPlanField_introducao" rows="2" placeholder="Pergunta inicial pra envolver os desbravadores..." maxlength="500"></textarea>
-          <label class="pl-field-label">📚 Desenvolvimento</label>
+          <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Desenvolvimento</label>
           <textarea class="pl-input pl-textarea" id="clPlanField_desenvolvimento" rows="3" placeholder="Explicação do conteúdo..." maxlength="800"></textarea>
-          <label class="pl-field-label">🎲 Atividade prática</label>
+          <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Atividade prática</label>
           <textarea class="pl-input pl-textarea" id="clPlanField_atividade" rows="2" placeholder="Dinâmica ou exercício relacionado ao requisito..." maxlength="500"></textarea>
-          <label class="pl-field-label">🙏 Aplicação espiritual</label>
+          <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>Aplicação espiritual</label>
           <textarea class="pl-input pl-textarea" id="clPlanField_aplicacao" rows="2" placeholder="Como podemos aplicar isso no nosso dia a dia?" maxlength="500"></textarea>
 
-          <label class="pl-field-label">✅ Avaliação</label>
+          <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Avaliação</label>
           <label class="pl-checklist-row" style="margin-bottom:8px;">
             <input type="checkbox" class="pl-checklist-done" id="clPlanField_avParticipou">
             <span style="color:var(--cream); font-size:13.5px; font-weight:600;">Participou</span>
@@ -8163,7 +8181,7 @@
             <span style="color:var(--cream); font-size:13.5px; font-weight:600;">Cumpriu o requisito</span>
           </label>
 
-          <label class="pl-field-label">📝 Observações do instrutor</label>
+          <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Observações do instrutor</label>
           <textarea class="pl-input pl-textarea" id="clPlanField_observacoes" rows="2" placeholder="Observações gerais sobre a aula..." maxlength="400"></textarea>
 
           <div class="pl-modal-actions">
@@ -8184,7 +8202,7 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <h3 class="pl-title" id="unTitle">Unidades</h3>
-          <button type="button" class="pl-back" id="unScoringOpenBtn" aria-label="Pontuação de Unidades" style="display:none;">🏆</button>
+          <button type="button" class="pl-back" id="unScoringOpenBtn" aria-label="Pontuação de Unidades" style="display:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M17 5h2a2 2 0 0 1 2 2 4 4 0 0 1-4 4M7 5H5a2 2 0 0 0-2 2 4 4 0 0 0 4 4"/></svg></button>
         </div>
 
         <div class="cl-hub" id="unHub">
@@ -8721,7 +8739,7 @@
           <button type="button" class="pl-back" id="usBackBtn" aria-label="Voltar">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
-          <h3 class="pl-title">🏆 Pontuação de Unidades</h3>
+          <h3 class="pl-title"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M17 5h2a2 2 0 0 1 2 2 4 4 0 0 1-4 4M7 5H5a2 2 0 0 0-2 2 4 4 0 0 0 4 4"/></svg>Pontuação de Unidades</h3>
           <span class="pl-topbar-spacer" aria-hidden="true"></span>
         </div>
 
@@ -9676,14 +9694,14 @@
         <p class="un-empty-hint" id="sdReqEmpty">Ainda não tem os requisitos completos cadastrados aqui.</p>
         <p class="sd-req-text" id="sdReqText" style="display:none;"></p>
 
-        <button type="button" class="pl-btn pl-btn-primary" id="sdPdfBtn" style="width:100%; margin:16px 0 8px;">📄 Baixar PDF</button>
-        <button type="button" class="pl-btn pl-btn-neutral" id="sdShareBtn" style="width:100%; margin:0 0 16px;">🔗 Compartilhar</button>
+        <button type="button" class="pl-btn pl-btn-primary" id="sdPdfBtn" style="width:100%; margin:16px 0 8px;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Baixar PDF</button>
+        <button type="button" class="pl-btn pl-btn-neutral" id="sdShareBtn" style="width:100%; margin:0 0 16px;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Compartilhar</button>
 
-        <h4 class="un-section-title">📚 Aula</h4>
+        <h4 class="un-section-title"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Aula</h4>
         <div class="cl-comprovante-list" id="sdAulaList"></div>
         <button type="button" class="pl-list-add-btn" id="sdAulaAddBtn">+ Anexar arquivo de aula</button>
 
-        <h4 class="un-section-title" style="margin-top:20px;">📝 Avaliação</h4>
+        <h4 class="un-section-title" style="margin-top:20px;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Avaliação</h4>
         <div class="cl-comprovante-list" id="sdAvalList"></div>
         <button type="button" class="pl-list-add-btn" id="sdAvalAddBtn" style="margin-bottom:20px;">+ Anexar arquivo de avaliação</button>
 
@@ -9717,7 +9735,7 @@
       <div class="pl-modal-overlay" id="sdQrOverlay">
         <div class="pl-modal">
           <div class="pl-modal-head">
-            <h4 class="pl-modal-title">🔳 Compartilhar especialidade</h4>
+            <h4 class="pl-modal-title"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="17.5" y1="14" x2="17.5" y2="21"/><line x1="14" y1="17.5" x2="21" y2="17.5"/></svg>Compartilhar especialidade</h4>
             <button type="button" class="pl-modal-close" id="sdQrClose" aria-label="Fechar">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
@@ -10206,7 +10224,7 @@
                Dia (card.dataset.schedule não vazio) — ver window.__plGetNextScheduledEvent
                mais abaixo no arquivo. Toca pra abrir o evento em modo leitura. -->
           <a href="#" class="bd-officer-chip bd-schedule-chip" id="bdScheduleReadyBanner" style="display:none;">
-            <span id="bdScheduleReadyInfo">📋 Programação pronta</span>
+            <span id="bdScheduleReadyInfo"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Programação pronta</span>
           </a>
         </p>
 
@@ -10224,7 +10242,7 @@
         </div>
 
         <div class="bd-reminder-banner bd-birthday-banner" id="bdBirthdayBanner" role="button" tabindex="0" data-goto="view-birthdays" style="display:none;">
-          <span class="bd-reminder-banner-icon">🎂</span>
+          <span class="bd-reminder-banner-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></span>
           <span class="bd-reminder-banner-body">
             <span class="bd-reminder-banner-title">Aniversário hoje</span>
             <span class="bd-reminder-banner-msg" id="bdBirthdayBannerMsg"></span>
@@ -10268,12 +10286,12 @@
               </div>
               <p class="pl-reminder-hint" style="margin:0 2px 14px;" id="bdOfficerFillEventLabel"></p>
 
-              <label class="pl-field-label" style="margin-top:0;">📋 Programação do Dia</label>
-              <button type="button" class="pl-list-add-btn pl-list-template-btn" id="bdOfficerScheduleTemplateBtn">📋 Carregar modelo padrão da Reunião Regular</button>
+              <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Programação do Dia</label>
+              <button type="button" class="pl-list-add-btn pl-list-template-btn" id="bdOfficerScheduleTemplateBtn"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Carregar modelo padrão da Reunião Regular</button>
               <div class="pl-schedule-list" id="bdOfficerScheduleList"></div>
               <button type="button" class="pl-list-add-btn" id="bdOfficerScheduleAddBtn">+ Adicionar horário</button>
 
-              <label class="pl-field-label">🤝 Aviso aos Membros</label>
+              <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Aviso aos Membros</label>
               <textarea class="pl-input pl-textarea" id="bdOfficerNotice" rows="3" placeholder="Mensagem para os membros (pode incluir um versículo)..." maxlength="400"></textarea>
 
               <label class="pl-field-label">Checklist de Atividades</label>
@@ -10281,7 +10299,7 @@
               <button type="button" class="pl-list-add-btn" id="bdOfficerChecklistAddBtn">+ Adicionar item</button>
 
               <div class="pl-modal-actions">
-                <button type="button" class="pl-btn" id="bdOfficerFillPdfBtn" style="background:rgba(255,255,255,0.08); color:var(--cream);">📄 PDF</button>
+                <button type="button" class="pl-btn" id="bdOfficerFillPdfBtn" style="background:rgba(255,255,255,0.08); color:var(--cream);"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>PDF</button>
                 <button type="button" class="pl-btn pl-btn-primary" id="bdOfficerFillSaveBtn">Salvar Programação</button>
               </div>
             </div>
@@ -11469,6 +11487,18 @@
         fieldRepeatOn.checked = card.dataset.reminderRepeatOn === '1';
         fieldRepeatDays.value = card.dataset.reminderRepeatDays || '';
         fieldRepeatCount.value = card.dataset.reminderRepeatCount || '';
+        const historyHint = document.getElementById('plReminderHistoryHint');
+        const timesConfirmedSoFar = parseInt(card.dataset.reminderConfirmedTimes, 10) || 0;
+        if(historyHint){
+          if(timesConfirmedSoFar > 0){
+            historyHint.textContent = 'Já confirmado ' + timesConfirmedSoFar + 'x'
+              + (card.dataset.reminderLastConfirmedDate ? ' — última vez em ' + card.dataset.reminderLastConfirmedDate.split('-').reverse().join('/') : '')
+              + (card.dataset.reminderConfirmedPor ? ' por ' + card.dataset.reminderConfirmedPor : '') + '.';
+            historyHint.style.display = '';
+          } else {
+            historyHint.style.display = 'none';
+          }
+        }
         setPhoto(card.dataset.foto || '');
       } else {
         modalTitle.textContent = 'Novo Evento';
@@ -11496,6 +11526,8 @@
         fieldRepeatOn.checked = false;
         fieldRepeatDays.value = '';
         fieldRepeatCount.value = '';
+        const historyHintNew = document.getElementById('plReminderHistoryHint');
+        if(historyHintNew) historyHintNew.style.display = 'none';
         setPhoto('');
       }
       toggleReminderFields();
@@ -11591,6 +11623,7 @@
       a.dataset.reminderRepeatCount = data.reminderRepeatCount || '';
       a.dataset.reminderConfirmedTimes = data.reminderConfirmedTimes || '0';
       a.dataset.reminderLastConfirmedDate = data.reminderLastConfirmedDate || '';
+      a.dataset.reminderConfirmedPor = data.reminderConfirmedPor || '';
       const dowAbbr = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'][new Date(new Date().getFullYear(), data.monIdx - 1, parseInt(data.day, 10)).getDay()];
       a.innerHTML =
         '<div class="pl-event-date"><em>' + dowAbbr + '</em><b>' + data.day + '</b></div>' +
@@ -11694,7 +11727,8 @@
         reminderRepeatDays: row.lembrete_repetir_dias != null ? String(row.lembrete_repetir_dias) : '',
         reminderRepeatCount: row.lembrete_repetir_vezes != null ? String(row.lembrete_repetir_vezes) : '',
         reminderConfirmedTimes: String(row.lembrete_confirmado_vezes || 0),
-        reminderLastConfirmedDate: row.lembrete_ultima_confirmacao || ''
+        reminderLastConfirmedDate: row.lembrete_ultima_confirmacao || '',
+        reminderConfirmedPor: row.lembrete_confirmado_por || ''
       };
     }
 
@@ -12281,6 +12315,17 @@
       card.dataset.reminderConfirmedTimes = String(timesConfirmed);
       card.dataset.reminderLastConfirmedDate = todayStr;
       refreshReminderBell();
+      // Sem isso, a confirmação só existia na tela: recarregar a página
+      // esquecia tudo e o lembrete voltava a aparecer do zero, ignorando o
+      // limite de repetições já configurado (lembrete_repetir_vezes).
+      if(supa && card.dataset.id){
+        supa.from('eventos_agenda').update({
+          lembrete_confirmado: true,
+          lembrete_confirmado_vezes: timesConfirmed,
+          lembrete_ultima_confirmacao: todayStr,
+          lembrete_confirmado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
+        }).eq('id', card.dataset.id);
+      }
     }
 
     function openBellPanel(){
@@ -12825,7 +12870,7 @@
           if(comprovantes.length){
             const primeiro = comprovantes[0];
             const isImage = primeiro.foto.indexOf('data:image') === 0;
-            const badgeContent = comprovantes.length > 1 ? String(comprovantes.length) : '📎';
+            const badgeContent = comprovantes.length > 1 ? String(comprovantes.length) : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>';
             thumbEl.innerHTML = (isImage
               ? '<img src="' + primeiro.foto + '" alt="Comprovante anexado">'
               : '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg>') +
@@ -13062,15 +13107,21 @@
     const qrCopyBtn = document.getElementById('clQrCopyBtn');
     const qrDownloadBtn = document.getElementById('clQrDownloadBtn');
 
-    // Dentro do app nativo (Capacitor), window.location.origin é "https://localhost"
-    // — um endereço que só existe dentro do WebView daquele aparelho específico,
-    // então um QR Code gerado com ele não abre em nenhum outro celular. Nesse caso
-    // usa sempre o link público real do site publicado (ver README para a URL).
+    // Dentro do app nativo (Capacitor), window.location.origin é um endereço que só
+    // existe dentro do WebView daquele aparelho específico — "https://localhost" no
+    // Android, mas "capacitor://localhost" no iOS (esquema próprio, sem "https")
+    // — então um QR Code gerado com ele não abre em nenhum outro celular (só em quem
+    // já tem o app instalado). Nesse caso usa sempre o link público real do site
+    // publicado (ver README para a URL).
     const PUBLIC_APP_URL = 'https://cedros-digital.adrodrigues-ahi.workers.dev/index.html';
+    function isRealPublicOrigin(){
+      return (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+        && window.location.hostname !== 'localhost';
+    }
     function buildComprovanteLink(desbravadorId, requisitoTitulo){
-      const base = window.location.origin === 'https://localhost'
-        ? PUBLIC_APP_URL
-        : window.location.origin + window.location.pathname;
+      const base = isRealPublicOrigin()
+        ? window.location.origin + window.location.pathname
+        : PUBLIC_APP_URL;
       return base + '#comprovante=' + encodeURIComponent(desbravadorId) + '|' + encodeURIComponent(requisitoTitulo);
     }
 
@@ -13448,15 +13499,20 @@
     const avCumpriu = document.getElementById('clPlanField_avCumpriu');
 
     const CLASS_DOT = {
-      'Amigo': '🟢', 'Companheiro': '🔵', 'Pesquisador': '🟠',
-      'Pioneiro': '🟣', 'Excursionista': '🔴', 'Guia': '🟡'
+      'Amigo': '#43a047', 'Companheiro': '#1e88e5', 'Pesquisador': '#fb8c00',
+      'Pioneiro': '#8e24aa', 'Excursionista': '#e53935', 'Guia': '#fdd835'
     };
+    const CLASS_DOT_FALLBACK_ICON = '<svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:0;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>';
 
     let planningClass = null;
     let plans = [];
     let editingPlan = null; // null = criando um planejamento novo
 
-    function classDot(classe){ return CLASS_DOT[classe] || '📚'; }
+    function classDot(classe){
+      return CLASS_DOT[classe]
+        ? '<span class="class-color-dot" style="background:' + CLASS_DOT[classe] + '"></span>'
+        : CLASS_DOT_FALLBACK_ICON;
+    }
 
     // Sugestões de requisito: reaproveita os cards já cadastrados em Classes
     // Regulares pra essa classe (data-title em .cl-activity-card), sem duplicar
@@ -13565,7 +13621,7 @@
 
     function openList(){
       editingPlan = null;
-      titleEl.textContent = classDot(planningClass) + ' Planejamento — ' + planningClass;
+      titleEl.innerHTML = classDot(planningClass) + ' Planejamento — ' + planningClass;
       listState.style.display = '';
       formState.style.display = 'none';
       backBtn.style.visibility = 'hidden';
@@ -14034,7 +14090,7 @@
 
       const matRow = document.createElement('div');
       matRow.className = 'un-member-detail-row';
-      matRow.innerHTML = '<b></b><span></span>';
+      matRow.innerHTML = '<b></b><span class="un-mat-status"><span class="un-mat-status-icon"></span><span class="un-mat-status-text"></span></span>';
       matRow.querySelector('b').textContent = 'Matrícula no clube oficial';
       wrap.appendChild(matRow);
 
@@ -14043,10 +14099,13 @@
       matBtn.style.marginTop = '4px';
       wrap.appendChild(matBtn);
 
+      const ICON_CHECK_CIRCLE = '<svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+      const ICON_ALERT_TRIANGLE = '<svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
       function updateMatriculaUI(){
-        matRow.querySelector('span').textContent = m.matriculado
-          ? ('✅ Matriculado' + (m.matriculaNumero ? ' (nº ' + m.matriculaNumero + ')' : '') + (m.matriculaVerificadoEm ? ' — conferido em ' + new Date(m.matriculaVerificadoEm).toLocaleDateString('pt-BR') : ''))
-          : '⚠️ Ainda não confirmado';
+        matRow.querySelector('.un-mat-status-icon').innerHTML = m.matriculado ? ICON_CHECK_CIRCLE : ICON_ALERT_TRIANGLE;
+        matRow.querySelector('.un-mat-status-text').textContent = m.matriculado
+          ? ('Matriculado' + (m.matriculaNumero ? ' (nº ' + m.matriculaNumero + ')' : '') + (m.matriculaVerificadoEm ? ' — conferido em ' + new Date(m.matriculaVerificadoEm).toLocaleDateString('pt-BR') : ''))
+          : 'Ainda não confirmado';
         matBtn.className = 'pl-btn ' + (m.matriculado ? 'pl-btn-neutral' : 'pl-btn-primary');
         matBtn.textContent = m.matriculado ? 'Desmarcar matrícula' : 'Marcar como matriculado';
       }
@@ -15328,7 +15387,7 @@
       const label1 = document.createElement('label');
       label1.className = 'pl-field-label';
       label1.style.marginTop = '0';
-      label1.textContent = '👮 Oficial 1';
+      label1.innerHTML = '<svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Oficial 1';
       const select1 = buildOfficerSelect(officerIds[0]);
       col1.appendChild(label1);
       col1.appendChild(select1);
@@ -15338,7 +15397,7 @@
       const label2 = document.createElement('label');
       label2.className = 'pl-field-label';
       label2.style.marginTop = '0';
-      label2.textContent = '👮 Oficial 2';
+      label2.innerHTML = '<svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Oficial 2';
       const select2 = buildOfficerSelect(officerIds[1]);
       col2.appendChild(label2);
       col2.appendChild(select2);
@@ -17017,7 +17076,7 @@ const REQ_SUMMARIES = {
           row.className = 'un-mini-row';
           row.style.cursor = 'pointer';
           row.innerHTML =
-            '<span class="un-mini-date"><b>🏅</b></span>' +
+            '<span class="un-mini-date"><b><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg></b></span>' +
             '<span class="un-mini-body"><span class="un-mini-title"></span><span class="un-mini-meta"></span></span>';
           row.querySelector('.un-mini-title').textContent = a.especialidade;
           row.querySelector('.un-mini-meta').textContent = (a.categoria || 'Sem área') + (a.data_conclusao ? ' · ' + new Date(a.data_conclusao + 'T00:00:00').toLocaleDateString('pt-BR') : '');
@@ -18611,7 +18670,7 @@ const REQ_SUMMARIES = {
       }
       scheduleReadyCard = result.card;
       const dateStr = result.date.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
-      scheduleReadyInfo.textContent = '📋 Programação pronta · ' + dateStr;
+      scheduleReadyInfo.innerHTML = '<svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Programação pronta · ' + dateStr;
       scheduleReadyBanner.title = scheduleReadyCard.dataset.title || '';
       scheduleReadyBanner.style.display = '';
     }
@@ -19047,13 +19106,18 @@ const REQ_SUMMARIES = {
 
     // Compartilhar por link/QR Code — abre a rota pública #especialidade=<nome>
     // (view-specialty-public), sem precisar de login. Dentro do app nativo
-    // (Capacitor), window.location.origin é "https://localhost", que só existe
-    // naquele aparelho — nesse caso usa sempre o link público real do site.
+    // (Capacitor), window.location.origin é um endereço que só existe naquele
+    // aparelho — "https://localhost" no Android, "capacitor://localhost" no iOS
+    // — nesse caso usa sempre o link público real do site.
     const PUBLIC_APP_URL = 'https://cedros-digital.adrodrigues-ahi.workers.dev/index.html';
+    function isRealPublicOrigin(){
+      return (window.location.protocol === 'http:' || window.location.protocol === 'https:')
+        && window.location.hostname !== 'localhost';
+    }
     function buildSpecialtyLink(nome){
-      const base = window.location.origin === 'https://localhost'
-        ? PUBLIC_APP_URL
-        : window.location.origin + window.location.pathname;
+      const base = isRealPublicOrigin()
+        ? window.location.origin + window.location.pathname
+        : PUBLIC_APP_URL;
       return base + '#especialidade=' + encodeURIComponent(nome);
     }
     if(shareBtn){
