@@ -10165,6 +10165,10 @@
             <span class="bd-qn-icon bd-qn-icon-img"><img src="icons/nav-units.png?v=2" alt="Unidades"></span>
             <span>Unidades</span>
           </a>
+          <a href="#" class="bd-qn-item" id="rankingOpenBtn" style="display:none;">
+            <span class="bd-qn-icon bd-qn-icon-img"><img src="icons/nav-ranking.png" alt="Ranking"></span>
+            <span>Ranking</span>
+          </a>
           <a href="#" class="bd-qn-item" data-goto="view-devotional">
             <span class="bd-qn-icon bd-qn-icon-img"><img src="icons/nav-devotional.png?v=2" alt="Devocional"></span>
             <span>Devocional</span>
@@ -18727,6 +18731,7 @@ const REQ_SUMMARIES = {
   // ---------------------------------------------------------------------
   (function(){
     const openBtn = document.getElementById('unScoringOpenBtn');
+    const dashOpenBtn = document.getElementById('rankingOpenBtn');
     const backBtn = document.getElementById('usBackBtn');
     const unitList = document.getElementById('usUnitList');
     const rankEl = document.getElementById('bentoUnitRank');
@@ -18737,6 +18742,7 @@ const REQ_SUMMARIES = {
     let currentUnit = null;
     let currentSign = 1;
     let loaded = false;
+    let cameFrom = 'view-units'; // pra onde o "Voltar" leva — depende de por onde entrou
 
     function totalsByUnit(){
       const totals = {};
@@ -18904,18 +18910,21 @@ const REQ_SUMMARIES = {
       });
     }
 
-    async function openScoringView(){
+    async function openScoringView(fromView){
+      cameFrom = fromView || 'view-units';
       showView('view-unit-scoring');
       if(!loaded) await loadData();
       renderUnitList();
     }
 
-    if(openBtn) openBtn.addEventListener('click', (e) => { e.preventDefault(); openScoringView(); });
-    if(backBtn) backBtn.addEventListener('click', (e) => { e.preventDefault(); showView('view-units'); });
+    if(openBtn) openBtn.addEventListener('click', (e) => { e.preventDefault(); openScoringView('view-units'); });
+    if(dashOpenBtn) dashOpenBtn.addEventListener('click', (e) => { e.preventDefault(); openScoringView('view-dashboard'); });
+    if(backBtn) backBtn.addEventListener('click', (e) => { e.preventDefault(); showView(cameFrom); });
 
     function applyScoringAccess(usuario){
-      if(!openBtn) return;
-      openBtn.style.display = (usuario && usuario.podePontuarUnidades) ? '' : 'none';
+      const canScore = !!(usuario && usuario.podePontuarUnidades);
+      if(openBtn) openBtn.style.display = canScore ? '' : 'none';
+      if(dashOpenBtn) dashOpenBtn.style.display = canScore ? '' : 'none';
     }
     document.addEventListener('cedros:loggedin', (e) => applyScoringAccess(e.detail));
     applyScoringAccess(window.__currentUsuario);
