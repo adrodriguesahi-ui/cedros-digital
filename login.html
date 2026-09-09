@@ -10504,38 +10504,19 @@
             </a>
           </div>
 
-          <div class="bd-section-head">
-            <h4>Avisos recentes</h4>
-            <a href="#" class="dash-link">Ver todos
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
-            </a>
-          </div>
+          <!-- "Avisos recentes": ainda não existe um sistema real de postagem
+               de avisos (sem tabela no Supabase, sem tela de publicação) —
+               fica oculto até esse recurso existir, em vez de mostrar itens
+               fixos que nunca mudam. -->
+          <div id="bdNoticesSection" style="display:none;">
+            <div class="bd-section-head">
+              <h4>Avisos recentes</h4>
+              <a href="#" class="dash-link">Ver todos
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+              </a>
+            </div>
 
-          <div class="notice-list bd-notice-list">
-            <a href="#" class="notice-item">
-              <span class="notice-icon bd-icon-green">
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3Z"/><path d="M11.6 16.8a3 3 0 0 1-5.8-1.6"/></svg>
-              </span>
-              <span class="notice-body">
-                <span class="notice-title">Doação de Alimentos</span>
-                <span class="notice-desc">Participe da campanha de arrecadação para famílias necessitadas.</span>
-              </span>
-              <span class="notice-time">2h atrás
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
-              </span>
-            </a>
-            <a href="#" class="notice-item">
-              <span class="notice-icon bd-icon-gold">
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>
-              </span>
-              <span class="notice-body">
-                <span class="notice-title">Inscrições para o Campori</span>
-                <span class="notice-desc">As inscrições já estão abertas! Garanta sua vaga.</span>
-              </span>
-              <span class="notice-time">1 dia atrás
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
-              </span>
-            </a>
+            <div class="notice-list bd-notice-list" id="bdNoticesList"></div>
           </div>
 
         </div>
