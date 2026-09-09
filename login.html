@@ -2114,11 +2114,9 @@
     flex-shrink:0; width:74px; display:flex; flex-direction:column;
     align-items:center; gap:7px; text-decoration:none;
   }
-  /* Um "flick" avança de 5 em 5 cards em vez de 1 em 1: só o 1º card de cada
-     grupo de 5 vira ponto de parada do scroll-snap (os outros 4 deslizam
-     livre até lá). scroll-snap-stop:always garante que nunca pula um grupo
-     inteiro num arraste mais forte. */
-  .bd-qn-item:nth-child(5n+1){ scroll-snap-align:start; scroll-snap-stop:always; }
+  /* Cada ícone é ponto de parada do scroll-snap, então o arraste (pra
+     qualquer lado) sempre estaciona alinhado num ícone, sem pular nenhum. */
+  .bd-qn-item{ scroll-snap-align:start; scroll-snap-stop:always; }
   .bd-qn-icon{
     width:56px; height:56px; border-radius:18px;
     display:flex; align-items:center; justify-content:center;
