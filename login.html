@@ -10245,6 +10245,20 @@
           </a>
         </p>
 
+        <!-- Só aparece pra quem é Oficial de Dia, enquanto a Programação do Dia
+             preenchida por ele estiver "em execução" (evento é hoje e o horário
+             atual já passou de uma atividade mas ainda não chegou na próxima) —
+             ver checkActivityTransitionAlert mais abaixo no arquivo. -->
+        <div class="bd-reminder-banner bd-activity-alert-banner" id="bdActivityAlertBanner" role="status" style="display:none;">
+          <span class="bd-reminder-banner-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+          </span>
+          <span class="bd-reminder-banner-body">
+            <span class="bd-reminder-banner-title">Atividade terminando</span>
+            <span class="bd-reminder-banner-msg" id="bdActivityAlertMsg"></span>
+          </span>
+        </div>
+
         <div class="bd-reminder-banner" id="bdReminderBanner" role="button" tabindex="0" style="display:none;">
           <span class="bd-reminder-banner-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
@@ -18714,6 +18728,98 @@ const REQ_SUMMARIES = {
       document.addEventListener('cedros:loggedin', refreshOfficerBanner);
     }
 
+    // ---- Alerta sonoro "atividade terminando" pro Oficial de Dia ----
+    // Enquanto o evento em que a pessoa é Oficial de Dia estiver acontecendo hoje,
+    // avisa (som + banner) quando a atividade atual da Programação do Dia está perto
+    // de acabar (a próxima começa em até 15min) — repete a cada checagem de 5min
+    // (~15, ~10, ~5min restantes) até a próxima atividade realmente começar, quando
+    // o alerta passa a valer pra ela e a de depois, e assim por diante.
+    const activityAlertBanner = document.getElementById('bdActivityAlertBanner');
+    const activityAlertMsg = document.getElementById('bdActivityAlertMsg');
+    const ACTIVITY_ALERT_WINDOW_MIN = 15;
+    let lastActivityAlertKey = null;
+
+    function playActivityAlertChime(){
+      try{
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if(!Ctx) return;
+        const ctx = new Ctx();
+        const notes = [660, 880, 1108.7]; // três tons ascendentes — mais chamativo que o "ding" de lembrete
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          const start = ctx.currentTime + i * 0.14;
+          gain.gain.setValueAtTime(0, start);
+          gain.gain.linearRampToValueAtTime(0.22, start + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.4);
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(start);
+          osc.stop(start + 0.45);
+        });
+        setTimeout(() => ctx.close(), 1000);
+      } catch(err){ /* áudio indisponível — ignora silenciosamente */ }
+    }
+
+    function findOfficerCardHappeningNow(userId){
+      const now = new Date();
+      const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'));
+      return cards.find(card => {
+        if(!officerParseJSON(card.dataset.officerIds).includes(userId)) return false;
+        return parseInt(card.dataset.day, 10) === now.getDate() && parseInt(card.dataset.monIndex, 10) === (now.getMonth() + 1);
+      }) || null;
+    }
+
+    // Acha a "atividade atual" na Programação do Dia (a última cujo horário já
+    // passou) e a que vem em seguida, comparando os horários com o relógio agora.
+    function findActivityTransition(card){
+      const schedule = officerParseJSON(card.dataset.schedule);
+      if(schedule.length < 2) return null;
+      const now = new Date();
+      const times = schedule.map(item => {
+        const [hh, mm] = (item.horario || '00:00').split(':').map(n => parseInt(n, 10) || 0);
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm);
+      });
+      for(let i = 0; i < schedule.length - 1; i++){
+        if(now >= times[i] && now < times[i + 1]){
+          return { current: schedule[i], next: schedule[i + 1], nextTime: times[i + 1] };
+        }
+      }
+      return null;
+    }
+
+    function checkActivityTransitionAlert(){
+      if(!activityAlertBanner) return;
+      const user = window.__currentUsuario;
+      const card = user ? findOfficerCardHappeningNow(user.id) : null;
+      const transition = card ? findActivityTransition(card) : null;
+      if(!transition){
+        activityAlertBanner.style.display = 'none';
+        lastActivityAlertKey = null;
+        return;
+      }
+      const minutesLeft = Math.round((transition.nextTime - new Date()) / 60000);
+      if(minutesLeft > ACTIVITY_ALERT_WINDOW_MIN || minutesLeft < 0){
+        activityAlertBanner.style.display = 'none';
+        lastActivityAlertKey = null;
+        return;
+      }
+      activityAlertMsg.textContent = (transition.current.atividade || 'Atividade atual') + ' termina em breve · próxima: ' + (transition.next.atividade || '—') + (transition.next.horario ? ' às ' + transition.next.horario : '');
+      activityAlertBanner.style.display = '';
+      // Cada janela de ~5min dentro do período de alerta toca uma vez — é o que
+      // faz o som "repetir a cada 5 minutos" até a próxima atividade começar,
+      // sem tocar de novo se essa função for chamada mais de uma vez no mesmo intervalo.
+      const alertKey = card.dataset.id + '|' + transition.next.horario + '|' + Math.floor(minutesLeft / 5);
+      if(alertKey !== lastActivityAlertKey){
+        lastActivityAlertKey = alertKey;
+        playActivityAlertChime();
+      }
+    }
+
+    setInterval(checkActivityTransitionAlert, 5 * 60 * 1000);
+    document.addEventListener('cedros:loggedin', checkActivityTransitionAlert);
+
     // ---- Chip "Programação pronta" (só Diretoria) ----
     // Avisa a Diretoria assim que o Oficial de Dia preenche a Programação do Dia de
     // um evento futuro, sem precisar entrar na Agenda Anual pra descobrir. Toca pra
@@ -18749,10 +18855,11 @@ const REQ_SUMMARIES = {
       document.addEventListener('cedros:loggedin', refreshScheduleReadyBanner);
     }
 
-    window.__bdRefreshBanners = function(){ buildBanners(); refreshOfficerBanner(); refreshScheduleReadyBanner(); };
+    window.__bdRefreshBanners = function(){ buildBanners(); refreshOfficerBanner(); refreshScheduleReadyBanner(); checkActivityTransitionAlert(); };
     buildBanners();
     refreshOfficerBanner();
     refreshScheduleReadyBanner();
+    checkActivityTransitionAlert();
   })();
 
   // ---------------------------------------------------------------------
