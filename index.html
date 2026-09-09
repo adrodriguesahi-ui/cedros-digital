@@ -1056,6 +1056,28 @@
   .at-check-name{ flex:1; min-width:0; font-size:13px; font-weight:700; color:var(--cream); }
   .at-check-row.absent{ opacity:0.55; }
 
+  /* Chamada com 3 estados por pessoa (Presente / Atraso / Falta) — antes era só
+     um interruptor presente/ausente, que não distinguia quem chegou atrasado.
+     É um segmento único (uma "trilha" com 3 fatias) em vez de 3 botões soltos:
+     repetido em dezenas de linhas, três caixas com borda própria viravam ruído.
+     Fica numa linha abaixo do nome — ao lado dele, espremia nomes longos em
+     várias linhas no celular, e o alvo de toque maior ajuda a marcar rápido. */
+  .at-check-row.at-check-row-status{ flex-wrap:wrap; row-gap:9px; }
+  .at-status-group{
+    display:flex; width:100%; gap:2px;
+    background:rgba(255,255,255,0.045); border-radius:11px; padding:3px;
+  }
+  .at-status-btn{
+    flex:1; border:none; background:transparent; color:rgba(245,239,225,0.45);
+    border-radius:8px; padding:8px 4px;
+    font-size:11.5px; font-weight:800; letter-spacing:0.01em;
+    cursor:pointer; transition:background .18s, color .18s;
+  }
+  .at-status-btn:active{ transform:scale(0.96); }
+  .at-status-btn.active[data-status="presente"]{ background:rgba(74,222,128,0.16); color:#7BE8A4; }
+  .at-status-btn.active[data-status="atraso"]{ background:rgba(245,196,90,0.16); color:#F5C45A; }
+  .at-status-btn.active[data-status="falta"]{ background:rgba(255,107,92,0.14); color:#FF8D80; }
+
   .at-history-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:4px; }
   .at-empty-hint{ font-size:12px; font-weight:600; color:rgba(245,239,225,0.4); margin:4px 0 0; }
 
@@ -3443,6 +3465,7 @@
             <select class="pl-input" id="plFieldOfficer2"><option value="">Nenhum</option></select>
 
             <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Programação do Dia</label>
+            <p class="pl-reminder-hint" id="plProgramacaoLockHint" style="display:none; margin:-4px 0 10px;">Só o Oficial de Dia responsável ou a Diretoria (Diretor/Dir. Associado(a)) pode editar essa parte.</p>
             <button type="button" class="pl-list-add-btn pl-list-template-btn" id="plScheduleTemplateBtn"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Carregar modelo padrão da Reunião Regular</button>
             <div class="pl-schedule-list" id="plScheduleList"></div>
             <button type="button" class="pl-list-add-btn" id="plScheduleAddBtn">+ Adicionar horário</button>
@@ -9138,7 +9161,7 @@
 
                 <div class="sp-area-heading">Nova Chamada</div>
                 <div class="pl-field-col">
-                  <label class="pl-field-label" style="margin-top:0;">Reunião</label>
+                  <label class="pl-field-label" style="margin-top:0;">Reunião / Evento</label>
                   <select class="pl-input" id="atCallMeetingSelect"></select>
                 </div>
                 <div class="pl-field-row" id="atCallManualFields" style="display:none;">
@@ -10241,9 +10264,60 @@
                Dia (card.dataset.schedule não vazio) — ver window.__plGetNextScheduledEvent
                mais abaixo no arquivo. Toca pra abrir o evento em modo leitura. -->
           <a href="#" class="bd-officer-chip bd-schedule-chip" id="bdScheduleReadyBanner" style="display:none;">
-            <span id="bdScheduleReadyInfo"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Programação pronta</span>
+            <span id="bdScheduleReadyInfo"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Reunião Regular</span>
           </a>
         </p>
+
+        <!-- Só aparece pra quem é Oficial de Dia, enquanto a Programação do Dia
+             preenchida por ele estiver "em execução" (evento é hoje e o horário
+             atual já passou de uma atividade mas ainda não chegou na próxima) —
+             ver checkActivityTransitionAlert mais abaixo no arquivo. -->
+        <div class="bd-reminder-banner bd-activity-alert-banner" id="bdActivityAlertBanner" role="status" style="display:none;">
+          <span class="bd-reminder-banner-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+          </span>
+          <span class="bd-reminder-banner-body">
+            <span class="bd-reminder-banner-title">Atividade terminando</span>
+            <span class="bd-reminder-banner-msg" id="bdActivityAlertMsg"></span>
+          </span>
+        </div>
+
+        <!-- Só aparece pra Oficiais de Dia responsáveis, Diretor ou Dir. Associado(a),
+             quando a Programação do Dia de uma Reunião Regular de hoje já passou do
+             último horário e ainda não foi confirmada como concluída — ver
+             checkMeetingConcludedAlert mais abaixo no arquivo. Some pra todo mundo
+             assim que qualquer uma dessas pessoas confirmar. -->
+        <div class="bd-reminder-banner bd-meeting-concluded-banner" id="bdMeetingConcludedBanner" style="display:none;">
+          <span class="bd-reminder-banner-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+          </span>
+          <span class="bd-reminder-banner-body">
+            <span class="bd-reminder-banner-title">Reunião terminou</span>
+            <span class="bd-reminder-banner-msg" id="bdMeetingConcludedMsg"></span>
+          </span>
+          <button type="button" class="bd-reminder-banner-confirm" id="bdMeetingConcludedConfirmBtn" aria-label="Confirmar conclusão da reunião">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </button>
+        </div>
+
+        <!-- Só aparece pra Diretor ou Dir. Associado(a), quando algum Oficial de Dia
+             preencheu a Programação do Dia de uma Reunião Regular futura mas ela ainda
+             não foi aprovada — ver refreshProgramacaoApprovalBanner mais abaixo no
+             arquivo. Só depois de aprovada ela passa a contar como "pronta"/publicada
+             (chip "Reunião Regular" logo abaixo, que só mostra a partir de 2 dias
+             antes do evento). -->
+        <div class="bd-reminder-banner bd-approval-banner" id="bdProgramacaoApprovalBanner" role="button" tabindex="0" style="display:none;">
+          <span class="bd-reminder-banner-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+          </span>
+          <span class="bd-reminder-banner-body">
+            <span class="bd-reminder-banner-title">Programação aguardando aprovação</span>
+            <span class="bd-reminder-banner-msg" id="bdProgramacaoApprovalMsg"></span>
+          </span>
+          <button type="button" class="bd-reminder-banner-confirm" id="bdProgramacaoApprovalConfirmBtn" aria-label="Aprovar programação">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </button>
+        </div>
 
         <div class="bd-reminder-banner" id="bdReminderBanner" role="button" tabindex="0" style="display:none;">
           <span class="bd-reminder-banner-icon">
@@ -10682,6 +10756,19 @@
 
   function showView(id){
     views.forEach(v => v.classList.toggle('active', v.id === id));
+    // Card "Membros" do Início: entra direto na Chamada de Presença, sem as
+    // outras abas da Secretaria à vista — window.__scAttendanceOnlyNextEntry é
+    // setado por esse atalho logo antes de chamar showView. Qualquer outra
+    // forma de entrar na Secretaria (menu, relatório de Unidades etc.) sempre
+    // restaura as abas normais.
+    if(id === 'view-secretary'){
+      const tabsEl = document.querySelector('#view-secretary .sc-pdf-tabs');
+      const titleEl = document.querySelector('#view-secretary .pl-title');
+      const attendanceOnly = !!window.__scAttendanceOnlyNextEntry;
+      window.__scAttendanceOnlyNextEntry = false;
+      if(tabsEl) tabsEl.style.display = attendanceOnly ? 'none' : '';
+      if(titleEl) titleEl.textContent = attendanceOnly ? 'Chamada de Presença' : 'Secretaria';
+    }
     if(appTabbar){
       const showBar = APP_TABBAR_VIEWS.has(id);
       appTabbar.classList.toggle('show', showBar);
@@ -11518,6 +11605,35 @@
     });
     setCustomColor('green');
 
+    // Quem pode editar a Programação do Dia (horários, checklist e aviso aos
+    // membros) de um evento já existente: só os Oficiais de Dia responsáveis por
+    // ele (oficiais_dia_ids) ou quem tem cargo Diretor/Dir. Associado(a) (mesmos 3
+    // cargos usados pra liberar a aba Escala de Oficiais na Secretaria) — o resto
+    // do formulário (título, data, local etc.) continua editável por quem já tinha
+    // acesso de edição na Agenda Anual, só essa parte fica travada.
+    const PROGRAMACAO_DIA_ALLOWED_CARGOS = ['diretor', 'dir. associado', 'dir. associada'];
+    function normalizeProgramacaoDiaCargo(s){
+      return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    }
+    function canEditProgramacaoDoDia(card){
+      const user = window.__currentUsuario;
+      if(!user) return false;
+      if(PROGRAMACAO_DIA_ALLOWED_CARGOS.includes(normalizeProgramacaoDiaCargo(user.cargo))) return true;
+      return parseJSONSafe(card.dataset.officerIds).includes(user.id);
+    }
+    function applyProgramacaoDoDiaLock(allowed){
+      scheduleList.querySelectorAll('input, select').forEach(el => { el.disabled = !allowed; });
+      scheduleList.querySelectorAll('.pl-list-remove-btn').forEach(btn => { btn.style.display = allowed ? '' : 'none'; });
+      scheduleAddBtn.style.display = allowed ? '' : 'none';
+      if(scheduleTemplateBtn) scheduleTemplateBtn.style.display = allowed ? '' : 'none';
+      checklistList.querySelectorAll('input').forEach(el => { el.disabled = !allowed; });
+      checklistList.querySelectorAll('.pl-list-remove-btn').forEach(btn => { btn.style.display = allowed ? '' : 'none'; });
+      checklistAddBtn.style.display = allowed ? '' : 'none';
+      fieldNotice.disabled = !allowed;
+      const lockHint = document.getElementById('plProgramacaoLockHint');
+      if(lockHint) lockHint.style.display = allowed ? 'none' : '';
+    }
+
     function openModal(mode, card, preset){
       editingCard = card || null;
       photoCameraInput.value = '';
@@ -11564,6 +11680,7 @@
           }
         }
         setPhoto(card.dataset.foto || '');
+        applyProgramacaoDoDiaLock(canEditProgramacaoDoDia(card));
       } else {
         modalTitle.textContent = 'Novo Evento';
         deleteBtn.style.display = 'none';
@@ -11593,6 +11710,7 @@
         const historyHintNew = document.getElementById('plReminderHistoryHint');
         if(historyHintNew) historyHintNew.style.display = 'none';
         setPhoto('');
+        applyProgramacaoDoDiaLock(true);
       }
       toggleReminderFields();
       toggleRepeatFields();
@@ -11675,6 +11793,8 @@
       a.dataset.notice = data.notice || '';
       a.dataset.schedule = JSON.stringify(data.schedule || []);
       a.dataset.checklist = JSON.stringify(data.checklist || []);
+      a.dataset.reuniaoConcluida = data.reuniaoConcluida ? '1' : '';
+      a.dataset.programacaoAprovada = data.programacaoAprovada ? '1' : '';
       a.dataset.showGallery = data.showGallery === false ? '0' : '1';
       a.dataset.showGalleryFrom = data.showGalleryFrom || '';
       a.dataset.foto = data.foto || '';
@@ -11780,6 +11900,8 @@
         notice: row.aviso_membros || '',
         schedule: Array.isArray(row.programacao_dia) ? row.programacao_dia : [],
         checklist: Array.isArray(row.checklist_atividades) ? row.checklist_atividades : [],
+        reuniaoConcluida: !!row.reuniao_concluida,
+        programacaoAprovada: !!row.programacao_aprovada,
         showGallery: row.mostrar_galeria !== false,
         showGalleryFrom: row.mostrar_galeria_a_partir_de || '',
         foto: row.foto || '',
@@ -12560,11 +12682,12 @@
     // acha o próximo evento (se houver) cujo Oficial de Dia já preencheu a
     // Programação do Dia (card.dataset.schedule não vazio), mesma regra de datas
     // do __plGetOfficerEvent acima.
-    window.__plGetNextScheduledEvent = function(){
+    // Comum às duas funções abaixo: junta cada card com a data (dia+hora de início)
+    // resolvida pro próximo ano se já passou este ano — mesma regra usada em todo o
+    // resto do arquivo pra achar "o próximo evento" que bate um filtro.
+    function withResolvedDates(cards){
       const now = new Date();
-      const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'))
-        .filter(card => parseJSONSafe(card.dataset.schedule).length > 0 && card.dataset.escalaOculta !== '1');
-      const withDates = cards.map(card => {
+      return cards.map(card => {
         const day = parseInt(card.dataset.day, 10);
         const monIdx = parseInt(card.dataset.monIndex, 10);
         if(!day || !monIdx) return null;
@@ -12572,9 +12695,28 @@
         let date = new Date(now.getFullYear(), monIdx - 1, day, hh, mm);
         if(date < now) date = new Date(now.getFullYear() + 1, monIdx - 1, day, hh, mm);
         return { card, date };
-      }).filter(Boolean);
-      withDates.sort((a, b) => a.date - b.date);
-      return withDates[0] || null;
+      }).filter(Boolean).sort((a, b) => a.date - b.date);
+    }
+
+    // Usado pelo banner "Programação aguardando aprovação" (só Diretor/Dir.
+    // Associado(a)): acha a próxima Reunião Regular cujo Oficial de Dia já
+    // preencheu a Programação, mas que ainda não foi aprovada.
+    window.__plGetPendingApprovalEvent = function(){
+      const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'))
+        .filter(card => parseJSONSafe(card.dataset.schedule).length > 0 && card.dataset.escalaOculta !== '1' && card.dataset.programacaoAprovada !== '1');
+      return withResolvedDates(cards)[0] || null;
+    };
+
+    // Usado pelo chip "Reunião Regular" (só Diretoria): só considera a Programação
+    // "publicada" depois de aprovada por Diretor/Dir. Associado(a) — e mesmo aprovada,
+    // só passa a aparecer a partir de 2 dias antes do evento (não adianta mostrar
+    // "pronta" com um mês de antecedência).
+    window.__plGetNextScheduledEvent = function(){
+      const now = new Date();
+      const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
+      const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'))
+        .filter(card => parseJSONSafe(card.dataset.schedule).length > 0 && card.dataset.escalaOculta !== '1' && card.dataset.programacaoAprovada === '1');
+      return withResolvedDates(cards).filter(item => (item.date - now) <= TWO_DAYS_MS)[0] || null;
     };
 
     // Usado pelo card de destaque do dashboard: mostra os detalhes do evento sem
@@ -15719,14 +15861,18 @@
     // precisar de uma chamada fora do calendário ainda pode escolher "Outro".
     async function loadRegularMeetings(){
       if(!supa || !meetingSelect) return;
+      // Antes só trazia eventos com "Reunião Regular" no título; agora traz todos os
+      // eventos da Agenda Anual (Acampamento, Caminhada, evento externo etc.) também
+      // como opção de chamada — cada um rotulado como "Chamada de Evento" quando não
+      // for uma Reunião Regular de verdade (tag_label === 'Reunião').
       const { data, error } = await supa.from('eventos_agenda')
-        .select('id, dia, mes_indice, titulo')
-        .ilike('titulo', '%Reunião Regular%')
+        .select('id, dia, mes_indice, titulo, tag_label')
         .order('mes_indice', { ascending: true }).order('dia', { ascending: true });
       if(error || !data) return;
       const year = new Date().getFullYear();
       regularMeetings = data.map(row => ({
         id: row.id, day: row.dia, monIdx: row.mes_indice, title: row.titulo,
+        isRegular: row.tag_label === 'Reunião',
         date: new Date(year, row.mes_indice - 1, row.dia)
       }));
       renderMeetingSelect();
@@ -15740,9 +15886,9 @@
       regularMeetings.forEach((m, i) => {
         const opt = document.createElement('option');
         opt.value = String(i);
-        opt.textContent = String(m.day).padStart(2, '0') + '/' + MONTHS_ABBR[m.monIdx - 1] + ' — ' + m.title;
+        opt.textContent = String(m.day).padStart(2, '0') + '/' + MONTHS_ABBR[m.monIdx - 1] + ' — ' + m.title + (m.isRegular ? '' : ' (Chamada de Evento)');
         meetingSelect.appendChild(opt);
-        if(m.date <= today) defaultIdx = i; // última reunião já ocorrida (ou hoje) até agora
+        if(m.date <= today) defaultIdx = i; // último evento já ocorrido (ou hoje) até agora
       });
       const outroOpt = document.createElement('option');
       outroOpt.value = 'outro';
@@ -15772,7 +15918,9 @@
       callDate.value = iso;
       callEvent.value = m.title;
       selectedEventId = m.id;
-      if(countsToggle) countsToggle.checked = true;
+      // Reunião Regular conta pra frequência anual por padrão; eventos/acampamentos
+      // não (a pessoa ainda pode ligar manualmente se quiser que contem).
+      if(countsToggle) countsToggle.checked = m.isRegular;
     }
     if(meetingSelect) meetingSelect.addEventListener('change', applyMeetingSelection);
     loadRegularMeetings();
@@ -15816,7 +15964,7 @@
       const ids = calls.map(c => c.id);
       let presencas = [];
       if(ids.length){
-        const { data } = await supa.from('chamada_presencas').select('chamada_id, usuario_id, presente').in('chamada_id', ids);
+        const { data } = await supa.from('chamada_presencas').select('chamada_id, usuario_id, presente, status').in('chamada_id', ids);
         presencas = data || [];
       }
       const byChamada = {};
@@ -15827,7 +15975,15 @@
         const parts = c.data.split('-').map(n => parseInt(n, 10));
         const members = (byChamada[c.id] || []).map(p => {
           const person = rosterById[p.usuario_id];
-          return { id: p.usuario_id, name: person ? person.name : '(removido)', unit: person ? person.unit : '—', present: p.presente };
+          // Chamadas salvas antes dos 3 estados não têm `status` — deriva do
+          // booleano antigo pra elas continuarem abrindo normalmente.
+          return {
+            id: p.usuario_id,
+            name: person ? person.name : '(removido)',
+            unit: person ? person.unit : '—',
+            present: p.presente,
+            status: normalizeStatus(p.status, p.presente)
+          };
         });
         return {
           id: c.id,
@@ -15864,10 +16020,65 @@
       });
     }
 
+    // Cada pessoa na chamada tem 3 estados em vez do antigo presente/ausente:
+    // presente, atraso ou falta. Pra frequência anual, conta como presente tanto
+    // "presente" quanto "atraso" (quem chegou atrasado esteve na reunião) — a coluna
+    // `presente` de chamada_presencas segue sendo gravada assim, então nada do
+    // cálculo de frequência mudou.
+    const AT_STATUSES = [
+      { key: 'presente', label: 'Presente' },
+      { key: 'atraso', label: 'Atraso' },
+      { key: 'falta', label: 'Falta' }
+    ];
+    // 'pontual'/'atrasado' foram os nomes da primeira versão dos 3 estados —
+    // ficam aqui só pra ler chamadas gravadas antes da renomeação.
+    const AT_STATUS_ALIASES = { pontual: 'presente', atrasado: 'atraso' };
+    function statusToPresent(status){ return status !== 'falta'; }
+    // Chamadas antigas (só presente/ausente) não têm status nenhum: deriva do booleano.
+    function normalizeStatus(status, present){
+      if(!status) return present === false ? 'falta' : 'presente';
+      return AT_STATUS_ALIASES[status] || status;
+    }
+
+    // O estado fica no próprio row (dataset.status), então ler a chamada de volta
+    // é só varrer as linhas — não precisa de estado paralelo em JS.
+    function buildStatusGroup(row, initialStatus, onChange){
+      const group = document.createElement('span');
+      group.className = 'at-status-group';
+      row.dataset.status = initialStatus || 'presente';
+      function paint(){
+        group.querySelectorAll('.at-status-btn').forEach(b => b.classList.toggle('active', b.dataset.status === row.dataset.status));
+        row.classList.toggle('absent', row.dataset.status === 'falta');
+      }
+      AT_STATUSES.forEach(st => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'at-status-btn';
+        btn.dataset.status = st.key;
+        btn.textContent = st.label;
+        btn.addEventListener('click', () => {
+          row.dataset.status = st.key;
+          paint();
+          if(onChange) onChange();
+        });
+        group.appendChild(btn);
+      });
+      paint();
+      return group;
+    }
+
+    function countByStatus(container){
+      const rows = Array.from(container.querySelectorAll('.at-check-row'));
+      const late = rows.filter(r => r.dataset.status === 'atraso').length;
+      const present = rows.filter(r => statusToPresent(r.dataset.status)).length;
+      return { total: rows.length, present, late };
+    }
+    function formatCount(c){
+      return c.present + '/' + c.total + ' presentes' + (c.late ? ' · ' + c.late + ' atrasado' + (c.late > 1 ? 's' : '') : '');
+    }
+
     function updateChecklistCount(){
-      const total = checklist.querySelectorAll('.at-check-row').length;
-      const present = checklist.querySelectorAll('.at-check-row input:checked').length;
-      checklistCount.textContent = present + '/' + total + ' presentes';
+      checklistCount.textContent = formatCount(countByStatus(checklist));
     }
 
     startCallBtn.addEventListener('click', () => {
@@ -15878,17 +16089,15 @@
       checklist.innerHTML = '';
       roster.forEach(m => {
         const row = document.createElement('div');
-        row.className = 'at-check-row';
+        row.className = 'at-check-row at-check-row-status';
+        row.dataset.id = m.id;
+        row.dataset.name = m.name;
+        row.dataset.unit = m.unit;
         row.innerHTML =
           '<span class="cl-class-dot cl-color-' + (UNIT_COLOR[m.unit] || 'gray') + '"></span>' +
-          '<span class="at-check-name"></span>' +
-          '<span class="pl-switch"><input type="checkbox" checked data-id="' + m.id + '" data-name="' + m.name + '" data-unit="' + m.unit + '"><span class="pl-switch-track"><span class="pl-switch-thumb"></span></span></span>';
+          '<span class="at-check-name"></span>';
         row.querySelector('.at-check-name').textContent = m.name;
-        const input = row.querySelector('input');
-        input.addEventListener('change', () => {
-          row.classList.toggle('absent', !input.checked);
-          updateChecklistCount();
-        });
+        row.appendChild(buildStatusGroup(row, 'presente', updateChecklistCount));
         checklist.appendChild(row);
       });
       checklistWrap.style.display = '';
@@ -15911,7 +16120,8 @@
         row.querySelector('.pl-event-date em').textContent = rec.mon;
         row.querySelector('.pl-event-title').textContent = rec.event;
         row.querySelector('.pl-event-meta').textContent = rec.members.length + ' desbravadores na lista' + (rec.contaPresenca === false ? ' · não conta pra frequência' : '');
-        row.querySelector('.pl-event-tag').textContent = rec.presentCount + '/' + rec.members.length + ' presentes';
+        const recLate = rec.members.filter(m => m.status === 'atraso').length;
+        row.querySelector('.pl-event-tag').textContent = rec.presentCount + '/' + rec.members.length + ' presentes' + (recLate ? ' · ' + recLate + ' atr.' : '');
         row.addEventListener('click', (e) => {
           e.preventDefault();
           openEditModal(rec);
@@ -15932,9 +16142,7 @@
     let editingRecord = null;
 
     function updateEditChecklistCount(){
-      const total = editChecklist.querySelectorAll('.at-check-row').length;
-      const present = editChecklist.querySelectorAll('.at-check-row input:checked').length;
-      editChecklistCount.textContent = present + '/' + total + ' presentes';
+      editChecklistCount.textContent = formatCount(countByStatus(editChecklist));
     }
 
     function openEditModal(rec){
@@ -15944,18 +16152,13 @@
       editChecklist.innerHTML = '';
       rec.members.forEach((m, i) => {
         const row = document.createElement('div');
-        row.className = 'at-check-row';
-        row.classList.toggle('absent', !m.present);
+        row.className = 'at-check-row at-check-row-status';
+        row.dataset.idx = String(i);
         row.innerHTML =
           '<span class="cl-class-dot cl-color-' + (UNIT_COLOR[m.unit] || 'gray') + '"></span>' +
-          '<span class="at-check-name"></span>' +
-          '<span class="pl-switch"><input type="checkbox"' + (m.present ? ' checked' : '') + ' data-idx="' + i + '"><span class="pl-switch-track"><span class="pl-switch-thumb"></span></span></span>';
+          '<span class="at-check-name"></span>';
         row.querySelector('.at-check-name').textContent = m.name;
-        const input = row.querySelector('input');
-        input.addEventListener('change', () => {
-          row.classList.toggle('absent', !input.checked);
-          updateEditChecklistCount();
-        });
+        row.appendChild(buildStatusGroup(row, normalizeStatus(m.status, m.present), updateEditChecklistCount));
         editChecklist.appendChild(row);
       });
       updateEditChecklistCount();
@@ -15965,8 +16168,9 @@
 
     function readEditChecklistMembers(){
       return editingRecord.members.map((m, i) => {
-        const input = editChecklist.querySelector('input[data-idx="' + i + '"]');
-        return { id: m.id, name: m.name, unit: m.unit, present: input ? input.checked : m.present };
+        const row = editChecklist.querySelector('.at-check-row[data-idx="' + i + '"]');
+        const status = row ? (row.dataset.status || m.status) : normalizeStatus(m.status, m.present);
+        return { id: m.id, name: m.name, unit: m.unit, status, present: statusToPresent(status) };
       });
     }
 
@@ -15980,7 +16184,7 @@
       editingRecord.presentCount = members.filter(m => m.present).length;
       if(supa && editingRecord.id){
         await Promise.all(members.filter(m => m.id).map(m =>
-          supa.from('chamada_presencas').update({ presente: m.present }).eq('chamada_id', editingRecord.id).eq('usuario_id', m.id)
+          supa.from('chamada_presencas').update({ presente: m.present, status: m.status }).eq('chamada_id', editingRecord.id).eq('usuario_id', m.id)
         ));
       }
       renderHistory();
@@ -16021,7 +16225,8 @@
       doc.setFontSize(11);
       doc.text('Data: ' + rec.day + '/' + rec.mon, marginX, y);
       const presentCount = members.filter(m => m.present).length;
-      doc.text(presentCount + '/' + members.length + ' presentes', pageWidth - marginX, y, { align: 'right' });
+      const lateCount = members.filter(m => m.status === 'atraso').length;
+      doc.text(presentCount + '/' + members.length + ' presentes' + (lateCount ? ' · ' + lateCount + ' atrasado' + (lateCount > 1 ? 's' : '') : ''), pageWidth - marginX, y, { align: 'right' });
       y += 10;
 
       doc.setFont('helvetica', 'bold');
@@ -16043,7 +16248,8 @@
         }
         doc.text(m.name, marginX, y);
         doc.text(m.unit, marginX + 90, y);
-        doc.text(m.present ? 'Presente' : 'Ausente', pageWidth - marginX, y, { align: 'right' });
+        const statusLabel = m.status === 'atraso' ? 'Atraso' : (m.present ? 'Presente' : 'Falta');
+        doc.text(statusLabel, pageWidth - marginX, y, { align: 'right' });
         y += 7;
       });
 
@@ -16059,11 +16265,12 @@
     saveCallBtn.addEventListener('click', async () => {
       const dateObj = new Date(callDate.value + 'T00:00:00');
       const monthsAbbr = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
-      const members = Array.from(checklist.querySelectorAll('.at-check-row input')).map(input => ({
-        id: input.getAttribute('data-id'),
-        name: input.getAttribute('data-name'),
-        unit: input.getAttribute('data-unit'),
-        present: input.checked
+      const members = Array.from(checklist.querySelectorAll('.at-check-row')).map(row => ({
+        id: row.dataset.id,
+        name: row.dataset.name,
+        unit: row.dataset.unit,
+        status: row.dataset.status || 'presente',
+        present: statusToPresent(row.dataset.status || 'presente')
       }));
       const presentCount = members.filter(m => m.present).length;
       const contaPresenca = countsToggle ? countsToggle.checked : true;
@@ -16079,7 +16286,7 @@
         }).select().single();
         if(!error && chamada){
           chamadaId = chamada.id;
-          const rows = members.filter(m => m.id).map(m => ({ chamada_id: chamadaId, usuario_id: m.id, presente: m.present }));
+          const rows = members.filter(m => m.id).map(m => ({ chamada_id: chamadaId, usuario_id: m.id, presente: m.present, status: m.status }));
           if(rows.length) await supa.from('chamada_presencas').insert(rows);
         }
       }
@@ -18064,22 +18271,20 @@ const REQ_SUMMARIES = {
   });
 
   // Card "Membros" do painel -> leva direto pra Chamada de Presença (Secretaria).
-  // Só quem tem acesso ao módulo de Secretaria (Diretoria Executiva/Administrador,
-  // conforme papeis.permissoes_padrao) consegue de fato abrir a lista de presença —
-  // os demais veem um aviso em vez de navegar, reaproveitando a mesma restrição
-  // que já esconde "Secretaria" do menu desses papéis.
+  // Só quem tem um desses cargos cadastrados (campo livre em Administração →
+  // Usuários) consegue realizar a chamada de presença: Diretor(a), Dir.
+  // Associado(a), Secretário(a) ou Tesoureiro(a). Os demais membros nem veem o
+  // card — some da tela inicial em vez de aparecer bloqueado.
   (function(){
     const chip = document.getElementById('bdMembersChip');
-    const toast = document.getElementById('bdAccessToast');
-    const toastMsg = document.getElementById('bdAccessToastMsg');
     if(!chip) return;
-    let toastTimer;
-    function showAccessToast(text){
-      if(!toast || !toastMsg) return;
-      toastMsg.textContent = text;
-      toast.classList.add('show');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
+    const MEMBERS_CARD_ALLOWED_CARGOS = ['diretor', 'diretora', 'dir. associado', 'dir. associada', 'secretario', 'secretaria', 'tesoureiro', 'tesoureira'];
+    function normalizeMembersCargo(s){
+      return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    }
+    function applyMembersCardAccess(usuario){
+      const allowed = !!usuario && MEMBERS_CARD_ALLOWED_CARGOS.includes(normalizeMembersCargo(usuario.cargo));
+      chip.style.display = allowed ? '' : 'none';
     }
     // Quantidade real de membros = total de linhas em `usuarios` (mesma fonte
     // usada pela contagem por unidade em Unidades/loadMemberCounts).
@@ -18091,14 +18296,11 @@ const REQ_SUMMARIES = {
       if(error || count == null) return;
       countEl.textContent = count;
     }
-    document.addEventListener('cedros:loggedin', refreshMemberCount);
+    document.addEventListener('cedros:loggedin', (e) => { refreshMemberCount(); applyMembersCardAccess(e.detail); });
+    applyMembersCardAccess(window.__currentUsuario);
     chip.addEventListener('click', (e) => {
       e.preventDefault();
-      const restricted = window.__restrictedGotoViews && window.__restrictedGotoViews.indexOf('view-secretary') !== -1;
-      if(restricted){
-        showAccessToast('Apenas a Diretoria Executiva tem acesso à lista de presença.');
-        return;
-      }
+      window.__scAttendanceOnlyNextEntry = true;
       showView('view-secretary');
       const attendanceTab = document.querySelector('.sc-pdf-tab[data-tab="attendance"]');
       if(attendanceTab) attendanceTab.click();
@@ -18694,10 +18896,17 @@ const REQ_SUMMARIES = {
         })).filter(item => item.texto);
 
         officerFillSaveBtn.disabled = true;
+        // Toda vez que o Oficial de Dia salva (preenchimento novo ou uma edição em
+        // cima de uma programação já aprovada), a aprovação anterior deixa de valer
+        // — precisa que Diretor/Dir. Associado(a) aprove essa versão de novo antes
+        // dela contar como publicada.
         const { error } = await supa.from('eventos_agenda').update({
           programacao_dia: schedule,
           aviso_membros: notice || null,
-          checklist_atividades: checklist
+          checklist_atividades: checklist,
+          programacao_aprovada: false,
+          programacao_aprovada_por: null,
+          programacao_aprovada_em: null
         }).eq('id', officerCurrentCard.dataset.id);
         officerFillSaveBtn.disabled = false;
         if(error){
@@ -18708,17 +18917,296 @@ const REQ_SUMMARIES = {
         officerCurrentCard.dataset.schedule = JSON.stringify(schedule);
         officerCurrentCard.dataset.notice = notice;
         officerCurrentCard.dataset.checklist = JSON.stringify(checklist);
+        officerCurrentCard.dataset.programacaoAprovada = '';
         officerFillOverlay.classList.remove('show');
+        if(window.__bdRefreshBanners) window.__bdRefreshBanners();
       });
 
       document.addEventListener('cedros:loggedin', refreshOfficerBanner);
     }
 
-    // ---- Chip "Programação pronta" (só Diretoria) ----
-    // Avisa a Diretoria assim que o Oficial de Dia preenche a Programação do Dia de
-    // um evento futuro, sem precisar entrar na Agenda Anual pra descobrir. Toca pra
-    // abrir o evento em modo leitura (window.__plOpenEventReadOnly, já usado pelo
-    // card de destaque do carrossel).
+    // ---- Alerta sonoro "atividade terminando" pro Oficial de Dia ----
+    // Enquanto o evento em que a pessoa é Oficial de Dia estiver acontecendo hoje,
+    // avisa (som + banner) quando a atividade atual da Programação do Dia está perto
+    // de acabar (a próxima começa em até 15min) — repete a cada checagem de 5min
+    // (~15, ~10, ~5min restantes) até a próxima atividade realmente começar, quando
+    // o alerta passa a valer pra ela e a de depois, e assim por diante.
+    const activityAlertBanner = document.getElementById('bdActivityAlertBanner');
+    const activityAlertMsg = document.getElementById('bdActivityAlertMsg');
+    const ACTIVITY_ALERT_WINDOW_MIN = 15;
+    let lastActivityAlertKey = null;
+
+    function playActivityAlertChime(){
+      try{
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if(!Ctx) return;
+        const ctx = new Ctx();
+        // "Pop-pop" curto tipo marimba, no estilo de tom de notificação de app de
+        // mensagem — duas notas curtas com ataque rápido e decaimento percussivo,
+        // mais amigável e reconhecível que um alarme.
+        const notes = [
+          { freq: 1567.98, start: 0 },     // G6
+          { freq: 2093.00, start: 0.11 }   // C7
+        ];
+        notes.forEach(note => {
+          const start = ctx.currentTime + note.start;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = note.freq;
+          const overtone = ctx.createOscillator();
+          const overtoneGain = ctx.createGain();
+          overtone.type = 'sine';
+          overtone.frequency.value = note.freq * 2;
+          gain.gain.setValueAtTime(0, start);
+          gain.gain.linearRampToValueAtTime(0.3, start + 0.006);
+          gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.22);
+          overtoneGain.gain.setValueAtTime(0, start);
+          overtoneGain.gain.linearRampToValueAtTime(0.08, start + 0.006);
+          overtoneGain.gain.exponentialRampToValueAtTime(0.0001, start + 0.14);
+          osc.connect(gain).connect(ctx.destination);
+          overtone.connect(overtoneGain).connect(ctx.destination);
+          osc.start(start); osc.stop(start + 0.25);
+          overtone.start(start); overtone.stop(start + 0.16);
+        });
+        setTimeout(() => ctx.close(), 600);
+      } catch(err){ /* áudio indisponível — ignora silenciosamente */ }
+    }
+
+    // Vibra o celular junto com o sino (dentro do app nativo via Capacitor Haptics,
+    // ou navigator.vibrate no navegador/PWA — iOS Safari/WKWebView não suporta
+    // vibração de jeito nenhum, então nesse caso só o som mesmo).
+    function triggerActivityAlertVibration(){
+      try{
+        const haptics = window.Capacitor && window.Capacitor.isPluginAvailable && window.Capacitor.isPluginAvailable('Haptics')
+          ? window.Capacitor.Plugins.Haptics : null;
+        if(haptics && haptics.impact){
+          haptics.impact({ style: 'HEAVY' });
+          setTimeout(() => haptics.impact({ style: 'HEAVY' }), 350);
+          return;
+        }
+      } catch(err){ /* Capacitor Haptics indisponível — tenta o fallback abaixo */ }
+      try{
+        if(navigator.vibrate) navigator.vibrate([180, 120, 180]);
+      } catch(err){ /* vibração indisponível — ignora silenciosamente */ }
+    }
+
+    function findOfficerCardHappeningNow(userId){
+      const now = new Date();
+      const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'));
+      return cards.find(card => {
+        if(!officerParseJSON(card.dataset.officerIds).includes(userId)) return false;
+        return parseInt(card.dataset.day, 10) === now.getDate() && parseInt(card.dataset.monIndex, 10) === (now.getMonth() + 1);
+      }) || null;
+    }
+
+    // Acha a "atividade atual" na Programação do Dia (a última cujo horário já
+    // passou) e a que vem em seguida, comparando os horários com o relógio agora.
+    function findActivityTransition(card){
+      const schedule = officerParseJSON(card.dataset.schedule);
+      if(schedule.length < 2) return null;
+      const now = new Date();
+      const times = schedule.map(item => {
+        const [hh, mm] = (item.horario || '00:00').split(':').map(n => parseInt(n, 10) || 0);
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm);
+      });
+      for(let i = 0; i < schedule.length - 1; i++){
+        if(now >= times[i] && now < times[i + 1]){
+          return { current: schedule[i], next: schedule[i + 1], nextTime: times[i + 1] };
+        }
+      }
+      return null;
+    }
+
+    function checkActivityTransitionAlert(){
+      if(!activityAlertBanner) return;
+      const user = window.__currentUsuario;
+      const card = user ? findOfficerCardHappeningNow(user.id) : null;
+      const transition = card ? findActivityTransition(card) : null;
+      if(!transition){
+        activityAlertBanner.style.display = 'none';
+        lastActivityAlertKey = null;
+        return;
+      }
+      const minutesLeft = Math.round((transition.nextTime - new Date()) / 60000);
+      if(minutesLeft > ACTIVITY_ALERT_WINDOW_MIN || minutesLeft < 0){
+        activityAlertBanner.style.display = 'none';
+        lastActivityAlertKey = null;
+        return;
+      }
+      activityAlertMsg.textContent = (transition.current.atividade || 'Atividade atual') + ' termina em breve · próxima: ' + (transition.next.atividade || '—') + (transition.next.horario ? ' às ' + transition.next.horario : '');
+      activityAlertBanner.style.display = '';
+      // Cada janela de ~5min dentro do período de alerta toca uma vez — é o que
+      // faz o som "repetir a cada 5 minutos" até a próxima atividade começar,
+      // sem tocar de novo se essa função for chamada mais de uma vez no mesmo intervalo.
+      const alertKey = card.dataset.id + '|' + transition.next.horario + '|' + Math.floor(minutesLeft / 5);
+      if(alertKey !== lastActivityAlertKey){
+        lastActivityAlertKey = alertKey;
+        playActivityAlertChime();
+        triggerActivityAlertVibration();
+      }
+    }
+
+    setInterval(checkActivityTransitionAlert, 5 * 60 * 1000);
+    document.addEventListener('cedros:loggedin', checkActivityTransitionAlert);
+
+    // ---- Confirmação de "reunião concluída" ----
+    // Quando a Programação do Dia de uma Reunião Regular de hoje passa do último
+    // horário cadastrado, oferece aos Oficiais de Dia responsáveis, Diretor ou
+    // Dir. Associado(a) um botão pra confirmar que a reunião realmente terminou.
+    // A confirmação é salva no evento (reuniao_concluida) — assim que qualquer
+    // uma dessas pessoas confirma, o banner some da tela inicial pra todo mundo,
+    // não só de quem confirmou.
+    const meetingConcludedBanner = document.getElementById('bdMeetingConcludedBanner');
+    const meetingConcludedMsg = document.getElementById('bdMeetingConcludedMsg');
+    const meetingConcludedConfirmBtn = document.getElementById('bdMeetingConcludedConfirmBtn');
+    const MEETING_CONFIRM_ALLOWED_CARGOS = ['diretor', 'dir. associado', 'dir. associada'];
+    let meetingConcludedCard = null;
+
+    function normalizeMeetingCargo(s){
+      return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    }
+    function canConfirmMeetingConcluded(card, user){
+      if(!user) return false;
+      if(MEETING_CONFIRM_ALLOWED_CARGOS.includes(normalizeMeetingCargo(user.cargo))) return true;
+      return officerParseJSON(card.dataset.officerIds).includes(user.id);
+    }
+    function isScheduleConcluded(card){
+      const schedule = officerParseJSON(card.dataset.schedule);
+      if(!schedule.length) return false;
+      const last = schedule[schedule.length - 1];
+      const [hh, mm] = (last.horario || '00:00').split(':').map(n => parseInt(n, 10) || 0);
+      const now = new Date();
+      const lastTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm);
+      return now >= lastTime;
+    }
+    function findConcludedMeetingForUser(user){
+      if(!user) return null;
+      const now = new Date();
+      const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'));
+      return cards.find(card => {
+        if(card.dataset.reuniaoConcluida === '1') return false;
+        if(parseInt(card.dataset.day, 10) !== now.getDate() || parseInt(card.dataset.monIndex, 10) !== (now.getMonth() + 1)) return false;
+        if(!isScheduleConcluded(card)) return false;
+        return canConfirmMeetingConcluded(card, user);
+      }) || null;
+    }
+
+    function checkMeetingConcludedAlert(){
+      if(!meetingConcludedBanner) return;
+      const user = window.__currentUsuario;
+      const card = findConcludedMeetingForUser(user);
+      meetingConcludedCard = card;
+      if(!card){
+        meetingConcludedBanner.style.display = 'none';
+        return;
+      }
+      meetingConcludedMsg.textContent = (card.dataset.title || 'Reunião') + ' já terminou · confirmar conclusão?';
+      meetingConcludedBanner.style.display = '';
+    }
+
+    if(meetingConcludedConfirmBtn){
+      meetingConcludedConfirmBtn.addEventListener('click', async () => {
+        if(!meetingConcludedCard) return;
+        const card = meetingConcludedCard;
+        const user = window.__currentUsuario;
+        meetingConcludedConfirmBtn.disabled = true;
+        if(supa && card.dataset.id){
+          const { error } = await supa.from('eventos_agenda').update({
+            reuniao_concluida: true,
+            reuniao_concluida_por: (user && user.nome) || null,
+            reuniao_concluida_em: new Date().toISOString()
+          }).eq('id', card.dataset.id);
+          if(error){
+            console.error('Erro ao confirmar conclusão da reunião:', error);
+            alert('Não foi possível confirmar. Tente novamente.\n\nDetalhe: ' + (error.message || error.hint || error.code || 'erro desconhecido'));
+            meetingConcludedConfirmBtn.disabled = false;
+            return;
+          }
+        }
+        card.dataset.reuniaoConcluida = '1';
+        meetingConcludedConfirmBtn.disabled = false;
+        meetingConcludedCard = null;
+        meetingConcludedBanner.style.display = 'none';
+      });
+    }
+
+    setInterval(checkMeetingConcludedAlert, 5 * 60 * 1000);
+    document.addEventListener('cedros:loggedin', checkMeetingConcludedAlert);
+
+    // ---- Aprovação da Programação do Dia (só Diretor/Dir. Associado(a)) ----
+    // O Oficial de Dia pode preencher a Programação a qualquer momento, mas ela só
+    // conta como publicada (chip "Reunião Regular" logo abaixo) depois que um desses
+    // dois cargos aprova — evita que uma programação incompleta ou errada apareça
+    // pra Diretoria/membros antes de alguém responsável revisar.
+    const approvalBanner = document.getElementById('bdProgramacaoApprovalBanner');
+    const approvalMsg = document.getElementById('bdProgramacaoApprovalMsg');
+    const approvalConfirmBtn = document.getElementById('bdProgramacaoApprovalConfirmBtn');
+    const APPROVAL_ALLOWED_CARGOS = ['diretor', 'dir. associado', 'dir. associada'];
+    let approvalCard = null;
+
+    function normalizeApprovalCargo(s){
+      return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    }
+
+    function refreshProgramacaoApprovalBanner(){
+      if(!approvalBanner) return;
+      const user = window.__currentUsuario;
+      const isApprover = !!user && APPROVAL_ALLOWED_CARGOS.includes(normalizeApprovalCargo(user.cargo));
+      const result = (isApprover && window.__plGetPendingApprovalEvent) ? window.__plGetPendingApprovalEvent() : null;
+      if(!result){
+        approvalBanner.style.display = 'none';
+        approvalCard = null;
+        return;
+      }
+      approvalCard = result.card;
+      const dateStr = result.date.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
+      approvalMsg.textContent = (approvalCard.dataset.title || 'Reunião') + ' · ' + dateStr;
+      approvalBanner.style.display = '';
+    }
+
+    if(approvalBanner){
+      approvalBanner.addEventListener('click', (e) => {
+        e.preventDefault();
+        if(approvalCard && window.__plOpenEventReadOnly) window.__plOpenEventReadOnly(approvalCard);
+      });
+      if(approvalConfirmBtn){
+        approvalConfirmBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if(!approvalCard) return;
+          const card = approvalCard;
+          const user = window.__currentUsuario;
+          approvalConfirmBtn.disabled = true;
+          if(supa && card.dataset.id){
+            const { error } = await supa.from('eventos_agenda').update({
+              programacao_aprovada: true,
+              programacao_aprovada_por: (user && user.nome) || null,
+              programacao_aprovada_em: new Date().toISOString()
+            }).eq('id', card.dataset.id);
+            if(error){
+              console.error('Erro ao aprovar a Programação do Dia:', error);
+              alert('Não foi possível aprovar. Tente novamente.\n\nDetalhe: ' + (error.message || error.hint || error.code || 'erro desconhecido'));
+              approvalConfirmBtn.disabled = false;
+              return;
+            }
+          }
+          card.dataset.programacaoAprovada = '1';
+          approvalConfirmBtn.disabled = false;
+          approvalCard = null;
+          approvalBanner.style.display = 'none';
+          refreshScheduleReadyBanner();
+        });
+      }
+      document.addEventListener('cedros:loggedin', refreshProgramacaoApprovalBanner);
+    }
+
+    // ---- Chip "Reunião Regular" (só Diretoria) ----
+    // Avisa a Diretoria quando a Programação do Dia de um evento futuro já foi
+    // preenchida E aprovada (ver aprovação acima) — só a partir de 2 dias antes do
+    // evento (window.__plGetNextScheduledEvent já filtra isso). Toca pra abrir o
+    // evento em modo leitura (window.__plOpenEventReadOnly, já usado pelo card de
+    // destaque do carrossel).
     const scheduleReadyBanner = document.getElementById('bdScheduleReadyBanner');
     const scheduleReadyInfo = document.getElementById('bdScheduleReadyInfo');
     let scheduleReadyCard = null;
@@ -18735,7 +19223,7 @@ const REQ_SUMMARIES = {
       }
       scheduleReadyCard = result.card;
       const dateStr = result.date.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
-      scheduleReadyInfo.innerHTML = '<svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Programação pronta · ' + dateStr;
+      scheduleReadyInfo.innerHTML = '<svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Reunião Regular · ' + dateStr;
       scheduleReadyBanner.title = scheduleReadyCard.dataset.title || '';
       scheduleReadyBanner.style.display = '';
     }
@@ -18749,10 +19237,13 @@ const REQ_SUMMARIES = {
       document.addEventListener('cedros:loggedin', refreshScheduleReadyBanner);
     }
 
-    window.__bdRefreshBanners = function(){ buildBanners(); refreshOfficerBanner(); refreshScheduleReadyBanner(); };
+    window.__bdRefreshBanners = function(){ buildBanners(); refreshOfficerBanner(); refreshProgramacaoApprovalBanner(); refreshScheduleReadyBanner(); checkActivityTransitionAlert(); checkMeetingConcludedAlert(); };
     buildBanners();
     refreshOfficerBanner();
+    refreshProgramacaoApprovalBanner();
     refreshScheduleReadyBanner();
+    checkActivityTransitionAlert();
+    checkMeetingConcludedAlert();
   })();
 
   // ---------------------------------------------------------------------

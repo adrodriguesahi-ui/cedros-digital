@@ -557,6 +557,25 @@ alter table eventos_agenda add column if not exists escala_oculta boolean not nu
 -- repetições configurado (lembrete_repetir_vezes).
 alter table eventos_agenda add column if not exists lembrete_confirmado_por text;
 
+-- Colunas adicionadas depois: confirmação de que a Programação do Dia de uma
+-- Reunião Regular foi realmente concluída (feita por qualquer Oficial de Dia
+-- responsável, Diretor ou Dir. Associado(a), no banner "Reunião terminou" do
+-- Início) — assim que confirmada, o banner some da tela inicial pra todo
+-- mundo, não só de quem confirmou.
+alter table eventos_agenda add column if not exists reuniao_concluida boolean not null default false;
+alter table eventos_agenda add column if not exists reuniao_concluida_por text;
+alter table eventos_agenda add column if not exists reuniao_concluida_em timestamptz;
+
+-- Colunas adicionadas depois: aprovação da Programação do Dia preenchida pelo
+-- Oficial de Dia. Só depois de aprovada por Diretor/Dir. Associado(a) ela conta
+-- como publicada (chip "Reunião Regular" no Início, que só aparece a partir de
+-- 2 dias antes do evento) — evita que uma programação incompleta ou errada
+-- apareça pra Diretoria/membros antes de alguém responsável revisar. Volta a
+-- false toda vez que o Oficial de Dia salva uma nova versão.
+alter table eventos_agenda add column if not exists programacao_aprovada boolean not null default false;
+alter table eventos_agenda add column if not exists programacao_aprovada_por text;
+alter table eventos_agenda add column if not exists programacao_aprovada_em timestamptz;
+
 create or replace function set_updated_at_eventos_agenda()
 returns trigger language plpgsql as $$
 begin
@@ -797,6 +816,18 @@ create table if not exists chamada_presencas (
 );
 
 create index if not exists chamada_presencas_usuario_idx on chamada_presencas(usuario_id);
+
+-- Coluna adicionada depois: antes a chamada era só presente/ausente (booleano),
+-- o que não distinguia quem chegou atrasado. Agora cada pessoa tem um dos 3
+-- estados: 'presente', 'atraso' ou 'falta'. A coluna `presente` continua sendo
+-- gravada junto (true pra presente e atraso, false pra falta) — é ela que o
+-- cálculo de frequência anual usa, então nada dessa conta mudou. Chamadas
+-- antigas ficam com o default nas linhas marcadas como presentes; o app deriva
+-- o estado do booleano quando `status` vem vazio.
+-- ('pontual'/'atrasado' foram os nomes da primeira versão desses estados — o app
+-- ainda lê esses dois valores, então um banco que já rodou a versão anterior
+-- desta migração não precisa de conversão.)
+alter table chamada_presencas add column if not exists status text not null default 'presente';
 
 alter table chamadas enable row level security;
 alter table chamada_presencas enable row level security;
