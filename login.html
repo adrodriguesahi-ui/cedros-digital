@@ -9139,7 +9139,7 @@
 
                 <div class="sp-area-heading">Nova Chamada</div>
                 <div class="pl-field-col">
-                  <label class="pl-field-label" style="margin-top:0;">Reunião</label>
+                  <label class="pl-field-label" style="margin-top:0;">Reunião / Evento</label>
                   <select class="pl-input" id="atCallMeetingSelect"></select>
                 </div>
                 <div class="pl-field-row" id="atCallManualFields" style="display:none;">
@@ -10734,6 +10734,19 @@
 
   function showView(id){
     views.forEach(v => v.classList.toggle('active', v.id === id));
+    // Card "Membros" do Início: entra direto na Chamada de Presença, sem as
+    // outras abas da Secretaria à vista — window.__scAttendanceOnlyNextEntry é
+    // setado por esse atalho logo antes de chamar showView. Qualquer outra
+    // forma de entrar na Secretaria (menu, relatório de Unidades etc.) sempre
+    // restaura as abas normais.
+    if(id === 'view-secretary'){
+      const tabsEl = document.querySelector('#view-secretary .sc-pdf-tabs');
+      const titleEl = document.querySelector('#view-secretary .pl-title');
+      const attendanceOnly = !!window.__scAttendanceOnlyNextEntry;
+      window.__scAttendanceOnlyNextEntry = false;
+      if(tabsEl) tabsEl.style.display = attendanceOnly ? 'none' : '';
+      if(titleEl) titleEl.textContent = attendanceOnly ? 'Chamada de Presença' : 'Secretaria';
+    }
     if(appTabbar){
       const showBar = APP_TABBAR_VIEWS.has(id);
       appTabbar.classList.toggle('show', showBar);
@@ -15826,14 +15839,18 @@
     // precisar de uma chamada fora do calendário ainda pode escolher "Outro".
     async function loadRegularMeetings(){
       if(!supa || !meetingSelect) return;
+      // Antes só trazia eventos com "Reunião Regular" no título; agora traz todos os
+      // eventos da Agenda Anual (Acampamento, Caminhada, evento externo etc.) também
+      // como opção de chamada — cada um rotulado como "Chamada de Evento" quando não
+      // for uma Reunião Regular de verdade (tag_label === 'Reunião').
       const { data, error } = await supa.from('eventos_agenda')
-        .select('id, dia, mes_indice, titulo')
-        .ilike('titulo', '%Reunião Regular%')
+        .select('id, dia, mes_indice, titulo, tag_label')
         .order('mes_indice', { ascending: true }).order('dia', { ascending: true });
       if(error || !data) return;
       const year = new Date().getFullYear();
       regularMeetings = data.map(row => ({
         id: row.id, day: row.dia, monIdx: row.mes_indice, title: row.titulo,
+        isRegular: row.tag_label === 'Reunião',
         date: new Date(year, row.mes_indice - 1, row.dia)
       }));
       renderMeetingSelect();
@@ -15847,9 +15864,9 @@
       regularMeetings.forEach((m, i) => {
         const opt = document.createElement('option');
         opt.value = String(i);
-        opt.textContent = String(m.day).padStart(2, '0') + '/' + MONTHS_ABBR[m.monIdx - 1] + ' — ' + m.title;
+        opt.textContent = String(m.day).padStart(2, '0') + '/' + MONTHS_ABBR[m.monIdx - 1] + ' — ' + m.title + (m.isRegular ? '' : ' (Chamada de Evento)');
         meetingSelect.appendChild(opt);
-        if(m.date <= today) defaultIdx = i; // última reunião já ocorrida (ou hoje) até agora
+        if(m.date <= today) defaultIdx = i; // último evento já ocorrido (ou hoje) até agora
       });
       const outroOpt = document.createElement('option');
       outroOpt.value = 'outro';
@@ -15879,7 +15896,9 @@
       callDate.value = iso;
       callEvent.value = m.title;
       selectedEventId = m.id;
-      if(countsToggle) countsToggle.checked = true;
+      // Reunião Regular conta pra frequência anual por padrão; eventos/acampamentos
+      // não (a pessoa ainda pode ligar manualmente se quiser que contem).
+      if(countsToggle) countsToggle.checked = m.isRegular;
     }
     if(meetingSelect) meetingSelect.addEventListener('change', applyMeetingSelection);
     loadRegularMeetings();
@@ -18200,6 +18219,7 @@ const REQ_SUMMARIES = {
     applyMembersCardAccess(window.__currentUsuario);
     chip.addEventListener('click', (e) => {
       e.preventDefault();
+      window.__scAttendanceOnlyNextEntry = true;
       showView('view-secretary');
       const attendanceTab = document.querySelector('.sc-pdf-tab[data-tab="attendance"]');
       if(attendanceTab) attendanceTab.click();
