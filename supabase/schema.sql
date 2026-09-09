@@ -566,6 +566,16 @@ alter table eventos_agenda add column if not exists reuniao_concluida boolean no
 alter table eventos_agenda add column if not exists reuniao_concluida_por text;
 alter table eventos_agenda add column if not exists reuniao_concluida_em timestamptz;
 
+-- Colunas adicionadas depois: aprovação da Programação do Dia preenchida pelo
+-- Oficial de Dia. Só depois de aprovada por Diretor/Dir. Associado(a) ela conta
+-- como publicada (chip "Reunião Regular" no Início, que só aparece a partir de
+-- 2 dias antes do evento) — evita que uma programação incompleta ou errada
+-- apareça pra Diretoria/membros antes de alguém responsável revisar. Volta a
+-- false toda vez que o Oficial de Dia salva uma nova versão.
+alter table eventos_agenda add column if not exists programacao_aprovada boolean not null default false;
+alter table eventos_agenda add column if not exists programacao_aprovada_por text;
+alter table eventos_agenda add column if not exists programacao_aprovada_em timestamptz;
+
 create or replace function set_updated_at_eventos_agenda()
 returns trigger language plpgsql as $$
 begin

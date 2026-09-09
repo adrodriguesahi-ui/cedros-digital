@@ -10278,6 +10278,25 @@
           </button>
         </div>
 
+        <!-- Só aparece pra Diretor ou Dir. Associado(a), quando algum Oficial de Dia
+             preencheu a Programação do Dia de uma Reunião Regular futura mas ela ainda
+             não foi aprovada — ver refreshProgramacaoApprovalBanner mais abaixo no
+             arquivo. Só depois de aprovada ela passa a contar como "pronta"/publicada
+             (chip "Reunião Regular" logo abaixo, que só mostra a partir de 2 dias
+             antes do evento). -->
+        <div class="bd-reminder-banner bd-approval-banner" id="bdProgramacaoApprovalBanner" role="button" tabindex="0" style="display:none;">
+          <span class="bd-reminder-banner-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+          </span>
+          <span class="bd-reminder-banner-body">
+            <span class="bd-reminder-banner-title">Programação aguardando aprovação</span>
+            <span class="bd-reminder-banner-msg" id="bdProgramacaoApprovalMsg"></span>
+          </span>
+          <button type="button" class="bd-reminder-banner-confirm" id="bdProgramacaoApprovalConfirmBtn" aria-label="Aprovar programação">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          </button>
+        </div>
+
         <div class="bd-reminder-banner" id="bdReminderBanner" role="button" tabindex="0" style="display:none;">
           <span class="bd-reminder-banner-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
@@ -11740,6 +11759,7 @@
       a.dataset.schedule = JSON.stringify(data.schedule || []);
       a.dataset.checklist = JSON.stringify(data.checklist || []);
       a.dataset.reuniaoConcluida = data.reuniaoConcluida ? '1' : '';
+      a.dataset.programacaoAprovada = data.programacaoAprovada ? '1' : '';
       a.dataset.showGallery = data.showGallery === false ? '0' : '1';
       a.dataset.showGalleryFrom = data.showGalleryFrom || '';
       a.dataset.foto = data.foto || '';
@@ -11846,6 +11866,7 @@
         schedule: Array.isArray(row.programacao_dia) ? row.programacao_dia : [],
         checklist: Array.isArray(row.checklist_atividades) ? row.checklist_atividades : [],
         reuniaoConcluida: !!row.reuniao_concluida,
+        programacaoAprovada: !!row.programacao_aprovada,
         showGallery: row.mostrar_galeria !== false,
         showGalleryFrom: row.mostrar_galeria_a_partir_de || '',
         foto: row.foto || '',
@@ -12626,11 +12647,12 @@
     // acha o próximo evento (se houver) cujo Oficial de Dia já preencheu a
     // Programação do Dia (card.dataset.schedule não vazio), mesma regra de datas
     // do __plGetOfficerEvent acima.
-    window.__plGetNextScheduledEvent = function(){
+    // Comum às duas funções abaixo: junta cada card com a data (dia+hora de início)
+    // resolvida pro próximo ano se já passou este ano — mesma regra usada em todo o
+    // resto do arquivo pra achar "o próximo evento" que bate um filtro.
+    function withResolvedDates(cards){
       const now = new Date();
-      const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'))
-        .filter(card => parseJSONSafe(card.dataset.schedule).length > 0 && card.dataset.escalaOculta !== '1');
-      const withDates = cards.map(card => {
+      return cards.map(card => {
         const day = parseInt(card.dataset.day, 10);
         const monIdx = parseInt(card.dataset.monIndex, 10);
         if(!day || !monIdx) return null;
@@ -12638,9 +12660,28 @@
         let date = new Date(now.getFullYear(), monIdx - 1, day, hh, mm);
         if(date < now) date = new Date(now.getFullYear() + 1, monIdx - 1, day, hh, mm);
         return { card, date };
-      }).filter(Boolean);
-      withDates.sort((a, b) => a.date - b.date);
-      return withDates[0] || null;
+      }).filter(Boolean).sort((a, b) => a.date - b.date);
+    }
+
+    // Usado pelo banner "Programação aguardando aprovação" (só Diretor/Dir.
+    // Associado(a)): acha a próxima Reunião Regular cujo Oficial de Dia já
+    // preencheu a Programação, mas que ainda não foi aprovada.
+    window.__plGetPendingApprovalEvent = function(){
+      const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'))
+        .filter(card => parseJSONSafe(card.dataset.schedule).length > 0 && card.dataset.escalaOculta !== '1' && card.dataset.programacaoAprovada !== '1');
+      return withResolvedDates(cards)[0] || null;
+    };
+
+    // Usado pelo chip "Reunião Regular" (só Diretoria): só considera a Programação
+    // "publicada" depois de aprovada por Diretor/Dir. Associado(a) — e mesmo aprovada,
+    // só passa a aparecer a partir de 2 dias antes do evento (não adianta mostrar
+    // "pronta" com um mês de antecedência).
+    window.__plGetNextScheduledEvent = function(){
+      const now = new Date();
+      const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
+      const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'))
+        .filter(card => parseJSONSafe(card.dataset.schedule).length > 0 && card.dataset.escalaOculta !== '1' && card.dataset.programacaoAprovada === '1');
+      return withResolvedDates(cards).filter(item => (item.date - now) <= TWO_DAYS_MS)[0] || null;
     };
 
     // Usado pelo card de destaque do dashboard: mostra os detalhes do evento sem
@@ -18760,10 +18801,17 @@ const REQ_SUMMARIES = {
         })).filter(item => item.texto);
 
         officerFillSaveBtn.disabled = true;
+        // Toda vez que o Oficial de Dia salva (preenchimento novo ou uma edição em
+        // cima de uma programação já aprovada), a aprovação anterior deixa de valer
+        // — precisa que Diretor/Dir. Associado(a) aprove essa versão de novo antes
+        // dela contar como publicada.
         const { error } = await supa.from('eventos_agenda').update({
           programacao_dia: schedule,
           aviso_membros: notice || null,
-          checklist_atividades: checklist
+          checklist_atividades: checklist,
+          programacao_aprovada: false,
+          programacao_aprovada_por: null,
+          programacao_aprovada_em: null
         }).eq('id', officerCurrentCard.dataset.id);
         officerFillSaveBtn.disabled = false;
         if(error){
@@ -18774,7 +18822,9 @@ const REQ_SUMMARIES = {
         officerCurrentCard.dataset.schedule = JSON.stringify(schedule);
         officerCurrentCard.dataset.notice = notice;
         officerCurrentCard.dataset.checklist = JSON.stringify(checklist);
+        officerCurrentCard.dataset.programacaoAprovada = '';
         officerFillOverlay.classList.remove('show');
+        if(window.__bdRefreshBanners) window.__bdRefreshBanners();
       });
 
       document.addEventListener('cedros:loggedin', refreshOfficerBanner);
@@ -18989,11 +19039,79 @@ const REQ_SUMMARIES = {
     setInterval(checkMeetingConcludedAlert, 5 * 60 * 1000);
     document.addEventListener('cedros:loggedin', checkMeetingConcludedAlert);
 
-    // ---- Chip "Programação pronta" (só Diretoria) ----
-    // Avisa a Diretoria assim que o Oficial de Dia preenche a Programação do Dia de
-    // um evento futuro, sem precisar entrar na Agenda Anual pra descobrir. Toca pra
-    // abrir o evento em modo leitura (window.__plOpenEventReadOnly, já usado pelo
-    // card de destaque do carrossel).
+    // ---- Aprovação da Programação do Dia (só Diretor/Dir. Associado(a)) ----
+    // O Oficial de Dia pode preencher a Programação a qualquer momento, mas ela só
+    // conta como publicada (chip "Reunião Regular" logo abaixo) depois que um desses
+    // dois cargos aprova — evita que uma programação incompleta ou errada apareça
+    // pra Diretoria/membros antes de alguém responsável revisar.
+    const approvalBanner = document.getElementById('bdProgramacaoApprovalBanner');
+    const approvalMsg = document.getElementById('bdProgramacaoApprovalMsg');
+    const approvalConfirmBtn = document.getElementById('bdProgramacaoApprovalConfirmBtn');
+    const APPROVAL_ALLOWED_CARGOS = ['diretor', 'dir. associado', 'dir. associada'];
+    let approvalCard = null;
+
+    function normalizeApprovalCargo(s){
+      return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    }
+
+    function refreshProgramacaoApprovalBanner(){
+      if(!approvalBanner) return;
+      const user = window.__currentUsuario;
+      const isApprover = !!user && APPROVAL_ALLOWED_CARGOS.includes(normalizeApprovalCargo(user.cargo));
+      const result = (isApprover && window.__plGetPendingApprovalEvent) ? window.__plGetPendingApprovalEvent() : null;
+      if(!result){
+        approvalBanner.style.display = 'none';
+        approvalCard = null;
+        return;
+      }
+      approvalCard = result.card;
+      const dateStr = result.date.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
+      approvalMsg.textContent = (approvalCard.dataset.title || 'Reunião') + ' · ' + dateStr;
+      approvalBanner.style.display = '';
+    }
+
+    if(approvalBanner){
+      approvalBanner.addEventListener('click', (e) => {
+        e.preventDefault();
+        if(approvalCard && window.__plOpenEventReadOnly) window.__plOpenEventReadOnly(approvalCard);
+      });
+      if(approvalConfirmBtn){
+        approvalConfirmBtn.addEventListener('click', async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if(!approvalCard) return;
+          const card = approvalCard;
+          const user = window.__currentUsuario;
+          approvalConfirmBtn.disabled = true;
+          if(supa && card.dataset.id){
+            const { error } = await supa.from('eventos_agenda').update({
+              programacao_aprovada: true,
+              programacao_aprovada_por: (user && user.nome) || null,
+              programacao_aprovada_em: new Date().toISOString()
+            }).eq('id', card.dataset.id);
+            if(error){
+              console.error('Erro ao aprovar a Programação do Dia:', error);
+              alert('Não foi possível aprovar. Tente novamente.\n\nDetalhe: ' + (error.message || error.hint || error.code || 'erro desconhecido'));
+              approvalConfirmBtn.disabled = false;
+              return;
+            }
+          }
+          card.dataset.programacaoAprovada = '1';
+          approvalConfirmBtn.disabled = false;
+          approvalCard = null;
+          approvalBanner.style.display = 'none';
+          refreshScheduleReadyBanner();
+        });
+      }
+      document.addEventListener('cedros:loggedin', refreshProgramacaoApprovalBanner);
+    }
+
+    // ---- Chip "Reunião Regular" (só Diretoria) ----
+    // Avisa a Diretoria quando a Programação do Dia de um evento futuro já foi
+    // preenchida E aprovada (ver aprovação acima) — só a partir de 2 dias antes do
+    // evento (window.__plGetNextScheduledEvent já filtra isso). Toca pra abrir o
+    // evento em modo leitura (window.__plOpenEventReadOnly, já usado pelo card de
+    // destaque do carrossel).
     const scheduleReadyBanner = document.getElementById('bdScheduleReadyBanner');
     const scheduleReadyInfo = document.getElementById('bdScheduleReadyInfo');
     let scheduleReadyCard = null;
@@ -19024,9 +19142,10 @@ const REQ_SUMMARIES = {
       document.addEventListener('cedros:loggedin', refreshScheduleReadyBanner);
     }
 
-    window.__bdRefreshBanners = function(){ buildBanners(); refreshOfficerBanner(); refreshScheduleReadyBanner(); checkActivityTransitionAlert(); checkMeetingConcludedAlert(); };
+    window.__bdRefreshBanners = function(){ buildBanners(); refreshOfficerBanner(); refreshProgramacaoApprovalBanner(); refreshScheduleReadyBanner(); checkActivityTransitionAlert(); checkMeetingConcludedAlert(); };
     buildBanners();
     refreshOfficerBanner();
+    refreshProgramacaoApprovalBanner();
     refreshScheduleReadyBanner();
     checkActivityTransitionAlert();
     checkMeetingConcludedAlert();
