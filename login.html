@@ -9193,7 +9193,10 @@
                     <span class="at-roster-count" id="atChecklistCount">0/0 presentes</span>
                   </div>
                   <div class="at-checklist" id="atChecklist"></div>
-                  <button type="button" class="pl-btn pl-btn-primary" id="atSaveCallBtn" style="margin-top:10px;">Salvar Chamada</button>
+                  <div class="pl-modal-actions" style="margin-top:12px;">
+                    <button type="button" class="pl-btn" id="atCallPdfBtn" style="background:rgba(255,255,255,0.08); color:var(--cream);"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Gerar PDF</button>
+                    <button type="button" class="pl-btn pl-btn-primary" id="atSaveCallBtn">Salvar Chamada</button>
+                  </div>
                 </div>
 
                 <div class="sp-area-heading">Histórico de Chamadas</div>
@@ -15840,6 +15843,7 @@
     const checklist = document.getElementById('atChecklist');
     const checklistCount = document.getElementById('atChecklistCount');
     const saveCallBtn = document.getElementById('atSaveCallBtn');
+    const callPdfBtn = document.getElementById('atCallPdfBtn');
     const historyList = document.getElementById('atHistoryList');
     const historyEmpty = document.getElementById('atHistoryEmpty');
     const meetingSelect = document.getElementById('atCallMeetingSelect');
@@ -16262,16 +16266,36 @@
       buildAttendancePDF(editingRecord, readEditChecklistMembers());
     });
 
-    saveCallBtn.addEventListener('click', async () => {
-      const dateObj = new Date(callDate.value + 'T00:00:00');
-      const monthsAbbr = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
-      const members = Array.from(checklist.querySelectorAll('.at-check-row')).map(row => ({
+    // Lê a chamada que está na tela agora — usado tanto pra salvar quanto pra
+    // gerar o PDF antes de salvar.
+    function readChecklistMembers(){
+      return Array.from(checklist.querySelectorAll('.at-check-row')).map(row => ({
         id: row.dataset.id,
         name: row.dataset.name,
         unit: row.dataset.unit,
         status: row.dataset.status || 'presente',
         present: statusToPresent(row.dataset.status || 'presente')
       }));
+    }
+
+    // O PDF também sai direto daqui, sem precisar salvar e reabrir pelo histórico
+    // (o botão do histórico continua existindo pra reimprimir depois).
+    if(callPdfBtn){
+      callPdfBtn.addEventListener('click', () => {
+        if(!callDate.value || !callEvent.value.trim()) return;
+        const d = new Date(callDate.value + 'T00:00:00');
+        buildAttendancePDF({
+          event: callEvent.value.trim(),
+          day: String(d.getDate()).padStart(2, '0'),
+          mon: MONTHS_ABBR[d.getMonth()]
+        }, readChecklistMembers());
+      });
+    }
+
+    saveCallBtn.addEventListener('click', async () => {
+      const dateObj = new Date(callDate.value + 'T00:00:00');
+      const monthsAbbr = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+      const members = readChecklistMembers();
       const presentCount = members.filter(m => m.present).length;
       const contaPresenca = countsToggle ? countsToggle.checked : true;
 
