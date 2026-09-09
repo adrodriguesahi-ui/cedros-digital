@@ -18744,26 +18744,49 @@ const REQ_SUMMARIES = {
         const Ctx = window.AudioContext || window.webkitAudioContext;
         if(!Ctx) return;
         const ctx = new Ctx();
-        // 4 apitos curtos de onda quadrada (tipo alarme de forno/despertador) —
-        // bem mais chamativo que o "ding" suave do lembrete comum.
-        const beepCount = 4;
-        const freq = 1046.5;
-        for(let i = 0; i < beepCount; i++){
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'square';
-          osc.frequency.value = freq;
-          const start = ctx.currentTime + i * 0.22;
-          gain.gain.setValueAtTime(0, start);
-          gain.gain.linearRampToValueAtTime(0.3, start + 0.008);
-          gain.gain.setValueAtTime(0.3, start + 0.11);
-          gain.gain.linearRampToValueAtTime(0, start + 0.15);
-          osc.connect(gain).connect(ctx.destination);
-          osc.start(start);
-          osc.stop(start + 0.16);
+        // Sino sintetizado (síntese aditiva com parciais inarmônicos, como um sino
+        // de verdade) — duas badaladas, bem mais chamativo e reconhecível que um
+        // "bip" eletrônico.
+        const strikeCount = 2;
+        const baseFreq = 587; // ré agudo — sino claro, tipo sininho de mesa
+        const partials = [1, 2, 3, 4.2, 5.4, 6.8];
+        const partialGains = [0.5, 0.32, 0.22, 0.14, 0.09, 0.05];
+        for(let s = 0; s < strikeCount; s++){
+          const strikeStart = ctx.currentTime + s * 0.62;
+          partials.forEach((ratio, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = baseFreq * ratio;
+            const decay = 0.9 - i * 0.1; // parciais mais agudos somem mais rápido, como um sino real
+            gain.gain.setValueAtTime(0, strikeStart);
+            gain.gain.linearRampToValueAtTime(partialGains[i], strikeStart + 0.008);
+            gain.gain.exponentialRampToValueAtTime(0.0001, strikeStart + decay);
+            osc.connect(gain).connect(ctx.destination);
+            osc.start(strikeStart);
+            osc.stop(strikeStart + decay + 0.05);
+          });
         }
-        setTimeout(() => ctx.close(), beepCount * 220 + 300);
+        setTimeout(() => ctx.close(), strikeCount * 620 + 1000);
       } catch(err){ /* áudio indisponível — ignora silenciosamente */ }
+    }
+
+    // Vibra o celular junto com o sino (dentro do app nativo via Capacitor Haptics,
+    // ou navigator.vibrate no navegador/PWA — iOS Safari/WKWebView não suporta
+    // vibração de jeito nenhum, então nesse caso só o som mesmo).
+    function triggerActivityAlertVibration(){
+      try{
+        const haptics = window.Capacitor && window.Capacitor.isPluginAvailable && window.Capacitor.isPluginAvailable('Haptics')
+          ? window.Capacitor.Plugins.Haptics : null;
+        if(haptics && haptics.impact){
+          haptics.impact({ style: 'HEAVY' });
+          setTimeout(() => haptics.impact({ style: 'HEAVY' }), 350);
+          return;
+        }
+      } catch(err){ /* Capacitor Haptics indisponível — tenta o fallback abaixo */ }
+      try{
+        if(navigator.vibrate) navigator.vibrate([180, 120, 180]);
+      } catch(err){ /* vibração indisponível — ignora silenciosamente */ }
     }
 
     function findOfficerCardHappeningNow(userId){
@@ -18818,6 +18841,7 @@ const REQ_SUMMARIES = {
       if(alertKey !== lastActivityAlertKey){
         lastActivityAlertKey = alertKey;
         playActivityAlertChime();
+        triggerActivityAlertVibration();
       }
     }
 
