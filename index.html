@@ -11314,6 +11314,10 @@
     const viewPhotoImg = document.getElementById('plViewPhotoImg');
     const viewPdfBtn = document.getElementById('plViewPdfBtn');
     let viewingCard = null;
+    // Setado por __plOpenEventReadOnly (atalho "Programação pronta" do Início):
+    // como esse atalho troca pra view-planning só pra mostrar o evento, fechar
+    // o modal deve voltar pro Início em vez de deixar o calendário aberto atrás.
+    let returnViewOnClose = null;
     if(viewPdfBtn){
       viewPdfBtn.addEventListener('click', () => {
         if(viewingCard) generateProgramacaoPDF(buildProgramacaoPDFDataFromCard(viewingCard));
@@ -11415,7 +11419,13 @@
       viewPhotoImg.src = foto || '';
       viewOverlay.classList.add('show');
     }
-    function closeViewOnly(){ viewOverlay.classList.remove('show'); }
+    function closeViewOnly(){
+      viewOverlay.classList.remove('show');
+      if(returnViewOnClose){
+        showView(returnViewOnClose);
+        returnViewOnClose = null;
+      }
+    }
     viewModalClose.addEventListener('click', closeViewOnly);
     viewOverlay.addEventListener('click', (e) => { if(e.target === viewOverlay) closeViewOnly(); });
 
@@ -12555,6 +12565,7 @@
     // abrir o formulário de edição, não importa o modo (Editor/Somente visualização)
     // em que a Agenda Anual esteja no momento.
     window.__plOpenEventReadOnly = function(card){
+      returnViewOnClose = 'view-dashboard';
       showView('view-planning');
       openViewOnly(card);
     };
