@@ -1,4 +1,5 @@
 node_modules/
+.wrangler/
 www/
 android/app/build/
 android/build/

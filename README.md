@@ -6,7 +6,7 @@ Publicado em: https://cedros-digital.adrodrigues-ahi.workers.dev
 
 ## Como publicar
 
-Hospedado no **Cloudflare Workers** (Workers & Pages → "Connect to Git"), com deploy automático a cada `git push` na branch `main` — configurado via [wrangler.toml](wrangler.toml) (site estático, sem build, servido a partir da raiz do repositório).
+Hospedado no **Cloudflare Workers** (Workers & Pages → "Connect to Git"), com deploy automático a cada `git push` na branch `main` — configurado via [wrangler.toml](wrangler.toml). O site em si é estático (sem build, servido a partir da raiz do repositório); o [worker.js](worker.js) só entra em ação pra rota `/api/suggest-missions` (sugestões de missão por IA, ver abaixo) — tudo o mais continua sendo servido como arquivo estático.
 
 Pra publicar do zero:
 1. No painel da Cloudflare, vá em **Workers & Pages → Create → Connect to Git** e selecione este repositório.
@@ -20,6 +20,15 @@ Pra publicar do zero:
 ## Backend (Supabase)
 
 Login, cadastro e o painel de Administração usam o Supabase (Postgres + Auth) — ver [supabase/schema.sql](supabase/schema.sql) para o schema (tabelas, função de permissões padrão e RLS).
+
+## Sugestões de missão por IA
+
+O botão "Sugerir com IA" na tela Missões (só Diretor(a)/Dir. Associado(a)) chama a API da Anthropic (Claude) através do [worker.js](worker.js), que guarda a chave em segredo — o app nunca tem acesso a ela diretamente. Pra ativar:
+
+1. Crie uma conta e uma API key em [console.anthropic.com](https://console.anthropic.com) (uso é cobrado por chamada, ver preços lá).
+2. No painel da Cloudflare, vá em **Workers & Pages → cedros-digital → Settings → Variables and Secrets** → **Add** → nome `ANTHROPIC_API_KEY`, tipo **Secret**, cole a chave → **Save and deploy**.
+
+Sem a chave configurada, o botão continua aparecendo mas mostra um aviso de erro ao tocar — o resto do app não é afetado.
 
 ## Gerar APK
 

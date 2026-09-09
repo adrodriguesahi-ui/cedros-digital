@@ -12,4 +12,6 @@ supabase
 package.json
 package-lock.json
 capacitor.config.json
+worker.js
+wrangler.toml
 *.md
