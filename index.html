@@ -1056,6 +1056,24 @@
   .at-check-name{ flex:1; min-width:0; font-size:13px; font-weight:700; color:var(--cream); }
   .at-check-row.absent{ opacity:0.55; }
 
+  /* Chamada com 3 estados por pessoa (Pontual / Atrasado / Falta) — antes era só
+     um interruptor presente/ausente, que não distinguia quem chegou atrasado.
+     Os 3 botões ficam numa linha própria abaixo do nome: lado a lado com o nome
+     eles espremiam nomes longos em 3 linhas no celular, e alvos de toque maiores
+     ajudam a marcar a chamada rápido. */
+  .at-check-row.at-check-row-status{ flex-wrap:wrap; }
+  .at-status-group{ display:flex; gap:6px; width:100%; }
+  .at-status-btn{
+    flex:1; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.05);
+    color:rgba(245,239,225,0.55); border-radius:8px; padding:7px 4px;
+    font-size:10.5px; font-weight:900; letter-spacing:0.02em; text-transform:uppercase;
+    cursor:pointer; transition:background .15s, color .15s, border-color .15s;
+  }
+  .at-status-btn:active{ transform:scale(0.94); }
+  .at-status-btn.active[data-status="pontual"]{ background:rgba(74,222,128,0.18); border-color:rgba(74,222,128,0.5); color:#7BE8A4; }
+  .at-status-btn.active[data-status="atrasado"]{ background:rgba(245,196,90,0.18); border-color:rgba(245,196,90,0.5); color:#F5C45A; }
+  .at-status-btn.active[data-status="falta"]{ background:rgba(255,107,92,0.18); border-color:rgba(255,107,92,0.5); color:#FF8D80; }
+
   .at-history-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:4px; }
   .at-empty-hint{ font-size:12px; font-weight:600; color:rgba(245,239,225,0.4); margin:4px 0 0; }
 
@@ -15942,7 +15960,7 @@
       const ids = calls.map(c => c.id);
       let presencas = [];
       if(ids.length){
-        const { data } = await supa.from('chamada_presencas').select('chamada_id, usuario_id, presente').in('chamada_id', ids);
+        const { data } = await supa.from('chamada_presencas').select('chamada_id, usuario_id, presente, status').in('chamada_id', ids);
         presencas = data || [];
       }
       const byChamada = {};
@@ -15953,7 +15971,15 @@
         const parts = c.data.split('-').map(n => parseInt(n, 10));
         const members = (byChamada[c.id] || []).map(p => {
           const person = rosterById[p.usuario_id];
-          return { id: p.usuario_id, name: person ? person.name : '(removido)', unit: person ? person.unit : '—', present: p.presente };
+          // Chamadas salvas antes dos 3 estados não têm `status` — deriva do
+          // booleano antigo pra elas continuarem abrindo normalmente.
+          return {
+            id: p.usuario_id,
+            name: person ? person.name : '(removido)',
+            unit: person ? person.unit : '—',
+            present: p.presente,
+            status: p.status || presentToStatus(p.presente)
+          };
         });
         return {
           id: c.id,
@@ -15990,10 +16016,58 @@
       });
     }
 
+    // Cada pessoa na chamada tem 3 estados em vez do antigo presente/ausente:
+    // pontual, atrasado ou falta. Pra frequência anual, "presente" continua sendo
+    // pontual OU atrasado (quem chegou atrasado esteve na reunião) — a coluna
+    // `presente` de chamada_presencas segue sendo gravada assim, então nada do
+    // cálculo de frequência mudou.
+    const AT_STATUSES = [
+      { key: 'pontual', label: 'Pontual' },
+      { key: 'atrasado', label: 'Atrasado' },
+      { key: 'falta', label: 'Falta' }
+    ];
+    function statusToPresent(status){ return status !== 'falta'; }
+    function presentToStatus(present){ return present ? 'pontual' : 'falta'; }
+
+    // O estado fica no próprio row (dataset.status), então ler a chamada de volta
+    // é só varrer as linhas — não precisa de estado paralelo em JS.
+    function buildStatusGroup(row, initialStatus, onChange){
+      const group = document.createElement('span');
+      group.className = 'at-status-group';
+      row.dataset.status = initialStatus || 'pontual';
+      function paint(){
+        group.querySelectorAll('.at-status-btn').forEach(b => b.classList.toggle('active', b.dataset.status === row.dataset.status));
+        row.classList.toggle('absent', row.dataset.status === 'falta');
+      }
+      AT_STATUSES.forEach(st => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'at-status-btn';
+        btn.dataset.status = st.key;
+        btn.textContent = st.label;
+        btn.addEventListener('click', () => {
+          row.dataset.status = st.key;
+          paint();
+          if(onChange) onChange();
+        });
+        group.appendChild(btn);
+      });
+      paint();
+      return group;
+    }
+
+    function countByStatus(container){
+      const rows = Array.from(container.querySelectorAll('.at-check-row'));
+      const late = rows.filter(r => r.dataset.status === 'atrasado').length;
+      const present = rows.filter(r => statusToPresent(r.dataset.status)).length;
+      return { total: rows.length, present, late };
+    }
+    function formatCount(c){
+      return c.present + '/' + c.total + ' presentes' + (c.late ? ' · ' + c.late + ' atrasado' + (c.late > 1 ? 's' : '') : '');
+    }
+
     function updateChecklistCount(){
-      const total = checklist.querySelectorAll('.at-check-row').length;
-      const present = checklist.querySelectorAll('.at-check-row input:checked').length;
-      checklistCount.textContent = present + '/' + total + ' presentes';
+      checklistCount.textContent = formatCount(countByStatus(checklist));
     }
 
     startCallBtn.addEventListener('click', () => {
@@ -16004,17 +16078,15 @@
       checklist.innerHTML = '';
       roster.forEach(m => {
         const row = document.createElement('div');
-        row.className = 'at-check-row';
+        row.className = 'at-check-row at-check-row-status';
+        row.dataset.id = m.id;
+        row.dataset.name = m.name;
+        row.dataset.unit = m.unit;
         row.innerHTML =
           '<span class="cl-class-dot cl-color-' + (UNIT_COLOR[m.unit] || 'gray') + '"></span>' +
-          '<span class="at-check-name"></span>' +
-          '<span class="pl-switch"><input type="checkbox" checked data-id="' + m.id + '" data-name="' + m.name + '" data-unit="' + m.unit + '"><span class="pl-switch-track"><span class="pl-switch-thumb"></span></span></span>';
+          '<span class="at-check-name"></span>';
         row.querySelector('.at-check-name').textContent = m.name;
-        const input = row.querySelector('input');
-        input.addEventListener('change', () => {
-          row.classList.toggle('absent', !input.checked);
-          updateChecklistCount();
-        });
+        row.appendChild(buildStatusGroup(row, 'pontual', updateChecklistCount));
         checklist.appendChild(row);
       });
       checklistWrap.style.display = '';
@@ -16037,7 +16109,8 @@
         row.querySelector('.pl-event-date em').textContent = rec.mon;
         row.querySelector('.pl-event-title').textContent = rec.event;
         row.querySelector('.pl-event-meta').textContent = rec.members.length + ' desbravadores na lista' + (rec.contaPresenca === false ? ' · não conta pra frequência' : '');
-        row.querySelector('.pl-event-tag').textContent = rec.presentCount + '/' + rec.members.length + ' presentes';
+        const recLate = rec.members.filter(m => m.status === 'atrasado').length;
+        row.querySelector('.pl-event-tag').textContent = rec.presentCount + '/' + rec.members.length + ' presentes' + (recLate ? ' · ' + recLate + ' atr.' : '');
         row.addEventListener('click', (e) => {
           e.preventDefault();
           openEditModal(rec);
@@ -16058,9 +16131,7 @@
     let editingRecord = null;
 
     function updateEditChecklistCount(){
-      const total = editChecklist.querySelectorAll('.at-check-row').length;
-      const present = editChecklist.querySelectorAll('.at-check-row input:checked').length;
-      editChecklistCount.textContent = present + '/' + total + ' presentes';
+      editChecklistCount.textContent = formatCount(countByStatus(editChecklist));
     }
 
     function openEditModal(rec){
@@ -16070,18 +16141,13 @@
       editChecklist.innerHTML = '';
       rec.members.forEach((m, i) => {
         const row = document.createElement('div');
-        row.className = 'at-check-row';
-        row.classList.toggle('absent', !m.present);
+        row.className = 'at-check-row at-check-row-status';
+        row.dataset.idx = String(i);
         row.innerHTML =
           '<span class="cl-class-dot cl-color-' + (UNIT_COLOR[m.unit] || 'gray') + '"></span>' +
-          '<span class="at-check-name"></span>' +
-          '<span class="pl-switch"><input type="checkbox"' + (m.present ? ' checked' : '') + ' data-idx="' + i + '"><span class="pl-switch-track"><span class="pl-switch-thumb"></span></span></span>';
+          '<span class="at-check-name"></span>';
         row.querySelector('.at-check-name').textContent = m.name;
-        const input = row.querySelector('input');
-        input.addEventListener('change', () => {
-          row.classList.toggle('absent', !input.checked);
-          updateEditChecklistCount();
-        });
+        row.appendChild(buildStatusGroup(row, m.status || presentToStatus(m.present), updateEditChecklistCount));
         editChecklist.appendChild(row);
       });
       updateEditChecklistCount();
@@ -16091,8 +16157,9 @@
 
     function readEditChecklistMembers(){
       return editingRecord.members.map((m, i) => {
-        const input = editChecklist.querySelector('input[data-idx="' + i + '"]');
-        return { id: m.id, name: m.name, unit: m.unit, present: input ? input.checked : m.present };
+        const row = editChecklist.querySelector('.at-check-row[data-idx="' + i + '"]');
+        const status = row ? (row.dataset.status || m.status) : (m.status || presentToStatus(m.present));
+        return { id: m.id, name: m.name, unit: m.unit, status, present: statusToPresent(status) };
       });
     }
 
@@ -16106,7 +16173,7 @@
       editingRecord.presentCount = members.filter(m => m.present).length;
       if(supa && editingRecord.id){
         await Promise.all(members.filter(m => m.id).map(m =>
-          supa.from('chamada_presencas').update({ presente: m.present }).eq('chamada_id', editingRecord.id).eq('usuario_id', m.id)
+          supa.from('chamada_presencas').update({ presente: m.present, status: m.status }).eq('chamada_id', editingRecord.id).eq('usuario_id', m.id)
         ));
       }
       renderHistory();
@@ -16147,7 +16214,8 @@
       doc.setFontSize(11);
       doc.text('Data: ' + rec.day + '/' + rec.mon, marginX, y);
       const presentCount = members.filter(m => m.present).length;
-      doc.text(presentCount + '/' + members.length + ' presentes', pageWidth - marginX, y, { align: 'right' });
+      const lateCount = members.filter(m => m.status === 'atrasado').length;
+      doc.text(presentCount + '/' + members.length + ' presentes' + (lateCount ? ' · ' + lateCount + ' atrasado' + (lateCount > 1 ? 's' : '') : ''), pageWidth - marginX, y, { align: 'right' });
       y += 10;
 
       doc.setFont('helvetica', 'bold');
@@ -16169,7 +16237,8 @@
         }
         doc.text(m.name, marginX, y);
         doc.text(m.unit, marginX + 90, y);
-        doc.text(m.present ? 'Presente' : 'Ausente', pageWidth - marginX, y, { align: 'right' });
+        const statusLabel = m.status === 'atrasado' ? 'Atrasado' : (m.present ? 'Pontual' : 'Falta');
+        doc.text(statusLabel, pageWidth - marginX, y, { align: 'right' });
         y += 7;
       });
 
@@ -16185,11 +16254,12 @@
     saveCallBtn.addEventListener('click', async () => {
       const dateObj = new Date(callDate.value + 'T00:00:00');
       const monthsAbbr = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
-      const members = Array.from(checklist.querySelectorAll('.at-check-row input')).map(input => ({
-        id: input.getAttribute('data-id'),
-        name: input.getAttribute('data-name'),
-        unit: input.getAttribute('data-unit'),
-        present: input.checked
+      const members = Array.from(checklist.querySelectorAll('.at-check-row')).map(row => ({
+        id: row.dataset.id,
+        name: row.dataset.name,
+        unit: row.dataset.unit,
+        status: row.dataset.status || 'pontual',
+        present: statusToPresent(row.dataset.status || 'pontual')
       }));
       const presentCount = members.filter(m => m.present).length;
       const contaPresenca = countsToggle ? countsToggle.checked : true;
@@ -16205,7 +16275,7 @@
         }).select().single();
         if(!error && chamada){
           chamadaId = chamada.id;
-          const rows = members.filter(m => m.id).map(m => ({ chamada_id: chamadaId, usuario_id: m.id, presente: m.present }));
+          const rows = members.filter(m => m.id).map(m => ({ chamada_id: chamadaId, usuario_id: m.id, presente: m.present, status: m.status }));
           if(rows.length) await supa.from('chamada_presencas').insert(rows);
         }
       }
