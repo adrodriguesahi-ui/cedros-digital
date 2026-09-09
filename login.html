@@ -1878,33 +1878,34 @@
     width:16px; height:16px; margin-top:4px; color:var(--gold);
   }
 
-  .pl-bell-panel{
-    position:absolute; top:calc(100% + 10px); right:0; z-index:30;
-    width:260px; max-width:78vw;
-    background:#0F1B11; border:1px solid rgba(255,255,255,0.12);
-    border-radius:14px; padding:10px;
-    box-shadow:0 14px 32px rgba(0,0,0,0.4);
-    opacity:0; visibility:hidden; transform:translateY(-6px);
-    transition:opacity .16s ease, transform .16s ease, visibility 0s linear .16s;
+  /* Tela cheia de Lembretes (sino do Início) — um card por lembrete, com o
+     texto completo em vez do painelzinho estreito de antes. */
+  .bd-reminders-list{ display:flex; flex-direction:column; gap:12px; }
+  .bd-reminder-card{
+    background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08);
+    border-radius:16px; padding:16px;
   }
-  .pl-bell-panel.show{ opacity:1; visibility:visible; transform:translateY(0); transition:opacity .16s ease, transform .16s ease; }
-  .pl-bell-item{
-    display:flex; align-items:center; gap:8px;
-    padding:9px 10px; border-radius:10px;
-    background:rgba(255,255,255,0.05);
-    margin-bottom:6px;
+  .bd-reminder-card-date{
+    font-size:11px; font-weight:900; letter-spacing:0.03em; text-transform:uppercase;
+    color:var(--gold); margin-bottom:6px;
   }
-  .pl-bell-item:last-child{ margin-bottom:0; }
-  .pl-bell-item-text{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
-  .pl-bell-item-date{ font-size:10.5px; font-weight:800; color:var(--gold); text-transform:uppercase; letter-spacing:0.03em; }
-  .pl-bell-item-msg{ font-size:12.5px; font-weight:700; color:var(--cream); line-height:1.35; }
-  .pl-bell-item-confirm{
-    flex-shrink:0; width:26px; height:26px; border-radius:50%;
-    background:rgba(63,203,107,0.18); color:var(--accent); border:none; cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
+  .bd-reminder-card-title{ margin:0 0 6px; font-size:15px; font-weight:900; color:var(--cream); }
+  .bd-reminder-card-meta{
+    display:flex; align-items:center; gap:6px; margin-bottom:10px;
+    font-size:12px; font-weight:600; color:rgba(245,239,225,0.6);
   }
-  .pl-bell-item-confirm:active{ transform:scale(0.9); background:rgba(63,203,107,0.3); }
-  .pl-bell-empty{ padding:14px 8px; font-size:12.5px; font-weight:600; color:rgba(245,239,225,0.55); text-align:center; }
+  .bd-reminder-card-meta svg{ flex-shrink:0; color:rgba(245,239,225,0.4); }
+  .bd-reminder-card-msg{
+    margin:0 0 14px; font-size:13.5px; font-weight:600; line-height:1.55;
+    color:rgba(245,239,225,0.85); white-space:pre-wrap;
+  }
+  .bd-reminder-card-confirm{
+    width:100%; border:none; border-radius:12px; padding:11px; cursor:pointer;
+    background:rgba(63,203,107,0.16); color:var(--accent); font-size:13px; font-weight:800;
+    display:flex; align-items:center; justify-content:center; gap:7px;
+  }
+  .bd-reminder-card-confirm:active{ background:rgba(63,203,107,0.28); transform:scale(0.98); }
+  .bd-reminders-empty{ padding:60px 20px; text-align:center; font-size:13px; font-weight:600; color:rgba(245,239,225,0.5); }
 
   /* Reused white-card components get a dark surface inside this view */
   .view-bdash .event-card,
@@ -9193,7 +9194,10 @@
                     <span class="at-roster-count" id="atChecklistCount">0/0 presentes</span>
                   </div>
                   <div class="at-checklist" id="atChecklist"></div>
-                  <button type="button" class="pl-btn pl-btn-primary" id="atSaveCallBtn" style="margin-top:10px;">Salvar Chamada</button>
+                  <div class="pl-modal-actions" style="margin-top:12px;">
+                    <button type="button" class="pl-btn" id="atCallPdfBtn" style="background:rgba(255,255,255,0.08); color:var(--cream);"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Gerar PDF</button>
+                    <button type="button" class="pl-btn pl-btn-primary" id="atSaveCallBtn">Salvar Chamada</button>
+                  </div>
                 </div>
 
                 <div class="sp-area-heading">Histórico de Chamadas</div>
@@ -10486,6 +10490,25 @@
             </a>
           </div>
 
+        </div>
+      </div>
+
+      <!-- Tela de Lembretes: abre ao tocar o sino no topo do Início. Cada lembrete
+           vem com o texto completo (sem cortar) — o sino antes abria só um
+           painelzinho estreito por cima do conteúdo. -->
+      <div class="pl-dayview-overlay" id="bdRemindersOverlay">
+        <div class="pl-dayview-head">
+          <button type="button" class="pl-dayview-icon-btn" id="bdRemindersClose" aria-label="Voltar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h3 class="pl-dayview-title">Lembretes</h3>
+          <button type="button" class="pl-dayview-icon-btn" id="bdRemindersMarkAllBtn" aria-label="Marcar todos como lidos" style="display:none;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3H7a2 2 0 0 0-2 2v16l7-4 7 4V5a2 2 0 0 0-2-2z"/><polyline points="9 10 11 12 15 8"/></svg>
+          </button>
+        </div>
+        <div class="pl-dayview-list-wrap">
+          <div class="bd-reminders-list" id="bdRemindersList"></div>
+          <p class="bd-reminders-empty" id="bdRemindersEmpty" style="display:none;">Nenhum lembrete ativo no momento.</p>
         </div>
       </div>
 
@@ -12394,7 +12417,11 @@
     const reminderBanner = document.getElementById('bdReminderBanner');
     const reminderBannerTitle = document.getElementById('bdReminderBannerTitle');
     const reminderBannerMsg = document.getElementById('bdReminderBannerMsg');
-    let bellPanel = null;
+    const remindersOverlay = document.getElementById('bdRemindersOverlay');
+    const remindersList = document.getElementById('bdRemindersList');
+    const remindersEmpty = document.getElementById('bdRemindersEmpty');
+    const remindersClose = document.getElementById('bdRemindersClose');
+    const remindersMarkAllBtn = document.getElementById('bdRemindersMarkAllBtn');
     let lastDueCount = 0;
 
     // ---- Notificações nativas do sistema (fora do app) ----
@@ -12514,10 +12541,12 @@
       }
     }
 
-    function openBellPanel(){
-      ensureBellPanel();
-      renderBellPanel(collectDueReminders());
-      bellPanel.classList.add('show');
+    function openRemindersPage(){
+      renderRemindersPage(collectDueReminders());
+      if(remindersOverlay) remindersOverlay.classList.add('show');
+    }
+    function closeRemindersPage(){
+      if(remindersOverlay) remindersOverlay.classList.remove('show');
     }
 
     function refreshReminderBell(){
@@ -12536,7 +12565,7 @@
         bellDot.textContent = due.length > 9 ? '9+' : String(due.length);
       }
       bellBtn.classList.toggle('has-reminder', due.length > 0);
-      if(bellPanel) renderBellPanel(due);
+      if(remindersOverlay && remindersOverlay.classList.contains('show')) renderRemindersPage(due);
 
       if(reminderBanner){
         if(due.length){
@@ -12552,57 +12581,47 @@
       }
     }
 
-    function renderBellPanel(due){
-      if(!bellPanel) return;
-      bellPanel.innerHTML = '';
-      if(!due.length){
-        const empty = document.createElement('div');
-        empty.className = 'pl-bell-empty';
-        empty.textContent = 'Nenhum alerta de evento no momento.';
-        bellPanel.appendChild(empty);
-        return;
-      }
+    // Tela cheia de Lembretes: um card por lembrete, com data, local (quando o
+    // evento tem um) e o texto completo do lembrete — sem cortar como no
+    // painelzinho antigo.
+    function renderRemindersPage(due){
+      if(!remindersList) return;
+      remindersList.innerHTML = '';
+      if(remindersEmpty) remindersEmpty.style.display = due.length ? 'none' : '';
+      if(remindersMarkAllBtn) remindersMarkAllBtn.style.display = due.length ? '' : 'none';
       due.forEach(item => {
-        const row = document.createElement('div');
-        row.className = 'pl-bell-item';
-        row.innerHTML =
-          '<span class="pl-bell-item-text">' +
-            '<span class="pl-bell-item-date"></span>' +
-            '<span class="pl-bell-item-msg"></span>' +
-          '</span>' +
-          '<button type="button" class="pl-bell-item-confirm" aria-label="Marcar como lido">' +
-            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+        const local = item.card.dataset.local || '';
+        const card = document.createElement('div');
+        card.className = 'bd-reminder-card';
+        card.innerHTML =
+          '<div class="bd-reminder-card-date"></div>' +
+          '<h4 class="bd-reminder-card-title"></h4>' +
+          (local ? '<div class="bd-reminder-card-meta"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span></span></div>' : '') +
+          '<p class="bd-reminder-card-msg"></p>' +
+          '<button type="button" class="bd-reminder-card-confirm">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+            'Marcar como lido' +
           '</button>';
-        row.querySelector('.pl-bell-item-date').textContent = item.day + ' ' + item.monAbbr + (item.repeatOn ? ' · repete +' + item.timesLeft + 'x' : '');
-        row.querySelector('.pl-bell-item-msg').textContent = item.msg;
-        row.querySelector('.pl-bell-item-confirm').addEventListener('click', (e) => {
-          e.preventDefault(); e.stopPropagation();
-          confirmReminderRead(item.card);
-        });
-        bellPanel.appendChild(row);
+        card.querySelector('.bd-reminder-card-date').textContent = item.day + ' ' + item.monAbbr + (item.repeatOn ? ' · repete +' + item.timesLeft + 'x' : '');
+        card.querySelector('.bd-reminder-card-title').textContent = item.title;
+        if(local) card.querySelector('.bd-reminder-card-meta span').textContent = local;
+        card.querySelector('.bd-reminder-card-msg').textContent = item.msg;
+        card.querySelector('.bd-reminder-card-confirm').addEventListener('click', () => confirmReminderRead(item.card));
+        remindersList.appendChild(card);
       });
-    }
-
-    function ensureBellPanel(){
-      if(bellPanel || !bellBtn) return;
-      bellPanel = document.createElement('div');
-      bellPanel.className = 'pl-bell-panel';
-      bellBtn.parentElement.style.position = 'relative';
-      bellBtn.parentElement.appendChild(bellPanel);
     }
 
     if(bellBtn){
-      ensureBellPanel();
       bellBtn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        renderBellPanel(collectDueReminders());
-        bellPanel.classList.toggle('show');
+        openRemindersPage();
       });
-      document.addEventListener('click', (e) => {
-        if(bellPanel && bellPanel.classList.contains('show') && !bellPanel.contains(e.target) && e.target !== bellBtn && !bellBtn.contains(e.target)){
-          bellPanel.classList.remove('show');
-        }
+    }
+    if(remindersClose) remindersClose.addEventListener('click', closeRemindersPage);
+    if(remindersMarkAllBtn){
+      remindersMarkAllBtn.addEventListener('click', () => {
+        collectDueReminders().forEach(item => confirmReminderRead(item.card));
       });
     }
 
@@ -12610,7 +12629,7 @@
       reminderBanner.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        openBellPanel();
+        openRemindersPage();
       });
       const bannerConfirmBtn = document.getElementById('bdReminderBannerConfirm');
       if(bannerConfirmBtn){
@@ -15840,6 +15859,7 @@
     const checklist = document.getElementById('atChecklist');
     const checklistCount = document.getElementById('atChecklistCount');
     const saveCallBtn = document.getElementById('atSaveCallBtn');
+    const callPdfBtn = document.getElementById('atCallPdfBtn');
     const historyList = document.getElementById('atHistoryList');
     const historyEmpty = document.getElementById('atHistoryEmpty');
     const meetingSelect = document.getElementById('atCallMeetingSelect');
@@ -16262,16 +16282,36 @@
       buildAttendancePDF(editingRecord, readEditChecklistMembers());
     });
 
-    saveCallBtn.addEventListener('click', async () => {
-      const dateObj = new Date(callDate.value + 'T00:00:00');
-      const monthsAbbr = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
-      const members = Array.from(checklist.querySelectorAll('.at-check-row')).map(row => ({
+    // Lê a chamada que está na tela agora — usado tanto pra salvar quanto pra
+    // gerar o PDF antes de salvar.
+    function readChecklistMembers(){
+      return Array.from(checklist.querySelectorAll('.at-check-row')).map(row => ({
         id: row.dataset.id,
         name: row.dataset.name,
         unit: row.dataset.unit,
         status: row.dataset.status || 'presente',
         present: statusToPresent(row.dataset.status || 'presente')
       }));
+    }
+
+    // O PDF também sai direto daqui, sem precisar salvar e reabrir pelo histórico
+    // (o botão do histórico continua existindo pra reimprimir depois).
+    if(callPdfBtn){
+      callPdfBtn.addEventListener('click', () => {
+        if(!callDate.value || !callEvent.value.trim()) return;
+        const d = new Date(callDate.value + 'T00:00:00');
+        buildAttendancePDF({
+          event: callEvent.value.trim(),
+          day: String(d.getDate()).padStart(2, '0'),
+          mon: MONTHS_ABBR[d.getMonth()]
+        }, readChecklistMembers());
+      });
+    }
+
+    saveCallBtn.addEventListener('click', async () => {
+      const dateObj = new Date(callDate.value + 'T00:00:00');
+      const monthsAbbr = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+      const members = readChecklistMembers();
       const presentCount = members.filter(m => m.present).length;
       const contaPresenca = countsToggle ? countsToggle.checked : true;
 
