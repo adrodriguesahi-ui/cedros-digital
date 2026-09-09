@@ -11428,6 +11428,11 @@
       const foto = card.dataset.foto || '';
       viewPhotoBlock.style.display = foto ? '' : 'none';
       viewPhotoImg.src = foto || '';
+      if(viewPdfBtn){
+        const user = window.__currentUsuario;
+        const isOfficer = !!(user && parseJSONSafe(card.dataset.officerIds).includes(user.id));
+        viewPdfBtn.style.display = isOfficer ? '' : 'none';
+      }
       viewOverlay.classList.add('show');
     }
     function closeViewOnly(){
