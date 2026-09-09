@@ -2299,30 +2299,29 @@
   .bento-chart-card{ grid-column:1 / -1; }
   .bento-chart-title{ margin:0 0 14px; font-size:12px; font-weight:800; color:var(--lg-muted); text-transform:uppercase; letter-spacing:0.04em; }
   .bento-bars{ display:flex; flex-direction:column; gap:11px; }
-  .bento-bar-row{ display:grid; grid-template-columns:24px 84px 1fr 38px; align-items:center; gap:10px; padding:5px 6px; border-radius:10px; }
+  .bento-bar-row{ display:grid; grid-template-columns:28px 92px 1fr 46px; align-items:center; gap:10px; padding:6px 6px; border-radius:12px; }
   .bento-bar-row.is-first{
     background:linear-gradient(90deg, rgba(216,168,62,0.14), rgba(216,168,62,0));
-    padding:8px 6px;
+    padding:9px 6px;
   }
   .bento-bar-rank{
-    width:22px; height:22px; border-radius:50%;
+    width:26px; height:26px; border-radius:50%;
     display:flex; align-items:center; justify-content:center;
-    font-size:10.5px; font-weight:900; color:#06170C;
+    font-size:11px; font-weight:900; color:#06170C;
     background:var(--lg-muted);
   }
-  .bento-bar-rank.r1{ background:linear-gradient(160deg,#F3D27A,var(--lg-gold)); box-shadow:0 0 10px rgba(216,168,62,0.55); font-size:12px; }
-  .bento-bar-rank.r2{ background:linear-gradient(160deg,#E4E9EC,#A9B4BC); }
-  .bento-bar-rank.r3{ background:linear-gradient(160deg,#E3B48C,#B5794B); }
-  .bento-bar-label{ font-size:12px; font-weight:800; color:var(--lg-ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .bento-bar-row.is-first .bento-bar-label{ font-size:13.5px; }
-  .bento-bar-track{ height:9px; border-radius:5px; background:rgba(255,255,255,0.07); overflow:hidden; }
-  .bento-bar-row.is-first .bento-bar-track{ height:12px; }
-  .bento-bar-fill{ display:block; height:100%; border-radius:5px; background:var(--lg-green); }
-  .bento-bar-fill.f1{ background:linear-gradient(90deg, var(--lg-gold), #F3D27A); box-shadow:0 0 8px rgba(216,168,62,0.5); }
-  .bento-bar-fill.f2{ background:linear-gradient(90deg, #A9B4BC, #E4E9EC); }
-  .bento-bar-fill.f3{ background:linear-gradient(90deg, #B5794B, #E3B48C); }
-  .bento-bar-val{ font-size:12px; font-weight:900; color:var(--lg-muted); text-align:right; }
-  .bento-bar-row.is-first .bento-bar-val{ color:var(--lg-gold); font-size:14px; }
+  .bento-bar-rank.medal{ background:none; font-size:18px; }
+  .bento-bar-row.is-first .bento-bar-rank.medal{ font-size:21px; }
+  .bento-bar-label{ display:flex; align-items:center; gap:6px; min-width:0; }
+  .bento-bar-dot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
+  .bento-bar-name{ font-size:12.5px; font-weight:800; color:var(--lg-ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bento-bar-row.is-first .bento-bar-name{ font-size:14.5px; }
+  .bento-bar-track{ height:10px; border-radius:6px; background:rgba(255,255,255,0.07); overflow:hidden; }
+  .bento-bar-row.is-first .bento-bar-track{ height:14px; }
+  .bento-bar-fill{ display:block; height:100%; border-radius:6px; background:var(--bar-color, var(--lg-green)); }
+  .bento-bar-row.is-first .bento-bar-fill{ box-shadow:0 0 9px var(--bar-color, rgba(216,168,62,0.5)); }
+  .bento-bar-val{ font-size:11.5px; font-weight:900; color:var(--lg-muted); text-align:right; white-space:nowrap; }
+  .bento-bar-row.is-first .bento-bar-val{ color:var(--lg-gold); font-size:13.5px; }
 
   .bento-mini-card{ display:flex; flex-direction:column; gap:6px; }
   .bento-mini-icon{ width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; margin-bottom:2px; }
@@ -19391,6 +19390,10 @@ const REQ_SUMMARIES = {
 
     // Ícone de troféu usado no #1 — mesmo desenho do título "Pontuação de Unidades".
     const TROPHY_SVG = '<svg class="us-trophy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M17 5h2a2 2 0 0 1 2 2 4 4 0 0 1-4 4M7 5H5a2 2 0 0 0-2 2 4 4 0 0 0 4 4"/></svg>';
+    // Mesma paleta das bolinhas cl-color-* — mantém a cor da unidade
+    // reconhecível no mini-ranking do Início, igual no resto do app.
+    const UNIT_COLOR_HEX = { green:'var(--accent)', blue:'#5B9BFF', gold:'var(--gold)', purple:'#B98BFF', red:'#FF6B5C', orange:'#FF9F43', gray:'#9AA3A0' };
+    const RANK_MEDAL = { 1:'🥇', 2:'🥈', 3:'🥉' };
 
     function renderUnitList(){
       if(!unitList) return;
@@ -19427,17 +19430,22 @@ const REQ_SUMMARIES = {
       sorted.forEach((u, i) => {
         const total = totals[u.nome] || 0;
         const rank = i + 1;
+        const medal = RANK_MEDAL[rank];
+        const color = UNIT_COLOR_HEX[u.cor] || UNIT_COLOR_HEX.gray;
         const row = document.createElement('div');
         row.className = 'bento-bar-row' + (rank === 1 ? ' is-first' : '');
         row.innerHTML =
-          '<span class="bento-bar-rank' + (rank <= 3 ? ' r' + rank : '') + '"></span>' +
-          '<span class="bento-bar-label"></span>' +
-          '<span class="bento-bar-track"><span class="bento-bar-fill' + (rank <= 3 ? ' f' + rank : '') + '"></span></span>' +
+          '<span class="bento-bar-rank' + (medal ? ' medal' : '') + '"></span>' +
+          '<span class="bento-bar-label"><span class="bento-bar-dot"></span><span class="bento-bar-name"></span></span>' +
+          '<span class="bento-bar-track"><span class="bento-bar-fill"></span></span>' +
           '<span class="bento-bar-val"></span>';
-        row.querySelector('.bento-bar-rank').textContent = rank;
-        row.querySelector('.bento-bar-label').textContent = u.nome;
-        row.querySelector('.bento-bar-fill').style.width = Math.round((total / max) * 100) + '%';
-        row.querySelector('.bento-bar-val').textContent = total;
+        row.querySelector('.bento-bar-rank').textContent = medal || rank;
+        row.querySelector('.bento-bar-dot').style.background = color;
+        row.querySelector('.bento-bar-name').textContent = u.nome;
+        const fill = row.querySelector('.bento-bar-fill');
+        fill.style.setProperty('--bar-color', color);
+        fill.style.width = Math.round((total / max) * 100) + '%';
+        row.querySelector('.bento-bar-val').textContent = total + ' pts';
         rankEl.appendChild(row);
       });
     }
