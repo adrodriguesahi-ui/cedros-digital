@@ -2470,12 +2470,6 @@
   .bd-live-title{ margin:0 0 8px; font-size:19px; font-weight:900; color:var(--lg-ink); }
   .bd-live-meta{ display:flex; align-items:center; gap:6px; margin:0 0 16px; font-size:13px; font-weight:600; color:var(--lg-muted); }
 
-  .bd-banner-empty{
-    margin:0 0 12px; padding:28px 14px; text-align:center;
-    font-size:13px; font-weight:700; color:var(--lg-muted);
-    background:rgba(255,255,255,0.03); border:1px solid var(--lg-border); border-radius:16px;
-  }
-
   /* Fixture list ("Esta Semana") */
   .bd-fixture-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:26px; }
   .bd-fixture{ border-radius:14px; padding:12px 14px; }
@@ -10415,7 +10409,6 @@
              mais abaixo no arquivo. -->
         <div class="bd-banner-row" id="bdBannerRow"></div>
         <div class="bd-banner-dots" id="bdBannerDots"></div>
-        <p class="bd-banner-empty" id="bdBannerEmpty" style="display:none;">Nenhum evento agendado.</p>
 
         <div class="bd-content">
 
@@ -10504,38 +10497,19 @@
             </a>
           </div>
 
-          <div class="bd-section-head">
-            <h4>Avisos recentes</h4>
-            <a href="#" class="dash-link">Ver todos
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
-            </a>
-          </div>
+          <!-- "Avisos recentes": ainda não existe um sistema real de postagem
+               de avisos (sem tabela no Supabase, sem tela de publicação) —
+               fica oculto até esse recurso existir, em vez de mostrar itens
+               fixos que nunca mudam. -->
+          <div id="bdNoticesSection" style="display:none;">
+            <div class="bd-section-head">
+              <h4>Avisos recentes</h4>
+              <a href="#" class="dash-link">Ver todos
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+              </a>
+            </div>
 
-          <div class="notice-list bd-notice-list">
-            <a href="#" class="notice-item">
-              <span class="notice-icon bd-icon-green">
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3Z"/><path d="M11.6 16.8a3 3 0 0 1-5.8-1.6"/></svg>
-              </span>
-              <span class="notice-body">
-                <span class="notice-title">Doação de Alimentos</span>
-                <span class="notice-desc">Participe da campanha de arrecadação para famílias necessitadas.</span>
-              </span>
-              <span class="notice-time">2h atrás
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
-              </span>
-            </a>
-            <a href="#" class="notice-item">
-              <span class="notice-icon bd-icon-gold">
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>
-              </span>
-              <span class="notice-body">
-                <span class="notice-title">Inscrições para o Campori</span>
-                <span class="notice-desc">As inscrições já estão abertas! Garanta sua vaga.</span>
-              </span>
-              <span class="notice-time">1 dia atrás
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
-              </span>
-            </a>
+            <div class="notice-list bd-notice-list" id="bdNoticesList"></div>
           </div>
 
         </div>
@@ -18708,7 +18682,6 @@ const REQ_SUMMARIES = {
   (function(){
     const row = document.getElementById('bdBannerRow');
     const dotsWrap = document.getElementById('bdBannerDots');
-    const emptyMsg = document.getElementById('bdBannerEmpty');
     if(!row || !dotsWrap) return;
 
     const TAG_GRADIENT = {
@@ -18824,7 +18797,10 @@ const REQ_SUMMARIES = {
       index = 0;
 
       const upcoming = (window.__plGetUpcomingEvents && window.__plGetUpcomingEvents(5)) || [];
-      if(emptyMsg) emptyMsg.style.display = upcoming.length ? 'none' : '';
+      // Sem eventos futuros, oculta o carrossel inteiro em vez de mostrar
+      // um card vazio "Nenhum evento agendado." ocupando espaço à toa.
+      row.style.display = upcoming.length ? '' : 'none';
+      dotsWrap.style.display = upcoming.length ? '' : 'none';
 
       const now = new Date();
       upcoming.forEach(({ card, date }, i) => {
