@@ -18171,22 +18171,20 @@ const REQ_SUMMARIES = {
   });
 
   // Card "Membros" do painel -> leva direto pra Chamada de Presença (Secretaria).
-  // Só quem tem acesso ao módulo de Secretaria (Diretoria Executiva/Administrador,
-  // conforme papeis.permissoes_padrao) consegue de fato abrir a lista de presença —
-  // os demais veem um aviso em vez de navegar, reaproveitando a mesma restrição
-  // que já esconde "Secretaria" do menu desses papéis.
+  // Só quem tem um desses cargos cadastrados (campo livre em Administração →
+  // Usuários) consegue realizar a chamada de presença: Diretor(a), Dir.
+  // Associado(a), Secretário(a) ou Tesoureiro(a). Os demais membros nem veem o
+  // card — some da tela inicial em vez de aparecer bloqueado.
   (function(){
     const chip = document.getElementById('bdMembersChip');
-    const toast = document.getElementById('bdAccessToast');
-    const toastMsg = document.getElementById('bdAccessToastMsg');
     if(!chip) return;
-    let toastTimer;
-    function showAccessToast(text){
-      if(!toast || !toastMsg) return;
-      toastMsg.textContent = text;
-      toast.classList.add('show');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
+    const MEMBERS_CARD_ALLOWED_CARGOS = ['diretor', 'diretora', 'dir. associado', 'dir. associada', 'secretario', 'secretaria', 'tesoureiro', 'tesoureira'];
+    function normalizeMembersCargo(s){
+      return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    }
+    function applyMembersCardAccess(usuario){
+      const allowed = !!usuario && MEMBERS_CARD_ALLOWED_CARGOS.includes(normalizeMembersCargo(usuario.cargo));
+      chip.style.display = allowed ? '' : 'none';
     }
     // Quantidade real de membros = total de linhas em `usuarios` (mesma fonte
     // usada pela contagem por unidade em Unidades/loadMemberCounts).
@@ -18198,14 +18196,10 @@ const REQ_SUMMARIES = {
       if(error || count == null) return;
       countEl.textContent = count;
     }
-    document.addEventListener('cedros:loggedin', refreshMemberCount);
+    document.addEventListener('cedros:loggedin', (e) => { refreshMemberCount(); applyMembersCardAccess(e.detail); });
+    applyMembersCardAccess(window.__currentUsuario);
     chip.addEventListener('click', (e) => {
       e.preventDefault();
-      const restricted = window.__restrictedGotoViews && window.__restrictedGotoViews.indexOf('view-secretary') !== -1;
-      if(restricted){
-        showAccessToast('Apenas a Diretoria Executiva tem acesso à lista de presença.');
-        return;
-      }
       showView('view-secretary');
       const attendanceTab = document.querySelector('.sc-pdf-tab[data-tab="attendance"]');
       if(attendanceTab) attendanceTab.click();
