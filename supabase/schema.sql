@@ -819,12 +819,15 @@ create index if not exists chamada_presencas_usuario_idx on chamada_presencas(us
 
 -- Coluna adicionada depois: antes a chamada era só presente/ausente (booleano),
 -- o que não distinguia quem chegou atrasado. Agora cada pessoa tem um dos 3
--- estados: 'pontual', 'atrasado' ou 'falta'. A coluna `presente` continua sendo
--- gravada junto (true pra pontual e atrasado, false pra falta) — é ela que o
+-- estados: 'presente', 'atraso' ou 'falta'. A coluna `presente` continua sendo
+-- gravada junto (true pra presente e atraso, false pra falta) — é ela que o
 -- cálculo de frequência anual usa, então nada dessa conta mudou. Chamadas
--- antigas ficam com o default 'pontual' nas linhas marcadas como presentes; o
--- app deriva o estado do booleano quando `status` vem vazio.
-alter table chamada_presencas add column if not exists status text not null default 'pontual';
+-- antigas ficam com o default nas linhas marcadas como presentes; o app deriva
+-- o estado do booleano quando `status` vem vazio.
+-- ('pontual'/'atrasado' foram os nomes da primeira versão desses estados — o app
+-- ainda lê esses dois valores, então um banco que já rodou a versão anterior
+-- desta migração não precisa de conversão.)
+alter table chamada_presencas add column if not exists status text not null default 'presente';
 
 alter table chamadas enable row level security;
 alter table chamada_presencas enable row level security;

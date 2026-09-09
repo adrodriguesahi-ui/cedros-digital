@@ -1056,23 +1056,27 @@
   .at-check-name{ flex:1; min-width:0; font-size:13px; font-weight:700; color:var(--cream); }
   .at-check-row.absent{ opacity:0.55; }
 
-  /* Chamada com 3 estados por pessoa (Pontual / Atrasado / Falta) — antes era só
+  /* Chamada com 3 estados por pessoa (Presente / Atraso / Falta) — antes era só
      um interruptor presente/ausente, que não distinguia quem chegou atrasado.
-     Os 3 botões ficam numa linha própria abaixo do nome: lado a lado com o nome
-     eles espremiam nomes longos em 3 linhas no celular, e alvos de toque maiores
-     ajudam a marcar a chamada rápido. */
-  .at-check-row.at-check-row-status{ flex-wrap:wrap; }
-  .at-status-group{ display:flex; gap:6px; width:100%; }
-  .at-status-btn{
-    flex:1; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.05);
-    color:rgba(245,239,225,0.55); border-radius:8px; padding:7px 4px;
-    font-size:10.5px; font-weight:900; letter-spacing:0.02em; text-transform:uppercase;
-    cursor:pointer; transition:background .15s, color .15s, border-color .15s;
+     É um segmento único (uma "trilha" com 3 fatias) em vez de 3 botões soltos:
+     repetido em dezenas de linhas, três caixas com borda própria viravam ruído.
+     Fica numa linha abaixo do nome — ao lado dele, espremia nomes longos em
+     várias linhas no celular, e o alvo de toque maior ajuda a marcar rápido. */
+  .at-check-row.at-check-row-status{ flex-wrap:wrap; row-gap:9px; }
+  .at-status-group{
+    display:flex; width:100%; gap:2px;
+    background:rgba(255,255,255,0.045); border-radius:11px; padding:3px;
   }
-  .at-status-btn:active{ transform:scale(0.94); }
-  .at-status-btn.active[data-status="pontual"]{ background:rgba(74,222,128,0.18); border-color:rgba(74,222,128,0.5); color:#7BE8A4; }
-  .at-status-btn.active[data-status="atrasado"]{ background:rgba(245,196,90,0.18); border-color:rgba(245,196,90,0.5); color:#F5C45A; }
-  .at-status-btn.active[data-status="falta"]{ background:rgba(255,107,92,0.18); border-color:rgba(255,107,92,0.5); color:#FF8D80; }
+  .at-status-btn{
+    flex:1; border:none; background:transparent; color:rgba(245,239,225,0.45);
+    border-radius:8px; padding:8px 4px;
+    font-size:11.5px; font-weight:800; letter-spacing:0.01em;
+    cursor:pointer; transition:background .18s, color .18s;
+  }
+  .at-status-btn:active{ transform:scale(0.96); }
+  .at-status-btn.active[data-status="presente"]{ background:rgba(74,222,128,0.16); color:#7BE8A4; }
+  .at-status-btn.active[data-status="atraso"]{ background:rgba(245,196,90,0.16); color:#F5C45A; }
+  .at-status-btn.active[data-status="falta"]{ background:rgba(255,107,92,0.14); color:#FF8D80; }
 
   .at-history-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:4px; }
   .at-empty-hint{ font-size:12px; font-weight:600; color:rgba(245,239,225,0.4); margin:4px 0 0; }
@@ -15978,7 +15982,7 @@
             name: person ? person.name : '(removido)',
             unit: person ? person.unit : '—',
             present: p.presente,
-            status: p.status || presentToStatus(p.presente)
+            status: normalizeStatus(p.status, p.presente)
           };
         });
         return {
@@ -16017,24 +16021,31 @@
     }
 
     // Cada pessoa na chamada tem 3 estados em vez do antigo presente/ausente:
-    // pontual, atrasado ou falta. Pra frequência anual, "presente" continua sendo
-    // pontual OU atrasado (quem chegou atrasado esteve na reunião) — a coluna
+    // presente, atraso ou falta. Pra frequência anual, conta como presente tanto
+    // "presente" quanto "atraso" (quem chegou atrasado esteve na reunião) — a coluna
     // `presente` de chamada_presencas segue sendo gravada assim, então nada do
     // cálculo de frequência mudou.
     const AT_STATUSES = [
-      { key: 'pontual', label: 'Pontual' },
-      { key: 'atrasado', label: 'Atrasado' },
+      { key: 'presente', label: 'Presente' },
+      { key: 'atraso', label: 'Atraso' },
       { key: 'falta', label: 'Falta' }
     ];
+    // 'pontual'/'atrasado' foram os nomes da primeira versão dos 3 estados —
+    // ficam aqui só pra ler chamadas gravadas antes da renomeação.
+    const AT_STATUS_ALIASES = { pontual: 'presente', atrasado: 'atraso' };
     function statusToPresent(status){ return status !== 'falta'; }
-    function presentToStatus(present){ return present ? 'pontual' : 'falta'; }
+    // Chamadas antigas (só presente/ausente) não têm status nenhum: deriva do booleano.
+    function normalizeStatus(status, present){
+      if(!status) return present === false ? 'falta' : 'presente';
+      return AT_STATUS_ALIASES[status] || status;
+    }
 
     // O estado fica no próprio row (dataset.status), então ler a chamada de volta
     // é só varrer as linhas — não precisa de estado paralelo em JS.
     function buildStatusGroup(row, initialStatus, onChange){
       const group = document.createElement('span');
       group.className = 'at-status-group';
-      row.dataset.status = initialStatus || 'pontual';
+      row.dataset.status = initialStatus || 'presente';
       function paint(){
         group.querySelectorAll('.at-status-btn').forEach(b => b.classList.toggle('active', b.dataset.status === row.dataset.status));
         row.classList.toggle('absent', row.dataset.status === 'falta');
@@ -16058,7 +16069,7 @@
 
     function countByStatus(container){
       const rows = Array.from(container.querySelectorAll('.at-check-row'));
-      const late = rows.filter(r => r.dataset.status === 'atrasado').length;
+      const late = rows.filter(r => r.dataset.status === 'atraso').length;
       const present = rows.filter(r => statusToPresent(r.dataset.status)).length;
       return { total: rows.length, present, late };
     }
@@ -16086,7 +16097,7 @@
           '<span class="cl-class-dot cl-color-' + (UNIT_COLOR[m.unit] || 'gray') + '"></span>' +
           '<span class="at-check-name"></span>';
         row.querySelector('.at-check-name').textContent = m.name;
-        row.appendChild(buildStatusGroup(row, 'pontual', updateChecklistCount));
+        row.appendChild(buildStatusGroup(row, 'presente', updateChecklistCount));
         checklist.appendChild(row);
       });
       checklistWrap.style.display = '';
@@ -16109,7 +16120,7 @@
         row.querySelector('.pl-event-date em').textContent = rec.mon;
         row.querySelector('.pl-event-title').textContent = rec.event;
         row.querySelector('.pl-event-meta').textContent = rec.members.length + ' desbravadores na lista' + (rec.contaPresenca === false ? ' · não conta pra frequência' : '');
-        const recLate = rec.members.filter(m => m.status === 'atrasado').length;
+        const recLate = rec.members.filter(m => m.status === 'atraso').length;
         row.querySelector('.pl-event-tag').textContent = rec.presentCount + '/' + rec.members.length + ' presentes' + (recLate ? ' · ' + recLate + ' atr.' : '');
         row.addEventListener('click', (e) => {
           e.preventDefault();
@@ -16147,7 +16158,7 @@
           '<span class="cl-class-dot cl-color-' + (UNIT_COLOR[m.unit] || 'gray') + '"></span>' +
           '<span class="at-check-name"></span>';
         row.querySelector('.at-check-name').textContent = m.name;
-        row.appendChild(buildStatusGroup(row, m.status || presentToStatus(m.present), updateEditChecklistCount));
+        row.appendChild(buildStatusGroup(row, normalizeStatus(m.status, m.present), updateEditChecklistCount));
         editChecklist.appendChild(row);
       });
       updateEditChecklistCount();
@@ -16158,7 +16169,7 @@
     function readEditChecklistMembers(){
       return editingRecord.members.map((m, i) => {
         const row = editChecklist.querySelector('.at-check-row[data-idx="' + i + '"]');
-        const status = row ? (row.dataset.status || m.status) : (m.status || presentToStatus(m.present));
+        const status = row ? (row.dataset.status || m.status) : normalizeStatus(m.status, m.present);
         return { id: m.id, name: m.name, unit: m.unit, status, present: statusToPresent(status) };
       });
     }
@@ -16214,7 +16225,7 @@
       doc.setFontSize(11);
       doc.text('Data: ' + rec.day + '/' + rec.mon, marginX, y);
       const presentCount = members.filter(m => m.present).length;
-      const lateCount = members.filter(m => m.status === 'atrasado').length;
+      const lateCount = members.filter(m => m.status === 'atraso').length;
       doc.text(presentCount + '/' + members.length + ' presentes' + (lateCount ? ' · ' + lateCount + ' atrasado' + (lateCount > 1 ? 's' : '') : ''), pageWidth - marginX, y, { align: 'right' });
       y += 10;
 
@@ -16237,7 +16248,7 @@
         }
         doc.text(m.name, marginX, y);
         doc.text(m.unit, marginX + 90, y);
-        const statusLabel = m.status === 'atrasado' ? 'Atrasado' : (m.present ? 'Pontual' : 'Falta');
+        const statusLabel = m.status === 'atraso' ? 'Atraso' : (m.present ? 'Presente' : 'Falta');
         doc.text(statusLabel, pageWidth - marginX, y, { align: 'right' });
         y += 7;
       });
@@ -16258,8 +16269,8 @@
         id: row.dataset.id,
         name: row.dataset.name,
         unit: row.dataset.unit,
-        status: row.dataset.status || 'pontual',
-        present: statusToPresent(row.dataset.status || 'pontual')
+        status: row.dataset.status || 'presente',
+        present: statusToPresent(row.dataset.status || 'presente')
       }));
       const presentCount = members.filter(m => m.present).length;
       const contaPresenca = countsToggle ? countsToggle.checked : true;
