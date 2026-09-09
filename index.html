@@ -10810,7 +10810,12 @@
     if(!unitEl || !badgeEl) return;
     window.__applyGreetingUnit = function(usuario){
       if(!usuario) return;
-      unitEl.textContent = usuario.unidade === 'Diretoria do Clube' ? 'Diretoria: ' + (usuario.cargo || '—') : 'Unidade ' + (usuario.unidade || '—');
+      const isDiretoria = usuario.unidade === 'Diretoria do Clube';
+      // Pra quem é da Diretoria o cargo já aparece no badge (bdAttendBadge logo
+      // ao lado) — repetir "Diretoria: <cargo>" aqui era redundante, então esse
+      // texto some de vez pra esse caso em vez de duplicar a informação.
+      unitEl.style.display = isDiretoria ? 'none' : '';
+      unitEl.textContent = isDiretoria ? '' : 'Unidade ' + (usuario.unidade || '—');
       if(usuario.cargo){
         badgeEl.textContent = usuario.cargo;
         badgeEl.setAttribute('aria-label', 'Cargo: ' + usuario.cargo);
