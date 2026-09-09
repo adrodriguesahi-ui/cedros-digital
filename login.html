@@ -1318,6 +1318,30 @@
   .us-history-body{ flex:1; min-width:0; }
   .us-history-motivo{ font-size:12.5px; font-weight:700; color:var(--cream); display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .us-history-meta{ font-size:11px; color:rgba(245,239,225,0.5); }
+  .us-history-unit{ font-weight:900; color:var(--gold); }
+
+  .us-period-toggle{ display:flex; gap:8px; margin:0 0 14px; }
+  .us-period-btn{
+    flex:1; border:1px solid rgba(255,255,255,0.14); background:rgba(255,255,255,0.05);
+    color:rgba(245,239,225,0.6); border-radius:10px; padding:8px 4px;
+    font-size:12px; font-weight:800; cursor:pointer; text-align:center;
+  }
+  .us-period-btn.active{ background:rgba(63,203,107,0.18); border-color:var(--accent); color:var(--accent); }
+
+  /* Pódio na lista de unidades (Pontuação de Unidades) — mesmas cores de
+     ouro/prata/bronze do mini-ranking do Início (.bento-bar-rank), só que aqui
+     o texto fica claro (fundo escuro) em vez de escuro (fundo claro do card). */
+  .us-rank-badge{
+    flex-shrink:0; width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:900; color:rgba(245,239,225,0.5);
+    background:rgba(255,255,255,0.07);
+  }
+  .us-rank-badge.r1{ background:linear-gradient(160deg,#F3D27A,var(--lg-gold)); color:#3A2C05; box-shadow:0 0 10px rgba(216,168,62,0.4); }
+  .us-rank-badge.r2{ background:linear-gradient(160deg,#E4E9EC,#A9B4BC); color:#2A2E30; }
+  .us-rank-badge.r3{ background:linear-gradient(160deg,#E3B48C,#B5794B); color:#3A2409; }
+  .un-hub-row.us-row-first{ background:rgba(216,168,62,0.1); border:1px solid rgba(216,168,62,0.35); }
+  .us-trophy-icon{ flex-shrink:0; margin-left:2px; color:var(--gold); }
 
   /* ---- Detalhe de especialidade (view-specialty-detail) ---- */
   .sd-header{ display:flex; flex-direction:column; align-items:center; gap:12px; margin:6px 0 20px; text-align:center; }
@@ -8777,13 +8801,37 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <h3 class="pl-title"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M17 5h2a2 2 0 0 1 2 2 4 4 0 0 1-4 4M7 5H5a2 2 0 0 0-2 2 4 4 0 0 0 4 4"/></svg>Pontuação de Unidades</h3>
-          <span class="pl-topbar-spacer" aria-hidden="true"></span>
+          <button type="button" class="pl-back" id="usHistoryAllBtn" aria-label="Histórico geral">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13a9 9 0 1 0 2.13-8.54L3 8"/><path d="M12 7v5l4 2"/></svg>
+          </button>
         </div>
 
         <p class="pl-reminder-hint" style="margin-top:0;">Toque numa unidade pra lançar um ajuste de pontos — positivo ou negativo — com o motivo. O total vira o Rank das Unidades do Início.</p>
 
+        <!-- Filtra o ranking desta tela por período — o mini-ranking do Início
+             (bentoUnitRank) continua sempre "geral"/acumulado, pra não mudar sem
+             a pessoa entrar aqui e escolher. -->
+        <div class="us-period-toggle" id="usPeriodToggle">
+          <button type="button" class="us-period-btn active" data-period="geral">Geral</button>
+          <button type="button" class="us-period-btn" data-period="ano">Este Ano</button>
+          <button type="button" class="us-period-btn" data-period="mes">Este Mês</button>
+        </div>
+
         <div class="us-unit-list" id="usUnitList"></div>
 
+      </div>
+
+      <div class="pl-modal-overlay" id="usHistoryAllOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Histórico Geral</h4>
+            <button type="button" class="pl-modal-close" id="usHistoryAllClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <p class="pl-reminder-hint" style="margin-top:0;">Todos os lançamentos de todas as unidades, do mais recente pro mais antigo.</p>
+          <div class="us-history-list" id="usHistoryAllList"></div>
+        </div>
       </div>
 
       <div class="pl-modal-overlay" id="usAdjustOverlay">
@@ -19308,11 +19356,25 @@ const REQ_SUMMARIES = {
     let currentSign = 1;
     let loaded = false;
     let cameFrom = 'view-units'; // pra onde o "Voltar" leva — depende de por onde entrou
+    let periodFilter = 'geral'; // 'geral' | 'ano' | 'mes' — só afeta esta tela
 
-    function totalsByUnit(){
+    function isInPeriod(dateStr){
+      if(periodFilter === 'geral') return true;
+      const d = new Date(dateStr);
+      const now = new Date();
+      if(periodFilter === 'ano') return d.getFullYear() === now.getFullYear();
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    }
+
+    // usePeriod=true respeita o filtro de período desta tela; usePeriod=false
+    // (padrão) é sempre o total geral/acumulado — usado pelo mini-ranking do
+    // Início e por "Total atual" do modal de ajuste, que devem refletir o total
+    // de verdade da unidade, não uma janela filtrada.
+    function totalsByUnit(usePeriod){
       const totals = {};
       units.forEach(u => { totals[u.nome] = 0; });
-      pontosRows.forEach(r => { totals[r.unidade] = (totals[r.unidade] || 0) + r.pontos; });
+      const rows = usePeriod ? pontosRows.filter(r => isInPeriod(r.created_at)) : pontosRows;
+      rows.forEach(r => { totals[r.unidade] = (totals[r.unidade] || 0) + r.pontos; });
       return totals;
     }
 
@@ -19327,20 +19389,27 @@ const REQ_SUMMARIES = {
       loaded = true;
     }
 
+    // Ícone de troféu usado no #1 — mesmo desenho do título "Pontuação de Unidades".
+    const TROPHY_SVG = '<svg class="us-trophy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M17 5h2a2 2 0 0 1 2 2 4 4 0 0 1-4 4M7 5H5a2 2 0 0 0-2 2 4 4 0 0 0 4 4"/></svg>';
+
     function renderUnitList(){
       if(!unitList) return;
-      const totals = totalsByUnit();
+      const totals = totalsByUnit(true);
       const sorted = units.slice().sort((a, b) => (totals[b.nome] || 0) - (totals[a.nome] || 0));
       unitList.innerHTML = '';
-      sorted.forEach(u => {
+      sorted.forEach((u, i) => {
+        const rank = i + 1;
         const row = document.createElement('a');
         row.href = '#';
-        row.className = 'cl-hub-row un-hub-row';
+        row.className = 'cl-hub-row un-hub-row' + (rank === 1 ? ' us-row-first' : '');
         row.innerHTML =
+          '<span class="us-rank-badge' + (rank <= 3 ? ' r' + rank : '') + '"></span>' +
           '<span class="cl-class-dot cl-color-' + (u.cor || 'gray') + '"></span>' +
           '<span class="cl-hub-row-name"></span>' +
+          (rank === 1 ? TROPHY_SVG : '') +
           '<span class="cl-hub-row-count"></span>' +
           '<svg class="cl-hub-row-arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+        row.querySelector('.us-rank-badge').textContent = rank;
         row.querySelector('.cl-hub-row-name').textContent = u.nome;
         const total = totals[u.nome] || 0;
         row.querySelector('.cl-hub-row-count').textContent = total + (total === 1 ? ' ponto' : ' pontos');
@@ -19351,7 +19420,7 @@ const REQ_SUMMARIES = {
 
     function renderRanking(){
       if(!rankEl) return;
-      const totals = totalsByUnit();
+      const totals = totalsByUnit(false);
       const sorted = units.slice().sort((a, b) => (totals[b.nome] || 0) - (totals[a.nome] || 0));
       const max = Math.max(1, ...sorted.map(u => totals[u.nome] || 0));
       rankEl.innerHTML = '';
@@ -19422,7 +19491,7 @@ const REQ_SUMMARIES = {
       motivoInput.value = '';
       motivoInput.style.borderColor = '';
       adjustTitle.textContent = unidade;
-      const total = totalsByUnit()[unidade] || 0;
+      const total = totalsByUnit(false)[unidade] || 0;
       adjustTotal.textContent = 'Total atual: ' + total + (total === 1 ? ' ponto' : ' pontos');
       renderHistory();
       adjustOverlay.classList.add('show');
@@ -19469,11 +19538,68 @@ const REQ_SUMMARIES = {
         renderRanking();
         pointsInput.value = '';
         motivoInput.value = '';
-        const total = totalsByUnit()[currentUnit] || 0;
+        const total = totalsByUnit(false)[currentUnit] || 0;
         adjustTotal.textContent = 'Total atual: ' + total + (total === 1 ? ' ponto' : ' pontos');
         renderHistory();
       });
     }
+
+    const periodToggle = document.getElementById('usPeriodToggle');
+    if(periodToggle){
+      periodToggle.querySelectorAll('.us-period-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          periodFilter = btn.getAttribute('data-period');
+          periodToggle.querySelectorAll('.us-period-btn').forEach(b => b.classList.toggle('active', b === btn));
+          renderUnitList();
+        });
+      });
+    }
+
+    // Histórico Geral: todos os lançamentos de todas as unidades juntos (extrato
+    // de auditoria) — o histórico de dentro do modal de ajuste continua existindo,
+    // filtrado só pra unidade que se está ajustando.
+    const historyAllOverlay = document.getElementById('usHistoryAllOverlay');
+    const historyAllList = document.getElementById('usHistoryAllList');
+    const historyAllBtn = document.getElementById('usHistoryAllBtn');
+    const historyAllClose = document.getElementById('usHistoryAllClose');
+
+    function renderHistoryAll(){
+      if(!historyAllList) return;
+      historyAllList.innerHTML = '';
+      if(!pontosRows.length){
+        historyAllList.innerHTML = '<p class="un-empty-hint">Nenhum lançamento ainda.</p>';
+        return;
+      }
+      const unitColor = {};
+      units.forEach(u => { unitColor[u.nome] = u.cor || 'gray'; });
+      pontosRows.forEach(r => {
+        const row = document.createElement('div');
+        row.className = 'us-history-row';
+        const dateStr = new Date(r.created_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+        row.innerHTML =
+          '<span class="us-history-points ' + (r.pontos >= 0 ? 'positive' : 'negative') + '"></span>' +
+          '<span class="us-history-body">' +
+            '<span class="us-history-motivo"><span class="cl-class-dot cl-color-' + (unitColor[r.unidade] || 'gray') + '" style="display:inline-block; vertical-align:middle; margin-right:5px;"></span><span class="us-history-unit"></span> — <span></span></span>' +
+            '<span class="us-history-meta"></span>' +
+          '</span>';
+        row.querySelector('.us-history-points').textContent = (r.pontos >= 0 ? '+' : '') + r.pontos;
+        row.querySelector('.us-history-unit').textContent = r.unidade;
+        row.querySelector('.us-history-motivo span:last-child').textContent = r.motivo;
+        row.querySelector('.us-history-meta').textContent = dateStr + (r.criado_por ? ' · ' + r.criado_por : '');
+        historyAllList.appendChild(row);
+      });
+    }
+
+    if(historyAllBtn){
+      historyAllBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if(!loaded) await loadData();
+        renderHistoryAll();
+        historyAllOverlay.classList.add('show');
+      });
+    }
+    if(historyAllClose) historyAllClose.addEventListener('click', () => historyAllOverlay.classList.remove('show'));
+    if(historyAllOverlay) historyAllOverlay.addEventListener('click', (e) => { if(e.target === historyAllOverlay) historyAllOverlay.classList.remove('show'); });
 
     async function openScoringView(fromView){
       cameFrom = fromView || 'view-units';
