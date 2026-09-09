@@ -10467,34 +10467,19 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
           </a>
 
-          <div class="bd-section-head">
-            <h4>Esta Semana</h4>
-            <a href="#" class="dash-link">Ver agenda
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
-            </a>
-          </div>
+          <!-- "Esta Semana": eventos reais da Agenda Anual que caem entre hoje e o
+               próximo domingo — ver renderThisWeek() mais abaixo no arquivo. Some
+               por completo quando não há nenhum evento na semana, em vez de um
+               carrossel vazio. -->
+          <div id="bdWeekSection" style="display:none;">
+            <div class="bd-section-head">
+              <h4>Esta Semana</h4>
+              <a href="#" class="dash-link" id="bdWeekVerAgenda">Ver agenda
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+              </a>
+            </div>
 
-          <div class="carousel">
-            <a href="#" class="carousel-card">
-              <span class="carousel-date">24<em>MAI</em></span>
-              <span class="carousel-title">Planejamento Anual</span>
-              <span class="carousel-meta">15:00 · Sede do Clube</span>
-            </a>
-            <a href="#" class="carousel-card">
-              <span class="carousel-date">28<em>MAI</em></span>
-              <span class="carousel-title">Culto Jovem</span>
-              <span class="carousel-meta">19:30 · Templo Sede</span>
-            </a>
-            <a href="#" class="carousel-card">
-              <span class="carousel-date">31<em>MAI</em></span>
-              <span class="carousel-title">Acampamento de Unidade</span>
-              <span class="carousel-meta">08:00 · Chácara Cedros</span>
-            </a>
-            <a href="#" class="carousel-card">
-              <span class="carousel-date">05<em>JUN</em></span>
-              <span class="carousel-title">Investidura</span>
-              <span class="carousel-meta">10:00 · Sede do Clube</span>
-            </a>
+            <div class="carousel" id="bdWeekCarousel"></div>
           </div>
 
           <!-- "Avisos recentes": ainda não existe um sistema real de postagem
@@ -18861,6 +18846,55 @@ const REQ_SUMMARIES = {
       startAutoplay();
     }
 
+    // ---- "Esta Semana": carrossel com os eventos reais da Agenda Anual que
+    // caem entre agora e o próximo domingo (23:59:59) — reaproveita a mesma
+    // lista de "próximos eventos" do banner acima. Some por completo quando
+    // não há nenhum evento na semana, em vez de mostrar um carrossel vazio. ----
+    const weekSection = document.getElementById('bdWeekSection');
+    const weekCarousel = document.getElementById('bdWeekCarousel');
+    const weekVerAgenda = document.getElementById('bdWeekVerAgenda');
+
+    function renderThisWeek(){
+      if(!weekSection || !weekCarousel) return;
+      weekCarousel.innerHTML = '';
+      const now = new Date();
+      const weekEnd = new Date(now);
+      weekEnd.setDate(now.getDate() + (now.getDay() === 0 ? 0 : 7 - now.getDay()));
+      weekEnd.setHours(23, 59, 59, 999);
+
+      const upcoming = (window.__plGetUpcomingEvents && window.__plGetUpcomingEvents(20)) || [];
+      const thisWeek = upcoming.filter(({ date }) => date <= weekEnd);
+      weekSection.style.display = thisWeek.length ? '' : 'none';
+
+      thisWeek.forEach(({ card }) => {
+        const a = document.createElement('a');
+        a.href = '#';
+        a.className = 'carousel-card';
+        a.innerHTML =
+          '<span class="carousel-date"></span>' +
+          '<span class="carousel-title"></span>' +
+          '<span class="carousel-meta"></span>';
+        const dateEl = a.querySelector('.carousel-date');
+        dateEl.append(card.dataset.day || '', document.createElement('em'));
+        dateEl.querySelector('em').textContent = card.dataset.monAbbr || '';
+        a.querySelector('.carousel-title').textContent = card.dataset.title || '';
+        const time = card.dataset.time || '';
+        a.querySelector('.carousel-meta').textContent = (time ? time + ' · ' : '') + (card.dataset.local || 'Sede do Clube');
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          if(window.__plOpenEventReadOnly) window.__plOpenEventReadOnly(card);
+        });
+        weekCarousel.appendChild(a);
+      });
+    }
+
+    if(weekVerAgenda){
+      weekVerAgenda.addEventListener('click', (e) => {
+        e.preventDefault();
+        showView('view-planning');
+      });
+    }
+
     // ---- Card "Você é Oficial de Dia" + preenchimento da Programação da Reunião ----
     // Deixa a pessoa marcada como oficial preencher horários/aviso/checklist do evento
     // direto do dashboard, sem precisar de permissão de edição na Agenda Anual/Secretaria
@@ -19301,8 +19335,9 @@ const REQ_SUMMARIES = {
       document.addEventListener('cedros:loggedin', refreshScheduleReadyBanner);
     }
 
-    window.__bdRefreshBanners = function(){ buildBanners(); refreshOfficerBanner(); refreshProgramacaoApprovalBanner(); refreshScheduleReadyBanner(); checkActivityTransitionAlert(); checkMeetingConcludedAlert(); };
+    window.__bdRefreshBanners = function(){ buildBanners(); renderThisWeek(); refreshOfficerBanner(); refreshProgramacaoApprovalBanner(); refreshScheduleReadyBanner(); checkActivityTransitionAlert(); checkMeetingConcludedAlert(); };
     buildBanners();
+    renderThisWeek();
     refreshOfficerBanner();
     refreshProgramacaoApprovalBanner();
     refreshScheduleReadyBanner();
