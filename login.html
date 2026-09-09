@@ -10810,7 +10810,7 @@
     if(!unitEl || !badgeEl) return;
     window.__applyGreetingUnit = function(usuario){
       if(!usuario) return;
-      unitEl.textContent = usuario.unidade === 'Diretoria do Clube' ? 'Diretoria do Clube' : 'Unidade ' + (usuario.unidade || '—');
+      unitEl.textContent = usuario.unidade === 'Diretoria do Clube' ? 'Diretoria: ' + (usuario.cargo || '—') : 'Unidade ' + (usuario.unidade || '—');
       if(usuario.cargo){
         badgeEl.textContent = usuario.cargo;
         badgeEl.setAttribute('aria-label', 'Cargo: ' + usuario.cargo);
