@@ -8897,6 +8897,64 @@
 
         <div class="us-unit-list" id="usUnitList"></div>
 
+        <!-- "Atividades Extras": geram lançamento real em unidade_pontos ao
+             serem marcadas como concluídas — ver window.__aeRefresh mais
+             abaixo no arquivo. Cadastrar é restrito ao cargo Coordenador(a)
+             de Unidades; qualquer um que já acesse esta tela pode ver e
+             marcar conclusão. -->
+        <div class="bd-section-head" style="margin-top:22px;">
+          <h4 class="un-section-title" style="margin:0;">Atividades Extras</h4>
+          <button type="button" class="dash-link" id="aeAddBtn" style="display:none; background:none; border:none; cursor:pointer; font-family:inherit;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nova
+          </button>
+        </div>
+        <div class="un-mini-list" id="aeList" style="margin-bottom:18px;">
+          <p class="un-empty-hint">Carregando...</p>
+        </div>
+
+      </div>
+
+      <!-- Cadastro/edição de atividade extra (Coordenador(a) de Unidades) -->
+      <div class="pl-modal-overlay" id="aeModalOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title" id="aeModalTitle">Nova Atividade Extra</h4>
+            <button type="button" class="pl-modal-close" id="aeModalClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <label class="pl-field-label" style="margin-top:0;">Título</label>
+          <input type="text" class="pl-input" id="aeFieldTitle" placeholder="Ex.: Mutirão de limpeza da sede" maxlength="80">
+          <label class="pl-field-label">Descrição</label>
+          <textarea class="pl-input pl-textarea" id="aeFieldDesc" rows="3" placeholder="Detalhes da atividade (opcional)" maxlength="300"></textarea>
+          <label class="pl-field-label">Unidade</label>
+          <select class="pl-input" id="aeFieldUnidade">
+            <option value="">Geral (qualquer unidade)</option>
+          </select>
+          <label class="pl-field-label">Pontos</label>
+          <input type="number" class="pl-input" id="aeFieldPoints" min="0" step="1" placeholder="0">
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-danger" id="aeDeleteBtn" style="display:none;">Excluir</button>
+            <button type="button" class="pl-btn pl-btn-primary" id="aeSaveBtn">Salvar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Marcar conclusão por unidade — atividade "geral" mostra todas as
+           unidades (cada uma conclui na sua vez); atividade de unidade
+           específica mostra só ela. -->
+      <div class="pl-modal-overlay" id="aeCompleteModalOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title" id="aeCompleteModalTitle">Concluir atividade</h4>
+            <button type="button" class="pl-modal-close" id="aeCompleteModalClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <p class="pl-reminder-hint" style="margin-top:0;" id="aeCompleteModalHint"></p>
+          <div class="un-mini-list" id="aeCompleteList"></div>
+        </div>
       </div>
 
       <div class="pl-modal-overlay" id="usHistoryAllOverlay">
@@ -20300,6 +20358,7 @@ const REQ_SUMMARIES = {
       showView('view-unit-scoring');
       if(!loaded) await loadData();
       renderUnitList();
+      refreshExtraActivities();
     }
 
     if(openBtn) openBtn.addEventListener('click', (e) => { e.preventDefault(); openScoringView('view-units'); });
@@ -20313,6 +20372,203 @@ const REQ_SUMMARIES = {
     }
     document.addEventListener('cedros:loggedin', (e) => applyScoringAccess(e.detail));
     applyScoringAccess(window.__currentUsuario);
+
+    // ---------------------------------------------------------------------
+    // Atividades Extras: só Coordenador(a) de Unidades cadastra (título,
+    // descrição, pontos e se é de uma unidade específica ou "geral" — nesse
+    // caso qualquer unidade pode concluir, cada uma na sua vez). Marcar como
+    // concluída por uma unidade gera um lançamento de verdade em
+    // unidade_pontos (mesma tabela do ajuste manual acima) — o Rank das
+    // Unidades reflete na hora. Quem já acessa esta tela (pode_pontuar_unidades)
+    // pode ver a lista e marcar conclusão; só o cargo Coordenador(a) de
+    // Unidades cadastra/edita/exclui.
+    // ---------------------------------------------------------------------
+    const EXTRA_ACTIVITY_ALLOWED_CARGOS = ['coordenador de unidades', 'coordenadora de unidades'];
+    function normalizeExtraActivityCargo(s){
+      return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    }
+    function isExtraActivityAdmin(){
+      const u = window.__currentUsuario;
+      return !!u && EXTRA_ACTIVITY_ALLOWED_CARGOS.includes(normalizeExtraActivityCargo(u.cargo));
+    }
+
+    const aeAddBtn = document.getElementById('aeAddBtn');
+    const aeList = document.getElementById('aeList');
+    const aeModalOverlay = document.getElementById('aeModalOverlay');
+    const aeModalTitle = document.getElementById('aeModalTitle');
+    const aeModalClose = document.getElementById('aeModalClose');
+    const aeFieldTitle = document.getElementById('aeFieldTitle');
+    const aeFieldDesc = document.getElementById('aeFieldDesc');
+    const aeFieldUnidade = document.getElementById('aeFieldUnidade');
+    const aeFieldPoints = document.getElementById('aeFieldPoints');
+    const aeSaveBtn = document.getElementById('aeSaveBtn');
+    const aeDeleteBtn = document.getElementById('aeDeleteBtn');
+    const aeCompleteModalOverlay = document.getElementById('aeCompleteModalOverlay');
+    const aeCompleteModalTitle = document.getElementById('aeCompleteModalTitle');
+    const aeCompleteModalHint = document.getElementById('aeCompleteModalHint');
+    const aeCompleteList = document.getElementById('aeCompleteList');
+
+    let extraActivities = [];
+    let extraCompletions = [];
+    let editingExtraId = null;
+
+    function populateUnidadeSelect(selected){
+      if(!aeFieldUnidade) return;
+      aeFieldUnidade.innerHTML = '<option value="">Geral (qualquer unidade)</option>' +
+        units.map(u => '<option value="' + u.nome + '">' + u.nome + '</option>').join('');
+      aeFieldUnidade.value = selected || '';
+    }
+
+    function openExtraModal(activity){
+      editingExtraId = activity ? activity.id : null;
+      aeModalTitle.textContent = activity ? 'Editar Atividade Extra' : 'Nova Atividade Extra';
+      aeDeleteBtn.style.display = activity ? '' : 'none';
+      aeFieldTitle.value = activity ? activity.titulo : '';
+      aeFieldTitle.style.borderColor = '';
+      aeFieldDesc.value = activity ? (activity.descricao || '') : '';
+      populateUnidadeSelect(activity ? activity.unidade : '');
+      aeFieldPoints.value = activity ? activity.pontos : '';
+      aeFieldPoints.style.borderColor = '';
+      aeModalOverlay.classList.add('show');
+      setTimeout(() => aeFieldTitle.focus(), 150);
+    }
+    if(aeAddBtn) aeAddBtn.addEventListener('click', () => openExtraModal(null));
+    if(aeModalClose) aeModalClose.addEventListener('click', () => aeModalOverlay.classList.remove('show'));
+
+    if(aeSaveBtn){
+      aeSaveBtn.addEventListener('click', async () => {
+        const titulo = aeFieldTitle.value.trim();
+        const pontos = parseInt(aeFieldPoints.value, 10);
+        if(!titulo){ aeFieldTitle.style.borderColor = '#FF6B5C'; return; }
+        if(isNaN(pontos) || pontos < 0){ aeFieldPoints.style.borderColor = '#FF6B5C'; return; }
+        const payload = {
+          titulo,
+          descricao: aeFieldDesc.value.trim() || null,
+          pontos,
+          unidade: aeFieldUnidade.value || null,
+          criado_por: window.__currentUsuario ? window.__currentUsuario.nome : null
+        };
+        if(supa){
+          if(editingExtraId) await supa.from('atividades_extras').update(payload).eq('id', editingExtraId);
+          else await supa.from('atividades_extras').insert(Object.assign({ ativa: true }, payload));
+        }
+        aeModalOverlay.classList.remove('show');
+        await refreshExtraActivities();
+      });
+    }
+
+    if(aeDeleteBtn){
+      aeDeleteBtn.addEventListener('click', async () => {
+        if(!editingExtraId || !confirm('Excluir esta atividade extra? Os pontos já concedidos por ela serão removidos das unidades.')) return;
+        if(supa){
+          const { data: rows } = await supa.from('atividades_extras_concluidas').select('unidade_ponto_id').eq('atividade_id', editingExtraId);
+          const pointIds = (rows || []).map(r => r.unidade_ponto_id).filter(Boolean);
+          for(const pid of pointIds){ await supa.from('unidade_pontos').delete().eq('id', pid); }
+          await supa.from('atividades_extras').delete().eq('id', editingExtraId);
+        }
+        aeModalOverlay.classList.remove('show');
+        await loadData();
+        renderUnitList();
+        renderRanking();
+        await refreshExtraActivities();
+      });
+    }
+
+    async function toggleUnitCompletion(activity, unidade, btn){
+      if(!supa) return;
+      if(btn) btn.disabled = true;
+      const existing = extraCompletions.find(c => c.atividade_id === activity.id && c.unidade === unidade);
+      if(existing){
+        if(existing.unidade_ponto_id) await supa.from('unidade_pontos').delete().eq('id', existing.unidade_ponto_id);
+        await supa.from('atividades_extras_concluidas').delete().eq('id', existing.id);
+      } else {
+        const { data: pontoRow } = await supa.from('unidade_pontos').insert({
+          unidade,
+          pontos: activity.pontos,
+          motivo: 'Atividade extra: ' + activity.titulo,
+          criado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
+        }).select().single();
+        await supa.from('atividades_extras_concluidas').insert({
+          atividade_id: activity.id,
+          unidade,
+          unidade_ponto_id: pontoRow ? pontoRow.id : null
+        });
+      }
+      await loadData();
+      renderUnitList();
+      renderRanking();
+      await refreshExtraActivities();
+      if(completingActivity && completingActivity.id === activity.id) openCompleteModal(completingActivity);
+    }
+
+    let completingActivity = null;
+    function openCompleteModal(activity){
+      completingActivity = activity;
+      aeCompleteModalTitle.textContent = activity.titulo;
+      aeCompleteModalHint.textContent = activity.unidade
+        ? 'Restrita à unidade ' + activity.unidade + '.'
+        : 'Geral — qualquer unidade pode concluir, cada uma na sua vez.';
+      const targetUnits = activity.unidade ? units.filter(u => u.nome === activity.unidade) : units;
+      aeCompleteList.innerHTML = '';
+      targetUnits.forEach(u => {
+        const done = extraCompletions.some(c => c.atividade_id === activity.id && c.unidade === u.nome);
+        const row = document.createElement('div');
+        row.className = 'un-mini-row';
+        row.innerHTML =
+          '<span class="un-mini-body"><span class="un-mini-title"></span></span>' +
+          '<button type="button" class="ms-check-btn' + (done ? ' done' : '') + '"></button>';
+        row.querySelector('.un-mini-title').textContent = u.nome;
+        const btn = row.querySelector('.ms-check-btn');
+        btn.textContent = done ? 'Concluída ✓' : 'Concluir';
+        btn.addEventListener('click', () => toggleUnitCompletion(activity, u.nome, btn));
+        aeCompleteList.appendChild(row);
+      });
+      aeCompleteModalOverlay.classList.add('show');
+    }
+    if(document.getElementById('aeCompleteModalClose')){
+      document.getElementById('aeCompleteModalClose').addEventListener('click', () => { aeCompleteModalOverlay.classList.remove('show'); completingActivity = null; });
+    }
+
+    function renderExtraList(){
+      if(!aeList) return;
+      if(aeAddBtn) aeAddBtn.style.display = isExtraActivityAdmin() ? '' : 'none';
+      aeList.innerHTML = '';
+      if(!extraActivities.length){
+        aeList.innerHTML = '<p class="un-empty-hint">Nenhuma atividade extra cadastrada.</p>';
+        return;
+      }
+      const admin = isExtraActivityAdmin();
+      extraActivities.forEach(a => {
+        const targetCount = a.unidade ? 1 : units.length;
+        const doneCount = extraCompletions.filter(c => c.atividade_id === a.id).length;
+        const row = document.createElement('div');
+        row.className = 'un-mini-row';
+        row.innerHTML =
+          '<span class="un-mini-body"><span class="un-mini-title"></span><span class="un-mini-meta"></span></span>' +
+          '<button type="button" class="ms-use-btn' + (doneCount >= targetCount && targetCount > 0 ? ' done' : '') + '">Concluir</button>' +
+          (admin ? '<button type="button" class="ms-edit-btn" aria-label="Editar atividade"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>' : '');
+        row.querySelector('.un-mini-title').textContent = a.titulo;
+        const ptsLabel = a.pontos + (a.pontos === 1 ? ' ponto' : ' pontos');
+        row.querySelector('.un-mini-meta').textContent =
+          (a.descricao ? a.descricao + ' · ' : '') + (a.unidade || 'Geral') + ' · ' + ptsLabel + ' · ' + doneCount + '/' + targetCount + ' concluíram';
+        row.querySelector('.ms-use-btn').addEventListener('click', () => openCompleteModal(a));
+        const editBtn = row.querySelector('.ms-edit-btn');
+        if(editBtn) editBtn.addEventListener('click', () => openExtraModal(a));
+        aeList.appendChild(row);
+      });
+    }
+
+    async function refreshExtraActivities(){
+      if(aeAddBtn) aeAddBtn.style.display = isExtraActivityAdmin() ? '' : 'none';
+      if(!aeList || !supa) return;
+      const [{ data: activities }, { data: completions }] = await Promise.all([
+        supa.from('atividades_extras').select('*').eq('ativa', true).order('created_at', { ascending: false }),
+        supa.from('atividades_extras_concluidas').select('*')
+      ]);
+      extraActivities = activities || [];
+      extraCompletions = completions || [];
+      renderExtraList();
+    }
 
     window.__usRefreshDashboardRanking();
   })();
