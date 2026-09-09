@@ -557,6 +557,15 @@ alter table eventos_agenda add column if not exists escala_oculta boolean not nu
 -- repetições configurado (lembrete_repetir_vezes).
 alter table eventos_agenda add column if not exists lembrete_confirmado_por text;
 
+-- Colunas adicionadas depois: confirmação de que a Programação do Dia de uma
+-- Reunião Regular foi realmente concluída (feita por qualquer Oficial de Dia
+-- responsável, Diretor ou Dir. Associado(a), no banner "Reunião terminou" do
+-- Início) — assim que confirmada, o banner some da tela inicial pra todo
+-- mundo, não só de quem confirmou.
+alter table eventos_agenda add column if not exists reuniao_concluida boolean not null default false;
+alter table eventos_agenda add column if not exists reuniao_concluida_por text;
+alter table eventos_agenda add column if not exists reuniao_concluida_em timestamptz;
+
 create or replace function set_updated_at_eventos_agenda()
 returns trigger language plpgsql as $$
 begin
