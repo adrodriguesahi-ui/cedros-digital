@@ -863,3 +863,44 @@ alter table desafios_especialidades enable row level security;
 drop policy if exists "desafios_especialidades: acesso publico" on desafios_especialidades;
 create policy "desafios_especialidades: acesso publico" on desafios_especialidades
   for all using (true) with check (true);
+
+-- ---------------------------------------------------------------------
+-- missoes: sistema "Desafio Só Desbravador" — tarefas avulsas que a
+-- Diretoria cadastra manualmente (título, descrição, pontos definidos
+-- caso a caso, sem regra fixa por tipo). Cada desbravador marca as que
+-- concluiu em missoes_concluidas (uma linha por pessoa por missão); a
+-- soma de pontos das concluídas por usuário monta o ranking "Seja
+-- Destaque" na tela de Missões. `ativa` controla se a missão ainda
+-- aparece na lista pra ser concluída — encerrar uma missão não apaga
+-- o histórico de quem já concluiu, só tira ela da lista de pendentes.
+-- ---------------------------------------------------------------------
+create table if not exists missoes (
+  id uuid primary key default gen_random_uuid(),
+  titulo text not null,
+  descricao text,
+  pontos int not null default 0,
+  ativa boolean not null default true,
+  criado_por text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists missoes_concluidas (
+  id uuid primary key default gen_random_uuid(),
+  missao_id uuid not null references missoes(id) on delete cascade,
+  usuario_id uuid not null references usuarios(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (missao_id, usuario_id)
+);
+
+create index if not exists missoes_concluidas_usuario_idx on missoes_concluidas(usuario_id);
+
+alter table missoes enable row level security;
+alter table missoes_concluidas enable row level security;
+
+drop policy if exists "missoes: acesso publico" on missoes;
+create policy "missoes: acesso publico" on missoes
+  for all using (true) with check (true);
+
+drop policy if exists "missoes_concluidas: acesso publico" on missoes_concluidas;
+create policy "missoes_concluidas: acesso publico" on missoes_concluidas
+  for all using (true) with check (true);
