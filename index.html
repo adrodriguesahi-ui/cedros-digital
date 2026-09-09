@@ -1564,6 +1564,23 @@
   .sp-empty{ padding:30px 4px; text-align:center; font-size:13px; font-weight:600; color:rgba(245,239,225,0.45); }
   .sp-area-heading{ margin:18px 2px 8px; font-size:12px; font-weight:900; letter-spacing:0.03em; text-transform:uppercase; color:var(--gold); }
 
+  /* Card "Desafio de Especialidades" (Diretoria/Dir. Associado(a)) — reaproveita
+     o visual de .ad-disclaimer, só que com botão de ação. */
+  .sp-challenge-card{
+    display:flex; gap:10px; align-items:center;
+    background:rgba(216,168,62,0.1); border:1px solid rgba(216,168,62,0.25);
+    border-radius:14px; padding:12px 14px; margin:0 16px 14px;
+  }
+  .sp-challenge-card svg{ flex-shrink:0; color:var(--gold); }
+  .sp-challenge-card-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .sp-challenge-card-title{ font-size:12px; font-weight:900; color:var(--gold); margin-bottom:2px; }
+  .sp-challenge-card-status{ font-size:12px; font-weight:600; color:rgba(245,239,225,0.75); line-height:1.4; }
+  .sp-challenge-card-btn{
+    flex-shrink:0; background:rgba(216,168,62,0.22); color:var(--gold); border:none;
+    border-radius:20px; padding:7px 14px; font-size:11.5px; font-weight:800; cursor:pointer;
+  }
+  .sp-challenge-card-btn:active{ transform:scale(0.95); }
+
   /* ---- Administração do sistema ---- */
   .ad-disclaimer{
     display:flex; gap:8px; align-items:flex-start;
@@ -9648,7 +9665,51 @@
           </div>
           <p class="sp-disclaimer">534 especialidades (518 especialidades + 16 mestrados) da edição 2025 do Manual de Especialidades da DSA, organizadas em 11 áreas, incluindo a nova área "Ensinos Bíblicos". Base local (sem conexão ao site oficial).</p>
 
+          <!-- Só Diretor(a)/Dir. Associado(a) veem esse card — lança ou encerra o
+               desafio de especialidades que controla o banner "Ranking de
+               Especialidades" do Início. Ver refreshChallengeCard() mais abaixo
+               no arquivo. -->
+          <div class="sp-challenge-card" id="spChallengeCard" style="display:none;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M17 5h2a2 2 0 0 1 2 2v1a3 3 0 0 1-3 3M7 5H5a2 2 0 0 0-2 2v1a3 3 0 0 0 3 3"/></svg>
+            <span class="sp-challenge-card-body">
+              <span class="sp-challenge-card-title">Desafio de Especialidades</span>
+              <span class="sp-challenge-card-status" id="spChallengeStatus">Nenhum desafio ativo no momento.</span>
+            </span>
+            <button type="button" class="sp-challenge-card-btn" id="spChallengeLaunchBtn">Lançar</button>
+            <button type="button" class="sp-challenge-card-btn" id="spChallengeEndBtn" style="display:none;">Encerrar</button>
+          </div>
+
           <div class="pl-content" id="spContent"></div>
+        </div>
+
+        <div class="pl-modal-overlay" id="spChallengeModalOverlay">
+          <div class="pl-modal">
+            <div class="pl-modal-head">
+              <h4 class="pl-modal-title">Lançar Desafio de Especialidades</h4>
+              <button type="button" class="pl-modal-close" id="spChallengeModalClose" aria-label="Fechar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+
+            <label class="pl-field-label" style="margin-top:0;">Título do desafio</label>
+            <input type="text" class="pl-input" id="spChallengeFieldTitle" placeholder="Ex.: Semana das Especialidades" maxlength="60">
+
+            <div class="pl-field-row">
+              <div class="pl-field-col">
+                <label class="pl-field-label">Início</label>
+                <input type="date" class="pl-input" id="spChallengeFieldStart">
+              </div>
+              <div class="pl-field-col">
+                <label class="pl-field-label">Fim</label>
+                <input type="date" class="pl-input" id="spChallengeFieldEnd">
+              </div>
+            </div>
+            <p class="pl-reminder-hint" style="margin:-6px 0 14px;">Enquanto a data de hoje estiver dentro desse período, o banner "Ranking de Especialidades" aparece no Início pra todo mundo, com o TOP 10 de quem mais concluiu especialidades na janela.</p>
+
+            <div class="pl-modal-actions">
+              <button type="button" class="pl-btn pl-btn-primary" id="spChallengeSaveBtn">Lançar Desafio</button>
+            </div>
+          </div>
         </div>
 
         <div id="spAchievementsPanel" class="pl-content" style="display:none;">
@@ -10441,6 +10502,22 @@
             </div>
           </div>
 
+          <!-- Banner "Ranking de Especialidades": só aparece enquanto a Diretoria
+               tiver um desafio de especialidades ativo (tabela
+               desafios_especialidades) — ver renderSpecialtyBanner() mais abaixo
+               no arquivo. Fica acima do Rank das Unidades pra chamar mais atenção
+               enquanto durar o desafio. -->
+          <a href="#" class="bd-ranking-banner" id="bdSpecialtyBanner" style="display:none;">
+            <span class="bd-ranking-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M17 5h2a2 2 0 0 1 2 2v1a3 3 0 0 1-3 3M7 5H5a2 2 0 0 0-2 2v1a3 3 0 0 0 3 3"/></svg>
+            </span>
+            <span class="bd-ranking-text">
+              <span class="bd-ranking-kicker" id="bdSpecialtyBannerKicker">Ranking de Especialidades</span>
+              <span id="bdSpecialtyBannerText">Confira o <b>TOP 10</b> desbravadores</span>
+            </span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+          </a>
+
           <!-- Bento: progress ring + unit comparison chart + streak -->
           <div class="bento-grid">
             <div class="bento-card bento-chart-card">
@@ -10453,19 +10530,6 @@
             </div>
 
           </div>
-
-
-          <!-- Gamified ranking callout -->
-          <a href="#" class="bd-ranking-banner">
-            <span class="bd-ranking-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4Z"/><path d="M17 5h2a2 2 0 0 1 2 2v1a3 3 0 0 1-3 3M7 5H5a2 2 0 0 0-2 2v1a3 3 0 0 0 3 3"/></svg>
-            </span>
-            <span class="bd-ranking-text">
-              <span class="bd-ranking-kicker">Ranking de Especialidades</span>
-              Confira o <b>TOP 10</b> desbravadores desta semana
-            </span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
-          </a>
 
           <!-- "Esta Semana": eventos reais da Agenda Anual que caem entre hoje e o
                próximo domingo — ver renderThisWeek() mais abaixo no arquivo. Some
@@ -10516,6 +10580,25 @@
         <div class="pl-dayview-list-wrap">
           <div class="bd-reminders-list" id="bdRemindersList"></div>
           <p class="bd-reminders-empty" id="bdRemindersEmpty" style="display:none;">Nenhum lembrete ativo no momento.</p>
+        </div>
+      </div>
+
+      <!-- TOP 10 do desafio de especialidades ativo — abre ao tocar o banner
+           "Ranking de Especialidades". Contagem de especialidades_concluidas
+           dentro da janela do desafio, ver computeSpecialtyRanking() mais
+           abaixo no arquivo. -->
+      <div class="pl-dayview-overlay" id="bdSpecialtyRankOverlay">
+        <div class="pl-dayview-head">
+          <button type="button" class="pl-dayview-icon-btn" id="bdSpecialtyRankClose" aria-label="Voltar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h3 class="pl-dayview-title" id="bdSpecialtyRankTitle" style="text-transform:none;">TOP 10</h3>
+          <span class="pl-dayview-icon-btn" style="visibility:hidden;" aria-hidden="true"></span>
+        </div>
+        <div class="pl-dayview-list-wrap">
+          <p class="sp-disclaimer" id="bdSpecialtyRankPeriod" style="margin-top:14px;"></p>
+          <div class="un-mini-list" id="bdSpecialtyRankList"></div>
+          <p class="un-empty-hint" id="bdSpecialtyRankEmpty" style="display:none;">Ninguém concluiu especialidades neste desafio ainda.</p>
         </div>
       </div>
 
@@ -17501,6 +17584,125 @@ const REQ_SUMMARIES = {
     document.addEventListener('cedros:loggedin', updateDashboardChip);
   })();
 
+  // ---------------------------------------------------------------------
+  // Desafio de Especialidades: Diretor(a)/Dir. Associado(a) lança um desafio
+  // com janela de datas (tabela desafios_especialidades). Enquanto ativo, o
+  // banner "Ranking de Especialidades" do Início mostra o TOP 10 de quem mais
+  // concluiu especialidades (especialidades_concluidas) na janela.
+  // window.__spGetActiveChallenge / window.__spComputeRanking são usados pelo
+  // dashboard mais abaixo no arquivo.
+  // ---------------------------------------------------------------------
+  (function(){
+    const CHALLENGE_ALLOWED_CARGOS = ['diretor', 'dir. associado', 'dir. associada'];
+    function normalizeChallengeCargo(s){
+      return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    }
+
+    window.__spGetActiveChallenge = async function(){
+      if(!supa) return null;
+      const { data } = await supa.from('desafios_especialidades').select('*').order('created_at', { ascending: false });
+      const rows = data || [];
+      const today = new Date().toISOString().slice(0, 10);
+      return rows.find(d => d.data_inicio <= today && today <= d.data_fim) || null;
+    };
+
+    window.__spComputeRanking = async function(dataInicio, dataFim){
+      if(!supa) return [];
+      const [{ data: concluidas }, { data: users }] = await Promise.all([
+        supa.from('especialidades_concluidas').select('usuario_id, data_conclusao'),
+        supa.from('usuarios').select('id, nome')
+      ]);
+      const nameById = {};
+      (users || []).forEach(u => { nameById[u.id] = u.nome; });
+      const counts = {};
+      (concluidas || []).forEach(row => {
+        const d = row.data_conclusao;
+        if(!d || d < dataInicio || d > dataFim) return;
+        counts[row.usuario_id] = (counts[row.usuario_id] || 0) + 1;
+      });
+      return Object.keys(counts)
+        .map(id => ({ nome: nameById[id] || 'Desconhecido', total: counts[id] }))
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 10);
+    };
+
+    const card = document.getElementById('spChallengeCard');
+    const cardStatus = document.getElementById('spChallengeStatus');
+    const launchBtn = document.getElementById('spChallengeLaunchBtn');
+    const endBtn = document.getElementById('spChallengeEndBtn');
+    const modalOverlay = document.getElementById('spChallengeModalOverlay');
+    const modalClose = document.getElementById('spChallengeModalClose');
+    const fieldTitle = document.getElementById('spChallengeFieldTitle');
+    const fieldStart = document.getElementById('spChallengeFieldStart');
+    const fieldEnd = document.getElementById('spChallengeFieldEnd');
+    const saveBtn = document.getElementById('spChallengeSaveBtn');
+    if(!card) return;
+
+    async function refreshChallengeCard(){
+      const user = window.__currentUsuario;
+      const allowed = !!user && CHALLENGE_ALLOWED_CARGOS.includes(normalizeChallengeCargo(user.cargo));
+      card.style.display = allowed ? '' : 'none';
+      if(!allowed) return;
+      const active = await window.__spGetActiveChallenge();
+      if(active){
+        cardStatus.textContent = 'Ativo: "' + active.titulo + '" até ' + new Date(active.data_fim + 'T00:00:00').toLocaleDateString('pt-BR');
+        launchBtn.style.display = 'none';
+        endBtn.style.display = '';
+        endBtn.dataset.challengeId = active.id;
+      } else {
+        cardStatus.textContent = 'Nenhum desafio ativo no momento.';
+        launchBtn.style.display = '';
+        endBtn.style.display = 'none';
+      }
+    }
+
+    if(launchBtn){
+      launchBtn.addEventListener('click', () => {
+        const today = new Date().toISOString().slice(0, 10);
+        fieldTitle.value = '';
+        fieldTitle.style.borderColor = '';
+        fieldStart.value = today;
+        fieldEnd.value = today;
+        fieldEnd.style.borderColor = '';
+        modalOverlay.classList.add('show');
+      });
+    }
+    if(modalClose) modalClose.addEventListener('click', () => modalOverlay.classList.remove('show'));
+
+    if(saveBtn){
+      saveBtn.addEventListener('click', async () => {
+        const titulo = fieldTitle.value.trim();
+        const inicio = fieldStart.value;
+        const fim = fieldEnd.value;
+        if(!titulo){ fieldTitle.style.borderColor = '#FF6B5C'; return; }
+        if(!inicio || !fim || fim < inicio){ fieldEnd.style.borderColor = '#FF6B5C'; return; }
+        if(supa){
+          await supa.from('desafios_especialidades').insert({
+            titulo, data_inicio: inicio, data_fim: fim,
+            criado_por: window.__currentUsuario ? window.__currentUsuario.nome : null
+          });
+        }
+        modalOverlay.classList.remove('show');
+        await refreshChallengeCard();
+        if(window.__bdRefreshBanners) window.__bdRefreshBanners();
+      });
+    }
+
+    if(endBtn){
+      endBtn.addEventListener('click', async () => {
+        const id = endBtn.dataset.challengeId;
+        if(!id || !confirm('Encerrar o desafio agora?')) return;
+        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+        if(supa) await supa.from('desafios_especialidades').update({ data_fim: yesterday }).eq('id', id);
+        await refreshChallengeCard();
+        if(window.__bdRefreshBanners) window.__bdRefreshBanners();
+      });
+    }
+
+    document.addEventListener('cedros:loggedin', refreshChallengeCard);
+    refreshChallengeCard();
+  })();
+
   // Organização de Eventos: tarefas, responsáveis e prazos por evento
   (function(){
     const hub = document.getElementById('eoHub');
@@ -18895,6 +19097,67 @@ const REQ_SUMMARIES = {
       });
     }
 
+    // ---- Banner "Ranking de Especialidades": só aparece com um desafio de
+    // especialidades ativo (ver window.__spGetActiveChallenge, exposto pela
+    // IIFE do Manual de Especialidades). Ao tocar, abre o TOP 10 da janela do
+    // desafio, calculado por window.__spComputeRanking. ----
+    const specialtyBanner = document.getElementById('bdSpecialtyBanner');
+    const specialtyBannerText = document.getElementById('bdSpecialtyBannerText');
+    const specialtyRankOverlay = document.getElementById('bdSpecialtyRankOverlay');
+    const specialtyRankClose = document.getElementById('bdSpecialtyRankClose');
+    const specialtyRankTitle = document.getElementById('bdSpecialtyRankTitle');
+    const specialtyRankPeriod = document.getElementById('bdSpecialtyRankPeriod');
+    const specialtyRankList = document.getElementById('bdSpecialtyRankList');
+    const specialtyRankEmpty = document.getElementById('bdSpecialtyRankEmpty');
+    let activeChallenge = null;
+
+    async function renderSpecialtyBanner(){
+      if(!specialtyBanner || !window.__spGetActiveChallenge) return;
+      activeChallenge = await window.__spGetActiveChallenge();
+      specialtyBanner.style.display = activeChallenge ? '' : 'none';
+      if(activeChallenge && specialtyBannerText){
+        specialtyBannerText.innerHTML = 'Confira o <b>TOP 10</b> do desafio "' + activeChallenge.titulo + '"';
+      }
+    }
+
+    async function openSpecialtyRankOverlay(){
+      if(!activeChallenge || !specialtyRankOverlay) return;
+      specialtyRankTitle.textContent = activeChallenge.titulo;
+      const inicio = new Date(activeChallenge.data_inicio + 'T00:00:00').toLocaleDateString('pt-BR');
+      const fim = new Date(activeChallenge.data_fim + 'T00:00:00').toLocaleDateString('pt-BR');
+      specialtyRankPeriod.textContent = 'De ' + inicio + ' até ' + fim + '.';
+      specialtyRankList.innerHTML = '<p class="un-empty-hint">Carregando...</p>';
+      specialtyRankEmpty.style.display = 'none';
+      specialtyRankOverlay.classList.add('show');
+
+      const ranking = await window.__spComputeRanking(activeChallenge.data_inicio, activeChallenge.data_fim);
+      specialtyRankList.innerHTML = '';
+      specialtyRankEmpty.style.display = ranking.length ? 'none' : '';
+      ranking.forEach((item, i) => {
+        const rank = i + 1;
+        const row = document.createElement('div');
+        row.className = 'un-mini-row';
+        row.innerHTML =
+          '<span class="us-rank-badge' + (rank <= 3 ? ' r' + rank : '') + '"></span>' +
+          '<span class="un-mini-body"><span class="un-mini-title"></span></span>' +
+          '<span class="un-mini-time"></span>';
+        row.querySelector('.us-rank-badge').textContent = rank;
+        row.querySelector('.un-mini-title').textContent = item.nome;
+        row.querySelector('.un-mini-time').textContent = item.total + (item.total === 1 ? ' especialidade' : ' especialidades');
+        specialtyRankList.appendChild(row);
+      });
+    }
+
+    if(specialtyBanner){
+      specialtyBanner.addEventListener('click', (e) => {
+        e.preventDefault();
+        openSpecialtyRankOverlay();
+      });
+    }
+    if(specialtyRankClose){
+      specialtyRankClose.addEventListener('click', () => specialtyRankOverlay.classList.remove('show'));
+    }
+
     // ---- Card "Você é Oficial de Dia" + preenchimento da Programação da Reunião ----
     // Deixa a pessoa marcada como oficial preencher horários/aviso/checklist do evento
     // direto do dashboard, sem precisar de permissão de edição na Agenda Anual/Secretaria
@@ -19335,9 +19598,10 @@ const REQ_SUMMARIES = {
       document.addEventListener('cedros:loggedin', refreshScheduleReadyBanner);
     }
 
-    window.__bdRefreshBanners = function(){ buildBanners(); renderThisWeek(); refreshOfficerBanner(); refreshProgramacaoApprovalBanner(); refreshScheduleReadyBanner(); checkActivityTransitionAlert(); checkMeetingConcludedAlert(); };
+    window.__bdRefreshBanners = function(){ buildBanners(); renderThisWeek(); renderSpecialtyBanner(); refreshOfficerBanner(); refreshProgramacaoApprovalBanner(); refreshScheduleReadyBanner(); checkActivityTransitionAlert(); checkMeetingConcludedAlert(); };
     buildBanners();
     renderThisWeek();
+    renderSpecialtyBanner();
     refreshOfficerBanner();
     refreshProgramacaoApprovalBanner();
     refreshScheduleReadyBanner();

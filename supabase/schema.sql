@@ -839,3 +839,27 @@ create policy "chamadas: acesso publico" on chamadas
 drop policy if exists "chamada_presencas: acesso publico" on chamada_presencas;
 create policy "chamada_presencas: acesso publico" on chamada_presencas
   for all using (true) with check (true);
+
+-- ---------------------------------------------------------------------
+-- desafios_especialidades: desafio de especialidades lançado por Diretor(a)
+-- ou Dir. Associado(a), com uma janela de datas. Enquanto a data de hoje cai
+-- dentro de [data_inicio, data_fim], o banner "Ranking de Especialidades" do
+-- Início mostra o TOP 10 de quem mais concluiu especialidades (tabela
+-- especialidades_concluidas) nessa janela. Fora de uma janela ativa o banner
+-- fica oculto — não existe um "desligado" explícito, encerrar antes da hora
+-- só move data_fim pra ontem.
+-- ---------------------------------------------------------------------
+create table if not exists desafios_especialidades (
+  id uuid primary key default gen_random_uuid(),
+  titulo text not null,
+  data_inicio date not null,
+  data_fim date not null,
+  criado_por text,
+  created_at timestamptz not null default now()
+);
+
+alter table desafios_especialidades enable row level security;
+
+drop policy if exists "desafios_especialidades: acesso publico" on desafios_especialidades;
+create policy "desafios_especialidades: acesso publico" on desafios_especialidades
+  for all using (true) with check (true);
