@@ -3443,6 +3443,7 @@
             <select class="pl-input" id="plFieldOfficer2"><option value="">Nenhum</option></select>
 
             <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Programação do Dia</label>
+            <p class="pl-reminder-hint" id="plProgramacaoLockHint" style="display:none; margin:-4px 0 10px;">Só o Oficial de Dia responsável ou a Diretoria (Diretor/Dir. Associado(a)) pode editar essa parte.</p>
             <button type="button" class="pl-list-add-btn pl-list-template-btn" id="plScheduleTemplateBtn"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Carregar modelo padrão da Reunião Regular</button>
             <div class="pl-schedule-list" id="plScheduleList"></div>
             <button type="button" class="pl-list-add-btn" id="plScheduleAddBtn">+ Adicionar horário</button>
@@ -10241,7 +10242,7 @@
                Dia (card.dataset.schedule não vazio) — ver window.__plGetNextScheduledEvent
                mais abaixo no arquivo. Toca pra abrir o evento em modo leitura. -->
           <a href="#" class="bd-officer-chip bd-schedule-chip" id="bdScheduleReadyBanner" style="display:none;">
-            <span id="bdScheduleReadyInfo"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Programação pronta</span>
+            <span id="bdScheduleReadyInfo"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Reunião Regular</span>
           </a>
         </p>
 
@@ -11532,6 +11533,35 @@
     });
     setCustomColor('green');
 
+    // Quem pode editar a Programação do Dia (horários, checklist e aviso aos
+    // membros) de um evento já existente: só os Oficiais de Dia responsáveis por
+    // ele (oficiais_dia_ids) ou quem tem cargo Diretor/Dir. Associado(a) (mesmos 3
+    // cargos usados pra liberar a aba Escala de Oficiais na Secretaria) — o resto
+    // do formulário (título, data, local etc.) continua editável por quem já tinha
+    // acesso de edição na Agenda Anual, só essa parte fica travada.
+    const PROGRAMACAO_DIA_ALLOWED_CARGOS = ['diretor', 'dir. associado', 'dir. associada'];
+    function normalizeProgramacaoDiaCargo(s){
+      return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    }
+    function canEditProgramacaoDoDia(card){
+      const user = window.__currentUsuario;
+      if(!user) return false;
+      if(PROGRAMACAO_DIA_ALLOWED_CARGOS.includes(normalizeProgramacaoDiaCargo(user.cargo))) return true;
+      return parseJSONSafe(card.dataset.officerIds).includes(user.id);
+    }
+    function applyProgramacaoDoDiaLock(allowed){
+      scheduleList.querySelectorAll('input, select').forEach(el => { el.disabled = !allowed; });
+      scheduleList.querySelectorAll('.pl-list-remove-btn').forEach(btn => { btn.style.display = allowed ? '' : 'none'; });
+      scheduleAddBtn.style.display = allowed ? '' : 'none';
+      if(scheduleTemplateBtn) scheduleTemplateBtn.style.display = allowed ? '' : 'none';
+      checklistList.querySelectorAll('input').forEach(el => { el.disabled = !allowed; });
+      checklistList.querySelectorAll('.pl-list-remove-btn').forEach(btn => { btn.style.display = allowed ? '' : 'none'; });
+      checklistAddBtn.style.display = allowed ? '' : 'none';
+      fieldNotice.disabled = !allowed;
+      const lockHint = document.getElementById('plProgramacaoLockHint');
+      if(lockHint) lockHint.style.display = allowed ? 'none' : '';
+    }
+
     function openModal(mode, card, preset){
       editingCard = card || null;
       photoCameraInput.value = '';
@@ -11578,6 +11608,7 @@
           }
         }
         setPhoto(card.dataset.foto || '');
+        applyProgramacaoDoDiaLock(canEditProgramacaoDoDia(card));
       } else {
         modalTitle.textContent = 'Novo Evento';
         deleteBtn.style.display = 'none';
@@ -11607,6 +11638,7 @@
         const historyHintNew = document.getElementById('plReminderHistoryHint');
         if(historyHintNew) historyHintNew.style.display = 'none';
         setPhoto('');
+        applyProgramacaoDoDiaLock(true);
       }
       toggleReminderFields();
       toggleRepeatFields();
@@ -18874,7 +18906,7 @@ const REQ_SUMMARIES = {
       }
       scheduleReadyCard = result.card;
       const dateStr = result.date.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
-      scheduleReadyInfo.innerHTML = '<svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Programação pronta · ' + dateStr;
+      scheduleReadyInfo.innerHTML = '<svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>Reunião Regular · ' + dateStr;
       scheduleReadyBanner.title = scheduleReadyCard.dataset.title || '';
       scheduleReadyBanner.style.display = '';
     }
