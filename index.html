@@ -10531,6 +10531,20 @@
 
           </div>
 
+          <!-- "Aniversariantes do Mês": lista real a partir de usuarios.data_nascimento
+               — ver updateDashboardBirthdayMonthCard() na IIFE de Aniversariantes,
+               mais abaixo no arquivo. Fica oculto quando ninguém faz aniversário
+               no mês atual. -->
+          <div id="bdBirthdayMonthSection" style="display:none;">
+            <div class="bd-section-head">
+              <h4 id="bdBirthdayMonthTitle">🎂 Aniversariantes do Mês</h4>
+              <a href="#" class="dash-link" id="bdBirthdayMonthLink">Ver todos
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+              </a>
+            </div>
+            <div class="pl-content" id="bdBirthdayMonthList" style="margin-bottom:22px;"></div>
+          </div>
+
           <!-- "Esta Semana": eventos reais da Agenda Anual que caem entre hoje e o
                próximo domingo — ver renderThisWeek() mais abaixo no arquivo. Some
                por completo quando não há nenhum evento na semana, em vez de um
@@ -16544,6 +16558,25 @@
       });
     }
 
+    // Reaproveitado pela lista completa (render()) e pelo card "Aniversariantes
+    // do Mês" do dashboard, pra manter os dois com a mesma cara.
+    function buildBirthdayCard(m, todayMonth, todayDay){
+      const isToday = m.parts.month === todayMonth && m.parts.day === todayDay;
+      const color = UNIT_COLOR[m.unidade] || 'gray';
+      const card = document.createElement('div');
+      card.className = 'pl-event-card bt-card';
+      card.innerHTML =
+        '<div class="pl-event-date"><b></b><em></em></div>' +
+        '<div class="pl-event-body"><h4 class="pl-event-title"></h4><p class="pl-event-meta"></p></div>' +
+        '<span class="pl-event-tag pl-tag-' + color + '"></span>';
+      card.querySelector('.pl-event-date b').textContent = String(m.parts.day).padStart(2, '0');
+      card.querySelector('.pl-event-date em').textContent = MONTH_ABBR[m.parts.month - 1];
+      card.querySelector('.pl-event-title').textContent = m.nome;
+      card.querySelector('.pl-event-meta').textContent = (m.unidade === 'Diretoria do Clube' ? 'Diretoria do Clube' : 'Unidade ' + m.unidade);
+      card.querySelector('.pl-event-tag').textContent = isToday ? '🎉 Hoje' : '🎂';
+      return card;
+    }
+
     function render(){
       const todayMonth = today.getMonth() + 1;
       const todayDay = today.getDate();
@@ -16556,27 +16589,43 @@
       if(!filtered.length){
         content.innerHTML = '<p class="un-empty-hint">Nenhum aniversariante em ' + MONTH_NAMES[selectedMonth - 1] + '.</p>';
       } else {
-        filtered.forEach(m => {
-          const isToday = m.parts.month === todayMonth && m.parts.day === todayDay;
-          const color = UNIT_COLOR[m.unidade] || 'gray';
-          const card = document.createElement('div');
-          card.className = 'pl-event-card bt-card';
-          card.innerHTML =
-            '<div class="pl-event-date"><b></b><em></em></div>' +
-            '<div class="pl-event-body"><h4 class="pl-event-title"></h4><p class="pl-event-meta"></p></div>' +
-            '<span class="pl-event-tag pl-tag-' + color + '"></span>';
-          card.querySelector('.pl-event-date b').textContent = String(m.parts.day).padStart(2, '0');
-          card.querySelector('.pl-event-date em').textContent = MONTH_ABBR[m.parts.month - 1];
-          card.querySelector('.pl-event-title').textContent = m.nome;
-          card.querySelector('.pl-event-meta').textContent = (m.unidade === 'Diretoria do Clube' ? 'Diretoria do Clube' : 'Unidade ' + m.unidade);
-          card.querySelector('.pl-event-tag').textContent = isToday ? '🎉 Hoje' : '🎂';
-          content.appendChild(card);
-        });
+        filtered.forEach(m => content.appendChild(buildBirthdayCard(m, todayMonth, todayDay)));
       }
       const hint = document.createElement('p');
       hint.className = 'pl-reminder-hint';
       hint.textContent = 'Lista sincronizada com Administração → Usuários (data de nascimento). Pra adicionar ou corrigir alguém, gerencie o cadastro por lá.';
       content.appendChild(hint);
+    }
+
+    // Card "Aniversariantes do Mês" do dashboard: mesma lista da tela cheia
+    // (Aniversariantes), mas sem seletor de mês — sempre o mês atual — e
+    // oculto por completo quando ninguém faz aniversário nele.
+    const monthCardSection = document.getElementById('bdBirthdayMonthSection');
+    const monthCardTitle = document.getElementById('bdBirthdayMonthTitle');
+    const monthCardList = document.getElementById('bdBirthdayMonthList');
+    const monthCardLink = document.getElementById('bdBirthdayMonthLink');
+
+    function updateDashboardBirthdayMonthCard(){
+      if(!monthCardSection || !monthCardList) return;
+      const todayMonth = today.getMonth() + 1;
+      const todayDay = today.getDate();
+      const filtered = roster
+        .map(m => Object.assign({}, m, { parts: birthdayParts(m.data_nascimento) }))
+        .filter(m => m.parts.month === todayMonth)
+        .sort((a, b) => a.parts.day - b.parts.day);
+
+      monthCardSection.style.display = filtered.length ? '' : 'none';
+      if(!filtered.length) return;
+      if(monthCardTitle) monthCardTitle.textContent = '🎂 Aniversariantes de ' + MONTH_NAMES[todayMonth - 1];
+      monthCardList.innerHTML = '';
+      filtered.forEach(m => monthCardList.appendChild(buildBirthdayCard(m, todayMonth, todayDay)));
+    }
+
+    if(monthCardLink){
+      monthCardLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        showView('view-birthdays');
+      });
     }
 
     function updateDashboardWidgets(){
@@ -16585,6 +16634,7 @@
       const thisMonthCount = roster.filter(m => birthdayParts(m.data_nascimento).month === todayMonth).length;
       const chip = document.getElementById('bdBirthdayChip');
       if(chip){ const b = chip.querySelector('b'); if(b) b.textContent = thisMonthCount; }
+      updateDashboardBirthdayMonthCard();
 
       const todays = roster.filter(m => { const p = birthdayParts(m.data_nascimento); return p.month === todayMonth && p.day === todayDay; });
       const banner = document.getElementById('bdBirthdayBanner');
