@@ -2470,12 +2470,6 @@
   .bd-live-title{ margin:0 0 8px; font-size:19px; font-weight:900; color:var(--lg-ink); }
   .bd-live-meta{ display:flex; align-items:center; gap:6px; margin:0 0 16px; font-size:13px; font-weight:600; color:var(--lg-muted); }
 
-  .bd-banner-empty{
-    margin:0 0 12px; padding:28px 14px; text-align:center;
-    font-size:13px; font-weight:700; color:var(--lg-muted);
-    background:rgba(255,255,255,0.03); border:1px solid var(--lg-border); border-radius:16px;
-  }
-
   /* Fixture list ("Esta Semana") */
   .bd-fixture-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:26px; }
   .bd-fixture{ border-radius:14px; padding:12px 14px; }
@@ -10415,7 +10409,6 @@
              mais abaixo no arquivo. -->
         <div class="bd-banner-row" id="bdBannerRow"></div>
         <div class="bd-banner-dots" id="bdBannerDots"></div>
-        <p class="bd-banner-empty" id="bdBannerEmpty" style="display:none;">Nenhum evento agendado.</p>
 
         <div class="bd-content">
 
@@ -18689,7 +18682,6 @@ const REQ_SUMMARIES = {
   (function(){
     const row = document.getElementById('bdBannerRow');
     const dotsWrap = document.getElementById('bdBannerDots');
-    const emptyMsg = document.getElementById('bdBannerEmpty');
     if(!row || !dotsWrap) return;
 
     const TAG_GRADIENT = {
@@ -18805,7 +18797,10 @@ const REQ_SUMMARIES = {
       index = 0;
 
       const upcoming = (window.__plGetUpcomingEvents && window.__plGetUpcomingEvents(5)) || [];
-      if(emptyMsg) emptyMsg.style.display = upcoming.length ? 'none' : '';
+      // Sem eventos futuros, oculta o carrossel inteiro em vez de mostrar
+      // um card vazio "Nenhum evento agendado." ocupando espaço à toa.
+      row.style.display = upcoming.length ? '' : 'none';
+      dotsWrap.style.display = upcoming.length ? '' : 'none';
 
       const now = new Date();
       upcoming.forEach(({ card, date }, i) => {
