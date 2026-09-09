@@ -1734,6 +1734,17 @@
     background:rgba(255,255,255,0.08); color:var(--cream);
     display:flex; align-items:center; justify-content:center;
   }
+  /* "Detalhes do Evento" (view-only, aberto pelo chip "Programação pronta" do
+     Início ou ao tocar num evento na Agenda Anual em modo leitura): em vez do
+     bottom-sheet padrão dos outros modais, ocupa a tela inteira — fica mais
+     confortável de ler o evento completo (programação, checklist, foto etc.)
+     sem um recorte de altura no meio da tela. */
+  #plViewModalOverlay{ align-items:stretch; background:var(--night); }
+  #plViewModalOverlay .pl-modal{
+    width:100%; max-width:none; height:100%; max-height:none;
+    border-radius:0; border:none;
+    padding-top:calc(18px + env(safe-area-inset-top,0px));
+  }
   .pl-field-label{ display:block; font-size:11.5px; font-weight:800; color:rgba(245,239,225,0.55); margin:12px 2px 6px; text-transform:uppercase; letter-spacing:0.03em; }
   .pl-input{
     width:100%; box-sizing:border-box;
