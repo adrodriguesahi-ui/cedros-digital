@@ -1707,14 +1707,6 @@
   .cl-area-acao.perigo{ color:#FF6B5C; border-color:rgba(255,107,92,0.25); background:rgba(255,107,92,0.1); }
   .cl-area-acao:active{ transform:scale(0.93); }
 
-  /* Lápis pra renomear a área, no cabeçalho do grupo. */
-  .cl-area-editar{
-    flex-shrink:0; display:flex; align-items:center; justify-content:center;
-    width:24px; height:24px; margin-left:6px; border-radius:7px;
-    background:rgba(255,255,255,0.07); color:rgba(245,239,225,0.55); cursor:pointer;
-  }
-  .cl-area-editar:active{ transform:scale(0.92); }
-
   /* O card do requisito é resumo: título em até 2 linhas e subtítulo em 1, com
      reticências. O texto inteiro fica na tela do requisito, ao tocar nele. */
   #view-classes .cl-activity-card .pl-event-title{
@@ -4094,7 +4086,6 @@
           </button>
           <h3 class="pl-title" id="clTitle">Classes Regulares</h3>
           <button type="button" class="pl-back" id="clRankOpenBtn" aria-label="Rendimento das Classes" style="display:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M17 5h2a2 2 0 0 1 2 2 4 4 0 0 1-4 4M7 5H5a2 2 0 0 0-2 2 4 4 0 0 0 4 4"/></svg></button>
-          <button type="button" class="pl-back" id="clAreasOpenBtn" aria-label="Áreas do cartão" style="display:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg></button>
           <button type="button" class="pl-back" id="clPlanningOpenBtn" aria-label="Planejamento de Aula" style="display:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></button>
         </div>
 
@@ -8587,7 +8578,7 @@
           <span style="width:34px;"></span>
         </div>
         <div class="pl-dayview-list-wrap">
-          <p class="sp-disclaimer" style="margin-top:14px;">As áreas agrupam os requisitos deste cartão. Renomear e criar vale só aqui; para mudar um requisito de área, toque nele na lista.</p>
+          <p class="sp-disclaimer" style="margin-top:14px;">As áreas agrupam os requisitos deste cartão, e valem só aqui. Para mudar um requisito de área, volte e toque no lápis dele no cronograma.</p>
           <div class="cl-areas-lista" id="clAreasLista"></div>
           <button type="button" class="pl-btn pl-btn-primary" id="clAreasNovaBtn" style="width:100%; margin-top:16px;">+ Nova área</button>
         </div>
@@ -10311,6 +10302,7 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <h3 class="pl-title">Planejamento de Classes</h3>
+          <button type="button" class="pl-back" id="cpAreasBtn" aria-label="Áreas do cartão" style="display:none;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg></button>
           <button type="button" class="pl-back" id="cpInstrutoresBtn" aria-label="Instrutores do cartão" style="display:none;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           </button>
@@ -14356,9 +14348,6 @@
       // lápis apareça já na primeira vez que o cartão é aberto.
       const grupoDaClasse = findClassGroup(className);
       if(grupoDaClasse) regroupByArea(grupoDaClasse);
-      const podeGerenciar = canManageStudents(className);
-      const btnAreas = document.getElementById('clAreasOpenBtn');
-      if(btnAreas) btnAreas.style.display = podeGerenciar ? '' : 'none';
       selectedStudent = null;
       if(studentBar){
         studentBar.style.display = '';
@@ -15704,7 +15693,6 @@
 
     // ---- Tela de Áreas do cartão: criar, renomear e excluir ----
     const areasOverlay = document.getElementById('clAreasOverlay');
-    const areasOpenBtn = document.getElementById('clAreasOpenBtn');
     const areasCloseBtn = document.getElementById('clAreasClose');
     const areasListaEl = document.getElementById('clAreasLista');
     const areasTitulo = document.getElementById('clAreasTitle');
@@ -15715,6 +15703,9 @@
     const areaMoverConfirma = document.getElementById('clAreaMoverConfirma');
     const areaMoverClose = document.getElementById('clAreaMoverClose');
     let areaParaExcluir = null;
+    // A tela é aberta pela área Planejamento de Classes, que pode estar num
+    // cartão diferente do que está aberto aqui — por isso a classe é explícita.
+    let areasClasse = null;
 
     function contaDaArea(className, area){
       const grupo = findClassGroup(className);
@@ -15723,13 +15714,14 @@
     }
 
     function renderAreasLista(){
-      if(!areasListaEl || !currentClass) return;
-      areasTitulo.textContent = 'Áreas — ' + currentClass;
+      const classe = areasClasse;
+      if(!areasListaEl || !classe) return;
+      areasTitulo.textContent = 'Áreas — ' + classe;
       areasListaEl.innerHTML = '';
       // Só mostra área do catálogo que tem requisito; as criadas aparecem sempre.
-      const criadas = areasCriadas(currentClass);
-      const lista = areasDoCartao(currentClass)
-        .filter(a => criadas.indexOf(a) !== -1 || contaDaArea(currentClass, a) > 0);
+      const criadas = areasCriadas(classe);
+      const lista = areasDoCartao(classe)
+        .filter(a => criadas.indexOf(a) !== -1 || contaDaArea(classe, a) > 0);
 
       if(!lista.length){
         areasListaEl.innerHTML = '<p class="un-empty-hint">Este cartão ainda não tem áreas.</p>';
@@ -15737,7 +15729,7 @@
       }
 
       lista.forEach(area => {
-        const n = contaDaArea(currentClass, area);
+        const n = contaDaArea(classe, area);
         const ehCriada = criadas.indexOf(area) !== -1;
         const linha = document.createElement('div');
         linha.className = 'cl-area-linha';
@@ -15746,40 +15738,47 @@
           '<span class="cl-area-linha-body"><span class="cl-area-linha-nome"></span><span class="cl-area-linha-meta"></span></span>' +
           '<button type="button" class="cl-area-acao" data-acao="renomear" aria-label="Renomear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>' +
           '<button type="button" class="cl-area-acao perigo" data-acao="excluir" aria-label="Excluir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>';
-        linha.querySelector('.cl-area-linha-nome').textContent = tituloDaArea(currentClass, area);
+        linha.querySelector('.cl-area-linha-nome').textContent = tituloDaArea(classe, area);
         linha.querySelector('.cl-area-linha-meta').textContent =
           (n === 1 ? '1 requisito' : n + ' requisitos') + (ehCriada ? ' · criada por você' : ' · do catálogo');
-        linha.querySelector('[data-acao="renomear"]').addEventListener('click', () => abrirEditorDeArea(currentClass, area));
+        linha.querySelector('[data-acao="renomear"]').addEventListener('click', () => abrirEditorDeArea(classe, area));
         linha.querySelector('[data-acao="excluir"]').addEventListener('click', () => pedirExclusaoDeArea(area, n, ehCriada));
         areasListaEl.appendChild(linha);
       });
     }
 
-    if(areasOpenBtn) areasOpenBtn.addEventListener('click', () => {
-      if(!currentClass) return;
+    // Aberta pela área Planejamento de Classes (ver window.__clAbrirAreas).
+    window.__clAbrirAreas = function(classe){
+      if(!classe) return;
+      areasClasse = classe;
       renderAreasLista();
+      // O overlay é absoluto dentro de uma .view; view fora da tela fica com
+      // opacity:0, então ele precisa se mudar pra view que está aparecendo.
+      const ativa = document.querySelector('.view.active');
+      if(ativa && areasOverlay.parentElement !== ativa) ativa.appendChild(areasOverlay);
       areasOverlay.classList.add('show');
-    });
+    };
     if(areasCloseBtn) areasCloseBtn.addEventListener('click', () => areasOverlay.classList.remove('show'));
 
     if(areasNovaBtn) areasNovaBtn.addEventListener('click', async () => {
+      const classe = areasClasse;
       const nome = (prompt('Nome da nova área:') || '').trim();
-      if(!nome || !currentClass) return;
+      if(!nome || !classe) return;
       // A chave da área é o próprio nome — o que agrupa os requisitos. Já
       // existindo, só renomeia em vez de criar duas com o mesmo nome.
-      if(areasDoCartao(currentClass).indexOf(nome) !== -1){
+      if(areasDoCartao(classe).indexOf(nome) !== -1){
         alert('Já existe uma área com esse nome neste cartão.');
         return;
       }
-      if(!AREAS_CRIADAS[currentClass]) AREAS_CRIADAS[currentClass] = [];
-      AREAS_CRIADAS[currentClass].push(nome);
-      const grupo = findClassGroup(currentClass);
+      if(!AREAS_CRIADAS[classe]) AREAS_CRIADAS[classe] = [];
+      AREAS_CRIADAS[classe].push(nome);
+      const grupo = findClassGroup(classe);
       if(grupo) regroupByArea(grupo);
       renderAreasLista();
 
       if(!supa) return;
       const { error } = await supa.from('areas_personalizadas')
-        .upsert({ classe: currentClass, area: nome, titulo: nome, criada: true });
+        .upsert({ classe: classe, area: nome, titulo: nome, criada: true });
       if(error) alert('Não consegui criar a área: ' + error.message);
     });
 
@@ -15788,17 +15787,17 @@
       areaParaExcluir = { area: area, n: n, criada: ehCriada };
       if(!n){
         // Vazia: some sem precisar mover nada.
-        if(confirm('Excluir a área "' + tituloDaArea(currentClass, area) + '"?')) excluirArea(null);
+        if(confirm('Excluir a área "' + tituloDaArea(areasClasse, area) + '"?')) excluirArea(null);
         areaParaExcluir = null;
         return;
       }
-      areaMoverTexto.textContent = 'A área "' + tituloDaArea(currentClass, area) + '" tem ' +
+      areaMoverTexto.textContent = 'A área "' + tituloDaArea(areasClasse, area) + '" tem ' +
         (n === 1 ? '1 requisito' : n + ' requisitos') + '. Escolha para onde eles vão antes de excluir.';
       areaMoverDestino.innerHTML = '';
-      areasDoCartao(currentClass).filter(a => a !== area).forEach(a => {
+      areasDoCartao(areasClasse).filter(a => a !== area).forEach(a => {
         const opt = document.createElement('option');
         opt.value = a;
-        opt.textContent = tituloDaArea(currentClass, a);
+        opt.textContent = tituloDaArea(areasClasse, a);
         areaMoverDestino.appendChild(opt);
       });
       areaMoverOverlay.classList.add('show');
@@ -15816,8 +15815,8 @@
 
     async function excluirArea(destino){
       const alvo = areaParaExcluir;
-      if(!alvo || !currentClass) return;
-      const classe = currentClass;
+      if(!alvo || !areasClasse) return;
+      const classe = areasClasse;
       const grupo = findClassGroup(classe);
 
       // Move os requisitos que estavam na área, gravando a área nova em cada um.
@@ -15896,20 +15895,6 @@
           collapsedAreas[key] = nowCollapsed;
         });
 
-        // Lápis pra renomear a área neste cartão — só quem gerencia a classe.
-        if(canManageStudents(className)){
-          const lapis = document.createElement('span');
-          lapis.className = 'cl-area-editar';
-          lapis.setAttribute('role', 'button');
-          lapis.setAttribute('tabindex', '0');
-          lapis.setAttribute('aria-label', 'Renomear a área ' + tituloDaArea(className, area));
-          lapis.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
-          lapis.addEventListener('click', (e) => {
-            e.stopPropagation();
-            abrirEditorDeArea(className, area);
-          });
-          heading.insertBefore(lapis, heading.querySelector('.cl-area-chevron'));
-        }
 
         section.appendChild(heading);
         const cardsWrap = document.createElement('div');
@@ -16006,8 +15991,6 @@
       // aqui, o Coordenador só via o lápis depois de salvar alguma coisa.
       document.querySelectorAll('#view-classes .pl-month-group').forEach(g => regroupByArea(g));
       if(!currentClass) return;
-      const btnAreas = document.getElementById('clAreasOpenBtn');
-      if(btnAreas) btnAreas.style.display = canManageStudents(currentClass) ? '' : 'none';
       renderStudentBar(currentClass);
       applyStudentProgressToCards();
     };
@@ -16570,6 +16553,7 @@
     const unscheduledEmpty = document.getElementById('cpUnscheduledEmpty');
     const readOnlyHint = document.getElementById('cpReadOnlyHint');
     const instrutoresBtn = document.getElementById('cpInstrutoresBtn');
+    const areasBtn = document.getElementById('cpAreasBtn');
     const instrutoresOverlay = document.getElementById('cpInstrutoresOverlay');
     const instrutoresClose = document.getElementById('cpInstrutoresClose');
     const instrutoresList = document.getElementById('cpInstrutoresList');
@@ -16741,6 +16725,8 @@
       // A lista de instrutores é do Coordenador; o responsável planeja, mas não
       // muda quem são os instrutores do cartão.
       if(instrutoresBtn) instrutoresBtn.style.display = canManageRoster(classe) ? '' : 'none';
+      // Editar as áreas do cartão é de quem monta o cartão, como o elenco.
+      if(areasBtn) areasBtn.style.display = canManageRoster(classe) ? '' : 'none';
 
       const requisitos = requisitosDaClasse(classe);
       const comData = plans.filter(p => p.data).sort((a, b) => a.data.localeCompare(b.data));
@@ -16928,6 +16914,10 @@
         : 'Deixe em branco se o requisito for único. Com sub-itens, o requisito fecha sozinho quando o desbravador cumprir todos.';
     }
     if(rtModo) rtModo.addEventListener('change', atualizarDicaDoModo);
+
+    if(areasBtn) areasBtn.addEventListener('click', () => {
+      if(window.__clAbrirAreas) window.__clAbrirAreas(classe);
+    });
 
     if(rtClose) rtClose.addEventListener('click', fecharEditorDeTexto);
 
