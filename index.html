@@ -14298,6 +14298,12 @@
       titleEl.textContent = className;
       addBtn.style.display = '';
       applyClassFilter();
+      // Os cabeçalhos de área carregam o lápis de renomear, que depende do
+      // papel de quem entrou. Eles são montados na carga da página, quando o
+      // usuário ainda pode não ser conhecido — remontar aqui garante que o
+      // lápis apareça já na primeira vez que o cartão é aberto.
+      const grupoDaClasse = findClassGroup(className);
+      if(grupoDaClasse) regroupByArea(grupoDaClasse);
       selectedStudent = null;
       if(studentBar){
         studentBar.style.display = '';
