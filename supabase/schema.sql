@@ -949,3 +949,17 @@ create policy "atividades_extras: acesso publico" on atividades_extras
 drop policy if exists "atividades_extras_concluidas: acesso publico" on atividades_extras_concluidas;
 create policy "atividades_extras_concluidas: acesso publico" on atividades_extras_concluidas
   for all using (true) with check (true);
+
+-- ---------------------------------------------------------------------
+-- Cada requisito de Classes Regulares marcado como "Concluída" (status
+-- 'done' em progresso_requisitos) por um desbravador com conta vinculada
+-- (usuario_id) gera um lançamento de 3 pontos pra unidade dele em
+-- unidade_pontos — o Rank das Unidades reflete na hora. Só vale daqui pra
+-- frente (marcar/desmarcar 'done' a partir de agora); requisitos que já
+-- estavam 'done' antes desta coluna existir não geram pontos retroativos.
+-- unidade_ponto_id guarda o lançamento gerado, pra poder desfazer se a
+-- pessoa desmarcar o requisito depois. Desbravador sem usuario_id
+-- vinculado (cadastrado direto em Classes Regulares, sem conta no app)
+-- não tem unidade conhecida, então não gera pontos.
+-- ---------------------------------------------------------------------
+alter table progresso_requisitos add column if not exists unidade_ponto_id uuid references unidade_pontos(id) on delete set null;

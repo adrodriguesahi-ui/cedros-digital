@@ -13612,6 +13612,43 @@
     }
     statusPickClose.addEventListener('click', () => statusPickOverlay.classList.remove('show'));
     statusPickOverlay.addEventListener('click', (e) => { if(e.target === statusPickOverlay) statusPickOverlay.classList.remove('show'); });
+    // Cada requisito marcado como "Concluída" gera 3 pontos pra unidade do
+    // desbravador (se ele tiver conta vinculada) — ver
+    // supabase/schema.sql (progresso_requisitos.unidade_ponto_id). Desmarcar
+    // depois desfaz o lançamento. window.__usRefreshDashboardRanking() (da
+    // tela de Pontuação de Unidades) atualiza o Rank das Unidades na hora.
+    const REQUISITO_DONE_POINTS = 3;
+
+    async function awardRequisitoPoints(desbravadorId, requisitoTitulo, alunoNome){
+      if(!supa) return;
+      const { data: desb } = await supa.from('desbravadores').select('usuario_id').eq('id', desbravadorId).maybeSingle();
+      if(!desb || !desb.usuario_id) return;
+      const { data: usuario } = await supa.from('usuarios').select('unidade').eq('id', desb.usuario_id).maybeSingle();
+      if(!usuario || !usuario.unidade) return;
+      const { data: pontoRow } = await supa.from('unidade_pontos').insert({
+        unidade: usuario.unidade,
+        pontos: REQUISITO_DONE_POINTS,
+        motivo: 'Requisito de classe: ' + requisitoTitulo + ' (' + alunoNome + ')',
+        criado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
+      }).select().single();
+      if(pontoRow){
+        await supa.from('progresso_requisitos').update({ unidade_ponto_id: pontoRow.id })
+          .eq('desbravador_id', desbravadorId).eq('requisito_titulo', requisitoTitulo);
+      }
+      if(window.__usRefreshDashboardRanking) window.__usRefreshDashboardRanking();
+    }
+
+    async function revokeRequisitoPoints(desbravadorId, requisitoTitulo){
+      if(!supa) return;
+      const { data: prog } = await supa.from('progresso_requisitos').select('unidade_ponto_id')
+        .eq('desbravador_id', desbravadorId).eq('requisito_titulo', requisitoTitulo).maybeSingle();
+      if(!prog || !prog.unidade_ponto_id) return;
+      await supa.from('unidade_pontos').delete().eq('id', prog.unidade_ponto_id);
+      await supa.from('progresso_requisitos').update({ unidade_ponto_id: null })
+        .eq('desbravador_id', desbravadorId).eq('requisito_titulo', requisitoTitulo);
+      if(window.__usRefreshDashboardRanking) window.__usRefreshDashboardRanking();
+    }
+
     statusPickOverlay.querySelectorAll('.cl-status-pick-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         if(!statusPickCard || !selectedStudent) return;
@@ -13619,6 +13656,7 @@
         if(!CLASS_PROGRESS[currentClass][selectedStudent]) CLASS_PROGRESS[currentClass][selectedStudent] = {};
         const status = btn.getAttribute('data-status');
         const requisitoTitulo = statusPickCard.dataset.title;
+        const previousStatus = CLASS_PROGRESS[currentClass][selectedStudent][requisitoTitulo] || 'todo';
         CLASS_PROGRESS[currentClass][selectedStudent][requisitoTitulo] = status;
         applyStudentProgressToCards();
         updateHubCounts();
@@ -13629,6 +13667,12 @@
           const { error } = await supa.from('progresso_requisitos')
             .upsert({ desbravador_id: desbravadorId, requisito_titulo: requisitoTitulo, status }, { onConflict: 'desbravador_id,requisito_titulo' });
           if(error) console.error('Erro ao salvar progresso:', error.message);
+
+          if(status === 'done' && previousStatus !== 'done'){
+            await awardRequisitoPoints(desbravadorId, requisitoTitulo, selectedStudent);
+          } else if(status !== 'done' && previousStatus === 'done'){
+            await revokeRequisitoPoints(desbravadorId, requisitoTitulo);
+          }
         }
       });
     });
