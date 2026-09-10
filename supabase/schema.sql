@@ -1037,3 +1037,29 @@ create policy "requisitos_comprovacao: acesso publico" on requisitos_comprovacao
 
 -- Resumo do que foi feito, escrito na hora de concluir o requisito.
 alter table progresso_requisitos add column if not exists resumo text;
+
+-- ---------------------------------------------------------------------
+-- classe_instrutores: quem são os instrutores de cada cartão. Quem define é
+-- o Coordenador daquele cartão (ou o Administrador), na área Planejamento de
+-- Classes. É essa lista que alimenta o campo "Instrutor responsável" de cada
+-- aula planejada — assim o nome sai sempre igual e só aparece quem realmente
+-- atende aquela classe.
+-- ---------------------------------------------------------------------
+create table if not exists classe_instrutores (
+  classe text not null,
+  usuario_id uuid not null references usuarios(id) on delete cascade,
+  criado_por text,
+  created_at timestamptz not null default now(),
+  primary key (classe, usuario_id)
+);
+
+alter table classe_instrutores enable row level security;
+
+drop policy if exists "classe_instrutores: acesso publico" on classe_instrutores;
+create policy "classe_instrutores: acesso publico" on classe_instrutores
+  for all using (true) with check (true);
+
+-- Instrutor escalado pra aula, agora escolhido na lista acima em vez de
+-- digitado. instrutor_responsavel continua guardando o nome (inclusive dos
+-- planejamentos antigos, feitos quando o campo era texto livre).
+alter table planejamentos_aula add column if not exists instrutor_usuario_id uuid references usuarios(id) on delete set null;
