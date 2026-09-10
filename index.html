@@ -2128,6 +2128,27 @@
   }
   .bd-birthday-banner .bd-reminder-banner-icon{ font-size:18px; animation:none; }
 
+  /* Modo "Ver como": a faixa fica fixa na tela toda (não dentro de uma view),
+     porque o papel simulado pode esconder Administração — e é por ela que se
+     sai do modo. Fica acima da tabbar pra não cobrir topo nem navegação. */
+  .vc-banner{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:86px; z-index:900;
+    display:flex; align-items:center; gap:9px; max-width:min(364px, 92vw);
+    background:rgba(91,155,255,0.16); border:1px solid rgba(91,155,255,0.45);
+    backdrop-filter:blur(8px);
+    border-radius:22px; padding:9px 10px 9px 13px;
+    font-size:12px; font-weight:700; color:rgba(245,239,225,0.9);
+    box-shadow:0 10px 24px rgba(0,0,0,0.35);
+  }
+  .vc-banner svg{ flex-shrink:0; color:#5B9BFF; }
+  .vc-banner-text{ flex:1; min-width:0; line-height:1.3; }
+  .vc-banner-text b{ color:#5B9BFF; }
+  .vc-banner-exit{
+    flex-shrink:0; background:#5B9BFF; color:#08130A; border:none;
+    border-radius:16px; padding:6px 12px; font-size:11.5px; font-weight:900; cursor:pointer;
+  }
+  .vc-banner-exit:active{ transform:scale(0.95); }
+
   .bd-access-sim-banner{
     display:flex; align-items:center; gap:9px; width:calc(100% - 32px); margin:8px 16px 4px;
     padding:10px 12px; border-radius:14px;
@@ -10412,6 +10433,12 @@
             Painel local, sem servidor: as permissões definidas aqui funcionam como referência/simulação nesta sessão do app. Para restringir de verdade o que cada pessoa pode fazer, será necessário um sistema de contas com login real no futuro.
           </p>
 
+          <!-- Ver como: testar as permissões de outro papel sem criar conta nem
+               mexer no banco — ver a IIFE do modo mais abaixo no arquivo. -->
+          <div class="sp-area-heading" id="vcHeading" style="display:none;">Testar Permissões</div>
+          <p class="pl-reminder-hint" id="vcHint" style="margin-top:0; display:none;">Veja o app como quem tem outro papel (ex.: Coordenador de Classes de um cartão) pra conferir o que aparece e o que fica bloqueado. Nada é gravado: vale só nesta sessão, no seu aparelho.</p>
+          <button type="button" class="pl-btn" id="vcOpenBtn" style="background:rgba(91,155,255,0.16); color:#5B9BFF; margin-bottom:18px; display:none;">Ver como outro papel</button>
+
           <div class="sp-area-heading">Minha Conta</div>
           <p class="pl-reminder-hint" style="margin-top:0;">E-mail de login atual: <strong id="adMyEmail">—</strong></p>
 
@@ -10966,6 +10993,49 @@
       </div>
 
     </section>
+
+    <!-- Faixa do modo "Ver como" — fora das views de propósito, pra continuar
+         visível mesmo quando o papel simulado esconde a tela de Administração. -->
+    <div class="vc-banner" id="vcBanner" style="display:none;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="vc-banner-text">Vendo como <b id="vcBannerRole"></b></span>
+      <button type="button" class="vc-banner-exit" id="vcBannerExit">Sair</button>
+    </div>
+
+    <div class="pl-modal-overlay" id="vcOverlay">
+      <div class="pl-modal">
+        <div class="pl-modal-head">
+          <h4 class="pl-modal-title">Ver como outro papel</h4>
+          <button type="button" class="pl-modal-close" id="vcClose" aria-label="Fechar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <p class="pl-reminder-hint" style="margin-top:0;">O app passa a se comportar como quem tem esse papel: menu, telas e o que pode editar. Você continua logado como você — nada é gravado no banco, e sair do modo recarrega o app no seu acesso normal.</p>
+
+        <label class="pl-field-label">Papel</label>
+        <select class="pl-input" id="vcRole"></select>
+
+        <div id="vcClasseWrap" style="display:none;">
+          <label class="pl-field-label">Classe que coordena</label>
+          <select class="pl-input" id="vcClasse">
+            <option value="">Nenhuma</option>
+            <option value="Amigo">Amigo</option>
+            <option value="Companheiro">Companheiro</option>
+            <option value="Pesquisador">Pesquisador</option>
+            <option value="Pioneiro">Pioneiro</option>
+            <option value="Excursionista">Excursionista</option>
+            <option value="Guia">Guia</option>
+          </select>
+          <p class="pl-reminder-hint">Só neste cartão o Coordenador de Classes cadastra e edita desbravadores.</p>
+        </div>
+
+        <p class="pl-reminder-hint">A permissão de pontuar unidades é por pessoa, não por papel, então fica desligada durante o teste.</p>
+
+        <div class="pl-modal-actions">
+          <button type="button" class="pl-btn pl-btn-primary" id="vcStartBtn">Entrar no modo</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Barra de navegação inferior GLOBAL: fica fixa em toda tela do app já logado
          (não só no Início) — ver JS showView() logo abaixo, que liga/desliga a classe
@@ -14573,6 +14643,13 @@
     // sem esse escopo, updateClassCount() via n===0 apagava os grupos deles.
     document.querySelectorAll('#view-classes .pl-month-group').forEach(g => { updateClassCount(g); regroupByArea(g); });
     window.__clShowHub = showHub;
+    // Repinta o que depende do papel (botão de + Aluno, lápis de editar) sem
+    // precisar sair e voltar na classe — usado pelo modo "Ver como".
+    window.__clRefreshPermissions = function(){
+      if(!currentClass) return;
+      renderStudentBar(currentClass);
+      applyStudentProgressToCards();
+    };
     loadRequisitosComprovacao();
     loadClassDataFromSupabase();
 
@@ -19840,6 +19917,107 @@ const REQ_SUMMARIES = {
     }, { onConflict: 'email', ignoreDuplicates: true });
     showView('view-success');
   }, 'signupAuthError');
+
+  // ---------------------------------------------------------------------
+  // Modo "Ver como": só pra Administrador, troca o papel (e o cartão, quando
+  // for Coordenador de Classes) apenas nesta sessão do navegador, pra dar pra
+  // conferir as permissões sem criar conta nem alterar nada no banco. As telas
+  // que dependem do papel já escutam o evento cedros:loggedin, então basta
+  // reemiti-lo com o usuário simulado. Sair recarrega a página — como nada foi
+  // gravado, o app volta sozinho ao acesso real (fechar o app também sai).
+  // ---------------------------------------------------------------------
+  (function(){
+    const overlay = document.getElementById('vcOverlay');
+    const openBtn = document.getElementById('vcOpenBtn');
+    const heading = document.getElementById('vcHeading');
+    const hint = document.getElementById('vcHint');
+    const closeBtn = document.getElementById('vcClose');
+    const roleSelect = document.getElementById('vcRole');
+    const classeWrap = document.getElementById('vcClasseWrap');
+    const classeSelect = document.getElementById('vcClasse');
+    const startBtn = document.getElementById('vcStartBtn');
+    const banner = document.getElementById('vcBanner');
+    const bannerRole = document.getElementById('vcBannerRole');
+    const bannerExit = document.getElementById('vcBannerExit');
+    if(!overlay || !openBtn || !banner) return;
+
+    let usuarioReal = null; // quem está de fato logado, enquanto o modo estiver ligado
+
+    function ehAdminDeVerdade(){
+      const u = usuarioReal || window.__currentUsuario;
+      return !!(u && u.papel === 'Administrador');
+    }
+
+    function applyOpenBtnVisibility(){
+      const mostra = ehAdminDeVerdade() && !usuarioReal;
+      [heading, hint, openBtn].forEach(el => { if(el) el.style.display = mostra ? '' : 'none'; });
+    }
+    document.addEventListener('cedros:loggedin', applyOpenBtnVisibility);
+    applyOpenBtnVisibility();
+
+    async function preencherPapeis(){
+      if(!roleSelect) return;
+      let nomes = [];
+      if(supa){
+        const { data } = await supa.from('papeis').select('nome');
+        nomes = (data || []).map(p => p.nome);
+      }
+      if(!nomes.length) nomes = Object.keys(window.__ROLE_VISIBILITY || {});
+      roleSelect.innerHTML = '';
+      nomes.filter(n => n !== 'Administrador').forEach(nome => {
+        const opt = document.createElement('option');
+        opt.value = nome; opt.textContent = nome;
+        roleSelect.appendChild(opt);
+      });
+      applyClasseVisibility();
+    }
+
+    function applyClasseVisibility(){
+      if(classeWrap) classeWrap.style.display = (roleSelect && roleSelect.value === 'Coordenador de Classes') ? '' : 'none';
+    }
+    if(roleSelect) roleSelect.addEventListener('change', applyClasseVisibility);
+
+    openBtn.addEventListener('click', async () => {
+      if(!ehAdminDeVerdade()) return;
+      await preencherPapeis();
+      overlay.classList.add('show');
+    });
+    if(closeBtn) closeBtn.addEventListener('click', () => overlay.classList.remove('show'));
+    overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.classList.remove('show'); });
+
+    async function aplicarAcessoDoPapel(papel, nome){
+      let acesso = null;
+      if(supa){
+        const { data } = await supa.rpc('permissoes_padrao_papel', { papel_nome: papel });
+        acesso = data;
+      }
+      if(!acesso || !Object.keys(acesso).length) acesso = (window.__ROLE_VISIBILITY && window.__ROLE_VISIBILITY[papel]) || {};
+      if(window.__applyAccessToDashboard) window.__applyAccessToDashboard(acesso, nome);
+    }
+
+    startBtn.addEventListener('click', async () => {
+      if(!ehAdminDeVerdade() || !window.__currentUsuario) return;
+      const papel = roleSelect.value;
+      if(!papel) return;
+      usuarioReal = Object.assign({}, window.__currentUsuario);
+      window.__currentUsuario = Object.assign({}, usuarioReal, {
+        papel: papel,
+        classeCoordenada: papel === 'Coordenador de Classes' ? (classeSelect.value || null) : null,
+        podePontuarUnidades: false
+      });
+
+      overlay.classList.remove('show');
+      bannerRole.textContent = papel + (window.__currentUsuario.classeCoordenada ? ' · ' + window.__currentUsuario.classeCoordenada : '');
+      banner.style.display = '';
+      applyOpenBtnVisibility();
+
+      await aplicarAcessoDoPapel(papel, usuarioReal.nome);
+      document.dispatchEvent(new CustomEvent('cedros:loggedin', { detail: window.__currentUsuario }));
+      if(window.__clRefreshPermissions) window.__clRefreshPermissions();
+    });
+
+    bannerExit.addEventListener('click', () => { window.location.reload(); });
+  })();
 
   // Esqueci a senha: envia o e-mail de recuperação do Supabase (usa o e-mail já digitado no campo de login)
   const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
