@@ -1767,13 +1767,14 @@
   .cp-req-editar:active{ transform:scale(0.92); }
 
   .cl-req-subtitulo{
-    margin:10px 0 0; font-size:12.5px; line-height:1.45; font-weight:700;
-    color:var(--gold);
+    margin:10px 0 0; font-size:12.5px; line-height:1.5; font-weight:700;
+    color:var(--gold); white-space:pre-line;
   }
 
   /* Descrição e observação do requisito, no detalhe. */
   .cl-req-descricao{
-    margin:12px 0 0; font-size:13px; line-height:1.5; color:rgba(245,239,225,0.78);
+    margin:12px 0 0; font-size:13px; line-height:1.55; color:rgba(245,239,225,0.78);
+    white-space:pre-line;
   }
   .cl-req-observacao{
     margin:10px 0 0; padding:10px 12px; border-radius:12px;
@@ -14384,6 +14385,14 @@
       return REQ_TEXTOS[requisitoKey(className, titulo)] || null;
     }
 
+    // Enunciado com "a) b) c)" no meio do parágrafo fica ilegível na tela do
+    // requisito: aqui cada marcador começa a própria linha. É só exibição — o
+    // texto continua guardado como foi escrito.
+    function comQuebraNosMarcadores(texto){
+      if(!texto) return '';
+      return texto.replace(/\s+(?=(?:[a-z]\)|\d+[).])\s)/gi, '\n');
+    }
+
     // 'um' = basta cumprir uma alternativa; 'todos' = precisa cumprir tudo.
     function modoDosSubitens(className, titulo){
       const t = textoDoRequisito(className, titulo);
@@ -15042,13 +15051,13 @@
       // O subtítulo é curto no card, mas aqui aparece inteiro.
       const subtitulo = texto ? (texto.subtitulo || '') : '';
       if(statusPickSub){
-        statusPickSub.textContent = subtitulo;
+        statusPickSub.textContent = comQuebraNosMarcadores(subtitulo);
         statusPickSub.style.display = subtitulo ? '' : 'none';
       }
       // A descrição vem do texto reescrito quando existe; senão, do catálogo.
       const descricao = (texto && texto.descricao) ? texto.descricao : (card.dataset.desc || '');
       if(statusPickDesc){
-        statusPickDesc.textContent = descricao;
+        statusPickDesc.textContent = comQuebraNosMarcadores(descricao);
         statusPickDesc.style.display = descricao ? '' : 'none';
       }
       const observacao = texto ? texto.observacao : '';
