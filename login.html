@@ -1690,6 +1690,23 @@
   .cl-sub-item.alternativa .cl-sub-caixa{ border-radius:50%; }
   .cp-sub-modo{ margin-bottom:8px; }
 
+  /* Linhas da tela de Áreas do cartão. */
+  .cl-areas-lista{ display:flex; flex-direction:column; gap:9px; margin-top:14px; }
+  .cl-area-linha{
+    display:flex; align-items:center; gap:10px; padding:12px;
+    border:1px solid rgba(255,255,255,0.09); border-radius:14px; background:rgba(255,255,255,0.03);
+  }
+  .cl-area-linha-body{ flex:1; min-width:0; }
+  .cl-area-linha-nome{ display:block; font-size:13.5px; font-weight:800; color:var(--cream); }
+  .cl-area-linha-meta{ display:block; margin-top:2px; font-size:11.5px; font-weight:600; color:rgba(245,239,225,0.45); }
+  .cl-area-acao{
+    flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    width:32px; height:32px; border-radius:10px; cursor:pointer;
+    border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.06); color:var(--cream);
+  }
+  .cl-area-acao.perigo{ color:#FF6B5C; border-color:rgba(255,107,92,0.25); background:rgba(255,107,92,0.1); }
+  .cl-area-acao:active{ transform:scale(0.93); }
+
   /* Lápis pra renomear a área, no cabeçalho do grupo. */
   .cl-area-editar{
     flex-shrink:0; display:flex; align-items:center; justify-content:center;
@@ -4077,6 +4094,7 @@
           </button>
           <h3 class="pl-title" id="clTitle">Classes Regulares</h3>
           <button type="button" class="pl-back" id="clRankOpenBtn" aria-label="Rendimento das Classes" style="display:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M17 5h2a2 2 0 0 1 2 2 4 4 0 0 1-4 4M7 5H5a2 2 0 0 0-2 2 4 4 0 0 0 4 4"/></svg></button>
+          <button type="button" class="pl-back" id="clAreasOpenBtn" aria-label="Áreas do cartão" style="display:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg></button>
           <button type="button" class="pl-back" id="clPlanningOpenBtn" aria-label="Planejamento de Aula" style="display:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></button>
         </div>
 
@@ -8558,6 +8576,23 @@
         </div>
       </div>
 
+      <!-- Áreas do cartão: criar, renomear e excluir. Ver areas_personalizadas
+           em supabase/schema.sql. -->
+      <div class="pl-dayview-overlay" id="clAreasOverlay">
+        <div class="pl-dayview-head">
+          <button type="button" class="pl-dayview-icon-btn" id="clAreasClose" aria-label="Voltar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h3 class="pl-dayview-title" style="text-transform:none;" id="clAreasTitle">Áreas</h3>
+          <span style="width:34px;"></span>
+        </div>
+        <div class="pl-dayview-list-wrap">
+          <p class="sp-disclaimer" style="margin-top:14px;">As áreas agrupam os requisitos deste cartão. Renomear e criar vale só aqui; para mudar um requisito de área, toque nele na lista.</p>
+          <div class="cl-areas-lista" id="clAreasLista"></div>
+          <button type="button" class="pl-btn pl-btn-primary" id="clAreasNovaBtn" style="width:100%; margin-top:16px;">+ Nova área</button>
+        </div>
+      </div>
+
       <!-- Renomeia a área naquele cartão. O nome do catálogo continua sendo o que
            agrupa a lista (ver areas_personalizadas em supabase/schema.sql). -->
       <div class="pl-modal-overlay" id="clAreaNomeOverlay">
@@ -8573,6 +8608,23 @@
           <div class="pl-modal-actions">
             <button type="button" class="pl-btn pl-btn-neutral" id="clAreaNomeReset">Restaurar original</button>
             <button type="button" class="pl-btn pl-btn-primary" id="clAreaNomeSalvar">Salvar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pl-modal-overlay" id="clAreaMoverOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Excluir área</h4>
+            <button type="button" class="pl-modal-close" id="clAreaMoverClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <p class="pl-reminder-hint" style="margin-top:0;" id="clAreaMoverTexto"></p>
+          <label class="pl-field-label" for="clAreaMoverDestino">Mover os requisitos para</label>
+          <select class="pl-input" id="clAreaMoverDestino"></select>
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-danger" id="clAreaMoverConfirma">Mover e excluir</button>
           </div>
         </div>
       </div>
@@ -14304,6 +14356,9 @@
       // lápis apareça já na primeira vez que o cartão é aberto.
       const grupoDaClasse = findClassGroup(className);
       if(grupoDaClasse) regroupByArea(grupoDaClasse);
+      const podeGerenciar = canManageStudents(className);
+      const btnAreas = document.getElementById('clAreasOpenBtn');
+      if(btnAreas) btnAreas.style.display = podeGerenciar ? '' : 'none';
       selectedStudent = null;
       if(studentBar){
         studentBar.style.display = '';
@@ -15572,14 +15627,30 @@
     function tituloDaArea(className, area){
       return AREA_TITULOS[className + '|' + area] || area;
     }
+    window.__clTituloDaArea = tituloDaArea;
+
+    // Áreas criadas pelo Coordenador: aparecem na lista mesmo sem requisito.
+    const AREAS_CRIADAS = {}; // AREAS_CRIADAS['Classe'] = ['chave-da-area', ...]
+    function areasCriadas(className){ return AREAS_CRIADAS[className] || []; }
+
+    // Todas as áreas que valem naquele cartão: as do catálogo mais as criadas.
+    function areasDoCartao(className){
+      return AREA_ORDER.concat(areasCriadas(className).filter(a => AREA_ORDER.indexOf(a) === -1));
+    }
+    window.__clAreasDoCartao = areasDoCartao;
 
     async function loadAreasPersonalizadas(){
       if(!supa) return;
-      const { data, error } = await supa.from('areas_personalizadas').select('classe, area, titulo');
+      const { data, error } = await supa.from('areas_personalizadas').select('classe, area, titulo, criada');
       if(error){ console.error('Erro ao carregar nomes de áreas:', error.message); return; }
       Object.keys(AREA_TITULOS).forEach(k => delete AREA_TITULOS[k]);
+      Object.keys(AREAS_CRIADAS).forEach(k => delete AREAS_CRIADAS[k]);
       (data || []).forEach(r => {
         if(r.titulo) AREA_TITULOS[r.classe + '|' + r.area] = r.titulo;
+        if(r.criada){
+          if(!AREAS_CRIADAS[r.classe]) AREAS_CRIADAS[r.classe] = [];
+          AREAS_CRIADAS[r.classe].push(r.area);
+        }
       });
       document.querySelectorAll('#view-classes .pl-month-group').forEach(g => regroupByArea(g));
     }
@@ -15616,6 +15687,7 @@
       const alvo = areaEmEdicao;
       fecharEditorDeArea();
       if(grupo) regroupByArea(grupo);
+      if(areasOverlay && areasOverlay.classList.contains('show')) renderAreasLista();
 
       if(!supa) return;
       // Sem nome próprio a linha sai, em vez de ficar guardando texto vazio.
@@ -15629,6 +15701,160 @@
       areaNomeInput.value = '';
       areaNomeSalvar.click();
     });
+
+    // ---- Tela de Áreas do cartão: criar, renomear e excluir ----
+    const areasOverlay = document.getElementById('clAreasOverlay');
+    const areasOpenBtn = document.getElementById('clAreasOpenBtn');
+    const areasCloseBtn = document.getElementById('clAreasClose');
+    const areasListaEl = document.getElementById('clAreasLista');
+    const areasTitulo = document.getElementById('clAreasTitle');
+    const areasNovaBtn = document.getElementById('clAreasNovaBtn');
+    const areaMoverOverlay = document.getElementById('clAreaMoverOverlay');
+    const areaMoverTexto = document.getElementById('clAreaMoverTexto');
+    const areaMoverDestino = document.getElementById('clAreaMoverDestino');
+    const areaMoverConfirma = document.getElementById('clAreaMoverConfirma');
+    const areaMoverClose = document.getElementById('clAreaMoverClose');
+    let areaParaExcluir = null;
+
+    function contaDaArea(className, area){
+      const grupo = findClassGroup(className);
+      if(!grupo) return 0;
+      return Array.from(grupo.querySelectorAll('.cl-activity-card')).filter(c => (c.dataset.area || '') === area).length;
+    }
+
+    function renderAreasLista(){
+      if(!areasListaEl || !currentClass) return;
+      areasTitulo.textContent = 'Áreas — ' + currentClass;
+      areasListaEl.innerHTML = '';
+      // Só mostra área do catálogo que tem requisito; as criadas aparecem sempre.
+      const criadas = areasCriadas(currentClass);
+      const lista = areasDoCartao(currentClass)
+        .filter(a => criadas.indexOf(a) !== -1 || contaDaArea(currentClass, a) > 0);
+
+      if(!lista.length){
+        areasListaEl.innerHTML = '<p class="un-empty-hint">Este cartão ainda não tem áreas.</p>';
+        return;
+      }
+
+      lista.forEach(area => {
+        const n = contaDaArea(currentClass, area);
+        const ehCriada = criadas.indexOf(area) !== -1;
+        const linha = document.createElement('div');
+        linha.className = 'cl-area-linha';
+        linha.innerHTML =
+          '<span class="cl-class-dot cl-color-' + (AREA_COLOR[area] || 'gray') + '"></span>' +
+          '<span class="cl-area-linha-body"><span class="cl-area-linha-nome"></span><span class="cl-area-linha-meta"></span></span>' +
+          '<button type="button" class="cl-area-acao" data-acao="renomear" aria-label="Renomear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>' +
+          '<button type="button" class="cl-area-acao perigo" data-acao="excluir" aria-label="Excluir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>';
+        linha.querySelector('.cl-area-linha-nome').textContent = tituloDaArea(currentClass, area);
+        linha.querySelector('.cl-area-linha-meta').textContent =
+          (n === 1 ? '1 requisito' : n + ' requisitos') + (ehCriada ? ' · criada por você' : ' · do catálogo');
+        linha.querySelector('[data-acao="renomear"]').addEventListener('click', () => abrirEditorDeArea(currentClass, area));
+        linha.querySelector('[data-acao="excluir"]').addEventListener('click', () => pedirExclusaoDeArea(area, n, ehCriada));
+        areasListaEl.appendChild(linha);
+      });
+    }
+
+    if(areasOpenBtn) areasOpenBtn.addEventListener('click', () => {
+      if(!currentClass) return;
+      renderAreasLista();
+      areasOverlay.classList.add('show');
+    });
+    if(areasCloseBtn) areasCloseBtn.addEventListener('click', () => areasOverlay.classList.remove('show'));
+
+    if(areasNovaBtn) areasNovaBtn.addEventListener('click', async () => {
+      const nome = (prompt('Nome da nova área:') || '').trim();
+      if(!nome || !currentClass) return;
+      // A chave da área é o próprio nome — o que agrupa os requisitos. Já
+      // existindo, só renomeia em vez de criar duas com o mesmo nome.
+      if(areasDoCartao(currentClass).indexOf(nome) !== -1){
+        alert('Já existe uma área com esse nome neste cartão.');
+        return;
+      }
+      if(!AREAS_CRIADAS[currentClass]) AREAS_CRIADAS[currentClass] = [];
+      AREAS_CRIADAS[currentClass].push(nome);
+      const grupo = findClassGroup(currentClass);
+      if(grupo) regroupByArea(grupo);
+      renderAreasLista();
+
+      if(!supa) return;
+      const { error } = await supa.from('areas_personalizadas')
+        .upsert({ classe: currentClass, area: nome, titulo: nome, criada: true });
+      if(error) alert('Não consegui criar a área: ' + error.message);
+    });
+
+    function pedirExclusaoDeArea(area, n, ehCriada){
+      if(!ehCriada && !n){ return; }
+      areaParaExcluir = { area: area, n: n, criada: ehCriada };
+      if(!n){
+        // Vazia: some sem precisar mover nada.
+        if(confirm('Excluir a área "' + tituloDaArea(currentClass, area) + '"?')) excluirArea(null);
+        areaParaExcluir = null;
+        return;
+      }
+      areaMoverTexto.textContent = 'A área "' + tituloDaArea(currentClass, area) + '" tem ' +
+        (n === 1 ? '1 requisito' : n + ' requisitos') + '. Escolha para onde eles vão antes de excluir.';
+      areaMoverDestino.innerHTML = '';
+      areasDoCartao(currentClass).filter(a => a !== area).forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a;
+        opt.textContent = tituloDaArea(currentClass, a);
+        areaMoverDestino.appendChild(opt);
+      });
+      areaMoverOverlay.classList.add('show');
+    }
+    if(areaMoverClose) areaMoverClose.addEventListener('click', () => {
+      areaMoverOverlay.classList.remove('show');
+      areaParaExcluir = null;
+    });
+    if(areaMoverConfirma) areaMoverConfirma.addEventListener('click', () => {
+      if(!areaParaExcluir) return;
+      excluirArea(areaMoverDestino.value);
+      areaMoverOverlay.classList.remove('show');
+      areaParaExcluir = null;
+    });
+
+    async function excluirArea(destino){
+      const alvo = areaParaExcluir;
+      if(!alvo || !currentClass) return;
+      const classe = currentClass;
+      const grupo = findClassGroup(classe);
+
+      // Move os requisitos que estavam na área, gravando a área nova em cada um.
+      if(destino && grupo){
+        const cards = Array.from(grupo.querySelectorAll('.cl-activity-card')).filter(c => (c.dataset.area || '') === alvo.area);
+        for(const card of cards){
+          const chave = card.dataset.title;
+          const original = card.dataset.areaOriginal || '';
+          card.dataset.area = destino;
+          const t = REQ_TEXTOS[requisitoKey(classe, chave)] || {};
+          t.area = destino === original ? '' : destino;
+          REQ_TEXTOS[requisitoKey(classe, chave)] = t;
+          if(supa){
+            const { error } = await supa.from('requisitos_personalizados').upsert({
+              classe: classe, requisito_titulo: chave,
+              area: destino === original ? null : destino,
+              atualizado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
+            });
+            if(error){ alert('Não consegui mover os requisitos: ' + error.message); return; }
+          }
+        }
+      }
+
+      // Tira a área criada da lista; do catálogo, ela some sozinha ao esvaziar.
+      const criadas = AREAS_CRIADAS[classe] || [];
+      const i = criadas.indexOf(alvo.area);
+      if(i !== -1) criadas.splice(i, 1);
+      delete AREA_TITULOS[classe + '|' + alvo.area];
+      if(grupo) regroupByArea(grupo);
+      renderAreasLista();
+
+      if(supa){
+        const { error } = await supa.from('areas_personalizadas').delete()
+          .eq('classe', classe).eq('area', alvo.area);
+        if(error) console.error('Erro ao excluir a área:', error.message);
+      }
+    }
 
     function regroupByArea(group){
       if(!group || !group.isConnected) return;
@@ -15644,6 +15870,9 @@
         byArea[area].push(card);
       });
 
+      // Área criada entra na lista mesmo vazia, senão ela some assim que o
+      // Coordenador cria e ele não tem pra onde mover os requisitos.
+      areasCriadas(className).forEach(a => { if(!byArea[a]) byArea[a] = []; });
       const orderedAreas = AREA_ORDER.filter(a => byArea[a]).concat(Object.keys(byArea).filter(a => AREA_ORDER.indexOf(a) === -1));
       orderedAreas.forEach(area => {
         const key = className + '|' + area;
@@ -15777,6 +16006,8 @@
       // aqui, o Coordenador só via o lápis depois de salvar alguma coisa.
       document.querySelectorAll('#view-classes .pl-month-group').forEach(g => regroupByArea(g));
       if(!currentClass) return;
+      const btnAreas = document.getElementById('clAreasOpenBtn');
+      if(btnAreas) btnAreas.style.display = canManageStudents(currentClass) ? '' : 'none';
       renderStudentBar(currentClass);
       applyStudentProgressToCards();
     };
@@ -16618,12 +16849,14 @@
       if(rtArea){
         const card = document.querySelector('.cl-activity-card[data-class="' + CSS.escape(alvo) + '"][data-title="' + CSS.escape(titulo) + '"]');
         const original = card ? (card.dataset.areaOriginal || card.dataset.area || '') : '';
-        const areas = (window.__clAreasDisponiveis && window.__clAreasDisponiveis()) || [];
+        const areas = (window.__clAreasDoCartao && window.__clAreasDoCartao(alvo))
+          || (window.__clAreasDisponiveis && window.__clAreasDisponiveis()) || [];
         rtArea.innerHTML = '';
         areas.forEach(a => {
           const opt = document.createElement('option');
           opt.value = a;
-          opt.textContent = a + (a === original ? ' (do catálogo)' : '');
+          const nome = (window.__clTituloDaArea && window.__clTituloDaArea(alvo, a)) || a;
+          opt.textContent = nome + (a === original ? ' (do catálogo)' : '');
           rtArea.appendChild(opt);
         });
         rtArea.value = (atual && atual.area) ? atual.area : original;

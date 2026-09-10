@@ -1148,3 +1148,7 @@ alter table areas_personalizadas enable row level security;
 
 drop policy if exists p_areaspers on areas_personalizadas;
 create policy p_areaspers on areas_personalizadas for all using(true) with check(true);
+
+-- Área criada pelo Coordenador (não existe no catálogo). Ela aparece na lista
+-- mesmo sem requisito dentro, pra ele poder criar primeiro e mover depois.
+alter table areas_personalizadas add column if not exists criada boolean not null default false;
