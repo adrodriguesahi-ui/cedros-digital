@@ -1755,6 +1755,12 @@
   #view-classes .cl-activity-card[data-view-status="progress"]{ border-left-color:var(--gold); }
   #view-classes .cl-activity-card[data-view-status="done"]{ border-left-color:var(--accent); opacity:0.72; }
 
+  /* Marca, na lista, os requisitos que exigem comprovação pra concluir. */
+  .cl-req-exige-badge{
+    display:inline-flex; align-items:center; gap:3px; margin-left:6px;
+    font-size:10.5px; font-weight:800; color:var(--gold);
+  }
+
   /* Painel do aluno selecionado: nome, % e barra, no lugar do texto solto. */
   .cl-student-panel{
     display:block; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);
@@ -8276,7 +8282,24 @@
             <button type="button" class="cl-status-pick-btn" data-status="done" data-color="green" data-label="Concluída">Concluída</button>
           </div>
 
-          <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Comprovação (opcional)</label>
+          <!-- Marcador por requisito: quem gerencia a classe decide quais exigem
+               comprovação. Ver requisitos_comprovacao em supabase/schema.sql. -->
+          <label class="pl-reminder-toggle-row" for="clReqExigirToggle" id="clReqExigirRow" style="display:none; margin:14px 0 6px;">
+            <span class="pl-reminder-toggle-text">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Exigir comprovação neste requisito
+            </span>
+            <span class="pl-switch">
+              <input type="checkbox" id="clReqExigirToggle">
+              <span class="pl-switch-track"><span class="pl-switch-thumb"></span></span>
+            </span>
+          </label>
+
+          <label class="pl-field-label" id="clFieldResumoLabel">Resumo do que foi feito</label>
+          <textarea class="pl-input" id="clFieldResumo" rows="3" maxlength="500" placeholder="Ex.: acampou duas noites no Sítio Cedros, montou a barraca sozinho e cozinhou no fogo de chão."></textarea>
+          <p class="pl-reminder-hint" id="clResumoHint">Fica guardado na ficha do desbravador junto com o comprovante.</p>
+
+          <label class="pl-field-label" id="clComprovanteLabel"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Comprovação (opcional)</label>
           <div class="cl-photo-row">
             <label class="cl-photo-btn" for="clComprovanteCamera">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h7l1 1.5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg>
@@ -13660,6 +13683,14 @@
     // acima (que só guarda status) pra não arriscar mexer no que já tá testado;
     // alimentado pelo mesmo loadClassDataFromSupabase() abaixo.
     const CLASS_COMPROVANTES = {};
+    // CLASS_RESUMOS[className][studentName][activityTitle] = resumo escrito ao concluir
+    const CLASS_RESUMOS = {};
+    // "classe|título" dos requisitos que exigem comprovação (requisitos_comprovacao)
+    let REQUISITOS_COMPROVACAO = new Set();
+    const requisitoKey = (className, titulo) => className + '|' + titulo;
+    function exigeComprovacao(className, titulo){
+      return REQUISITOS_COMPROVACAO.has(requisitoKey(className, titulo));
+    }
     let selectedStudent = null;
     let statusPickCard = null;
 
@@ -13668,10 +13699,22 @@
       if(!CLASS_PROGRESS[className]) CLASS_PROGRESS[className] = {};
       if(!STUDENT_IDS[className]) STUDENT_IDS[className] = {};
       if(!CLASS_COMPROVANTES[className]) CLASS_COMPROVANTES[className] = {};
+      if(!CLASS_RESUMOS[className]) CLASS_RESUMOS[className] = {};
     }
 
     // Carrega desbravadores e progresso já salvos no Supabase (tabelas "desbravadores"
     // e "progresso_requisitos", ver supabase/schema.sql) para dentro dos objetos locais.
+    // Quais requisitos exigem comprovação — vale pra classe inteira, não por
+    // aluno, então carrega à parte do progresso (e antes dele, pra lista já
+    // aparecer marcada na primeira pintura).
+    async function loadRequisitosComprovacao(){
+      if(!supa) return;
+      const { data, error } = await supa.from('requisitos_comprovacao').select('classe, requisito_titulo');
+      if(error){ console.error('Erro ao carregar requisitos com comprovação:', error.message); return; }
+      REQUISITOS_COMPROVACAO = new Set((data || []).map(r => requisitoKey(r.classe, r.requisito_titulo)));
+      if(currentClass) applyStudentProgressToCards();
+    }
+
     async function loadClassDataFromSupabase(){
       if(!supa) return;
       const { data: alunos, error: alunosErr } = await supa.from('desbravadores').select('id, nome, classe');
@@ -13685,17 +13728,23 @@
       Object.keys(STUDENT_IDS).forEach(k => { STUDENT_IDS[k] = {}; });
       Object.keys(CLASS_PROGRESS).forEach(k => { CLASS_PROGRESS[k] = {}; });
       Object.keys(CLASS_COMPROVANTES).forEach(k => { CLASS_COMPROVANTES[k] = {}; });
+      Object.keys(CLASS_RESUMOS).forEach(k => { CLASS_RESUMOS[k] = {}; });
 
-      const { data: progresso, error: progressoErr } = await supa.from('progresso_requisitos').select('desbravador_id, requisito_titulo, status');
+      const { data: progresso, error: progressoErr } = await supa.from('progresso_requisitos').select('desbravador_id, requisito_titulo, status, resumo');
       if(progressoErr) console.error('Erro ao carregar progresso:', progressoErr.message);
 
       const { data: arquivos, error: arquivosErr } = await supa.from('comprovante_arquivos').select('id, desbravador_id, requisito_titulo, arquivo_data, arquivo_nome').order('created_at');
       if(arquivosErr) console.error('Erro ao carregar comprovantes:', arquivosErr.message);
 
       const progressoByAluno = {};
+      const resumoByAluno = {};
       (progresso || []).forEach(p => {
         if(!progressoByAluno[p.desbravador_id]) progressoByAluno[p.desbravador_id] = {};
         progressoByAluno[p.desbravador_id][p.requisito_titulo] = p.status;
+        if(p.resumo){
+          if(!resumoByAluno[p.desbravador_id]) resumoByAluno[p.desbravador_id] = {};
+          resumoByAluno[p.desbravador_id][p.requisito_titulo] = p.resumo;
+        }
       });
 
       const comprovanteByAluno = {};
@@ -13711,6 +13760,7 @@
         STUDENT_IDS[aluno.classe][aluno.nome] = aluno.id;
         CLASS_PROGRESS[aluno.classe][aluno.nome] = progressoByAluno[aluno.id] || {};
         CLASS_COMPROVANTES[aluno.classe][aluno.nome] = comprovanteByAluno[aluno.id] || {};
+        CLASS_RESUMOS[aluno.classe][aluno.nome] = resumoByAluno[aluno.id] || {};
       });
 
       updateHubCounts();
@@ -13818,6 +13868,22 @@
         tag.className = 'pl-event-tag pl-tag-' + color;
         // A tarja lateral do card segue este status (ver CSS [data-view-status]).
         card.dataset.viewStatus = status;
+
+        // Avisa na própria lista quais requisitos vão pedir resumo pra concluir.
+        const meta = card.querySelector('.pl-event-meta');
+        if(meta){
+          let badge = meta.querySelector('.cl-req-exige-badge');
+          if(exigeComprovacao(currentClass, card.dataset.title)){
+            if(!badge){
+              badge = document.createElement('span');
+              badge.className = 'cl-req-exige-badge';
+              badge.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>exige comprovação';
+              meta.appendChild(badge);
+            }
+          } else if(badge){
+            badge.remove();
+          }
+        }
         // Na Classe Agrupada o filtro de idade define quais requisitos valem pra
         // essa pessoa: os de fora não entram na conta de concluídos/restantes.
         if(!card.classList.contains('cl-hide-age')){
@@ -13943,6 +14009,28 @@
       }
     });
 
+    const reqExigirRow = document.getElementById('clReqExigirRow');
+    const reqExigirToggle = document.getElementById('clReqExigirToggle');
+    const fieldResumo = document.getElementById('clFieldResumo');
+    const fieldResumoLabel = document.getElementById('clFieldResumoLabel');
+    const resumoHint = document.getElementById('clResumoHint');
+    const comprovanteLabel = document.getElementById('clComprovanteLabel');
+
+    // Requisito que exige comprovação: o resumo passa a ser obrigatório pra
+    // concluir; o anexo continua opcional (só recomendado).
+    function applyExigenciaUI(){
+      if(!statusPickCard) return;
+      const exige = exigeComprovacao(currentClass, statusPickCard.dataset.title);
+      if(fieldResumoLabel) fieldResumoLabel.textContent = exige ? 'Resumo do que foi feito (obrigatório pra concluir)' : 'Resumo do que foi feito';
+      if(resumoHint) resumoHint.textContent = exige
+        ? 'Este requisito exige comprovação: sem o resumo não dá pra marcar como concluída.'
+        : 'Fica guardado na ficha do desbravador junto com o comprovante.';
+      if(comprovanteLabel){
+        const texto = comprovanteLabel.lastChild;
+        if(texto) texto.textContent = exige ? 'Comprovação (recomendada)' : 'Comprovação (opcional)';
+      }
+    }
+
     function openStatusPick(card){
       statusPickCard = card;
       statusPickTitle.textContent = card.dataset.title;
@@ -13954,8 +14042,40 @@
       ensureClassData(currentClass);
       const comprovantes = (CLASS_COMPROVANTES[currentClass][selectedStudent] || {})[card.dataset.title] || [];
       renderComprovante(comprovantes);
+
+      if(fieldResumo){
+        fieldResumo.value = (CLASS_RESUMOS[currentClass][selectedStudent] || {})[card.dataset.title] || '';
+        fieldResumo.style.borderColor = '';
+      }
+      // Só quem gerencia a classe define o que exige comprovação.
+      if(reqExigirRow) reqExigirRow.style.display = canManageStudents(currentClass) ? '' : 'none';
+      if(reqExigirToggle) reqExigirToggle.checked = exigeComprovacao(currentClass, card.dataset.title);
+      applyExigenciaUI();
+
       statusPickOverlay.classList.add('show');
     }
+
+    if(reqExigirToggle){
+      reqExigirToggle.addEventListener('change', async () => {
+        if(!statusPickCard) return;
+        const classe = currentClass;
+        const titulo = statusPickCard.dataset.title;
+        const key = requisitoKey(classe, titulo);
+        if(reqExigirToggle.checked) REQUISITOS_COMPROVACAO.add(key); else REQUISITOS_COMPROVACAO.delete(key);
+        applyExigenciaUI();
+        applyStudentProgressToCards();
+        if(supa){
+          const { error } = reqExigirToggle.checked
+            ? await supa.from('requisitos_comprovacao').upsert({
+                classe: classe, requisito_titulo: titulo,
+                criado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
+              })
+            : await supa.from('requisitos_comprovacao').delete().eq('classe', classe).eq('requisito_titulo', titulo);
+          if(error) console.error('Erro ao salvar exigência de comprovação:', error.message);
+        }
+      });
+    }
+    if(fieldResumo) fieldResumo.addEventListener('input', () => { fieldResumo.style.borderColor = ''; });
     statusPickClose.addEventListener('click', () => statusPickOverlay.classList.remove('show'));
     statusPickOverlay.addEventListener('click', (e) => { if(e.target === statusPickOverlay) statusPickOverlay.classList.remove('show'); });
     // Cada requisito marcado como "Concluída" gera 3 pontos pra unidade do
@@ -14002,8 +14122,23 @@
         if(!CLASS_PROGRESS[currentClass][selectedStudent]) CLASS_PROGRESS[currentClass][selectedStudent] = {};
         const status = btn.getAttribute('data-status');
         const requisitoTitulo = statusPickCard.dataset.title;
+        const resumo = fieldResumo ? fieldResumo.value.trim() : '';
+
+        // Requisito marcado como "exige comprovação" não fecha sem o resumo do
+        // que foi feito — é o que sustenta a ficha na hora da investidura.
+        if(status === 'done' && exigeComprovacao(currentClass, requisitoTitulo) && !resumo){
+          if(fieldResumo){
+            fieldResumo.style.borderColor = '#FF6B5C';
+            fieldResumo.focus();
+          }
+          if(resumoHint) resumoHint.textContent = 'Escreva um resumo do que foi feito pra poder concluir este requisito.';
+          return;
+        }
+
         const previousStatus = CLASS_PROGRESS[currentClass][selectedStudent][requisitoTitulo] || 'todo';
         CLASS_PROGRESS[currentClass][selectedStudent][requisitoTitulo] = status;
+        if(!CLASS_RESUMOS[currentClass][selectedStudent]) CLASS_RESUMOS[currentClass][selectedStudent] = {};
+        CLASS_RESUMOS[currentClass][selectedStudent][requisitoTitulo] = resumo;
         applyStudentProgressToCards();
         updateHubCounts();
         statusPickOverlay.classList.remove('show');
@@ -14011,7 +14146,7 @@
         const desbravadorId = STUDENT_IDS[currentClass] && STUDENT_IDS[currentClass][selectedStudent];
         if(supa && desbravadorId){
           const { error } = await supa.from('progresso_requisitos')
-            .upsert({ desbravador_id: desbravadorId, requisito_titulo: requisitoTitulo, status }, { onConflict: 'desbravador_id,requisito_titulo' });
+            .upsert({ desbravador_id: desbravadorId, requisito_titulo: requisitoTitulo, status, resumo: resumo || null }, { onConflict: 'desbravador_id,requisito_titulo' });
           if(error) console.error('Erro ao salvar progresso:', error.message);
 
           if(status === 'done' && previousStatus !== 'done'){
@@ -14438,6 +14573,7 @@
     // sem esse escopo, updateClassCount() via n===0 apagava os grupos deles.
     document.querySelectorAll('#view-classes .pl-month-group').forEach(g => { updateClassCount(g); regroupByArea(g); });
     window.__clShowHub = showHub;
+    loadRequisitosComprovacao();
     loadClassDataFromSupabase();
 
     // Classe Agrupada — filtro por idade (ver CSS .cl-age-filter). Cada requisito
