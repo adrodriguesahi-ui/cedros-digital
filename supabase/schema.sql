@@ -1053,6 +1053,11 @@ create table if not exists classe_instrutores (
   primary key (classe, usuario_id)
 );
 
+-- Um dos instrutores do cartão é o responsável: além de dar aula, é ele quem
+-- monta o cronograma e escala qual instrutor associado cuida de cada aula.
+-- O app mantém no máximo um responsável por cartão.
+alter table classe_instrutores add column if not exists responsavel boolean not null default false;
+
 alter table classe_instrutores enable row level security;
 
 drop policy if exists "classe_instrutores: acesso publico" on classe_instrutores;

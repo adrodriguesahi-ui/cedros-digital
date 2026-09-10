@@ -1783,6 +1783,13 @@
   .cp-row-title{ display:block; font-size:13.5px; font-weight:800; color:var(--cream); line-height:1.3; }
   .cp-row-meta{ display:block; margin-top:3px; font-size:11.5px; font-weight:700; color:rgba(245,239,225,0.5); }
   .cp-row-meta .cp-sem-instrutor{ color:var(--gold); }
+  /* No modal de instrutores, marca qual deles é o responsável pelo cartão. */
+  .cp-resp-btn{
+    flex-shrink:0; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14);
+    color:rgba(245,239,225,0.55); border-radius:16px; padding:5px 10px;
+    font-size:10.5px; font-weight:800; cursor:pointer; white-space:nowrap;
+  }
+  .cp-resp-btn.ativo{ background:rgba(216,168,62,0.18); border-color:var(--gold); color:var(--gold); }
 
   /* Marca, na lista, os requisitos que exigem comprovação pra concluir. */
   .cl-req-exige-badge{
@@ -9973,7 +9980,7 @@
 
           <div class="cp-summary" id="cpSummary"></div>
 
-          <p class="pl-reminder-hint" id="cpReadOnlyHint" style="display:none;">Você pode acompanhar o cronograma, mas só o Administrador e o Coordenador deste cartão criam ou editam os planejamentos.</p>
+          <p class="pl-reminder-hint" id="cpReadOnlyHint" style="display:none;">Você pode acompanhar o cronograma, mas quem monta é o instrutor responsável deste cartão (ou o Coordenador da classe e o Administrador).</p>
 
           <h4 class="un-section-title">Agendados</h4>
           <div id="cpScheduled"></div>
@@ -14889,7 +14896,7 @@
       lista.forEach(pessoa => {
         const opt = document.createElement('option');
         opt.value = pessoa.id;
-        opt.textContent = pessoa.nome;
+        opt.textContent = pessoa.nome + (pessoa.responsavel ? ' · responsável do cartão' : '');
         campo.appendChild(opt);
       });
       const legado = atualNome && !lista.some(p => p.id === atualId);
@@ -14909,8 +14916,11 @@
       if(campo.value === 'legado'){
         return { id: null, nome: (editingPlan && editingPlan.instrutor_responsavel) || null };
       }
-      const opt = campo.options[campo.selectedIndex];
-      return { id: campo.value, nome: opt ? opt.textContent : null };
+      // Pelo id, não pelo rótulo: a opção do responsável leva um sufixo que não
+      // pode acabar virando o nome salvo.
+      const lista = (window.__cpGetInstrutores && window.__cpGetInstrutores(planningClass)) || [];
+      const pessoa = lista.find(p => p.id === campo.value);
+      return { id: campo.value, nome: pessoa ? pessoa.nome : null };
     }
 
     // Só Administrador e o Coordenador daquele cartão criam/editam; os demais
@@ -15159,12 +15169,22 @@
     let instrutoresPorClasse = {}; // { classe: [{ id, nome }] }
     let usuarios = [];
 
-    function canPlan(qualClasse){
+    // Definir a lista de instrutores do cartão é do Coordenador daquele cartão
+    // (ou do Administrador).
+    function canManageRoster(qualClasse){
       const u = window.__currentUsuario;
       if(!u || !qualClasse) return false;
       if(u.papel === 'Administrador') return true;
-      if(u.papel === 'Coordenador de Classes') return u.classeCoordenada === qualClasse;
-      return false;
+      return u.papel === 'Coordenador de Classes' && u.classeCoordenada === qualClasse;
+    }
+
+    // Montar o cronograma e escalar quem dá cada aula é do instrutor
+    // responsável pelo cartão — além de quem define a lista.
+    function canPlan(qualClasse){
+      if(canManageRoster(qualClasse)) return true;
+      const u = window.__currentUsuario;
+      if(!u || !u.id) return false;
+      return (instrutoresPorClasse[qualClasse] || []).some(p => p.id === u.id && p.responsavel);
     }
     window.__cpCanPlan = canPlan;
     window.__cpGetInstrutores = function(qualClasse){ return instrutoresPorClasse[qualClasse] || []; };
@@ -15197,7 +15217,7 @@
     async function loadInstrutores(){
       if(!supa) return;
       const [{ data: vinculos }, { data: pessoas }] = await Promise.all([
-        supa.from('classe_instrutores').select('classe, usuario_id'),
+        supa.from('classe_instrutores').select('classe, usuario_id, responsavel'),
         supa.from('usuarios').select('id, nome, papel, ativo').order('nome')
       ]);
       usuarios = (pessoas || []).filter(p => p.ativo !== false);
@@ -15208,7 +15228,11 @@
         const pessoa = porId[v.usuario_id];
         if(!pessoa) return;
         if(!instrutoresPorClasse[v.classe]) instrutoresPorClasse[v.classe] = [];
-        instrutoresPorClasse[v.classe].push({ id: pessoa.id, nome: pessoa.nome });
+        instrutoresPorClasse[v.classe].push({ id: pessoa.id, nome: pessoa.nome, responsavel: !!v.responsavel });
+      });
+      // O responsável aparece primeiro na hora de escalar a aula.
+      Object.keys(instrutoresPorClasse).forEach(k => {
+        instrutoresPorClasse[k].sort((a, b) => (b.responsavel ? 1 : 0) - (a.responsavel ? 1 : 0));
       });
     }
 
@@ -15252,7 +15276,9 @@
     function render(){
       const pode = canPlan(classe);
       if(readOnlyHint) readOnlyHint.style.display = pode ? 'none' : '';
-      if(instrutoresBtn) instrutoresBtn.style.display = pode ? '' : 'none';
+      // A lista de instrutores é do Coordenador; o responsável planeja, mas não
+      // muda quem são os instrutores do cartão.
+      if(instrutoresBtn) instrutoresBtn.style.display = canManageRoster(classe) ? '' : 'none';
 
       const requisitos = requisitosDaClasse(classe);
       const comData = plans.filter(p => p.data).sort((a, b) => a.data.localeCompare(b.data));
@@ -15321,33 +15347,67 @@
         return;
       }
       usuarios.forEach(pessoa => {
+        const vinculo = (instrutoresPorClasse[classe] || []).find(p => p.id === pessoa.id);
         const row = document.createElement('div');
         row.className = 'ad-vis-row';
         row.innerHTML =
           '<span class="ad-vis-title"></span>' +
+          '<button type="button" class="cp-resp-btn">Responsável</button>' +
           '<span class="pl-switch"><input type="checkbox"><span class="pl-switch-track"><span class="pl-switch-thumb"></span></span></span>';
         row.querySelector('.ad-vis-title').textContent = pessoa.nome + (pessoa.papel ? ' · ' + pessoa.papel : '');
+
+        const respBtn = row.querySelector('.cp-resp-btn');
+        respBtn.classList.toggle('ativo', !!(vinculo && vinculo.responsavel));
+        respBtn.style.display = atuais.has(pessoa.id) ? '' : 'none';
+
         const input = row.querySelector('input');
         input.checked = atuais.has(pessoa.id);
+
         input.addEventListener('change', async () => {
           const alvo = classe;
           if(!instrutoresPorClasse[alvo]) instrutoresPorClasse[alvo] = [];
           if(input.checked){
-            instrutoresPorClasse[alvo].push({ id: pessoa.id, nome: pessoa.nome });
+            instrutoresPorClasse[alvo].push({ id: pessoa.id, nome: pessoa.nome, responsavel: false });
           } else {
             instrutoresPorClasse[alvo] = instrutoresPorClasse[alvo].filter(p => p.id !== pessoa.id);
           }
+          respBtn.style.display = input.checked ? '' : 'none';
+          respBtn.classList.remove('ativo');
           render();
           if(supa){
             const { error } = input.checked
               ? await supa.from('classe_instrutores').upsert({
-                  classe: alvo, usuario_id: pessoa.id,
+                  classe: alvo, usuario_id: pessoa.id, responsavel: false,
                   criado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
                 })
               : await supa.from('classe_instrutores').delete().eq('classe', alvo).eq('usuario_id', pessoa.id);
             if(error) console.error('Erro ao salvar instrutor da classe:', error.message);
           }
         });
+
+        // Responsável é um só por cartão: marcar alguém tira de quem estava.
+        respBtn.addEventListener('click', async () => {
+          const alvo = classe;
+          if(!input.checked) return;
+          const virandoResponsavel = !respBtn.classList.contains('ativo');
+          const anteriores = (instrutoresPorClasse[alvo] || []).filter(p => p.responsavel && p.id !== pessoa.id);
+          (instrutoresPorClasse[alvo] || []).forEach(p => {
+            p.responsavel = virandoResponsavel && p.id === pessoa.id;
+          });
+          renderInstrutoresList();
+          render();
+          if(supa){
+            for(const antigo of anteriores){
+              await supa.from('classe_instrutores').update({ responsavel: false })
+                .eq('classe', alvo).eq('usuario_id', antigo.id);
+            }
+            const { error } = await supa.from('classe_instrutores')
+              .update({ responsavel: virandoResponsavel })
+              .eq('classe', alvo).eq('usuario_id', pessoa.id);
+            if(error) console.error('Erro ao definir instrutor responsável:', error.message);
+          }
+        });
+
         instrutoresList.appendChild(row);
       });
     }
@@ -15355,7 +15415,7 @@
     if(instrutoresBtn){
       instrutoresBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        if(!canPlan(classe)) return;
+        if(!canManageRoster(classe)) return;
         renderInstrutoresList();
         instrutoresOverlay.classList.add('show');
       });
