@@ -987,3 +987,53 @@ alter table classes_rendimento_papeis_extra enable row level security;
 drop policy if exists "classes_rendimento_papeis_extra: acesso publico" on classes_rendimento_papeis_extra;
 create policy "classes_rendimento_papeis_extra: acesso publico" on classes_rendimento_papeis_extra
   for all using (true) with check (true);
+
+-- ---------------------------------------------------------------------
+-- notificacao_aniversario_reuniao: configuração única (linha 'default') do
+-- aviso no sino "quem faz aniversário até a próxima Reunião Regular" (ver
+-- tela Aniversariantes). confirmado_evento_id guarda o id da Reunião
+-- (eventos_agenda) já confirmada, pra não repetir o aviso até a reunião
+-- seguinte virar a "próxima" de verdade.
+-- ---------------------------------------------------------------------
+create table if not exists notificacao_aniversario_reuniao (
+  id text primary key default 'default',
+  ativo boolean not null default false,
+  confirmado_evento_id uuid references eventos_agenda(id) on delete set null,
+  confirmado_em timestamptz,
+  updated_at timestamptz not null default now()
+);
+
+insert into notificacao_aniversario_reuniao (id) values ('default') on conflict (id) do nothing;
+
+alter table notificacao_aniversario_reuniao enable row level security;
+
+drop policy if exists "notificacao_aniversario_reuniao: acesso publico" on notificacao_aniversario_reuniao;
+create policy "notificacao_aniversario_reuniao: acesso publico" on notificacao_aniversario_reuniao
+  for all using (true) with check (true);
+
+-- ---------------------------------------------------------------------
+-- requisitos_comprovacao: quais requisitos de Classes Regulares exigem
+-- comprovação pra serem dados como concluídos. Marcado requisito a
+-- requisito por quem gerencia a classe (Administrador ou o Coordenador de
+-- Classes daquele cartão), dentro do próprio modal de status. O catálogo de
+-- requisitos é estático no HTML, então a chave aqui é (classe, título) —
+-- não há tabela de requisitos pra referenciar.
+-- Ao concluir um requisito marcado, o app exige o resumo do que foi feito
+-- (progresso_requisitos.resumo); o anexo continua opcional, só recomendado.
+-- ---------------------------------------------------------------------
+create table if not exists requisitos_comprovacao (
+  classe text not null,
+  requisito_titulo text not null,
+  criado_por text,
+  created_at timestamptz not null default now(),
+  primary key (classe, requisito_titulo)
+);
+
+alter table requisitos_comprovacao enable row level security;
+
+drop policy if exists "requisitos_comprovacao: acesso publico" on requisitos_comprovacao;
+create policy "requisitos_comprovacao: acesso publico" on requisitos_comprovacao
+  for all using (true) with check (true);
+
+-- Resumo do que foi feito, escrito na hora de concluir o requisito.
+alter table progresso_requisitos add column if not exists resumo text;

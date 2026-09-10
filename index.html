@@ -1746,6 +1746,49 @@
     color:rgba(245,239,225,0.55); cursor:pointer;
   }
 
+  /* A tarja lateral do card mostra o STATUS do requisito, não a cor da classe:
+     dentro de um cartão todos os cards são da mesma classe, então a cor da
+     classe se repetia 34 vezes sem informar nada. Assim dá pra ler a lista de
+     relance (verde = feito, dourado = em andamento). Vem depois de
+     .cl-border-* de propósito, pra ganhar dessas regras. */
+  #view-classes .cl-activity-card[data-view-status="todo"]{ border-left-color:rgba(255,255,255,0.13); }
+  #view-classes .cl-activity-card[data-view-status="progress"]{ border-left-color:var(--gold); }
+  #view-classes .cl-activity-card[data-view-status="done"]{ border-left-color:var(--accent); opacity:0.72; }
+
+  /* Marca, na lista, os requisitos que exigem comprovação pra concluir. */
+  .cl-req-exige-badge{
+    display:inline-flex; align-items:center; gap:3px; margin-left:6px;
+    font-size:10.5px; font-weight:800; color:var(--gold);
+  }
+
+  /* Painel do aluno selecionado: nome, % e barra, no lugar do texto solto. */
+  .cl-student-panel{
+    display:block; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);
+    border-radius:14px; padding:11px 13px; margin:10px 0 4px;
+  }
+  .cl-student-panel-top{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:8px; }
+  .cl-student-panel-name{ font-size:13.5px; font-weight:900; color:var(--cream); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cl-student-panel-pct{ flex-shrink:0; font-size:15px; font-weight:900; color:var(--accent); }
+  .cl-student-panel-bar{ display:block; height:6px; border-radius:4px; background:rgba(255,255,255,0.1); overflow:hidden; }
+  .cl-student-panel-bar > span{ display:block; height:100%; border-radius:4px; background:var(--accent); transition:width .35s ease; }
+  .cl-student-panel-sub{ display:block; margin-top:7px; font-size:11.5px; font-weight:700; color:rgba(245,239,225,0.5); }
+
+  /* Busca + filtro por status dos requisitos da classe aberta. Dois filtros
+     diferentes podem esconder um mesmo card (idade, na Classe Agrupada, e
+     busca/status aqui), então cada um usa a sua própria classe — se usassem
+     style.display direto, o último a rodar apagava a decisão do outro. */
+  .cl-req-filter{ display:flex; flex-direction:column; gap:9px; margin-bottom:14px; }
+  .cl-req-filter .cl-req-search{ margin:0; }
+  .cl-req-chips{ display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; -webkit-overflow-scrolling:touch; }
+  .cl-req-chip{
+    flex-shrink:0; white-space:nowrap; cursor:pointer;
+    background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12);
+    color:rgba(245,239,225,0.75); border-radius:20px; padding:7px 13px;
+    font-size:12px; font-weight:800;
+  }
+  .cl-req-chip.active{ background:var(--accent); border-color:var(--accent); color:#08130A; }
+  .cl-activity-card.cl-hide-age, .cl-activity-card.cl-hide-filter{ display:none; }
+
   .cl-status-pick-options{ display:flex; flex-direction:column; gap:8px; margin-top:4px; }
   .cl-status-pick-btn{
     display:flex; align-items:center; gap:10px;
@@ -2084,6 +2127,27 @@
     animation:none;
   }
   .bd-birthday-banner .bd-reminder-banner-icon{ font-size:18px; animation:none; }
+
+  /* Modo "Ver como": a faixa fica fixa na tela toda (não dentro de uma view),
+     porque o papel simulado pode esconder Administração — e é por ela que se
+     sai do modo. Fica acima da tabbar pra não cobrir topo nem navegação. */
+  .vc-banner{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:86px; z-index:900;
+    display:flex; align-items:center; gap:9px; max-width:min(364px, 92vw);
+    background:rgba(91,155,255,0.16); border:1px solid rgba(91,155,255,0.45);
+    backdrop-filter:blur(8px);
+    border-radius:22px; padding:9px 10px 9px 13px;
+    font-size:12px; font-weight:700; color:rgba(245,239,225,0.9);
+    box-shadow:0 10px 24px rgba(0,0,0,0.35);
+  }
+  .vc-banner svg{ flex-shrink:0; color:#5B9BFF; }
+  .vc-banner-text{ flex:1; min-width:0; line-height:1.3; }
+  .vc-banner-text b{ color:#5B9BFF; }
+  .vc-banner-exit{
+    flex-shrink:0; background:#5B9BFF; color:#08130A; border:none;
+    border-radius:16px; padding:6px 12px; font-size:11.5px; font-weight:900; cursor:pointer;
+  }
+  .vc-banner-exit:active{ transform:scale(0.95); }
 
   .bd-access-sim-banner{
     display:flex; align-items:center; gap:9px; width:calc(100% - 32px); margin:8px 16px 4px;
@@ -3930,6 +3994,17 @@
           </div>
           <span class="cl-student-progress-summary" id="clStudentProgressSummary" style="display:none;"></span>
           <div class="cl-student-chips" id="clStudentChips"></div>
+        </div>
+
+        <div class="cl-req-filter" id="clReqFilter" style="display:none;">
+          <input type="search" class="pl-input cl-req-search" id="clReqSearch" placeholder="Buscar requisito por nome, área ou descrição…" autocomplete="off">
+          <div class="cl-req-chips" id="clReqFilterChips">
+            <button type="button" class="cl-req-chip active" data-status="all">Todos</button>
+            <button type="button" class="cl-req-chip" data-status="todo">Faltam</button>
+            <button type="button" class="cl-req-chip" data-status="progress">Em andamento</button>
+            <button type="button" class="cl-req-chip" data-status="done">Concluídos</button>
+          </div>
+          <p class="un-empty-hint" id="clReqEmpty" style="display:none; margin:2px 0 0;">Nenhum requisito encontrado com esse filtro.</p>
         </div>
 
         <div class="pl-content" id="clContent" style="display:none;">
@@ -8228,7 +8303,24 @@
             <button type="button" class="cl-status-pick-btn" data-status="done" data-color="green" data-label="Concluída">Concluída</button>
           </div>
 
-          <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Comprovação (opcional)</label>
+          <!-- Marcador por requisito: quem gerencia a classe decide quais exigem
+               comprovação. Ver requisitos_comprovacao em supabase/schema.sql. -->
+          <label class="pl-reminder-toggle-row" for="clReqExigirToggle" id="clReqExigirRow" style="display:none; margin:14px 0 6px;">
+            <span class="pl-reminder-toggle-text">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Exigir comprovação neste requisito
+            </span>
+            <span class="pl-switch">
+              <input type="checkbox" id="clReqExigirToggle">
+              <span class="pl-switch-track"><span class="pl-switch-thumb"></span></span>
+            </span>
+          </label>
+
+          <label class="pl-field-label" id="clFieldResumoLabel">Resumo do que foi feito</label>
+          <textarea class="pl-input" id="clFieldResumo" rows="3" maxlength="500" placeholder="Ex.: acampou duas noites no Sítio Cedros, montou a barraca sozinho e cozinhou no fogo de chão."></textarea>
+          <p class="pl-reminder-hint" id="clResumoHint">Fica guardado na ficha do desbravador junto com o comprovante.</p>
+
+          <label class="pl-field-label" id="clComprovanteLabel"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Comprovação (opcional)</label>
           <div class="cl-photo-row">
             <label class="cl-photo-btn" for="clComprovanteCamera">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h7l1 1.5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.5"/></svg>
@@ -9808,6 +9900,18 @@
           <span class="pl-topbar-spacer" aria-hidden="true"></span>
         </div>
         <div class="pl-content">
+          <label class="pl-reminder-toggle-row" for="btNotifyReuniaoToggle" id="btNotifyReuniaoRow" style="display:none;">
+            <span class="pl-reminder-toggle-text">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
+              Avisar no sino aniversariantes até a próxima reunião
+            </span>
+            <span class="pl-switch">
+              <input type="checkbox" id="btNotifyReuniaoToggle">
+              <span class="pl-switch-track"><span class="pl-switch-thumb"></span></span>
+            </span>
+          </label>
+          <p class="pl-reminder-hint" id="btNotifyReuniaoHint" style="display:none; margin:-10px 0 14px;">Quando ligado, o sino avisa quem faz aniversário até a próxima Reunião Regular da Agenda Anual — some sozinho depois de confirmado e volta a avisar pra cada reunião seguinte.</p>
+
           <label class="pl-field-label" style="margin-top:0;">Mês</label>
           <select class="pl-input" id="btMonthSelect" style="margin-bottom:14px;"></select>
           <div id="btContent">
@@ -10328,6 +10432,12 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             Painel local, sem servidor: as permissões definidas aqui funcionam como referência/simulação nesta sessão do app. Para restringir de verdade o que cada pessoa pode fazer, será necessário um sistema de contas com login real no futuro.
           </p>
+
+          <!-- Ver como: testar as permissões de outro papel sem criar conta nem
+               mexer no banco — ver a IIFE do modo mais abaixo no arquivo. -->
+          <div class="sp-area-heading" id="vcHeading" style="display:none;">Testar Permissões</div>
+          <p class="pl-reminder-hint" id="vcHint" style="margin-top:0; display:none;">Veja o app como quem tem outro papel (ex.: Coordenador de Classes de um cartão) pra conferir o que aparece e o que fica bloqueado. Nada é gravado: vale só nesta sessão, no seu aparelho.</p>
+          <button type="button" class="pl-btn" id="vcOpenBtn" style="background:rgba(91,155,255,0.16); color:#5B9BFF; margin-bottom:18px; display:none;">Ver como outro papel</button>
 
           <div class="sp-area-heading">Minha Conta</div>
           <p class="pl-reminder-hint" style="margin-top:0;">E-mail de login atual: <strong id="adMyEmail">—</strong></p>
@@ -10883,6 +10993,49 @@
       </div>
 
     </section>
+
+    <!-- Faixa do modo "Ver como" — fora das views de propósito, pra continuar
+         visível mesmo quando o papel simulado esconde a tela de Administração. -->
+    <div class="vc-banner" id="vcBanner" style="display:none;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="vc-banner-text">Vendo como <b id="vcBannerRole"></b></span>
+      <button type="button" class="vc-banner-exit" id="vcBannerExit">Sair</button>
+    </div>
+
+    <div class="pl-modal-overlay" id="vcOverlay">
+      <div class="pl-modal">
+        <div class="pl-modal-head">
+          <h4 class="pl-modal-title">Ver como outro papel</h4>
+          <button type="button" class="pl-modal-close" id="vcClose" aria-label="Fechar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <p class="pl-reminder-hint" style="margin-top:0;">O app passa a se comportar como quem tem esse papel: menu, telas e o que pode editar. Você continua logado como você — nada é gravado no banco, e sair do modo recarrega o app no seu acesso normal.</p>
+
+        <label class="pl-field-label">Papel</label>
+        <select class="pl-input" id="vcRole"></select>
+
+        <div id="vcClasseWrap" style="display:none;">
+          <label class="pl-field-label">Classe que coordena</label>
+          <select class="pl-input" id="vcClasse">
+            <option value="">Nenhuma</option>
+            <option value="Amigo">Amigo</option>
+            <option value="Companheiro">Companheiro</option>
+            <option value="Pesquisador">Pesquisador</option>
+            <option value="Pioneiro">Pioneiro</option>
+            <option value="Excursionista">Excursionista</option>
+            <option value="Guia">Guia</option>
+          </select>
+          <p class="pl-reminder-hint">Só neste cartão o Coordenador de Classes cadastra e edita desbravadores.</p>
+        </div>
+
+        <p class="pl-reminder-hint">A permissão de pontuar unidades é por pessoa, não por papel, então fica desligada durante o teste.</p>
+
+        <div class="pl-modal-actions">
+          <button type="button" class="pl-btn pl-btn-primary" id="vcStartBtn">Entrar no modo</button>
+        </div>
+      </div>
+    </div>
 
     <!-- Barra de navegação inferior GLOBAL: fica fixa em toda tela do app já logado
          (não só no Início) — ver JS showView() logo abaixo, que liga/desliga a classe
@@ -12876,7 +13029,7 @@
     function collectDueReminders(){
       const today = new Date(); today.setHours(0,0,0,0);
       const cards = Array.from(document.querySelectorAll('.pl-event-card')).filter(c => c.dataset.reminderOn === '1' && c.dataset.reminderDate);
-      return cards
+      const due = cards
         .filter(c => isReminderCurrentlyDue(c, today))
         .map(c => ({
           card: c,
@@ -12888,6 +13041,21 @@
             ? Math.max(0, (parseInt(c.dataset.reminderRepeatCount, 10) || 0) - (parseInt(c.dataset.reminderConfirmedTimes, 10) || 0))
             : 0
         }));
+      // Aviso de aniversariantes até a próxima Reunião Regular — ligado em
+      // Aniversariantes (window.__btGetBirthdayReminder). Não tem card real
+      // na Agenda, então entra como item sintético (ver confirmReminderItem).
+      if(typeof window.__btGetBirthdayReminder === 'function'){
+        const b = window.__btGetBirthdayReminder();
+        if(b){
+          due.unshift({
+            card: { dataset: { local: '' } },
+            title: b.title, msg: b.msg, day: b.day, monAbbr: b.monAbbr,
+            repeatOn: false, timesLeft: 0,
+            isBirthday: true, meetingId: b.meetingId
+          });
+        }
+      }
+      return due;
     }
 
     async function confirmReminderRead(card){
@@ -12916,6 +13084,19 @@
       }
     }
 
+    // Item sintético de aniversariantes (ver window.__btGetBirthdayReminder,
+    // exposto pela IIFE de Aniversariantes) não tem card real na Agenda —
+    // confirmar ele salva em notificacao_aniversario_reuniao em vez de
+    // eventos_agenda. Usado pelo botão de cada card, "Marcar todos" e o banner.
+    async function confirmReminderItem(item){
+      if(item.isBirthday){
+        if(window.__btConfirmBirthdayReminder) await window.__btConfirmBirthdayReminder(item.meetingId);
+        refreshReminderBell();
+      } else {
+        await confirmReminderRead(item.card);
+      }
+    }
+
     function openRemindersPage(){
       renderRemindersPage(collectDueReminders());
       if(remindersOverlay) remindersOverlay.classList.add('show');
@@ -12923,6 +13104,10 @@
     function closeRemindersPage(){
       if(remindersOverlay) remindersOverlay.classList.remove('show');
     }
+
+    // Exposto pra Aniversariantes (ver window.__btGetBirthdayReminder) recalcular
+    // o sino assim que o aviso de aniversariantes for ligado/desligado/carregado.
+    window.__plRefreshReminderBell = function(){ refreshReminderBell(); };
 
     function refreshReminderBell(){
       if(!bellBtn) return;
@@ -12948,10 +13133,10 @@
           reminderBannerMsg.textContent = due[0].msg;
           reminderBanner.dataset.currentCard = '';
           reminderBanner.style.display = '';
-          window.__plCurrentBannerCard = due[0].card;
+          window.__plCurrentBannerItem = due[0];
         } else {
           reminderBanner.style.display = 'none';
-          window.__plCurrentBannerCard = null;
+          window.__plCurrentBannerItem = null;
         }
       }
     }
@@ -12981,7 +13166,7 @@
         card.querySelector('.bd-reminder-card-title').textContent = item.title;
         if(local) card.querySelector('.bd-reminder-card-meta span').textContent = local;
         card.querySelector('.bd-reminder-card-msg').textContent = item.msg;
-        card.querySelector('.bd-reminder-card-confirm').addEventListener('click', () => confirmReminderRead(item.card));
+        card.querySelector('.bd-reminder-card-confirm').addEventListener('click', () => confirmReminderItem(item));
         remindersList.appendChild(card);
       });
     }
@@ -12996,7 +13181,7 @@
     if(remindersClose) remindersClose.addEventListener('click', closeRemindersPage);
     if(remindersMarkAllBtn){
       remindersMarkAllBtn.addEventListener('click', () => {
-        collectDueReminders().forEach(item => confirmReminderRead(item.card));
+        collectDueReminders().forEach(item => confirmReminderItem(item));
       });
     }
 
@@ -13011,7 +13196,7 @@
         bannerConfirmBtn.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          if(window.__plCurrentBannerCard) confirmReminderRead(window.__plCurrentBannerCard);
+          if(window.__plCurrentBannerItem) confirmReminderItem(window.__plCurrentBannerItem);
         });
       }
     }
@@ -13223,6 +13408,86 @@
       });
     }
 
+    // ---- Busca + filtro por status dos requisitos da classe aberta ----
+    // O rótulo "N atividades" do grupo mostra o que está realmente à vista, e
+    // por isso considera as duas classes de ocultação (idade e busca/status).
+    const reqFilterBar = document.getElementById('clReqFilter');
+    const reqSearchInput = document.getElementById('clReqSearch');
+    const reqFilterChips = document.getElementById('clReqFilterChips');
+    const reqEmptyHint = document.getElementById('clReqEmpty');
+    let reqStatusFilter = 'all';
+
+    function normalizeReqText(s){
+      return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    }
+
+    function updateGroupVisibleCount(group){
+      if(!group) return;
+      const countEl = group.querySelector('.pl-month-count');
+      if(!countEl) return;
+      const visible = Array.from(group.querySelectorAll('.cl-activity-card'))
+        .filter(c => !c.classList.contains('cl-hide-age') && !c.classList.contains('cl-hide-filter')).length;
+      countEl.textContent = visible === 1 ? '1 atividade' : visible + ' atividades';
+    }
+
+    // Com um aluno selecionado o status que vale é o dele (CLASS_PROGRESS);
+    // no modo "Requisitos (modelo)" vale o status do próprio card.
+    function effectiveCardStatus(card){
+      if(selectedStudent && currentClass){
+        const studentProgress = (CLASS_PROGRESS[currentClass] || {})[selectedStudent] || {};
+        return studentProgress[card.dataset.title] || 'todo';
+      }
+      return card.dataset.status || 'todo';
+    }
+
+    function applyRequisitoFilter(){
+      if(!currentClass) return;
+      const group = findClassGroup(currentClass);
+      if(!group) return;
+      const term = normalizeReqText(reqSearchInput ? reqSearchInput.value.trim() : '');
+      let visible = 0;
+      group.querySelectorAll('.cl-activity-card').forEach(card => {
+        const statusOk = reqStatusFilter === 'all' || effectiveCardStatus(card) === reqStatusFilter;
+        const haystack = normalizeReqText((card.dataset.title || '') + ' ' + (card.dataset.area || '') + ' ' + (card.dataset.desc || ''));
+        const termOk = !term || haystack.indexOf(term) !== -1;
+        const hide = !(statusOk && termOk);
+        card.classList.toggle('cl-hide-filter', hide);
+        if(!hide && !card.classList.contains('cl-hide-age')) visible++;
+      });
+      // Os cards ficam dentro de seções por área (ver regroupByArea): uma área
+      // que ficou sem nenhum card visível vira só um título solto, então some.
+      group.querySelectorAll('.cl-area-section').forEach(section => {
+        const shown = Array.from(section.querySelectorAll('.cl-activity-card'))
+          .filter(c => !c.classList.contains('cl-hide-age') && !c.classList.contains('cl-hide-filter')).length;
+        section.style.display = shown ? '' : 'none';
+        const areaCount = section.querySelector('.cl-area-heading-count');
+        if(areaCount) areaCount.textContent = shown;
+      });
+      if(reqEmptyHint) reqEmptyHint.style.display = visible ? 'none' : '';
+      updateGroupVisibleCount(group);
+    }
+
+    function resetRequisitoFilter(){
+      reqStatusFilter = 'all';
+      if(reqSearchInput) reqSearchInput.value = '';
+      if(reqFilterChips){
+        reqFilterChips.querySelectorAll('.cl-req-chip').forEach(chip => {
+          chip.classList.toggle('active', chip.dataset.status === 'all');
+        });
+      }
+    }
+
+    if(reqSearchInput) reqSearchInput.addEventListener('input', applyRequisitoFilter);
+    if(reqFilterChips){
+      reqFilterChips.querySelectorAll('.cl-req-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          reqStatusFilter = chip.dataset.status;
+          reqFilterChips.querySelectorAll('.cl-req-chip').forEach(c => c.classList.toggle('active', c === chip));
+          applyRequisitoFilter();
+        });
+      });
+    }
+
     const planningOpenBtn = document.getElementById('clPlanningOpenBtn');
 
     // ---- Ranking de Classes: TOP por % de requisitos concluídos, só das 6
@@ -13403,6 +13668,7 @@
       titleEl.textContent = 'Classes Regulares';
       addBtn.style.display = 'none';
       if(studentBar) studentBar.style.display = 'none';
+      if(reqFilterBar) reqFilterBar.style.display = 'none';
       selectedStudent = null;
       updateHubCounts();
       if(planningOpenBtn) planningOpenBtn.style.display = 'none';
@@ -13422,6 +13688,11 @@
         renderStudentBar(className);
         applyStudentProgressToCards();
       }
+      // Cada classe começa sem filtro: um "Faltam" deixado de outra turma
+      // faria parecer que metade do cartão sumiu.
+      if(reqFilterBar) reqFilterBar.style.display = '';
+      resetRequisitoFilter();
+      applyRequisitoFilter();
       if(planningOpenBtn) planningOpenBtn.style.display = '';
     }
 
@@ -13482,6 +13753,14 @@
     // acima (que só guarda status) pra não arriscar mexer no que já tá testado;
     // alimentado pelo mesmo loadClassDataFromSupabase() abaixo.
     const CLASS_COMPROVANTES = {};
+    // CLASS_RESUMOS[className][studentName][activityTitle] = resumo escrito ao concluir
+    const CLASS_RESUMOS = {};
+    // "classe|título" dos requisitos que exigem comprovação (requisitos_comprovacao)
+    let REQUISITOS_COMPROVACAO = new Set();
+    const requisitoKey = (className, titulo) => className + '|' + titulo;
+    function exigeComprovacao(className, titulo){
+      return REQUISITOS_COMPROVACAO.has(requisitoKey(className, titulo));
+    }
     let selectedStudent = null;
     let statusPickCard = null;
 
@@ -13490,10 +13769,22 @@
       if(!CLASS_PROGRESS[className]) CLASS_PROGRESS[className] = {};
       if(!STUDENT_IDS[className]) STUDENT_IDS[className] = {};
       if(!CLASS_COMPROVANTES[className]) CLASS_COMPROVANTES[className] = {};
+      if(!CLASS_RESUMOS[className]) CLASS_RESUMOS[className] = {};
     }
 
     // Carrega desbravadores e progresso já salvos no Supabase (tabelas "desbravadores"
     // e "progresso_requisitos", ver supabase/schema.sql) para dentro dos objetos locais.
+    // Quais requisitos exigem comprovação — vale pra classe inteira, não por
+    // aluno, então carrega à parte do progresso (e antes dele, pra lista já
+    // aparecer marcada na primeira pintura).
+    async function loadRequisitosComprovacao(){
+      if(!supa) return;
+      const { data, error } = await supa.from('requisitos_comprovacao').select('classe, requisito_titulo');
+      if(error){ console.error('Erro ao carregar requisitos com comprovação:', error.message); return; }
+      REQUISITOS_COMPROVACAO = new Set((data || []).map(r => requisitoKey(r.classe, r.requisito_titulo)));
+      if(currentClass) applyStudentProgressToCards();
+    }
+
     async function loadClassDataFromSupabase(){
       if(!supa) return;
       const { data: alunos, error: alunosErr } = await supa.from('desbravadores').select('id, nome, classe');
@@ -13507,17 +13798,23 @@
       Object.keys(STUDENT_IDS).forEach(k => { STUDENT_IDS[k] = {}; });
       Object.keys(CLASS_PROGRESS).forEach(k => { CLASS_PROGRESS[k] = {}; });
       Object.keys(CLASS_COMPROVANTES).forEach(k => { CLASS_COMPROVANTES[k] = {}; });
+      Object.keys(CLASS_RESUMOS).forEach(k => { CLASS_RESUMOS[k] = {}; });
 
-      const { data: progresso, error: progressoErr } = await supa.from('progresso_requisitos').select('desbravador_id, requisito_titulo, status');
+      const { data: progresso, error: progressoErr } = await supa.from('progresso_requisitos').select('desbravador_id, requisito_titulo, status, resumo');
       if(progressoErr) console.error('Erro ao carregar progresso:', progressoErr.message);
 
       const { data: arquivos, error: arquivosErr } = await supa.from('comprovante_arquivos').select('id, desbravador_id, requisito_titulo, arquivo_data, arquivo_nome').order('created_at');
       if(arquivosErr) console.error('Erro ao carregar comprovantes:', arquivosErr.message);
 
       const progressoByAluno = {};
+      const resumoByAluno = {};
       (progresso || []).forEach(p => {
         if(!progressoByAluno[p.desbravador_id]) progressoByAluno[p.desbravador_id] = {};
         progressoByAluno[p.desbravador_id][p.requisito_titulo] = p.status;
+        if(p.resumo){
+          if(!resumoByAluno[p.desbravador_id]) resumoByAluno[p.desbravador_id] = {};
+          resumoByAluno[p.desbravador_id][p.requisito_titulo] = p.resumo;
+        }
       });
 
       const comprovanteByAluno = {};
@@ -13533,6 +13830,7 @@
         STUDENT_IDS[aluno.classe][aluno.nome] = aluno.id;
         CLASS_PROGRESS[aluno.classe][aluno.nome] = progressoByAluno[aluno.id] || {};
         CLASS_COMPROVANTES[aluno.classe][aluno.nome] = comprovanteByAluno[aluno.id] || {};
+        CLASS_RESUMOS[aluno.classe][aluno.nome] = resumoByAluno[aluno.id] || {};
       });
 
       updateHubCounts();
@@ -13638,8 +13936,30 @@
         }
         tag.textContent = label;
         tag.className = 'pl-event-tag pl-tag-' + color;
-        totalCount++;
-        if(status === 'done') doneCount++;
+        // A tarja lateral do card segue este status (ver CSS [data-view-status]).
+        card.dataset.viewStatus = status;
+
+        // Avisa na própria lista quais requisitos vão pedir resumo pra concluir.
+        const meta = card.querySelector('.pl-event-meta');
+        if(meta){
+          let badge = meta.querySelector('.cl-req-exige-badge');
+          if(exigeComprovacao(currentClass, card.dataset.title)){
+            if(!badge){
+              badge = document.createElement('span');
+              badge.className = 'cl-req-exige-badge';
+              badge.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>exige comprovação';
+              meta.appendChild(badge);
+            }
+          } else if(badge){
+            badge.remove();
+          }
+        }
+        // Na Classe Agrupada o filtro de idade define quais requisitos valem pra
+        // essa pessoa: os de fora não entram na conta de concluídos/restantes.
+        if(!card.classList.contains('cl-hide-age')){
+          totalCount++;
+          if(status === 'done') doneCount++;
+        }
 
         const thumbEl = card.querySelector('.cl-thumb[data-role="thumb"]');
         if(thumbEl){
@@ -13662,12 +13982,26 @@
 
       if(studentProgressSummary){
         if(progressForStudent){
+          const pct = totalCount ? Math.round((doneCount / totalCount) * 100) : 0;
           studentProgressSummary.style.display = '';
-          studentProgressSummary.textContent = doneCount + ' concluídas · ' + (totalCount - doneCount) + ' restantes';
+          studentProgressSummary.className = 'cl-student-panel';
+          studentProgressSummary.innerHTML =
+            '<span class="cl-student-panel-top"><span class="cl-student-panel-name"></span><span class="cl-student-panel-pct"></span></span>' +
+            '<span class="cl-student-panel-bar"><span></span></span>' +
+            '<span class="cl-student-panel-sub"></span>';
+          studentProgressSummary.querySelector('.cl-student-panel-name').textContent = selectedStudent;
+          studentProgressSummary.querySelector('.cl-student-panel-pct').textContent = pct + '%';
+          studentProgressSummary.querySelector('.cl-student-panel-bar > span').style.width = pct + '%';
+          studentProgressSummary.querySelector('.cl-student-panel-sub').textContent =
+            doneCount + ' de ' + totalCount + ' requisitos concluídos · faltam ' + (totalCount - doneCount);
         } else {
           studentProgressSummary.style.display = 'none';
         }
       }
+
+      // Trocar de aluno ou marcar um requisito muda o status que o filtro vê —
+      // sem isso, um card recém-concluído continuaria na lista de "Faltam".
+      applyRequisitoFilter();
     }
 
     studentAddBtn.addEventListener('click', () => {
@@ -13745,6 +14079,28 @@
       }
     });
 
+    const reqExigirRow = document.getElementById('clReqExigirRow');
+    const reqExigirToggle = document.getElementById('clReqExigirToggle');
+    const fieldResumo = document.getElementById('clFieldResumo');
+    const fieldResumoLabel = document.getElementById('clFieldResumoLabel');
+    const resumoHint = document.getElementById('clResumoHint');
+    const comprovanteLabel = document.getElementById('clComprovanteLabel');
+
+    // Requisito que exige comprovação: o resumo passa a ser obrigatório pra
+    // concluir; o anexo continua opcional (só recomendado).
+    function applyExigenciaUI(){
+      if(!statusPickCard) return;
+      const exige = exigeComprovacao(currentClass, statusPickCard.dataset.title);
+      if(fieldResumoLabel) fieldResumoLabel.textContent = exige ? 'Resumo do que foi feito (obrigatório pra concluir)' : 'Resumo do que foi feito';
+      if(resumoHint) resumoHint.textContent = exige
+        ? 'Este requisito exige comprovação: sem o resumo não dá pra marcar como concluída.'
+        : 'Fica guardado na ficha do desbravador junto com o comprovante.';
+      if(comprovanteLabel){
+        const texto = comprovanteLabel.lastChild;
+        if(texto) texto.textContent = exige ? 'Comprovação (recomendada)' : 'Comprovação (opcional)';
+      }
+    }
+
     function openStatusPick(card){
       statusPickCard = card;
       statusPickTitle.textContent = card.dataset.title;
@@ -13756,8 +14112,40 @@
       ensureClassData(currentClass);
       const comprovantes = (CLASS_COMPROVANTES[currentClass][selectedStudent] || {})[card.dataset.title] || [];
       renderComprovante(comprovantes);
+
+      if(fieldResumo){
+        fieldResumo.value = (CLASS_RESUMOS[currentClass][selectedStudent] || {})[card.dataset.title] || '';
+        fieldResumo.style.borderColor = '';
+      }
+      // Só quem gerencia a classe define o que exige comprovação.
+      if(reqExigirRow) reqExigirRow.style.display = canManageStudents(currentClass) ? '' : 'none';
+      if(reqExigirToggle) reqExigirToggle.checked = exigeComprovacao(currentClass, card.dataset.title);
+      applyExigenciaUI();
+
       statusPickOverlay.classList.add('show');
     }
+
+    if(reqExigirToggle){
+      reqExigirToggle.addEventListener('change', async () => {
+        if(!statusPickCard) return;
+        const classe = currentClass;
+        const titulo = statusPickCard.dataset.title;
+        const key = requisitoKey(classe, titulo);
+        if(reqExigirToggle.checked) REQUISITOS_COMPROVACAO.add(key); else REQUISITOS_COMPROVACAO.delete(key);
+        applyExigenciaUI();
+        applyStudentProgressToCards();
+        if(supa){
+          const { error } = reqExigirToggle.checked
+            ? await supa.from('requisitos_comprovacao').upsert({
+                classe: classe, requisito_titulo: titulo,
+                criado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
+              })
+            : await supa.from('requisitos_comprovacao').delete().eq('classe', classe).eq('requisito_titulo', titulo);
+          if(error) console.error('Erro ao salvar exigência de comprovação:', error.message);
+        }
+      });
+    }
+    if(fieldResumo) fieldResumo.addEventListener('input', () => { fieldResumo.style.borderColor = ''; });
     statusPickClose.addEventListener('click', () => statusPickOverlay.classList.remove('show'));
     statusPickOverlay.addEventListener('click', (e) => { if(e.target === statusPickOverlay) statusPickOverlay.classList.remove('show'); });
     // Cada requisito marcado como "Concluída" gera 3 pontos pra unidade do
@@ -13804,8 +14192,23 @@
         if(!CLASS_PROGRESS[currentClass][selectedStudent]) CLASS_PROGRESS[currentClass][selectedStudent] = {};
         const status = btn.getAttribute('data-status');
         const requisitoTitulo = statusPickCard.dataset.title;
+        const resumo = fieldResumo ? fieldResumo.value.trim() : '';
+
+        // Requisito marcado como "exige comprovação" não fecha sem o resumo do
+        // que foi feito — é o que sustenta a ficha na hora da investidura.
+        if(status === 'done' && exigeComprovacao(currentClass, requisitoTitulo) && !resumo){
+          if(fieldResumo){
+            fieldResumo.style.borderColor = '#FF6B5C';
+            fieldResumo.focus();
+          }
+          if(resumoHint) resumoHint.textContent = 'Escreva um resumo do que foi feito pra poder concluir este requisito.';
+          return;
+        }
+
         const previousStatus = CLASS_PROGRESS[currentClass][selectedStudent][requisitoTitulo] || 'todo';
         CLASS_PROGRESS[currentClass][selectedStudent][requisitoTitulo] = status;
+        if(!CLASS_RESUMOS[currentClass][selectedStudent]) CLASS_RESUMOS[currentClass][selectedStudent] = {};
+        CLASS_RESUMOS[currentClass][selectedStudent][requisitoTitulo] = resumo;
         applyStudentProgressToCards();
         updateHubCounts();
         statusPickOverlay.classList.remove('show');
@@ -13813,7 +14216,7 @@
         const desbravadorId = STUDENT_IDS[currentClass] && STUDENT_IDS[currentClass][selectedStudent];
         if(supa && desbravadorId){
           const { error } = await supa.from('progresso_requisitos')
-            .upsert({ desbravador_id: desbravadorId, requisito_titulo: requisitoTitulo, status }, { onConflict: 'desbravador_id,requisito_titulo' });
+            .upsert({ desbravador_id: desbravadorId, requisito_titulo: requisitoTitulo, status, resumo: resumo || null }, { onConflict: 'desbravador_id,requisito_titulo' });
           if(error) console.error('Erro ao salvar progresso:', error.message);
 
           if(status === 'done' && previousStatus !== 'done'){
@@ -14240,34 +14643,37 @@
     // sem esse escopo, updateClassCount() via n===0 apagava os grupos deles.
     document.querySelectorAll('#view-classes .pl-month-group').forEach(g => { updateClassCount(g); regroupByArea(g); });
     window.__clShowHub = showHub;
+    // Repinta o que depende do papel (botão de + Aluno, lápis de editar) sem
+    // precisar sair e voltar na classe — usado pelo modo "Ver como".
+    window.__clRefreshPermissions = function(){
+      if(!currentClass) return;
+      renderStudentBar(currentClass);
+      applyStudentProgressToCards();
+    };
+    loadRequisitosComprovacao();
     loadClassDataFromSupabase();
 
     // Classe Agrupada — filtro por idade (ver CSS .cl-age-filter). Cada requisito
     // guarda em data-ages as idades pra quem ele conta (ex.: "13,14,15" = conta
-    // pra quem tem 13, 14 ou 15+ anos); o filtro só alterna display:none, então
-    // regroupByArea()/updateClassCount() continuam contando o total real de
-    // cards — o rótulo "N atividades" do grupo é atualizado à parte aqui, com
-    // o total realmente visível pra idade escolhida.
+    // pra quem tem 13, 14 ou 15+ anos); esconder é só ligar a classe
+    // .cl-hide-age, então regroupByArea()/updateClassCount() continuam contando
+    // o total real de cards e o filtro de busca/status (.cl-hide-filter) pode
+    // conviver com este sem um apagar a decisão do outro.
     (function(){
       const ageFilterEl = document.getElementById('clAgeFilter');
       const agrupadaGroup = document.getElementById('clGroup-ClasseAgrupada');
       if(!ageFilterEl || !agrupadaGroup) return;
       const ageBtns = Array.from(ageFilterEl.querySelectorAll('.cl-age-btn'));
-      const countEl = agrupadaGroup.querySelector('.pl-month-count');
       const STORAGE_KEY = 'cedros_agrupada_age';
 
       function applyAge(age){
         const ageStr = String(age);
-        const cards = agrupadaGroup.querySelectorAll('.cl-activity-card');
-        let visible = 0;
-        cards.forEach(card => {
+        agrupadaGroup.querySelectorAll('.cl-activity-card').forEach(card => {
           const ages = (card.dataset.ages || '').split(',');
-          const match = ages.includes(ageStr);
-          card.style.display = match ? '' : 'none';
-          if(match) visible++;
+          card.classList.toggle('cl-hide-age', !ages.includes(ageStr));
         });
         ageBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.age === ageStr));
-        if(countEl) countEl.textContent = visible === 1 ? '1 atividade' : visible + ' atividades';
+        updateGroupVisibleCount(agrupadaGroup);
         try { localStorage.setItem(STORAGE_KEY, ageStr); } catch(e){}
       }
 
@@ -17144,11 +17550,104 @@
       updateDashboardWidgets();
     }
 
+    // ---- Avisar no sino aniversariantes até a próxima Reunião Regular ----
+    // Configuração única (id 'default') em notificacao_aniversario_reuniao;
+    // ligar/desligar é restrito à liderança (qualquer papel exceto
+    // Desbravador, o próprio membro do clube). O sino (IIFE da Agenda Anual,
+    // ver collectDueReminders) chama window.__btGetBirthdayReminder() a cada
+    // atualização — sem card real na Agenda, por isso o item sintético lá.
+    const notifyRow = document.getElementById('btNotifyReuniaoRow');
+    const notifyToggle = document.getElementById('btNotifyReuniaoToggle');
+    const notifyHint = document.getElementById('btNotifyReuniaoHint');
+    let notifyConfig = { ativo: false, confirmadoEventoId: null };
+
+    function applyNotifyRowVisibility(){
+      const canManage = !!(window.__currentUsuario && window.__currentUsuario.papel !== 'Desbravador');
+      if(notifyRow) notifyRow.style.display = canManage ? '' : 'none';
+      if(notifyHint) notifyHint.style.display = canManage ? '' : 'none';
+    }
+
+    async function loadNotifyConfig(){
+      if(!supa) return;
+      const { data, error } = await supa.from('notificacao_aniversario_reuniao').select('ativo, confirmado_evento_id').eq('id', 'default').maybeSingle();
+      if(error){ console.error('Erro ao carregar aviso de aniversariantes:', error.message); return; }
+      notifyConfig = { ativo: !!(data && data.ativo), confirmadoEventoId: data ? data.confirmado_evento_id : null };
+      if(notifyToggle) notifyToggle.checked = notifyConfig.ativo;
+      if(window.__plRefreshReminderBell) window.__plRefreshReminderBell();
+    }
+
+    if(notifyToggle){
+      notifyToggle.addEventListener('change', async () => {
+        notifyConfig.ativo = notifyToggle.checked;
+        if(supa){
+          const { error } = await supa.from('notificacao_aniversario_reuniao').update({ ativo: notifyConfig.ativo }).eq('id', 'default');
+          if(error) console.error('Erro ao salvar aviso de aniversariantes:', error.message);
+        }
+        if(window.__plRefreshReminderBell) window.__plRefreshReminderBell();
+      });
+    }
+
+    // Acha, entre os cards já carregados da Agenda Anual (tag "Reunião" =
+    // Reunião Regular de verdade), a próxima data futura — sem precisar de
+    // consulta separada, reaproveitando o mesmo DOM que o sino já lê.
+    function findNextReuniao(today){
+      const cards = Array.from(document.querySelectorAll('.pl-event-card[data-tag-label="Reunião"]'));
+      const year = today.getFullYear();
+      let best = null;
+      cards.forEach(c => {
+        const monIdx = parseInt(c.dataset.monIndex, 10);
+        const day = parseInt(c.dataset.day, 10);
+        if(!monIdx || !day) return;
+        const date = new Date(year, monIdx - 1, day);
+        if(date >= today && (!best || date < best.date)){
+          best = { id: c.dataset.id, date: date, day: c.dataset.day, monAbbr: c.dataset.monAbbr };
+        }
+      });
+      return best;
+    }
+
+    function upcomingBirthdaysInRange(fromDate, toDate){
+      const year = fromDate.getFullYear();
+      return roster
+        .map(m => { const p = birthdayParts(m.data_nascimento); return { nome: m.nome, date: new Date(year, p.month - 1, p.day) }; })
+        .filter(m => !isNaN(m.date) && m.date >= fromDate && m.date <= toDate)
+        .sort((a, b) => a.date - b.date);
+    }
+
+    function getBirthdayReminder(){
+      if(!notifyConfig.ativo) return null;
+      const todayNow = new Date(); todayNow.setHours(0, 0, 0, 0);
+      const meeting = findNextReuniao(todayNow);
+      if(!meeting || !meeting.id || meeting.id === notifyConfig.confirmadoEventoId) return null;
+      const names = upcomingBirthdaysInRange(todayNow, meeting.date).map(m => (m.nome || '').split(' ')[0]);
+      if(!names.length) return null;
+      return {
+        meetingId: meeting.id,
+        title: 'Aniversariantes',
+        msg: (names.length === 1 ? names[0] + ' faz aniversário' : names.join(', ') + ' fazem aniversário') + ' até a próxima reunião 🎂',
+        day: meeting.day, monAbbr: meeting.monAbbr
+      };
+    }
+    window.__btGetBirthdayReminder = getBirthdayReminder;
+
+    async function confirmBirthdayReminder(meetingId){
+      notifyConfig.confirmadoEventoId = meetingId;
+      if(supa){
+        const { error } = await supa.from('notificacao_aniversario_reuniao').update({
+          confirmado_evento_id: meetingId, confirmado_em: new Date().toISOString()
+        }).eq('id', 'default');
+        if(error) console.error('Erro ao confirmar aviso de aniversariantes:', error.message);
+      }
+    }
+    window.__btConfirmBirthdayReminder = confirmBirthdayReminder;
+
     monthSelect.addEventListener('change', () => { selectedMonth = parseInt(monthSelect.value, 10); render(); });
-    document.addEventListener('cedros:loggedin', updateDashboardWidgets);
+    document.addEventListener('cedros:loggedin', () => { updateDashboardWidgets(); applyNotifyRowVisibility(); });
 
     populateMonths();
     loadRoster();
+    loadNotifyConfig();
+    applyNotifyRowVisibility();
   })();
 
   // Manual de Especialidades — base local de referência + busca
@@ -19418,6 +19917,107 @@ const REQ_SUMMARIES = {
     }, { onConflict: 'email', ignoreDuplicates: true });
     showView('view-success');
   }, 'signupAuthError');
+
+  // ---------------------------------------------------------------------
+  // Modo "Ver como": só pra Administrador, troca o papel (e o cartão, quando
+  // for Coordenador de Classes) apenas nesta sessão do navegador, pra dar pra
+  // conferir as permissões sem criar conta nem alterar nada no banco. As telas
+  // que dependem do papel já escutam o evento cedros:loggedin, então basta
+  // reemiti-lo com o usuário simulado. Sair recarrega a página — como nada foi
+  // gravado, o app volta sozinho ao acesso real (fechar o app também sai).
+  // ---------------------------------------------------------------------
+  (function(){
+    const overlay = document.getElementById('vcOverlay');
+    const openBtn = document.getElementById('vcOpenBtn');
+    const heading = document.getElementById('vcHeading');
+    const hint = document.getElementById('vcHint');
+    const closeBtn = document.getElementById('vcClose');
+    const roleSelect = document.getElementById('vcRole');
+    const classeWrap = document.getElementById('vcClasseWrap');
+    const classeSelect = document.getElementById('vcClasse');
+    const startBtn = document.getElementById('vcStartBtn');
+    const banner = document.getElementById('vcBanner');
+    const bannerRole = document.getElementById('vcBannerRole');
+    const bannerExit = document.getElementById('vcBannerExit');
+    if(!overlay || !openBtn || !banner) return;
+
+    let usuarioReal = null; // quem está de fato logado, enquanto o modo estiver ligado
+
+    function ehAdminDeVerdade(){
+      const u = usuarioReal || window.__currentUsuario;
+      return !!(u && u.papel === 'Administrador');
+    }
+
+    function applyOpenBtnVisibility(){
+      const mostra = ehAdminDeVerdade() && !usuarioReal;
+      [heading, hint, openBtn].forEach(el => { if(el) el.style.display = mostra ? '' : 'none'; });
+    }
+    document.addEventListener('cedros:loggedin', applyOpenBtnVisibility);
+    applyOpenBtnVisibility();
+
+    async function preencherPapeis(){
+      if(!roleSelect) return;
+      let nomes = [];
+      if(supa){
+        const { data } = await supa.from('papeis').select('nome');
+        nomes = (data || []).map(p => p.nome);
+      }
+      if(!nomes.length) nomes = Object.keys(window.__ROLE_VISIBILITY || {});
+      roleSelect.innerHTML = '';
+      nomes.filter(n => n !== 'Administrador').forEach(nome => {
+        const opt = document.createElement('option');
+        opt.value = nome; opt.textContent = nome;
+        roleSelect.appendChild(opt);
+      });
+      applyClasseVisibility();
+    }
+
+    function applyClasseVisibility(){
+      if(classeWrap) classeWrap.style.display = (roleSelect && roleSelect.value === 'Coordenador de Classes') ? '' : 'none';
+    }
+    if(roleSelect) roleSelect.addEventListener('change', applyClasseVisibility);
+
+    openBtn.addEventListener('click', async () => {
+      if(!ehAdminDeVerdade()) return;
+      await preencherPapeis();
+      overlay.classList.add('show');
+    });
+    if(closeBtn) closeBtn.addEventListener('click', () => overlay.classList.remove('show'));
+    overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.classList.remove('show'); });
+
+    async function aplicarAcessoDoPapel(papel, nome){
+      let acesso = null;
+      if(supa){
+        const { data } = await supa.rpc('permissoes_padrao_papel', { papel_nome: papel });
+        acesso = data;
+      }
+      if(!acesso || !Object.keys(acesso).length) acesso = (window.__ROLE_VISIBILITY && window.__ROLE_VISIBILITY[papel]) || {};
+      if(window.__applyAccessToDashboard) window.__applyAccessToDashboard(acesso, nome);
+    }
+
+    startBtn.addEventListener('click', async () => {
+      if(!ehAdminDeVerdade() || !window.__currentUsuario) return;
+      const papel = roleSelect.value;
+      if(!papel) return;
+      usuarioReal = Object.assign({}, window.__currentUsuario);
+      window.__currentUsuario = Object.assign({}, usuarioReal, {
+        papel: papel,
+        classeCoordenada: papel === 'Coordenador de Classes' ? (classeSelect.value || null) : null,
+        podePontuarUnidades: false
+      });
+
+      overlay.classList.remove('show');
+      bannerRole.textContent = papel + (window.__currentUsuario.classeCoordenada ? ' · ' + window.__currentUsuario.classeCoordenada : '');
+      banner.style.display = '';
+      applyOpenBtnVisibility();
+
+      await aplicarAcessoDoPapel(papel, usuarioReal.nome);
+      document.dispatchEvent(new CustomEvent('cedros:loggedin', { detail: window.__currentUsuario }));
+      if(window.__clRefreshPermissions) window.__clRefreshPermissions();
+    });
+
+    bannerExit.addEventListener('click', () => { window.location.reload(); });
+  })();
 
   // Esqueci a senha: envia o e-mail de recuperação do Supabase (usa o e-mail já digitado no campo de login)
   const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
