@@ -1686,6 +1686,50 @@
   .cl-hub-row-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:7px; }
   .cl-hub-row-name{ font-size:14.5px; font-weight:800; color:var(--cream); line-height:1.28; }
   .cl-hub-row-progress{ display:flex; align-items:center; gap:9px; }
+  /* Rosca de situação dos requisitos, na tela de Rendimento das Classes. */
+  .cl-donut-card{
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+    border-radius:16px; padding:14px; margin:14px 0 20px;
+  }
+  .cl-donut-select{ margin-bottom:14px; }
+  .cl-donut-wrap{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .cl-donut{ position:relative; width:118px; height:118px; flex-shrink:0; }
+  .cl-donut svg{ width:100%; height:100%; transform:rotate(-90deg); }
+  .cl-donut-trilho{ fill:none; stroke:rgba(255,255,255,0.07); stroke-width:5; }
+  .cl-donut-arco{
+    fill:none; stroke-width:5; stroke-linecap:butt;
+    transition:stroke-dasharray .45s ease, stroke-dashoffset .45s ease;
+  }
+  #clDonutDone{ stroke:var(--accent); }
+  #clDonutProgress{ stroke:var(--gold); }
+  #clDonutTodo{ stroke:#9AA3A0; }
+  .cl-donut-centro{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:1px; pointer-events:none;
+  }
+  .cl-donut-centro em{ font-style:normal; font-size:10px; font-weight:700; color:rgba(245,239,225,0.5); }
+  .cl-donut-centro b{ font-size:21px; font-weight:900; color:var(--cream); line-height:1; }
+  .cl-donut-legenda{ flex:1; min-width:150px; display:flex; flex-direction:column; gap:11px; }
+  .cl-donut-item{ display:flex; align-items:flex-start; gap:8px; }
+  .cl-donut-marca{ width:4px; height:30px; border-radius:3px; flex-shrink:0; margin-top:1px; }
+  .cl-donut-item b{ display:block; font-size:11.5px; font-weight:800; color:rgba(245,239,225,0.82); }
+  .cl-donut-item span{ display:block; font-size:12.5px; font-weight:900; color:var(--cream); margin-top:1px; }
+  .cl-donut-item i{ font-style:normal; font-weight:700; font-size:11px; color:rgba(245,239,225,0.45); margin-left:4px; }
+  .cl-donut-nota{ margin:12px 0 0; font-size:11px; color:rgba(245,239,225,0.45); line-height:1.45; }
+  .cl-req-pct-row{ display:flex; align-items:center; gap:10px; }
+  .cl-req-pct-body{ flex:1; min-width:0; }
+  .cl-req-pct-top{ display:flex; justify-content:space-between; gap:10px; margin-bottom:5px; }
+  .cl-req-pct-nome{
+    font-size:11.5px; font-weight:800; color:rgba(245,239,225,0.82);
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .cl-req-pct-val{ font-size:11.5px; font-weight:900; color:var(--cream); flex-shrink:0; }
+  .cl-req-pct-val em{ font-style:normal; font-weight:700; color:rgba(245,239,225,0.45); }
+  .cl-req-pct-bar{ display:block; width:100%; height:5px; border-radius:4px; background:rgba(255,255,255,0.1); overflow:hidden; }
+  .cl-req-pct-fill{ display:block; height:100%; border-radius:4px; background:var(--accent); transition:width .35s ease; }
+  .cl-req-pct-fill.parcial{ background:var(--gold); }
+  .cl-req-pct-fill.zero{ background:#9AA3A0; }
+
   .cl-hub-row-bar{ flex:1; height:5px; border-radius:4px; background:rgba(255,255,255,0.1); overflow:hidden; }
   .cl-hub-row-bar-fill{ display:block; height:100%; border-radius:4px; background:var(--accent); transition:width .35s ease; }
   .cl-hub-row-count{ font-size:10.5px; font-weight:700; color:rgba(245,239,225,0.5); flex-shrink:0; white-space:nowrap; }
@@ -8342,6 +8386,34 @@
         </div>
         <div class="pl-dayview-list-wrap">
           <p class="sp-disclaimer" style="margin-top:14px;">Quem mais avançou nos requisitos de cada classe, por % concluído.</p>
+
+          <!-- Rosca do cartão escolhido: cada requisito de cada aluno é uma
+               marcação, repartida entre concluída / em andamento / não iniciada.
+               Abaixo dela, cada requisito com o % de alunos que já concluíram. -->
+          <div class="cl-donut-card">
+            <select class="pl-input cl-donut-select" id="clRankClassSelect" aria-label="Cartão"></select>
+            <div class="cl-donut-wrap">
+              <div class="cl-donut">
+                <svg viewBox="0 0 42 42" role="img" aria-label="Situação dos requisitos">
+                  <circle class="cl-donut-trilho" cx="21" cy="21" r="15.915"></circle>
+                  <circle class="cl-donut-arco" id="clDonutDone" cx="21" cy="21" r="15.915"></circle>
+                  <circle class="cl-donut-arco" id="clDonutProgress" cx="21" cy="21" r="15.915"></circle>
+                  <circle class="cl-donut-arco" id="clDonutTodo" cx="21" cy="21" r="15.915"></circle>
+                </svg>
+                <span class="cl-donut-centro">
+                  <em>Total</em>
+                  <b id="clDonutTotal">0</b>
+                </span>
+              </div>
+              <div class="cl-donut-legenda" id="clDonutLegenda"></div>
+            </div>
+            <p class="cl-donut-nota" id="clDonutNota"></p>
+          </div>
+
+          <h4 class="un-section-title">Requisitos por % concluído</h4>
+          <div id="clRankReqList" style="display:flex; flex-direction:column; gap:9px; margin-bottom:20px;"></div>
+          <p class="un-empty-hint" id="clRankReqEmpty" style="display:none;">Cadastre alunos neste cartão pra ver o rendimento por requisito.</p>
+
           <h4 class="un-section-title">Rendimento médio por classe</h4>
           <div id="clRankSummary" style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;"></div>
           <div id="clRankBlocks"></div>
@@ -13735,7 +13807,158 @@
       });
     }
 
+    // ---- Rosca de situação + requisitos em % (do cartão escolhido) ----
+    const donutSelect = document.getElementById('clRankClassSelect');
+    const donutLegenda = document.getElementById('clDonutLegenda');
+    const donutTotalEl = document.getElementById('clDonutTotal');
+    const donutNota = document.getElementById('clDonutNota');
+    const donutArcos = {
+      done: document.getElementById('clDonutDone'),
+      progress: document.getElementById('clDonutProgress'),
+      todo: document.getElementById('clDonutTodo')
+    };
+    const reqPctList = document.getElementById('clRankReqList');
+    const reqPctEmpty = document.getElementById('clRankReqEmpty');
+
+    const DONUT_SITUACOES = [
+      { chave: 'done', label: 'Concluída', cor: 'var(--accent)' },
+      { chave: 'progress', label: 'Em andamento', cor: 'var(--gold)' },
+      { chave: 'todo', label: 'Não iniciada', cor: '#9AA3A0' }
+    ];
+
+    // Cada requisito de cada aluno é uma marcação: num cartão de 34 requisitos
+    // com 8 alunos são 272 marcações, repartidas entre as três situações.
+    function computeClassStats(className){
+      const group = findClassGroup(className);
+      const cards = group ? Array.from(group.querySelectorAll('.cl-activity-card')) : [];
+      const students = CLASS_STUDENTS[className] || [];
+      const progress = CLASS_PROGRESS[className] || {};
+      const contagem = { done: 0, progress: 0, todo: 0 };
+      const porRequisito = cards.map(card => {
+        const titulo = card.dataset.title;
+        let concluiram = 0;
+        students.forEach(nome => {
+          const st = (progress[nome] || {})[titulo] || 'todo';
+          if(st === 'done'){ concluiram++; contagem.done++; }
+          else if(st === 'progress'){ contagem.progress++; }
+          else { contagem.todo++; }
+        });
+        return {
+          titulo: titulo,
+          concluiram: concluiram,
+          alunos: students.length,
+          pct: students.length ? Math.round((concluiram / students.length) * 100) : 0
+        };
+      });
+      return {
+        contagem: contagem,
+        porRequisito: porRequisito,
+        requisitos: cards.length,
+        alunos: students.length,
+        total: cards.length * students.length
+      };
+    }
+
+    // A circunferência do círculo vale 100, então cada fatia é o próprio %.
+    function renderDonut(stats){
+      const total = stats.total;
+      let inicio = 0;
+      DONUT_SITUACOES.forEach(sit => {
+        const arco = donutArcos[sit.chave];
+        if(!arco) return;
+        const fatia = total ? (stats.contagem[sit.chave] / total) * 100 : 0;
+        arco.setAttribute('stroke-dasharray', fatia + ' ' + (100 - fatia));
+        arco.setAttribute('stroke-dashoffset', String(-inicio));
+        inicio += fatia;
+      });
+      if(donutTotalEl) donutTotalEl.textContent = total;
+      if(donutLegenda){
+        donutLegenda.innerHTML = '';
+        DONUT_SITUACOES.forEach(sit => {
+          const qtd = stats.contagem[sit.chave];
+          const pct = total ? Math.round((qtd / total) * 100) : 0;
+          const item = document.createElement('div');
+          item.className = 'cl-donut-item';
+          item.innerHTML = '<span class="cl-donut-marca"></span><span><b></b><span></span></span>';
+          item.querySelector('.cl-donut-marca').style.background = sit.cor;
+          item.querySelector('b').textContent = sit.label;
+          item.querySelector('span > span').innerHTML = qtd + '<i>' + pct + '%</i>';
+          donutLegenda.appendChild(item);
+        });
+      }
+      if(donutNota){
+        donutNota.textContent = stats.alunos
+          ? stats.requisitos + ' requisitos × ' + stats.alunos + (stats.alunos === 1 ? ' aluno' : ' alunos')
+          : 'Nenhum aluno neste cartão ainda.';
+      }
+    }
+
+    function renderRequisitosPct(stats){
+      if(!reqPctList) return;
+      reqPctList.innerHTML = '';
+      if(!stats.alunos){
+        if(reqPctEmpty) reqPctEmpty.style.display = '';
+        return;
+      }
+      if(reqPctEmpty) reqPctEmpty.style.display = 'none';
+      stats.porRequisito.forEach(req => {
+        const row = document.createElement('div');
+        row.className = 'cl-req-pct-row';
+        row.innerHTML =
+          '<span class="cl-req-pct-body">' +
+            '<span class="cl-req-pct-top"><span class="cl-req-pct-nome"></span>' +
+            '<span class="cl-req-pct-val"></span></span>' +
+            '<span class="cl-req-pct-bar"><span class="cl-req-pct-fill" style="width:0%"></span></span>' +
+          '</span>';
+        row.querySelector('.cl-req-pct-nome').textContent = req.titulo;
+        row.querySelector('.cl-req-pct-val').innerHTML =
+          req.pct + '% <em>(' + req.concluiram + '/' + req.alunos + ')</em>';
+        const fill = row.querySelector('.cl-req-pct-fill');
+        fill.style.width = req.pct + '%';
+        // Verde quando todo mundo concluiu, dourado no meio do caminho, cinza no zero.
+        fill.className = 'cl-req-pct-fill' + (req.pct === 0 ? ' zero' : (req.pct < 100 ? ' parcial' : ''));
+        reqPctList.appendChild(row);
+      });
+    }
+
+    // O cartão que abre por padrão é o do Coordenador; os demais papéis caem no
+    // primeiro cartão que já tem aluno cadastrado.
+    function cartaoPadraoDoDonut(){
+      const u = window.__currentUsuario || {};
+      if(u.classeCoordenada && REGULAR_CLASSES.indexOf(u.classeCoordenada) !== -1) return u.classeCoordenada;
+      const comAluno = REGULAR_CLASSES.filter(c => (CLASS_STUDENTS[c] || []).length);
+      return comAluno[0] || REGULAR_CLASSES[0];
+    }
+
+    function renderDonutArea(className){
+      if(!className) return;
+      const stats = computeClassStats(className);
+      renderDonut(stats);
+      renderRequisitosPct(stats);
+    }
+
+    function populateDonutSelect(){
+      if(!donutSelect) return;
+      const anterior = donutSelect.value;
+      donutSelect.innerHTML = '';
+      REGULAR_CLASSES.forEach(className => {
+        const opt = document.createElement('option');
+        opt.value = className;
+        opt.textContent = className;
+        donutSelect.appendChild(opt);
+      });
+      const escolhido = (anterior && REGULAR_CLASSES.indexOf(anterior) !== -1)
+        ? anterior : cartaoPadraoDoDonut();
+      donutSelect.value = escolhido;
+      return escolhido;
+    }
+
+    if(donutSelect){
+      donutSelect.addEventListener('change', () => renderDonutArea(donutSelect.value));
+    }
+
     function renderClassRanking(){
+      renderDonutArea(populateDonutSelect());
       renderRendimentoSummary();
       if(!rankBlocks) return;
       rankBlocks.innerHTML = '';
@@ -15243,11 +15466,22 @@
       fields.desenvolvimento.value = row.texto;
     });
 
+    // O overlay é `position:absolute` dentro de uma <section class="view">, e
+    // view que não está ativa fica com opacity:0 e pointer-events:none. Como
+    // este formulário também é aberto pela área Planejamento de Classes (outra
+    // view), ele precisa se mudar pra view que está na tela — senão abre
+    // invisível, atrás do que o usuário está vendo.
+    function levarParaViewAtiva(){
+      const ativa = document.querySelector('.view.active');
+      if(ativa && overlay.parentElement !== ativa) ativa.appendChild(overlay);
+    }
+
     openBtn.addEventListener('click', () => {
       planningClass = window.__clGetCurrentClass ? window.__clGetCurrentClass() : null;
       if(!planningClass) return;
       populateRequisitoOptions(planningClass);
       openList();
+      levarParaViewAtiva();
       overlay.classList.add('show');
       loadPlans(planningClass);
     });
@@ -15260,6 +15494,7 @@
       planningClass = classe;
       populateRequisitoOptions(classe);
       populateInstrutorOptions(classe, plan);
+      levarParaViewAtiva();
       overlay.classList.add('show');
       loadPlans(classe);
       openForm(plan || null);
