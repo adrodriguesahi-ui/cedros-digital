@@ -10230,6 +10230,8 @@
         <label class="pl-field-label" for="cpReqTextoObservacao">Observação</label>
         <textarea class="pl-input pl-textarea" id="cpReqTextoObservacao" rows="3" placeholder="Recado do coordenador sobre este requisito"></textarea>
 
+        <p class="pl-reminder-hint" id="cpReqTextoLeitura" style="display:none;">Só o Coordenador desta classe (ou o Administrador) pode mudar este texto.</p>
+
         <div class="pl-modal-actions">
           <button type="button" class="pl-btn pl-btn-neutral" id="cpReqTextoReset">Restaurar original</button>
           <button type="button" class="pl-btn pl-btn-primary" id="cpReqTextoSalvar">Salvar</button>
@@ -14947,9 +14949,17 @@
     function handleActivityCardClick(card){
       if(selectedStudent){
         openStatusPick(card);
-      } else {
-        openModal('edit', card);
+        return;
       }
+      // Sem aluno escolhido, tocar no requisito abre o editor de texto, que
+      // grava em requisitos_personalizados. A tela "Editar Atividade" antiga só
+      // mexia no HTML da página, então tudo que se editava nela sumia no
+      // recarregamento — ela continua servindo o botão "+" de nova atividade.
+      if(window.__cpAbrirEditorDeTexto){
+        window.__cpAbrirEditorDeTexto(card.dataset.title, card.dataset.class || currentClass);
+        return;
+      }
+      openModal('edit', card);
     }
 
     const fieldTitle = document.getElementById('clFieldTitle');
@@ -15910,7 +15920,7 @@
         lapis.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
         lapis.addEventListener('click', (e) => {
           e.stopPropagation();
-          abrirEditorDeTexto(opts.requisito);
+          abrirEditorDeTexto(opts.requisito, classe);
         });
         row.appendChild(lapis);
       }
@@ -15984,6 +15994,7 @@
     const rtClose = document.getElementById('cpReqTextoClose');
     const rtSalvar = document.getElementById('cpReqTextoSalvar');
     const rtReset = document.getElementById('cpReqTextoReset');
+    const rtLeituraHint = document.getElementById('cpReqTextoLeitura');
     const rtCampos = {
       titulo: document.getElementById('cpReqTextoTitulo'),
       subtitulo: document.getElementById('cpReqTextoSubtitulo'),
@@ -15991,26 +16002,41 @@
       observacao: document.getElementById('cpReqTextoObservacao')
     };
     let rtRequisito = null;
+    // O editor também é aberto pela lista das Classes Regulares, que pode estar
+    // num cartão diferente do escolhido aqui — por isso a classe vem junto.
+    let rtClasse = null;
 
-    function descricaoDoCatalogo(titulo){
-      const card = document.querySelector('.cl-activity-card[data-class="' + CSS.escape(classe) + '"][data-title="' + CSS.escape(titulo) + '"]');
+    function descricaoDoCatalogo(classeAlvo, titulo){
+      const card = document.querySelector('.cl-activity-card[data-class="' + CSS.escape(classeAlvo) + '"][data-title="' + CSS.escape(titulo) + '"]');
       return card ? (card.dataset.desc || '') : '';
     }
 
-    async function abrirEditorDeTexto(titulo){
-      if(!canManageRoster(classe)) return;
+    function abrirEditorDeTexto(titulo, classeAlvo){
+      const alvo = classeAlvo || classe;
+      if(!alvo || !titulo) return;
       rtRequisito = titulo;
+      rtClasse = alvo;
       rtChave.textContent = titulo;
-      const atual = (window.__clTextoDoRequisito && window.__clTextoDoRequisito(classe, titulo)) || null;
+      const atual = (window.__clTextoDoRequisito && window.__clTextoDoRequisito(alvo, titulo)) || null;
       rtCampos.titulo.value = atual ? (atual.titulo || '') : '';
       rtCampos.subtitulo.value = atual ? (atual.subtitulo || '') : '';
       rtCampos.descricao.value = atual ? (atual.descricao || '') : '';
       rtCampos.observacao.value = atual ? (atual.observacao || '') : '';
       // Sem texto próprio ainda: já mostra a descrição do catálogo pra editar
       // em cima dela, em vez de obrigar a redigitar tudo.
-      if(!rtCampos.descricao.value) rtCampos.descricao.value = descricaoDoCatalogo(titulo);
+      if(!rtCampos.descricao.value) rtCampos.descricao.value = descricaoDoCatalogo(alvo, titulo);
+
+      // Quem não gerencia o cartão abre só pra ler.
+      const pode = canManageRoster(alvo);
+      Object.keys(rtCampos).forEach(k => { rtCampos[k].disabled = !pode; });
+      if(rtSalvar) rtSalvar.style.display = pode ? '' : 'none';
+      if(rtReset) rtReset.style.display = pode ? '' : 'none';
+      if(rtLeituraHint) rtLeituraHint.style.display = pode ? 'none' : '';
+
       rtOverlay.classList.add('show');
     }
+    // Usado pela lista de requisitos das Classes Regulares.
+    window.__cpAbrirEditorDeTexto = abrirEditorDeTexto;
 
     function fecharEditorDeTexto(){
       rtOverlay.classList.remove('show');
@@ -16020,10 +16046,10 @@
     if(rtClose) rtClose.addEventListener('click', fecharEditorDeTexto);
 
     if(rtSalvar) rtSalvar.addEventListener('click', async () => {
-      if(!rtRequisito || !supa) return;
+      if(!rtRequisito || !rtClasse || !supa) return;
       rtSalvar.disabled = true;
       const payload = {
-        classe: classe,
+        classe: rtClasse,
         requisito_titulo: rtRequisito,
         titulo: rtCampos.titulo.value.trim() || null,
         subtitulo: rtCampos.subtitulo.value.trim() || null,
@@ -16039,10 +16065,10 @@
     });
 
     if(rtReset) rtReset.addEventListener('click', async () => {
-      if(!rtRequisito || !supa) return;
+      if(!rtRequisito || !rtClasse || !supa) return;
       if(!confirm('Isso apaga o texto reescrito e volta ao original do catálogo. Continuar?')) return;
       const { error } = await supa.from('requisitos_personalizados').delete()
-        .eq('classe', classe).eq('requisito_titulo', rtRequisito);
+        .eq('classe', rtClasse).eq('requisito_titulo', rtRequisito);
       if(error){ alert('Não consegui restaurar: ' + error.message); return; }
       fecharEditorDeTexto();
       if(window.__clReloadTextosRequisitos) await window.__clReloadTextosRequisitos();
