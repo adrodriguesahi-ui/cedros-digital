@@ -904,3 +904,48 @@ create policy "missoes: acesso publico" on missoes
 drop policy if exists "missoes_concluidas: acesso publico" on missoes_concluidas;
 create policy "missoes_concluidas: acesso publico" on missoes_concluidas
   for all using (true) with check (true);
+
+-- ---------------------------------------------------------------------
+-- atividades_extras: tarefas extras que o(a) Coordenador(a) de Unidades
+-- cadastra na tela Pontuação de Unidades, além do ajuste manual de pontos
+-- que já existia. `unidade` nula = "geral": qualquer unidade pode concluir,
+-- cada uma na sua vez, de forma independente (por isso
+-- atividades_extras_concluidas guarda uma linha por unidade que concluiu,
+-- não uma só por atividade). `unidade` preenchida = restrita àquela
+-- unidade. Marcar como concluída gera um lançamento de verdade em
+-- unidade_pontos (unidade_ponto_id guarda o id desse lançamento, pra
+-- conseguir desfazer os dois juntos se a unidade desmarcar) — o Rank das
+-- Unidades reflete na hora, igual a qualquer outro ajuste de pontos.
+-- ---------------------------------------------------------------------
+create table if not exists atividades_extras (
+  id uuid primary key default gen_random_uuid(),
+  titulo text not null,
+  descricao text,
+  pontos int not null default 0,
+  unidade text,
+  ativa boolean not null default true,
+  criado_por text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists atividades_extras_concluidas (
+  id uuid primary key default gen_random_uuid(),
+  atividade_id uuid not null references atividades_extras(id) on delete cascade,
+  unidade text not null,
+  unidade_ponto_id uuid references unidade_pontos(id) on delete set null,
+  created_at timestamptz not null default now(),
+  unique (atividade_id, unidade)
+);
+
+create index if not exists atividades_extras_concluidas_atividade_idx on atividades_extras_concluidas(atividade_id);
+
+alter table atividades_extras enable row level security;
+alter table atividades_extras_concluidas enable row level security;
+
+drop policy if exists "atividades_extras: acesso publico" on atividades_extras;
+create policy "atividades_extras: acesso publico" on atividades_extras
+  for all using (true) with check (true);
+
+drop policy if exists "atividades_extras_concluidas: acesso publico" on atividades_extras_concluidas;
+create policy "atividades_extras_concluidas: acesso publico" on atividades_extras_concluidas
+  for all using (true) with check (true);
