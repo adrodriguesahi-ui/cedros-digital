@@ -9808,6 +9808,18 @@
           <span class="pl-topbar-spacer" aria-hidden="true"></span>
         </div>
         <div class="pl-content">
+          <label class="pl-reminder-toggle-row" for="btNotifyReuniaoToggle" id="btNotifyReuniaoRow" style="display:none;">
+            <span class="pl-reminder-toggle-text">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
+              Avisar no sino aniversariantes até a próxima reunião
+            </span>
+            <span class="pl-switch">
+              <input type="checkbox" id="btNotifyReuniaoToggle">
+              <span class="pl-switch-track"><span class="pl-switch-thumb"></span></span>
+            </span>
+          </label>
+          <p class="pl-reminder-hint" id="btNotifyReuniaoHint" style="display:none; margin:-10px 0 14px;">Quando ligado, o sino avisa quem faz aniversário até a próxima Reunião Regular da Agenda Anual — some sozinho depois de confirmado e volta a avisar pra cada reunião seguinte.</p>
+
           <label class="pl-field-label" style="margin-top:0;">Mês</label>
           <select class="pl-input" id="btMonthSelect" style="margin-bottom:14px;"></select>
           <div id="btContent">
@@ -12876,7 +12888,7 @@
     function collectDueReminders(){
       const today = new Date(); today.setHours(0,0,0,0);
       const cards = Array.from(document.querySelectorAll('.pl-event-card')).filter(c => c.dataset.reminderOn === '1' && c.dataset.reminderDate);
-      return cards
+      const due = cards
         .filter(c => isReminderCurrentlyDue(c, today))
         .map(c => ({
           card: c,
@@ -12888,6 +12900,21 @@
             ? Math.max(0, (parseInt(c.dataset.reminderRepeatCount, 10) || 0) - (parseInt(c.dataset.reminderConfirmedTimes, 10) || 0))
             : 0
         }));
+      // Aviso de aniversariantes até a próxima Reunião Regular — ligado em
+      // Aniversariantes (window.__btGetBirthdayReminder). Não tem card real
+      // na Agenda, então entra como item sintético (ver confirmReminderItem).
+      if(typeof window.__btGetBirthdayReminder === 'function'){
+        const b = window.__btGetBirthdayReminder();
+        if(b){
+          due.unshift({
+            card: { dataset: { local: '' } },
+            title: b.title, msg: b.msg, day: b.day, monAbbr: b.monAbbr,
+            repeatOn: false, timesLeft: 0,
+            isBirthday: true, meetingId: b.meetingId
+          });
+        }
+      }
+      return due;
     }
 
     async function confirmReminderRead(card){
@@ -12916,6 +12943,19 @@
       }
     }
 
+    // Item sintético de aniversariantes (ver window.__btGetBirthdayReminder,
+    // exposto pela IIFE de Aniversariantes) não tem card real na Agenda —
+    // confirmar ele salva em notificacao_aniversario_reuniao em vez de
+    // eventos_agenda. Usado pelo botão de cada card, "Marcar todos" e o banner.
+    async function confirmReminderItem(item){
+      if(item.isBirthday){
+        if(window.__btConfirmBirthdayReminder) await window.__btConfirmBirthdayReminder(item.meetingId);
+        refreshReminderBell();
+      } else {
+        await confirmReminderRead(item.card);
+      }
+    }
+
     function openRemindersPage(){
       renderRemindersPage(collectDueReminders());
       if(remindersOverlay) remindersOverlay.classList.add('show');
@@ -12923,6 +12963,10 @@
     function closeRemindersPage(){
       if(remindersOverlay) remindersOverlay.classList.remove('show');
     }
+
+    // Exposto pra Aniversariantes (ver window.__btGetBirthdayReminder) recalcular
+    // o sino assim que o aviso de aniversariantes for ligado/desligado/carregado.
+    window.__plRefreshReminderBell = function(){ refreshReminderBell(); };
 
     function refreshReminderBell(){
       if(!bellBtn) return;
@@ -12948,10 +12992,10 @@
           reminderBannerMsg.textContent = due[0].msg;
           reminderBanner.dataset.currentCard = '';
           reminderBanner.style.display = '';
-          window.__plCurrentBannerCard = due[0].card;
+          window.__plCurrentBannerItem = due[0];
         } else {
           reminderBanner.style.display = 'none';
-          window.__plCurrentBannerCard = null;
+          window.__plCurrentBannerItem = null;
         }
       }
     }
@@ -12981,7 +13025,7 @@
         card.querySelector('.bd-reminder-card-title').textContent = item.title;
         if(local) card.querySelector('.bd-reminder-card-meta span').textContent = local;
         card.querySelector('.bd-reminder-card-msg').textContent = item.msg;
-        card.querySelector('.bd-reminder-card-confirm').addEventListener('click', () => confirmReminderRead(item.card));
+        card.querySelector('.bd-reminder-card-confirm').addEventListener('click', () => confirmReminderItem(item));
         remindersList.appendChild(card);
       });
     }
@@ -12996,7 +13040,7 @@
     if(remindersClose) remindersClose.addEventListener('click', closeRemindersPage);
     if(remindersMarkAllBtn){
       remindersMarkAllBtn.addEventListener('click', () => {
-        collectDueReminders().forEach(item => confirmReminderRead(item.card));
+        collectDueReminders().forEach(item => confirmReminderItem(item));
       });
     }
 
@@ -13011,7 +13055,7 @@
         bannerConfirmBtn.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          if(window.__plCurrentBannerCard) confirmReminderRead(window.__plCurrentBannerCard);
+          if(window.__plCurrentBannerItem) confirmReminderItem(window.__plCurrentBannerItem);
         });
       }
     }
@@ -17144,11 +17188,104 @@
       updateDashboardWidgets();
     }
 
+    // ---- Avisar no sino aniversariantes até a próxima Reunião Regular ----
+    // Configuração única (id 'default') em notificacao_aniversario_reuniao;
+    // ligar/desligar é restrito à liderança (qualquer papel exceto
+    // Desbravador, o próprio membro do clube). O sino (IIFE da Agenda Anual,
+    // ver collectDueReminders) chama window.__btGetBirthdayReminder() a cada
+    // atualização — sem card real na Agenda, por isso o item sintético lá.
+    const notifyRow = document.getElementById('btNotifyReuniaoRow');
+    const notifyToggle = document.getElementById('btNotifyReuniaoToggle');
+    const notifyHint = document.getElementById('btNotifyReuniaoHint');
+    let notifyConfig = { ativo: false, confirmadoEventoId: null };
+
+    function applyNotifyRowVisibility(){
+      const canManage = !!(window.__currentUsuario && window.__currentUsuario.papel !== 'Desbravador');
+      if(notifyRow) notifyRow.style.display = canManage ? '' : 'none';
+      if(notifyHint) notifyHint.style.display = canManage ? '' : 'none';
+    }
+
+    async function loadNotifyConfig(){
+      if(!supa) return;
+      const { data, error } = await supa.from('notificacao_aniversario_reuniao').select('ativo, confirmado_evento_id').eq('id', 'default').maybeSingle();
+      if(error){ console.error('Erro ao carregar aviso de aniversariantes:', error.message); return; }
+      notifyConfig = { ativo: !!(data && data.ativo), confirmadoEventoId: data ? data.confirmado_evento_id : null };
+      if(notifyToggle) notifyToggle.checked = notifyConfig.ativo;
+      if(window.__plRefreshReminderBell) window.__plRefreshReminderBell();
+    }
+
+    if(notifyToggle){
+      notifyToggle.addEventListener('change', async () => {
+        notifyConfig.ativo = notifyToggle.checked;
+        if(supa){
+          const { error } = await supa.from('notificacao_aniversario_reuniao').update({ ativo: notifyConfig.ativo }).eq('id', 'default');
+          if(error) console.error('Erro ao salvar aviso de aniversariantes:', error.message);
+        }
+        if(window.__plRefreshReminderBell) window.__plRefreshReminderBell();
+      });
+    }
+
+    // Acha, entre os cards já carregados da Agenda Anual (tag "Reunião" =
+    // Reunião Regular de verdade), a próxima data futura — sem precisar de
+    // consulta separada, reaproveitando o mesmo DOM que o sino já lê.
+    function findNextReuniao(today){
+      const cards = Array.from(document.querySelectorAll('.pl-event-card[data-tag-label="Reunião"]'));
+      const year = today.getFullYear();
+      let best = null;
+      cards.forEach(c => {
+        const monIdx = parseInt(c.dataset.monIndex, 10);
+        const day = parseInt(c.dataset.day, 10);
+        if(!monIdx || !day) return;
+        const date = new Date(year, monIdx - 1, day);
+        if(date >= today && (!best || date < best.date)){
+          best = { id: c.dataset.id, date: date, day: c.dataset.day, monAbbr: c.dataset.monAbbr };
+        }
+      });
+      return best;
+    }
+
+    function upcomingBirthdaysInRange(fromDate, toDate){
+      const year = fromDate.getFullYear();
+      return roster
+        .map(m => { const p = birthdayParts(m.data_nascimento); return { nome: m.nome, date: new Date(year, p.month - 1, p.day) }; })
+        .filter(m => !isNaN(m.date) && m.date >= fromDate && m.date <= toDate)
+        .sort((a, b) => a.date - b.date);
+    }
+
+    function getBirthdayReminder(){
+      if(!notifyConfig.ativo) return null;
+      const todayNow = new Date(); todayNow.setHours(0, 0, 0, 0);
+      const meeting = findNextReuniao(todayNow);
+      if(!meeting || !meeting.id || meeting.id === notifyConfig.confirmadoEventoId) return null;
+      const names = upcomingBirthdaysInRange(todayNow, meeting.date).map(m => (m.nome || '').split(' ')[0]);
+      if(!names.length) return null;
+      return {
+        meetingId: meeting.id,
+        title: 'Aniversariantes',
+        msg: (names.length === 1 ? names[0] + ' faz aniversário' : names.join(', ') + ' fazem aniversário') + ' até a próxima reunião 🎂',
+        day: meeting.day, monAbbr: meeting.monAbbr
+      };
+    }
+    window.__btGetBirthdayReminder = getBirthdayReminder;
+
+    async function confirmBirthdayReminder(meetingId){
+      notifyConfig.confirmadoEventoId = meetingId;
+      if(supa){
+        const { error } = await supa.from('notificacao_aniversario_reuniao').update({
+          confirmado_evento_id: meetingId, confirmado_em: new Date().toISOString()
+        }).eq('id', 'default');
+        if(error) console.error('Erro ao confirmar aviso de aniversariantes:', error.message);
+      }
+    }
+    window.__btConfirmBirthdayReminder = confirmBirthdayReminder;
+
     monthSelect.addEventListener('change', () => { selectedMonth = parseInt(monthSelect.value, 10); render(); });
-    document.addEventListener('cedros:loggedin', updateDashboardWidgets);
+    document.addEventListener('cedros:loggedin', () => { updateDashboardWidgets(); applyNotifyRowVisibility(); });
 
     populateMonths();
     loadRoster();
+    loadNotifyConfig();
+    applyNotifyRowVisibility();
   })();
 
   // Manual de Especialidades — base local de referência + busca
