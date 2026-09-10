@@ -15243,11 +15243,22 @@
       fields.desenvolvimento.value = row.texto;
     });
 
+    // O overlay é `position:absolute` dentro de uma <section class="view">, e
+    // view que não está ativa fica com opacity:0 e pointer-events:none. Como
+    // este formulário também é aberto pela área Planejamento de Classes (outra
+    // view), ele precisa se mudar pra view que está na tela — senão abre
+    // invisível, atrás do que o usuário está vendo.
+    function levarParaViewAtiva(){
+      const ativa = document.querySelector('.view.active');
+      if(ativa && overlay.parentElement !== ativa) ativa.appendChild(overlay);
+    }
+
     openBtn.addEventListener('click', () => {
       planningClass = window.__clGetCurrentClass ? window.__clGetCurrentClass() : null;
       if(!planningClass) return;
       populateRequisitoOptions(planningClass);
       openList();
+      levarParaViewAtiva();
       overlay.classList.add('show');
       loadPlans(planningClass);
     });
@@ -15260,6 +15271,7 @@
       planningClass = classe;
       populateRequisitoOptions(classe);
       populateInstrutorOptions(classe, plan);
+      levarParaViewAtiva();
       overlay.classList.add('show');
       loadPlans(classe);
       openForm(plan || null);
