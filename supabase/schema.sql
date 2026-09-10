@@ -1128,3 +1128,8 @@ create policy p_subitens on requisito_subitens for all using(true) with check(tr
 
 drop policy if exists p_progsub on progresso_subitens;
 create policy p_progsub on progresso_subitens for all using(true) with check(true);
+
+-- Como o requisito é cumprido quando tem sub-itens: 'todos' (o padrão, precisa
+-- cumprir todos) ou 'um' (basta cumprir uma das alternativas — os requisitos do
+-- tipo "faça uma das seguintes"). Nulo vale como 'todos'.
+alter table requisitos_personalizados add column if not exists subitens_modo text;

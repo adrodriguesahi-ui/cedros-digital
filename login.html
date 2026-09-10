@@ -1686,6 +1686,10 @@
   .cl-hub-row-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:7px; }
   .cl-hub-row-name{ font-size:14.5px; font-weight:800; color:var(--cream); line-height:1.28; }
   .cl-hub-row-progress{ display:flex; align-items:center; gap:9px; }
+  /* Modo "um dos itens": a caixa vira redonda, como escolha única. */
+  .cl-sub-item.alternativa .cl-sub-caixa{ border-radius:50%; }
+  .cp-sub-modo{ margin-bottom:8px; }
+
   /* Andamento dos sub-itens, na linha do requisito. */
   .cl-sub-selo{
     flex-shrink:0; align-self:center; padding:3px 7px; border-radius:8px; margin-right:6px;
@@ -8548,7 +8552,7 @@
                status do requisito. Ver requisito_subitens no schema.sql. -->
           <div id="clSubitensBloco" style="display:none;">
             <div class="cl-sub-titulo">
-              <span>O que já cumpriu</span>
+              <span id="clSubTituloTexto">O que já cumpriu</span>
               <span class="cl-sub-contagem" id="clSubContagem"></span>
             </div>
             <div class="cl-sub-lista" id="clSubLista"></div>
@@ -10305,6 +10309,10 @@
           <label class="pl-field-label" for="cpReqTextoSubitens" style="margin:0;">Sub-itens</label>
           <button type="button" class="cp-sub-separar" id="cpReqTextoSepararBtn">Separar da descrição</button>
         </div>
+        <select class="pl-input cp-sub-modo" id="cpReqTextoModo" aria-label="Como o requisito é cumprido">
+          <option value="todos">Precisa cumprir todos os itens</option>
+          <option value="um">Basta cumprir um dos itens</option>
+        </select>
         <textarea class="pl-input pl-textarea" id="cpReqTextoSubitens" rows="5" placeholder="Um por linha. Ex.:&#10;a) Criação: o que Deus criou em cada dia&#10;b) 10 Pragas: quais caíram sobre o Egito"></textarea>
         <p class="cp-sub-hint" id="cpReqTextoSubHint">Deixe em branco se o requisito for único. Com sub-itens, o requisito fecha sozinho quando o desbravador cumprir todos.</p>
 
@@ -14357,6 +14365,13 @@
       return REQ_TEXTOS[requisitoKey(className, titulo)] || null;
     }
 
+    // 'um' = basta cumprir uma alternativa; 'todos' = precisa cumprir tudo.
+    function modoDosSubitens(className, titulo){
+      const t = textoDoRequisito(className, titulo);
+      return (t && t.modo === 'um') ? 'um' : 'todos';
+    }
+    window.__clModoSubitens = modoDosSubitens;
+
     // Título que aparece na tela: o reescrito quando existe, senão o do catálogo.
     function tituloExibicao(className, titulo){
       const t = textoDoRequisito(className, titulo);
@@ -14406,13 +14421,14 @@
     async function loadRequisitosPersonalizados(){
       if(!supa) return;
       const { data, error } = await supa.from('requisitos_personalizados')
-        .select('classe, requisito_titulo, titulo, subtitulo, descricao, observacao');
+        .select('classe, requisito_titulo, titulo, subtitulo, descricao, observacao, subitens_modo');
       if(error){ console.error('Erro ao carregar textos de requisitos:', error.message); return; }
       Object.keys(REQ_TEXTOS).forEach(k => delete REQ_TEXTOS[k]);
       (data || []).forEach(r => {
         REQ_TEXTOS[requisitoKey(r.classe, r.requisito_titulo)] = {
           titulo: r.titulo || '', subtitulo: r.subtitulo || '',
-          descricao: r.descricao || '', observacao: r.observacao || ''
+          descricao: r.descricao || '', observacao: r.observacao || '',
+          modo: r.subitens_modo === 'um' ? 'um' : 'todos'
         };
       });
       await loadSubitens();
@@ -14609,8 +14625,10 @@
 
         // Requisito com sub-itens mostra o andamento na própria lista.
         const subsDoCard = subitensDoRequisito(currentClass, card.dataset.title);
+        // No modo "um dos itens" a contagem não diz nada: o status já resolve.
+        const contaSubitens = modoDosSubitens(currentClass, card.dataset.title) !== 'um';
         let selo = card.querySelector('.cl-sub-selo');
-        if(subsDoCard.length && progressForStudent){
+        if(subsDoCard.length && progressForStudent && contaSubitens){
           const feitos = subsDoCard.filter(x => (SUB_FEITOS[x.id] || {}).feito).length;
           if(!selo){
             selo = document.createElement('span');
@@ -14789,12 +14807,15 @@
     const subBloco = document.getElementById('clSubitensBloco');
     const subLista = document.getElementById('clSubLista');
     const subContagem = document.getElementById('clSubContagem');
+    const subTituloTexto = document.getElementById('clSubTituloTexto');
     const subStatusHint = document.getElementById('clSubStatusHint');
     let subEmEdicao = null; // id do sub-item com o detalhe aberto
 
-    function statusPelosSubitens(subs){
-      const feitos = subs.filter(x => (SUB_FEITOS[x.id] || {}).feito).length;
+    function statusPelosSubitens(subs, modo){
       if(!subs.length) return null;
+      const feitos = subs.filter(x => (SUB_FEITOS[x.id] || {}).feito).length;
+      // No modo "um dos itens", cumprir uma alternativa já fecha o requisito.
+      if(modo === 'um') return feitos > 0 ? 'done' : 'todo';
       if(feitos === subs.length) return 'done';
       return feitos > 0 ? 'progress' : 'todo';
     }
@@ -14808,19 +14829,33 @@
         return;
       }
       subBloco.style.display = '';
+      const modo = modoDosSubitens(currentClass, card.dataset.title);
       const feitos = subs.filter(x => (SUB_FEITOS[x.id] || {}).feito).length;
-      subContagem.textContent = feitos + ' de ' + subs.length;
+      const escolhido = subs.find(x => (SUB_FEITOS[x.id] || {}).feito);
+
+      if(subTituloTexto){
+        subTituloTexto.textContent = modo === 'um' ? 'Escolha o que foi cumprido' : 'O que já cumpriu';
+      }
+      subContagem.textContent = modo === 'um'
+        ? (escolhido ? 'escolhido' : 'nenhum')
+        : (feitos + ' de ' + subs.length);
       if(subStatusHint){
-        subStatusHint.textContent = feitos === subs.length
-          ? 'Todos cumpridos — o requisito fica como Concluída.'
-          : 'O status abaixo acompanha os sub-itens marcados.';
+        if(modo === 'um'){
+          subStatusHint.textContent = escolhido
+            ? 'Uma alternativa basta — o requisito fica como Concluída.'
+            : 'Basta cumprir uma destas alternativas.';
+        } else {
+          subStatusHint.textContent = feitos === subs.length
+            ? 'Todos cumpridos — o requisito fica como Concluída.'
+            : 'O status abaixo acompanha os sub-itens marcados.';
+        }
       }
 
       subLista.innerHTML = '';
       subs.forEach(sub => {
         const estado = SUB_FEITOS[sub.id] || { feito: false, resumo: '' };
         const item = document.createElement('div');
-        item.className = 'cl-sub-item' + (estado.feito ? ' feito' : '');
+        item.className = 'cl-sub-item' + (estado.feito ? ' feito' : '') + (modo === 'um' ? ' alternativa' : '');
 
         const linha = document.createElement('div');
         linha.className = 'cl-sub-linha';
@@ -14908,22 +14943,37 @@
 
     async function marcarSubitem(card, sub, feito){
       const estado = SUB_FEITOS[sub.id] || { resumo: '' };
+      const modo = modoDosSubitens(currentClass, card.dataset.title);
+      const subs = subitensDoRequisito(currentClass, card.dataset.title);
       subEmEdicao = feito ? sub.id : null;
+
       const ok = await gravarSubitem(card, sub, feito, estado.resumo);
       if(!ok) return;
+
+      // "Um dos itens" é escolha única: marcar uma alternativa desmarca as outras.
+      if(modo === 'um' && feito){
+        for(const outro of subs){
+          if(outro.id !== sub.id && (SUB_FEITOS[outro.id] || {}).feito){
+            await gravarSubitem(card, outro, false, (SUB_FEITOS[outro.id] || {}).resumo);
+          }
+        }
+      }
       renderSubitens(card);
 
       // Marcar o último item conclui o requisito; desmarcar volta pra andamento.
-      const subs = subitensDoRequisito(currentClass, card.dataset.title);
-      let novo = statusPelosSubitens(subs);
+      let novo = statusPelosSubitens(subs, modo);
       // Requisito que exige comprovação só fecha com o resumo de cada sub-item —
       // mesma regra do requisito solto, aplicada item a item.
       if(novo === 'done' && exigeComprovacao(currentClass, card.dataset.title)){
-        const semResumo = subs.filter(x => !((SUB_FEITOS[x.id] || {}).resumo || '').trim());
+        // No modo "um", só a alternativa escolhida precisa do resumo.
+        const cobrar = modo === 'um' ? subs.filter(x => (SUB_FEITOS[x.id] || {}).feito) : subs;
+        const semResumo = cobrar.filter(x => !((SUB_FEITOS[x.id] || {}).resumo || '').trim());
         if(semResumo.length){
           novo = 'progress';
           if(subStatusHint){
-            subStatusHint.textContent = 'Este requisito exige comprovação: escreva o resumo de cada item pra ele fechar como Concluída.';
+            subStatusHint.textContent = modo === 'um'
+              ? 'Este requisito exige comprovação: escreva o resumo da alternativa escolhida pra ele fechar como Concluída.'
+              : 'Este requisito exige comprovação: escreva o resumo de cada item pra ele fechar como Concluída.';
           }
         }
       }
@@ -16350,6 +16400,7 @@
     const rtSubitens = document.getElementById('cpReqTextoSubitens');
     const rtSepararBtn = document.getElementById('cpReqTextoSepararBtn');
     const rtSubHint = document.getElementById('cpReqTextoSubHint');
+    const rtModo = document.getElementById('cpReqTextoModo');
     const rtCampos = {
       titulo: document.getElementById('cpReqTextoTitulo'),
       subtitulo: document.getElementById('cpReqTextoSubtitulo'),
@@ -16384,11 +16435,14 @@
       // Um sub-item por linha, na ordem em que estão salvos.
       const subs = (window.__clSubitens && window.__clSubitens(alvo, titulo)) || [];
       if(rtSubitens) rtSubitens.value = subs.map(x => x.texto).join('\n');
+      if(rtModo) rtModo.value = (window.__clModoSubitens && window.__clModoSubitens(alvo, titulo)) || 'todos';
+      atualizarDicaDoModo();
 
       // Quem não gerencia o cartão abre só pra ler.
       const pode = canManageRoster(alvo);
       Object.keys(rtCampos).forEach(k => { rtCampos[k].disabled = !pode; });
       if(rtSubitens) rtSubitens.disabled = !pode;
+      if(rtModo) rtModo.disabled = !pode;
       if(rtSepararBtn) rtSepararBtn.style.display = pode ? '' : 'none';
       if(rtSubHint) rtSubHint.style.display = pode ? '' : 'none';
       if(rtSalvar) rtSalvar.style.display = pode ? '' : 'none';
@@ -16441,6 +16495,14 @@
       rtSubitens.value = partes.join('\n');
     });
 
+    function atualizarDicaDoModo(){
+      if(!rtSubHint || !rtModo) return;
+      rtSubHint.textContent = rtModo.value === 'um'
+        ? 'Deixe em branco se o requisito for único. Aqui o desbravador escolhe uma das alternativas, e cumprir uma já conclui o requisito.'
+        : 'Deixe em branco se o requisito for único. Com sub-itens, o requisito fecha sozinho quando o desbravador cumprir todos.';
+    }
+    if(rtModo) rtModo.addEventListener('change', atualizarDicaDoModo);
+
     if(rtClose) rtClose.addEventListener('click', fecharEditorDeTexto);
 
     if(rtSalvar) rtSalvar.addEventListener('click', async () => {
@@ -16453,6 +16515,7 @@
         subtitulo: rtCampos.subtitulo.value.trim() || null,
         descricao: rtCampos.descricao.value.trim() || null,
         observacao: rtCampos.observacao.value.trim() || null,
+        subitens_modo: (rtModo && rtModo.value === 'um') ? 'um' : 'todos',
         atualizado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
       };
       const { error } = await supa.from('requisitos_personalizados').upsert(payload);
