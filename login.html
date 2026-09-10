@@ -16421,12 +16421,23 @@
     }
 
     if(rtSepararBtn) rtSepararBtn.addEventListener('click', () => {
-      const partes = separarEmSubitens(rtCampos.descricao.value);
+      // Separa a descrição; se ela estiver vazia (ou sem marcadores), tenta o
+      // que já está no próprio campo de sub-itens — é comum colar tudo ali numa
+      // linha só e querer quebrar depois.
+      const daDescricao = separarEmSubitens(rtCampos.descricao.value);
+      const doCampo = separarEmSubitens(rtSubitens.value);
+      const usarDescricao = daDescricao.length >= 2;
+      const partes = usarDescricao ? daDescricao : doCampo;
+
       if(partes.length < 2){
-        alert('Não achei itens separados nesta descrição. Escreva um por linha à mão.');
+        alert(rtCampos.descricao.value.trim() || rtSubitens.value.trim()
+          ? 'Não achei marcadores como "a)" ou "1." pra separar. Escreva um sub-item por linha à mão.'
+          : 'Escreva a descrição (ou cole os itens aqui embaixo) pra eu separar.');
         return;
       }
-      if(rtSubitens.value.trim() && !confirm('Isso substitui os sub-itens já escritos. Continuar?')) return;
+      // Só avisa quando vai mesmo sobrescrever algo que a pessoa escreveu à mão.
+      const jaSeparado = rtSubitens.value.trim().split('\n').filter(Boolean).length > 1;
+      if(usarDescricao && jaSeparado && !confirm('Isso substitui os sub-itens já escritos. Continuar?')) return;
       rtSubitens.value = partes.join('\n');
     });
 
