@@ -3770,7 +3770,7 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <h3 class="pl-title" id="clTitle">Classes Regulares</h3>
-          <button type="button" class="pl-back" id="clRankOpenBtn" aria-label="Ranking de Classes"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M17 5h2a2 2 0 0 1 2 2 4 4 0 0 1-4 4M7 5H5a2 2 0 0 0-2 2 4 4 0 0 0 4 4"/></svg></button>
+          <button type="button" class="pl-back" id="clRankOpenBtn" aria-label="Rendimento das Classes" style="display:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M17 5h2a2 2 0 0 1 2 2 4 4 0 0 1-4 4M7 5H5a2 2 0 0 0-2 2 4 4 0 0 0 4 4"/></svg></button>
           <button type="button" class="pl-back" id="clPlanningOpenBtn" aria-label="Planejamento de Aula" style="display:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></button>
         </div>
 
@@ -8166,13 +8166,33 @@
           <button type="button" class="pl-dayview-icon-btn" id="clRankClose" aria-label="Voltar">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
-          <h3 class="pl-dayview-title" style="text-transform:none;">Ranking de Classes</h3>
-          <span class="pl-dayview-icon-btn" style="visibility:hidden;" aria-hidden="true"></span>
+          <h3 class="pl-dayview-title" style="text-transform:none;">Rendimento das Classes</h3>
+          <button type="button" class="pl-dayview-icon-btn" id="clRankAccessBtn" aria-label="Configurar quem pode ver" style="display:none;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
         </div>
         <div class="pl-dayview-list-wrap">
           <p class="sp-disclaimer" style="margin-top:14px;">Quem mais avançou nos requisitos de cada classe, por % concluído.</p>
+          <h4 class="un-section-title">Rendimento médio por classe</h4>
+          <div id="clRankSummary" style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;"></div>
           <div id="clRankBlocks"></div>
           <p class="un-empty-hint" id="clRankEmpty" style="display:none;">Nenhum desbravador cadastrado nas classes regulares ainda.</p>
+        </div>
+      </div>
+
+      <!-- Configura quais papéis, além do Coordenador de Classes/Administrador/Diretoria
+           (que já enxergam por padrão), também podem abrir a tela de Rendimento acima —
+           gravado em classes_rendimento_papeis_extra (ver supabase/schema.sql). -->
+      <div class="pl-modal-overlay" id="clRankAccessOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Quem mais pode ver</h4>
+            <button type="button" class="pl-modal-close" id="clRankAccessClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <p class="pl-reminder-hint" style="margin-top:0;">Coordenador de Classes, Administrador e Diretoria já veem o Rendimento das Classes. Ligue aqui outras funções que também podem ver.</p>
+          <div class="ad-visibility-list" id="clRankAccessList"></div>
         </div>
       </div>
 
@@ -10418,6 +10438,20 @@
             <option value="Líder Master Avançado">Líder Master Avançado</option>
           </select>
           <p class="pl-reminder-hint">Ao definir, essa pessoa já aparece pronta em Classes Regulares → esse cartão, pra marcar requisitos — sem precisar cadastrar de novo lá.</p>
+
+          <div id="adFieldClasseCoordWrap" style="display:none;">
+            <label class="pl-field-label">Classe que coordena</label>
+            <select class="pl-input" id="adFieldClasseCoord">
+              <option value="">Nenhuma</option>
+              <option value="Amigo">Amigo</option>
+              <option value="Companheiro">Companheiro</option>
+              <option value="Pesquisador">Pesquisador</option>
+              <option value="Pioneiro">Pioneiro</option>
+              <option value="Excursionista">Excursionista</option>
+              <option value="Guia">Guia</option>
+            </select>
+            <p class="pl-reminder-hint">Como Coordenador(a) de Classes, essa pessoa só pode cadastrar/editar/excluir desbravadores do cartão escolhido aqui — os outros cartões ficam só leitura pra ela.</p>
+          </div>
 
           <!-- Permissão independente do cargo/papel — uma pessoa pode acumular várias
                funções no clube, então isso fica à parte em vez de "engolido" pelo campo
@@ -13218,7 +13252,30 @@
     const rankOpenBtn = document.getElementById('clRankOpenBtn');
     const rankCloseBtn = document.getElementById('clRankClose');
 
+    const rankSummary = document.getElementById('clRankSummary');
+
+    // Barra resumida por classe (% médio de conclusão), reaproveitando
+    // classCompletionPct já usado no hub — visão rápida sem entrar aluno a aluno.
+    function renderRendimentoSummary(){
+      if(!rankSummary) return;
+      rankSummary.innerHTML = '';
+      REGULAR_CLASSES.forEach(className => {
+        const group = findClassGroup(className);
+        const cards = group ? Array.from(group.querySelectorAll('.cl-activity-card')) : [];
+        const pct = classCompletionPct(className, cards);
+        const row = document.createElement('div');
+        row.innerHTML =
+          '<div class="cl-hub-row-top" style="margin-bottom:5px;"><span class="cl-hub-row-name"></span><span class="cl-hub-row-pct"></span></div>' +
+          '<span class="cl-hub-row-bar" style="display:block; width:100%;"><span class="cl-hub-row-bar-fill" style="width:0%"></span></span>';
+        row.querySelector('.cl-hub-row-name').textContent = className;
+        row.querySelector('.cl-hub-row-pct').textContent = pct + '%';
+        row.querySelector('.cl-hub-row-bar-fill').style.width = pct + '%';
+        rankSummary.appendChild(row);
+      });
+    }
+
     function renderClassRanking(){
+      renderRendimentoSummary();
       if(!rankBlocks) return;
       rankBlocks.innerHTML = '';
       let any = false;
@@ -13257,6 +13314,87 @@
       });
     }
     if(rankCloseBtn) rankCloseBtn.addEventListener('click', () => rankOverlay.classList.remove('show'));
+
+    // ---- Quem pode ver o Rendimento das Classes: Administrador, Coordenador
+    // de Classes e Diretoria/Diretoria Executiva sempre veem; os demais papéis
+    // só se estiverem em classes_rendimento_papeis_extra — lista que o próprio
+    // Coordenador de Classes (ou Administrador) controla pelo botão de
+    // engrenagem no cabeçalho da tela. ----
+    const RENDIMENTO_AUTO_PAPEIS = ['Administrador', 'Coordenador de Classes', 'Diretoria', 'Diretoria Executiva'];
+    let RENDIMENTO_EXTRA_PAPEIS = new Set();
+    const rankAccessBtn = document.getElementById('clRankAccessBtn');
+    const rankAccessOverlay = document.getElementById('clRankAccessOverlay');
+    const rankAccessClose = document.getElementById('clRankAccessClose');
+    const rankAccessList = document.getElementById('clRankAccessList');
+
+    function canViewRendimento(){
+      const u = window.__currentUsuario;
+      if(!u) return false;
+      if(RENDIMENTO_AUTO_PAPEIS.indexOf(u.papel) !== -1) return true;
+      return RENDIMENTO_EXTRA_PAPEIS.has(u.papel);
+    }
+    function canManageRendimentoAccess(){
+      const u = window.__currentUsuario;
+      return !!(u && (u.papel === 'Administrador' || u.papel === 'Coordenador de Classes'));
+    }
+    function applyRendimentoButtonVisibility(){
+      if(rankOpenBtn) rankOpenBtn.style.display = canViewRendimento() ? '' : 'none';
+      if(rankAccessBtn) rankAccessBtn.style.display = canManageRendimentoAccess() ? '' : 'none';
+    }
+    async function loadRendimentoAccess(){
+      if(!supa) return;
+      const { data, error } = await supa.from('classes_rendimento_papeis_extra').select('papel');
+      if(error){ console.error('Erro ao carregar acesso ao rendimento:', error.message); return; }
+      RENDIMENTO_EXTRA_PAPEIS = new Set((data || []).map(r => r.papel));
+      applyRendimentoButtonVisibility();
+    }
+    document.addEventListener('cedros:loggedin', () => { applyRendimentoButtonVisibility(); });
+    applyRendimentoButtonVisibility();
+    loadRendimentoAccess();
+
+    async function renderRendimentoAccessList(){
+      if(!rankAccessList || !supa) return;
+      rankAccessList.innerHTML = '<p class="pl-reminder-hint">Carregando…</p>';
+      const { data, error } = await supa.from('papeis').select('nome').order('nome');
+      if(error){ rankAccessList.innerHTML = ''; return; }
+      const extras = (data || []).filter(p => RENDIMENTO_AUTO_PAPEIS.indexOf(p.nome) === -1);
+      rankAccessList.innerHTML = '';
+      if(!extras.length){
+        rankAccessList.innerHTML = '<p class="pl-reminder-hint">Nenhuma outra função disponível.</p>';
+        return;
+      }
+      extras.forEach(p => {
+        const row = document.createElement('div');
+        row.className = 'ad-vis-row';
+        row.innerHTML =
+          '<span class="ad-vis-title"></span>' +
+          '<span class="pl-switch"><input type="checkbox" class="cl-rank-access-toggle"><span class="pl-switch-track"><span class="pl-switch-thumb"></span></span></span>';
+        row.querySelector('.ad-vis-title').textContent = p.nome;
+        const input = row.querySelector('.cl-rank-access-toggle');
+        input.checked = RENDIMENTO_EXTRA_PAPEIS.has(p.nome);
+        input.addEventListener('change', async () => {
+          if(input.checked){
+            RENDIMENTO_EXTRA_PAPEIS.add(p.nome);
+            const { error: insErr } = await supa.from('classes_rendimento_papeis_extra').upsert({ papel: p.nome });
+            if(insErr){ console.error('Erro ao liberar acesso:', insErr.message); }
+          } else {
+            RENDIMENTO_EXTRA_PAPEIS.delete(p.nome);
+            const { error: delErr } = await supa.from('classes_rendimento_papeis_extra').delete().eq('papel', p.nome);
+            if(delErr){ console.error('Erro ao remover acesso:', delErr.message); }
+          }
+        });
+        rankAccessList.appendChild(row);
+      });
+    }
+    if(rankAccessBtn){
+      rankAccessBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        renderRendimentoAccessList();
+        rankAccessOverlay.classList.add('show');
+      });
+    }
+    if(rankAccessClose) rankAccessClose.addEventListener('click', () => rankAccessOverlay.classList.remove('show'));
+    if(rankAccessOverlay) rankAccessOverlay.addEventListener('click', (e) => { if(e.target === rankAccessOverlay) rankAccessOverlay.classList.remove('show'); });
 
     function showHub(){
       currentClass = null;
@@ -13320,11 +13458,16 @@
     const studentDeleteBtn = document.getElementById('clStudentDeleteBtn');
     let editingStudentName = null;
 
-    // Regra de negócio: só Administrador e Coordenador de Classes podem cadastrar,
-    // renomear ou excluir desbravadores em Classes Regulares (ver supabase/schema.sql).
-    function canManageStudents(){
+    // Regra de negócio: Administrador cadastra/renomeia/exclui desbravadores em
+    // qualquer cartão; Coordenador de Classes só no cartão que ele coordena
+    // (usuarios.classe_coordenada, definido em Administração → Usuários) — os
+    // demais cartões ficam só leitura pra ele. Sem cartão definido, sem acesso.
+    function canManageStudents(className){
       const u = window.__currentUsuario;
-      return !!(u && (u.papel === 'Administrador' || u.papel === 'Coordenador de Classes'));
+      if(!u) return false;
+      if(u.papel === 'Administrador') return true;
+      if(u.papel === 'Coordenador de Classes') return !!className && u.classeCoordenada === className;
+      return false;
     }
     const statusPickOverlay = document.getElementById('clStatusPickOverlay');
     const statusPickTitle = document.getElementById('clStatusPickTitle');
@@ -13418,7 +13561,7 @@
     function renderStudentBar(className){
       ensureClassData(className);
       studentChips.innerHTML = '';
-      const canManage = canManageStudents();
+      const canManage = canManageStudents(className);
       studentAddBtn.style.display = canManage ? '' : 'none';
 
       const allChip = document.createElement('button');
@@ -18718,6 +18861,8 @@ const REQ_SUMMARIES = {
     const fieldBirthdate = document.getElementById('adFieldBirthdate');
     const fieldAtivo = document.getElementById('adFieldAtivo');
     const fieldClasse = document.getElementById('adFieldClasse');
+    const fieldClasseCoord = document.getElementById('adFieldClasseCoord');
+    const fieldClasseCoordWrap = document.getElementById('adFieldClasseCoordWrap');
     const userAccessBtn = document.getElementById('adUserAccessBtn');
     if(!content || !overlay) return;
 
@@ -18792,6 +18937,7 @@ const REQ_SUMMARIES = {
       card.dataset.birthdate = row.data_nascimento || '';
       card.dataset.ativo = row.ativo === false ? '0' : '1';
       card.dataset.classe = row.classe || '';
+      card.dataset.classeCoord = row.classe_coordenada || '';
       if(row.acesso) card.dataset.access = JSON.stringify(row.acesso);
       card.addEventListener('click', (e) => { e.preventDefault(); openModal('edit', card); });
       return card;
@@ -18880,6 +19026,14 @@ const REQ_SUMMARIES = {
       updatePendingVisibility();
     }
 
+    // Campo "Classe que coordena" só faz sentido pro papel Coordenador de
+    // Classes — escondido pros demais pra não confundir (ver canManageStudents
+    // em Classes Regulares, que usa esse valor pra restringir o cadastro).
+    function updateClasseCoordVisibility(){
+      if(fieldClasseCoordWrap) fieldClasseCoordWrap.style.display = (fieldRole.value === 'Coordenador de Classes') ? '' : 'none';
+    }
+    fieldRole.addEventListener('change', updateClasseCoordVisibility);
+
     function openModal(mode, card){
       editingCard = card || null;
       modalTitle.textContent = (mode === 'edit') ? 'Editar Usuário' : 'Novo Usuário';
@@ -18894,6 +19048,8 @@ const REQ_SUMMARIES = {
       fieldBirthdate.style.borderColor = '';
       fieldAtivo.checked = card ? card.dataset.ativo !== '0' : true;
       fieldClasse.value = card ? (card.dataset.classe || '') : '';
+      if(fieldClasseCoord) fieldClasseCoord.value = card ? (card.dataset.classeCoord || '') : '';
+      updateClasseCoordVisibility();
       userAccessBtn.style.display = (mode === 'edit') ? '' : 'none';
       window.__currentEditingUserCard = card || null;
       overlay.classList.add('show');
@@ -18918,7 +19074,8 @@ const REQ_SUMMARIES = {
         pode_pontuar_unidades: fieldCanScore.checked,
         data_nascimento: birthdateIso,
         ativo: fieldAtivo.checked,
-        classe: fieldClasse.value || null
+        classe: fieldClasse.value || null,
+        classe_coordenada: (fieldRole.value === 'Coordenador de Classes' && fieldClasseCoord) ? (fieldClasseCoord.value || null) : null
       };
       if(editingCard) payload.id = editingCard.dataset.id;
       const { data, error } = await supa.from('usuarios').upsert(payload).select().single();
@@ -19189,7 +19346,7 @@ const REQ_SUMMARIES = {
   // (ou seja, ainda não foi liberado por um admin) — usado pra barrar o acesso.
   async function applyLoggedInUser(authUser){
     if(!supa || !authUser || !authUser.email) return { found: false };
-    const { data: row } = await supa.from('usuarios').select('id, nome, papel, acesso, aprovado, ativo, unidade, cargo, pode_pontuar_unidades, data_nascimento').eq('email', authUser.email).maybeSingle();
+    const { data: row } = await supa.from('usuarios').select('id, nome, papel, acesso, aprovado, ativo, unidade, cargo, pode_pontuar_unidades, data_nascimento, classe_coordenada').eq('email', authUser.email).maybeSingle();
     if(!row || row.aprovado === false){ window.__currentUsuario = null; return { found: false, reason: 'aprovado' }; }
     if(row.ativo === false){ window.__currentUsuario = null; return { found: false, reason: 'ativo' }; }
     let access = row.acesso;
@@ -19198,7 +19355,7 @@ const REQ_SUMMARIES = {
       access = def || (window.__ROLE_VISIBILITY && window.__ROLE_VISIBILITY[row.papel]) || {};
     }
     if(window.__applyAccessToDashboard) window.__applyAccessToDashboard(access, row.nome);
-    window.__currentUsuario = { id: row.id, nome: row.nome, email: authUser.email, papel: row.papel, unidade: row.unidade, cargo: row.cargo, podePontuarUnidades: !!row.pode_pontuar_unidades, data_nascimento: row.data_nascimento };
+    window.__currentUsuario = { id: row.id, nome: row.nome, email: authUser.email, papel: row.papel, unidade: row.unidade, cargo: row.cargo, podePontuarUnidades: !!row.pode_pontuar_unidades, data_nascimento: row.data_nascimento, classeCoordenada: row.classe_coordenada || null };
     window.__currentAuthUserId = authUser.id;
     document.dispatchEvent(new CustomEvent('cedros:loggedin', { detail: window.__currentUsuario }));
     if(window.__applyGreetingUnit) window.__applyGreetingUnit(window.__currentUsuario);
