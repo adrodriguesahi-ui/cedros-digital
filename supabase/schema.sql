@@ -1090,3 +1090,41 @@ alter table planejamentos_aula add column if not exists instrutor_convidado bool
 
 -- Aulas que o Coordenador da classe marcou pra acompanhar pessoalmente.
 alter table planejamentos_aula add column if not exists coordenador_acompanha boolean not null default false;
+
+-- Texto do requisito ajustado pelo Coordenador daquele cartão: o catálogo de
+-- requisitos é fixo no app, e esta tabela guarda só o que foi reescrito.
+-- ATENÇÃO: requisito_titulo é a CHAVE do requisito no catálogo e nunca muda —
+-- é por ela que progresso_requisitos, planejamento_requisitos e
+-- requisitos_comprovacao amarram os registros. O título que aparece na tela é
+-- a coluna titulo; deixar em branco faz voltar ao texto original.
+create table if not exists requisitos_personalizados(classe text,requisito_titulo text,titulo text,subtitulo text,descricao text,observacao text,atualizado_por text,primary key(classe,requisito_titulo));
+
+alter table requisitos_personalizados enable row level security;
+
+drop policy if exists p_reqpers on requisitos_personalizados;
+create policy p_reqpers on requisitos_personalizados for all using(true) with check(true);
+
+-- Sub-itens de um requisito (o "a) b) c) d)" que alguns requisitos trazem
+-- dentro da descrição). Quem define é o Coordenador do cartão, no mesmo editor
+-- de texto do requisito. O id é gerado no app (crypto.randomUUID) pra não
+-- depender de gen_random_uuid() — assim o SQL fica fácil de colar no celular,
+-- onde o editor do Supabase fecha parêntese sozinho.
+create table if not exists requisito_subitens(id uuid primary key,classe text,requisito_titulo text,ordem int,texto text);
+
+-- O que cada desbravador já cumpriu, sub-item por sub-item, com o resumo do
+-- que foi feito. A chave é o id do sub-item, então reordenar a lista não
+-- embaralha o que já foi marcado.
+create table if not exists progresso_subitens(desbravador_id uuid,subitem_id uuid,feito boolean not null default false,resumo text,primary key(desbravador_id,subitem_id));
+
+-- Anexo presos a um sub-item específico; nulo continua sendo comprovação do
+-- requisito inteiro, como era antes.
+alter table comprovante_arquivos add column if not exists subitem_id uuid;
+
+alter table requisito_subitens enable row level security;
+alter table progresso_subitens enable row level security;
+
+drop policy if exists p_subitens on requisito_subitens;
+create policy p_subitens on requisito_subitens for all using(true) with check(true);
+
+drop policy if exists p_progsub on progresso_subitens;
+create policy p_progsub on progresso_subitens for all using(true) with check(true);
