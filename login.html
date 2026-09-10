@@ -1746,6 +1746,27 @@
     color:rgba(245,239,225,0.55); cursor:pointer;
   }
 
+  /* A tarja lateral do card mostra o STATUS do requisito, não a cor da classe:
+     dentro de um cartão todos os cards são da mesma classe, então a cor da
+     classe se repetia 34 vezes sem informar nada. Assim dá pra ler a lista de
+     relance (verde = feito, dourado = em andamento). Vem depois de
+     .cl-border-* de propósito, pra ganhar dessas regras. */
+  #view-classes .cl-activity-card[data-view-status="todo"]{ border-left-color:rgba(255,255,255,0.13); }
+  #view-classes .cl-activity-card[data-view-status="progress"]{ border-left-color:var(--gold); }
+  #view-classes .cl-activity-card[data-view-status="done"]{ border-left-color:var(--accent); opacity:0.72; }
+
+  /* Painel do aluno selecionado: nome, % e barra, no lugar do texto solto. */
+  .cl-student-panel{
+    display:block; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);
+    border-radius:14px; padding:11px 13px; margin:10px 0 4px;
+  }
+  .cl-student-panel-top{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:8px; }
+  .cl-student-panel-name{ font-size:13.5px; font-weight:900; color:var(--cream); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cl-student-panel-pct{ flex-shrink:0; font-size:15px; font-weight:900; color:var(--accent); }
+  .cl-student-panel-bar{ display:block; height:6px; border-radius:4px; background:rgba(255,255,255,0.1); overflow:hidden; }
+  .cl-student-panel-bar > span{ display:block; height:100%; border-radius:4px; background:var(--accent); transition:width .35s ease; }
+  .cl-student-panel-sub{ display:block; margin-top:7px; font-size:11.5px; font-weight:700; color:rgba(245,239,225,0.5); }
+
   /* Busca + filtro por status dos requisitos da classe aberta. Dois filtros
      diferentes podem esconder um mesmo card (idade, na Classe Agrupada, e
      busca/status aqui), então cada um usa a sua própria classe — se usassem
@@ -13795,8 +13816,14 @@
         }
         tag.textContent = label;
         tag.className = 'pl-event-tag pl-tag-' + color;
-        totalCount++;
-        if(status === 'done') doneCount++;
+        // A tarja lateral do card segue este status (ver CSS [data-view-status]).
+        card.dataset.viewStatus = status;
+        // Na Classe Agrupada o filtro de idade define quais requisitos valem pra
+        // essa pessoa: os de fora não entram na conta de concluídos/restantes.
+        if(!card.classList.contains('cl-hide-age')){
+          totalCount++;
+          if(status === 'done') doneCount++;
+        }
 
         const thumbEl = card.querySelector('.cl-thumb[data-role="thumb"]');
         if(thumbEl){
@@ -13819,8 +13846,18 @@
 
       if(studentProgressSummary){
         if(progressForStudent){
+          const pct = totalCount ? Math.round((doneCount / totalCount) * 100) : 0;
           studentProgressSummary.style.display = '';
-          studentProgressSummary.textContent = doneCount + ' concluídas · ' + (totalCount - doneCount) + ' restantes';
+          studentProgressSummary.className = 'cl-student-panel';
+          studentProgressSummary.innerHTML =
+            '<span class="cl-student-panel-top"><span class="cl-student-panel-name"></span><span class="cl-student-panel-pct"></span></span>' +
+            '<span class="cl-student-panel-bar"><span></span></span>' +
+            '<span class="cl-student-panel-sub"></span>';
+          studentProgressSummary.querySelector('.cl-student-panel-name').textContent = selectedStudent;
+          studentProgressSummary.querySelector('.cl-student-panel-pct').textContent = pct + '%';
+          studentProgressSummary.querySelector('.cl-student-panel-bar > span').style.width = pct + '%';
+          studentProgressSummary.querySelector('.cl-student-panel-sub').textContent =
+            doneCount + ' de ' + totalCount + ' requisitos concluídos · faltam ' + (totalCount - doneCount);
         } else {
           studentProgressSummary.style.display = 'none';
         }
