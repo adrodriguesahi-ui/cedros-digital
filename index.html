@@ -1686,6 +1686,30 @@
   .cl-hub-row-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:7px; }
   .cl-hub-row-name{ font-size:14.5px; font-weight:800; color:var(--cream); line-height:1.28; }
   .cl-hub-row-progress{ display:flex; align-items:center; gap:9px; }
+  /* Modo "um dos itens": a caixa vira redonda, como escolha única. */
+  .cl-sub-item.alternativa .cl-sub-caixa{ border-radius:50%; }
+  .cp-sub-modo{ margin-bottom:8px; }
+
+  /* Lápis pra renomear a área, no cabeçalho do grupo. */
+  .cl-area-editar{
+    flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    width:24px; height:24px; margin-left:6px; border-radius:7px;
+    background:rgba(255,255,255,0.07); color:rgba(245,239,225,0.55); cursor:pointer;
+  }
+  .cl-area-editar:active{ transform:scale(0.92); }
+
+  /* O card do requisito é resumo: título em até 2 linhas e subtítulo em 1, com
+     reticências. O texto inteiro fica na tela do requisito, ao tocar nele. */
+  #view-classes .cl-activity-card .pl-event-title{
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden; overflow-wrap:anywhere;
+  }
+  #view-classes .cl-activity-card .pl-event-meta{
+    display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  /* A badge de comprovação é inline, então continua cabendo na mesma linha. */
+  #view-classes .cl-activity-card .pl-event-meta .cl-req-exige-badge{ vertical-align:-1px; }
+
   /* Andamento dos sub-itens, na linha do requisito. */
   .cl-sub-selo{
     flex-shrink:0; align-self:center; padding:3px 7px; border-radius:8px; margin-right:6px;
@@ -1750,9 +1774,15 @@
   }
   .cp-req-editar:active{ transform:scale(0.92); }
 
+  .cl-req-subtitulo{
+    margin:10px 0 0; font-size:12.5px; line-height:1.5; font-weight:700;
+    color:var(--gold); white-space:pre-line;
+  }
+
   /* Descrição e observação do requisito, no detalhe. */
   .cl-req-descricao{
-    margin:12px 0 0; font-size:13px; line-height:1.5; color:rgba(245,239,225,0.78);
+    margin:12px 0 0; font-size:13px; line-height:1.55; color:rgba(245,239,225,0.78);
+    white-space:pre-line;
   }
   .cl-req-observacao{
     margin:10px 0 0; padding:10px 12px; border-radius:12px;
@@ -8528,6 +8558,25 @@
         </div>
       </div>
 
+      <!-- Renomeia a área naquele cartão. O nome do catálogo continua sendo o que
+           agrupa a lista (ver areas_personalizadas em supabase/schema.sql). -->
+      <div class="pl-modal-overlay" id="clAreaNomeOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Nome da área</h4>
+            <button type="button" class="pl-modal-close" id="clAreaNomeClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <p class="pl-reminder-hint" style="margin-top:0;">Área do catálogo: <b id="clAreaNomeOriginal"></b>. Vale só neste cartão; em branco volta ao nome original.</p>
+          <input type="text" class="pl-input" id="clAreaNomeInput" maxlength="60" placeholder="Como o grupo aparece na lista">
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-neutral" id="clAreaNomeReset">Restaurar original</button>
+            <button type="button" class="pl-btn pl-btn-primary" id="clAreaNomeSalvar">Salvar</button>
+          </div>
+        </div>
+      </div>
+
       <div class="pl-modal-overlay" id="clStatusPickOverlay">
         <div class="pl-modal">
           <div class="pl-modal-head">
@@ -8540,6 +8589,7 @@
 
           <!-- Descrição e observação do requisito, como o Coordenador do cartão
                escreveu (ver requisitos_personalizados em supabase/schema.sql). -->
+          <p class="cl-req-subtitulo" id="clStatusPickSub" style="display:none;"></p>
           <p class="cl-req-descricao" id="clStatusPickDesc" style="display:none;"></p>
           <p class="cl-req-observacao" id="clStatusPickObs" style="display:none;"></p>
 
@@ -8548,7 +8598,7 @@
                status do requisito. Ver requisito_subitens no schema.sql. -->
           <div id="clSubitensBloco" style="display:none;">
             <div class="cl-sub-titulo">
-              <span>O que já cumpriu</span>
+              <span id="clSubTituloTexto">O que já cumpriu</span>
               <span class="cl-sub-contagem" id="clSubContagem"></span>
             </div>
             <div class="cl-sub-lista" id="clSubLista"></div>
@@ -10292,6 +10342,9 @@
         <label class="pl-field-label" for="cpReqTextoSubtitulo">Subtítulo</label>
         <input type="text" class="pl-input" id="cpReqTextoSubtitulo" placeholder="Linha menor embaixo do título">
 
+        <label class="pl-field-label" for="cpReqTextoArea">Área</label>
+        <select class="pl-input" id="cpReqTextoArea"></select>
+
         <label class="pl-field-label" for="cpReqTextoDescricao">Descrição</label>
         <textarea class="pl-input pl-textarea" id="cpReqTextoDescricao" rows="4" placeholder="O que o desbravador precisa fazer"></textarea>
 
@@ -10305,6 +10358,10 @@
           <label class="pl-field-label" for="cpReqTextoSubitens" style="margin:0;">Sub-itens</label>
           <button type="button" class="cp-sub-separar" id="cpReqTextoSepararBtn">Separar da descrição</button>
         </div>
+        <select class="pl-input cp-sub-modo" id="cpReqTextoModo" aria-label="Como o requisito é cumprido">
+          <option value="todos">Precisa cumprir todos os itens</option>
+          <option value="um">Basta cumprir um dos itens</option>
+        </select>
         <textarea class="pl-input pl-textarea" id="cpReqTextoSubitens" rows="5" placeholder="Um por linha. Ex.:&#10;a) Criação: o que Deus criou em cada dia&#10;b) 10 Pragas: quais caíram sobre o Egito"></textarea>
         <p class="cp-sub-hint" id="cpReqTextoSubHint">Deixe em branco se o requisito for único. Com sub-itens, o requisito fecha sozinho quando o desbravador cumprir todos.</p>
 
@@ -14303,6 +14360,7 @@
     const statusPickOverlay = document.getElementById('clStatusPickOverlay');
     const statusPickTitle = document.getElementById('clStatusPickTitle');
     const statusPickSubtitle = document.getElementById('clStatusPickSubtitle');
+    const statusPickSub = document.getElementById('clStatusPickSub');
     const statusPickDesc = document.getElementById('clStatusPickDesc');
     const statusPickObs = document.getElementById('clStatusPickObs');
     const statusPickClose = document.getElementById('clStatusPickClose');
@@ -14357,6 +14415,21 @@
       return REQ_TEXTOS[requisitoKey(className, titulo)] || null;
     }
 
+    // Enunciado com "a) b) c)" no meio do parágrafo fica ilegível na tela do
+    // requisito: aqui cada marcador começa a própria linha. É só exibição — o
+    // texto continua guardado como foi escrito.
+    function comQuebraNosMarcadores(texto){
+      if(!texto) return '';
+      return texto.replace(/\s+(?=(?:[a-z]\)|\d+[).])\s)/gi, '\n');
+    }
+
+    // 'um' = basta cumprir uma alternativa; 'todos' = precisa cumprir tudo.
+    function modoDosSubitens(className, titulo){
+      const t = textoDoRequisito(className, titulo);
+      return (t && t.modo === 'um') ? 'um' : 'todos';
+    }
+    window.__clModoSubitens = modoDosSubitens;
+
     // Título que aparece na tela: o reescrito quando existe, senão o do catálogo.
     function tituloExibicao(className, titulo){
       const t = textoDoRequisito(className, titulo);
@@ -14406,13 +14479,15 @@
     async function loadRequisitosPersonalizados(){
       if(!supa) return;
       const { data, error } = await supa.from('requisitos_personalizados')
-        .select('classe, requisito_titulo, titulo, subtitulo, descricao, observacao');
+        .select('classe, requisito_titulo, titulo, subtitulo, descricao, observacao, subitens_modo, area');
       if(error){ console.error('Erro ao carregar textos de requisitos:', error.message); return; }
       Object.keys(REQ_TEXTOS).forEach(k => delete REQ_TEXTOS[k]);
       (data || []).forEach(r => {
         REQ_TEXTOS[requisitoKey(r.classe, r.requisito_titulo)] = {
           titulo: r.titulo || '', subtitulo: r.subtitulo || '',
-          descricao: r.descricao || '', observacao: r.observacao || ''
+          descricao: r.descricao || '', observacao: r.observacao || '',
+          modo: r.subitens_modo === 'um' ? 'um' : 'todos',
+          area: r.area || ''
         };
       });
       await loadSubitens();
@@ -14425,10 +14500,21 @@
 
     // Reescreve o que está visível no card sem encostar no data-title.
     function aplicarTextosNosCards(){
+      const gruposParaReagrupar = new Set();
       document.querySelectorAll('.cl-activity-card[data-title]').forEach(card => {
         const classe = card.dataset.class;
         const chave = card.dataset.title;
         const t = textoDoRequisito(classe, chave);
+
+        // A área guarda a original em data-areaOriginal, pra o Coordenador poder
+        // voltar atrás sem perder de onde o requisito veio no catálogo.
+        if(card.dataset.areaOriginal === undefined) card.dataset.areaOriginal = card.dataset.area || '';
+        const areaDesejada = (t && t.area) ? t.area : card.dataset.areaOriginal;
+        if(card.dataset.area !== areaDesejada){
+          card.dataset.area = areaDesejada;
+          const grupo = card.closest('.pl-month-group');
+          if(grupo) gruposParaReagrupar.add(grupo);
+        }
         const tituloEl = card.querySelector('.pl-event-title');
         if(tituloEl) tituloEl.textContent = (t && t.titulo) ? t.titulo : chave;
         const metaEl = card.querySelector('.pl-event-meta');
@@ -14440,6 +14526,8 @@
           if(badge) metaEl.appendChild(badge);
         }
       });
+      // Mudar de área muda o grupo em que o card aparece.
+      gruposParaReagrupar.forEach(g => regroupByArea(g));
     }
 
     async function loadClassDataFromSupabase(){
@@ -14609,8 +14697,10 @@
 
         // Requisito com sub-itens mostra o andamento na própria lista.
         const subsDoCard = subitensDoRequisito(currentClass, card.dataset.title);
+        // No modo "um dos itens" a contagem não diz nada: o status já resolve.
+        const contaSubitens = modoDosSubitens(currentClass, card.dataset.title) !== 'um';
         let selo = card.querySelector('.cl-sub-selo');
-        if(subsDoCard.length && progressForStudent){
+        if(subsDoCard.length && progressForStudent && contaSubitens){
           const feitos = subsDoCard.filter(x => (SUB_FEITOS[x.id] || {}).feito).length;
           if(!selo){
             selo = document.createElement('span');
@@ -14789,12 +14879,15 @@
     const subBloco = document.getElementById('clSubitensBloco');
     const subLista = document.getElementById('clSubLista');
     const subContagem = document.getElementById('clSubContagem');
+    const subTituloTexto = document.getElementById('clSubTituloTexto');
     const subStatusHint = document.getElementById('clSubStatusHint');
     let subEmEdicao = null; // id do sub-item com o detalhe aberto
 
-    function statusPelosSubitens(subs){
-      const feitos = subs.filter(x => (SUB_FEITOS[x.id] || {}).feito).length;
+    function statusPelosSubitens(subs, modo){
       if(!subs.length) return null;
+      const feitos = subs.filter(x => (SUB_FEITOS[x.id] || {}).feito).length;
+      // No modo "um dos itens", cumprir uma alternativa já fecha o requisito.
+      if(modo === 'um') return feitos > 0 ? 'done' : 'todo';
       if(feitos === subs.length) return 'done';
       return feitos > 0 ? 'progress' : 'todo';
     }
@@ -14808,19 +14901,33 @@
         return;
       }
       subBloco.style.display = '';
+      const modo = modoDosSubitens(currentClass, card.dataset.title);
       const feitos = subs.filter(x => (SUB_FEITOS[x.id] || {}).feito).length;
-      subContagem.textContent = feitos + ' de ' + subs.length;
+      const escolhido = subs.find(x => (SUB_FEITOS[x.id] || {}).feito);
+
+      if(subTituloTexto){
+        subTituloTexto.textContent = modo === 'um' ? 'Escolha o que foi cumprido' : 'O que já cumpriu';
+      }
+      subContagem.textContent = modo === 'um'
+        ? (escolhido ? 'escolhido' : 'nenhum')
+        : (feitos + ' de ' + subs.length);
       if(subStatusHint){
-        subStatusHint.textContent = feitos === subs.length
-          ? 'Todos cumpridos — o requisito fica como Concluída.'
-          : 'O status abaixo acompanha os sub-itens marcados.';
+        if(modo === 'um'){
+          subStatusHint.textContent = escolhido
+            ? 'Uma alternativa basta — o requisito fica como Concluída.'
+            : 'Basta cumprir uma destas alternativas.';
+        } else {
+          subStatusHint.textContent = feitos === subs.length
+            ? 'Todos cumpridos — o requisito fica como Concluída.'
+            : 'O status abaixo acompanha os sub-itens marcados.';
+        }
       }
 
       subLista.innerHTML = '';
       subs.forEach(sub => {
         const estado = SUB_FEITOS[sub.id] || { feito: false, resumo: '' };
         const item = document.createElement('div');
-        item.className = 'cl-sub-item' + (estado.feito ? ' feito' : '');
+        item.className = 'cl-sub-item' + (estado.feito ? ' feito' : '') + (modo === 'um' ? ' alternativa' : '');
 
         const linha = document.createElement('div');
         linha.className = 'cl-sub-linha';
@@ -14908,22 +15015,37 @@
 
     async function marcarSubitem(card, sub, feito){
       const estado = SUB_FEITOS[sub.id] || { resumo: '' };
+      const modo = modoDosSubitens(currentClass, card.dataset.title);
+      const subs = subitensDoRequisito(currentClass, card.dataset.title);
       subEmEdicao = feito ? sub.id : null;
+
       const ok = await gravarSubitem(card, sub, feito, estado.resumo);
       if(!ok) return;
+
+      // "Um dos itens" é escolha única: marcar uma alternativa desmarca as outras.
+      if(modo === 'um' && feito){
+        for(const outro of subs){
+          if(outro.id !== sub.id && (SUB_FEITOS[outro.id] || {}).feito){
+            await gravarSubitem(card, outro, false, (SUB_FEITOS[outro.id] || {}).resumo);
+          }
+        }
+      }
       renderSubitens(card);
 
       // Marcar o último item conclui o requisito; desmarcar volta pra andamento.
-      const subs = subitensDoRequisito(currentClass, card.dataset.title);
-      let novo = statusPelosSubitens(subs);
+      let novo = statusPelosSubitens(subs, modo);
       // Requisito que exige comprovação só fecha com o resumo de cada sub-item —
       // mesma regra do requisito solto, aplicada item a item.
       if(novo === 'done' && exigeComprovacao(currentClass, card.dataset.title)){
-        const semResumo = subs.filter(x => !((SUB_FEITOS[x.id] || {}).resumo || '').trim());
+        // No modo "um", só a alternativa escolhida precisa do resumo.
+        const cobrar = modo === 'um' ? subs.filter(x => (SUB_FEITOS[x.id] || {}).feito) : subs;
+        const semResumo = cobrar.filter(x => !((SUB_FEITOS[x.id] || {}).resumo || '').trim());
         if(semResumo.length){
           novo = 'progress';
           if(subStatusHint){
-            subStatusHint.textContent = 'Este requisito exige comprovação: escreva o resumo de cada item pra ele fechar como Concluída.';
+            subStatusHint.textContent = modo === 'um'
+              ? 'Este requisito exige comprovação: escreva o resumo da alternativa escolhida pra ele fechar como Concluída.'
+              : 'Este requisito exige comprovação: escreva o resumo de cada item pra ele fechar como Concluída.';
           }
         }
       }
@@ -14970,10 +15092,16 @@
       const texto = textoDoRequisito(currentClass, card.dataset.title);
       statusPickTitle.textContent = tituloExibicao(currentClass, card.dataset.title);
       statusPickSubtitle.textContent = 'Status de ' + selectedStudent + ' neste requisito:';
+      // O subtítulo é curto no card, mas aqui aparece inteiro.
+      const subtitulo = texto ? (texto.subtitulo || '') : '';
+      if(statusPickSub){
+        statusPickSub.textContent = comQuebraNosMarcadores(subtitulo);
+        statusPickSub.style.display = subtitulo ? '' : 'none';
+      }
       // A descrição vem do texto reescrito quando existe; senão, do catálogo.
       const descricao = (texto && texto.descricao) ? texto.descricao : (card.dataset.desc || '');
       if(statusPickDesc){
-        statusPickDesc.textContent = descricao;
+        statusPickDesc.textContent = comQuebraNosMarcadores(descricao);
         statusPickDesc.style.display = descricao ? '' : 'none';
       }
       const observacao = texto ? texto.observacao : '';
@@ -15430,6 +15558,71 @@
     const AREA_COLOR = { 'Geral':'orange', 'Vida Espiritual':'purple', 'Vida ao Ar Livre':'gold', 'Estudo da Natureza':'green', 'Saúde e Segurança':'red', 'Vida em Sociedade':'blue', 'Especialidades':'gray', 'Amigo da Natureza':'navy', 'Companheiro de Excursionismo':'navy', 'Pesquisador de Campo e Bosque':'navy', 'Pioneiro de Novas Fronteiras':'navy', 'Excursionista na Mata':'navy', 'Guia de Exploração':'navy' };
 
     const collapsedAreas = {}; // collapsedAreas['ClassName|Area'] = true when minimized
+    window.__clAreasDisponiveis = () => AREA_ORDER.slice();
+
+    // Nome que o Coordenador deu à área no cartão dele: AREA_TITULOS['Classe|Área'].
+    // A chave continua sendo o nome do catálogo, que é o que agrupa a lista.
+    const AREA_TITULOS = {};
+    function tituloDaArea(className, area){
+      return AREA_TITULOS[className + '|' + area] || area;
+    }
+
+    async function loadAreasPersonalizadas(){
+      if(!supa) return;
+      const { data, error } = await supa.from('areas_personalizadas').select('classe, area, titulo');
+      if(error){ console.error('Erro ao carregar nomes de áreas:', error.message); return; }
+      Object.keys(AREA_TITULOS).forEach(k => delete AREA_TITULOS[k]);
+      (data || []).forEach(r => {
+        if(r.titulo) AREA_TITULOS[r.classe + '|' + r.area] = r.titulo;
+      });
+      document.querySelectorAll('#view-classes .pl-month-group').forEach(g => regroupByArea(g));
+    }
+    window.__clReloadAreas = loadAreasPersonalizadas;
+
+    // ---- Renomear a área naquele cartão ----
+    const areaNomeOverlay = document.getElementById('clAreaNomeOverlay');
+    const areaNomeOriginal = document.getElementById('clAreaNomeOriginal');
+    const areaNomeInput = document.getElementById('clAreaNomeInput');
+    const areaNomeSalvar = document.getElementById('clAreaNomeSalvar');
+    const areaNomeReset = document.getElementById('clAreaNomeReset');
+    const areaNomeClose = document.getElementById('clAreaNomeClose');
+    let areaEmEdicao = null;
+
+    function abrirEditorDeArea(className, area){
+      areaEmEdicao = { classe: className, area: area };
+      areaNomeOriginal.textContent = area;
+      areaNomeInput.value = AREA_TITULOS[className + '|' + area] || '';
+      areaNomeOverlay.classList.add('show');
+      areaNomeInput.focus();
+    }
+    function fecharEditorDeArea(){
+      areaNomeOverlay.classList.remove('show');
+      areaEmEdicao = null;
+    }
+    if(areaNomeClose) areaNomeClose.addEventListener('click', fecharEditorDeArea);
+
+    if(areaNomeSalvar) areaNomeSalvar.addEventListener('click', async () => {
+      if(!areaEmEdicao) return;
+      const novo = areaNomeInput.value.trim();
+      const chave = areaEmEdicao.classe + '|' + areaEmEdicao.area;
+      if(novo) AREA_TITULOS[chave] = novo; else delete AREA_TITULOS[chave];
+      const grupo = findClassGroup(areaEmEdicao.classe);
+      const alvo = areaEmEdicao;
+      fecharEditorDeArea();
+      if(grupo) regroupByArea(grupo);
+
+      if(!supa) return;
+      // Sem nome próprio a linha sai, em vez de ficar guardando texto vazio.
+      const { error } = novo
+        ? await supa.from('areas_personalizadas').upsert({ classe: alvo.classe, area: alvo.area, titulo: novo })
+        : await supa.from('areas_personalizadas').delete().eq('classe', alvo.classe).eq('area', alvo.area);
+      if(error) alert('Não consegui salvar o nome da área: ' + error.message);
+    });
+
+    if(areaNomeReset) areaNomeReset.addEventListener('click', () => {
+      areaNomeInput.value = '';
+      areaNomeSalvar.click();
+    });
 
     function regroupByArea(group){
       if(!group || !group.isConnected) return;
@@ -15459,13 +15652,29 @@
         heading.className = 'cl-area-heading';
         heading.innerHTML =
           '<span class="cl-class-dot cl-color-' + color + '"></span>' +
-          '<span class="cl-area-heading-text">' + area + '</span>' +
+          '<span class="cl-area-heading-text"></span>' +
           '<span class="cl-area-heading-count">' + byArea[area].length + '</span>' +
           '<svg class="cl-area-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+        heading.querySelector('.cl-area-heading-text').textContent = tituloDaArea(className, area);
         heading.addEventListener('click', () => {
           const nowCollapsed = section.classList.toggle('collapsed');
           collapsedAreas[key] = nowCollapsed;
         });
+
+        // Lápis pra renomear a área neste cartão — só quem gerencia a classe.
+        if(canManageStudents(className)){
+          const lapis = document.createElement('span');
+          lapis.className = 'cl-area-editar';
+          lapis.setAttribute('role', 'button');
+          lapis.setAttribute('tabindex', '0');
+          lapis.setAttribute('aria-label', 'Renomear a área ' + tituloDaArea(className, area));
+          lapis.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+          lapis.addEventListener('click', (e) => {
+            e.stopPropagation();
+            abrirEditorDeArea(className, area);
+          });
+          heading.insertBefore(lapis, heading.querySelector('.cl-area-chevron'));
+        }
 
         section.appendChild(heading);
         const cardsWrap = document.createElement('div');
@@ -15557,12 +15766,22 @@
     // Repinta o que depende do papel (botão de + Aluno, lápis de editar) sem
     // precisar sair e voltar na classe — usado pelo modo "Ver como".
     window.__clRefreshPermissions = function(){
+      // Os grupos de área são montados antes de o usuário logado ser conhecido,
+      // e é o cabeçalho deles que carrega o lápis de renomear. Sem remontar
+      // aqui, o Coordenador só via o lápis depois de salvar alguma coisa.
+      document.querySelectorAll('#view-classes .pl-month-group').forEach(g => regroupByArea(g));
       if(!currentClass) return;
       renderStudentBar(currentClass);
       applyStudentProgressToCards();
     };
+    // Ao entrar, o papel muda o que a lista mostra (lápis de área, + Aluno...).
+    document.addEventListener('cedros:loggedin', () => {
+      if(window.__clRefreshPermissions) window.__clRefreshPermissions();
+    });
+
     loadRequisitosComprovacao();
     loadRequisitosPersonalizados();
+    loadAreasPersonalizadas();
     loadClassDataFromSupabase();
 
     // Classe Agrupada — filtro por idade (ver CSS .cl-age-filter). Cada requisito
@@ -16350,6 +16569,8 @@
     const rtSubitens = document.getElementById('cpReqTextoSubitens');
     const rtSepararBtn = document.getElementById('cpReqTextoSepararBtn');
     const rtSubHint = document.getElementById('cpReqTextoSubHint');
+    const rtModo = document.getElementById('cpReqTextoModo');
+    const rtArea = document.getElementById('cpReqTextoArea');
     const rtCampos = {
       titulo: document.getElementById('cpReqTextoTitulo'),
       subtitulo: document.getElementById('cpReqTextoSubtitulo'),
@@ -16384,11 +16605,31 @@
       // Um sub-item por linha, na ordem em que estão salvos.
       const subs = (window.__clSubitens && window.__clSubitens(alvo, titulo)) || [];
       if(rtSubitens) rtSubitens.value = subs.map(x => x.texto).join('\n');
+      if(rtModo) rtModo.value = (window.__clModoSubitens && window.__clModoSubitens(alvo, titulo)) || 'todos';
+      atualizarDicaDoModo();
+
+      // A área do catálogo vem primeiro, marcada, pra ficar claro de onde saiu.
+      if(rtArea){
+        const card = document.querySelector('.cl-activity-card[data-class="' + CSS.escape(alvo) + '"][data-title="' + CSS.escape(titulo) + '"]');
+        const original = card ? (card.dataset.areaOriginal || card.dataset.area || '') : '';
+        const areas = (window.__clAreasDisponiveis && window.__clAreasDisponiveis()) || [];
+        rtArea.innerHTML = '';
+        areas.forEach(a => {
+          const opt = document.createElement('option');
+          opt.value = a;
+          opt.textContent = a + (a === original ? ' (do catálogo)' : '');
+          rtArea.appendChild(opt);
+        });
+        rtArea.value = (atual && atual.area) ? atual.area : original;
+        if(!rtArea.value) rtArea.value = original;
+      }
 
       // Quem não gerencia o cartão abre só pra ler.
       const pode = canManageRoster(alvo);
       Object.keys(rtCampos).forEach(k => { rtCampos[k].disabled = !pode; });
       if(rtSubitens) rtSubitens.disabled = !pode;
+      if(rtModo) rtModo.disabled = !pode;
+      if(rtArea) rtArea.disabled = !pode;
       if(rtSepararBtn) rtSepararBtn.style.display = pode ? '' : 'none';
       if(rtSubHint) rtSubHint.style.display = pode ? '' : 'none';
       if(rtSalvar) rtSalvar.style.display = pode ? '' : 'none';
@@ -16421,14 +16662,33 @@
     }
 
     if(rtSepararBtn) rtSepararBtn.addEventListener('click', () => {
-      const partes = separarEmSubitens(rtCampos.descricao.value);
+      // Separa a descrição; se ela estiver vazia (ou sem marcadores), tenta o
+      // que já está no próprio campo de sub-itens — é comum colar tudo ali numa
+      // linha só e querer quebrar depois.
+      const daDescricao = separarEmSubitens(rtCampos.descricao.value);
+      const doCampo = separarEmSubitens(rtSubitens.value);
+      const usarDescricao = daDescricao.length >= 2;
+      const partes = usarDescricao ? daDescricao : doCampo;
+
       if(partes.length < 2){
-        alert('Não achei itens separados nesta descrição. Escreva um por linha à mão.');
+        alert(rtCampos.descricao.value.trim() || rtSubitens.value.trim()
+          ? 'Não achei marcadores como "a)" ou "1." pra separar. Escreva um sub-item por linha à mão.'
+          : 'Escreva a descrição (ou cole os itens aqui embaixo) pra eu separar.');
         return;
       }
-      if(rtSubitens.value.trim() && !confirm('Isso substitui os sub-itens já escritos. Continuar?')) return;
+      // Só avisa quando vai mesmo sobrescrever algo que a pessoa escreveu à mão.
+      const jaSeparado = rtSubitens.value.trim().split('\n').filter(Boolean).length > 1;
+      if(usarDescricao && jaSeparado && !confirm('Isso substitui os sub-itens já escritos. Continuar?')) return;
       rtSubitens.value = partes.join('\n');
     });
+
+    function atualizarDicaDoModo(){
+      if(!rtSubHint || !rtModo) return;
+      rtSubHint.textContent = rtModo.value === 'um'
+        ? 'Deixe em branco se o requisito for único. Aqui o desbravador escolhe uma das alternativas, e cumprir uma já conclui o requisito.'
+        : 'Deixe em branco se o requisito for único. Com sub-itens, o requisito fecha sozinho quando o desbravador cumprir todos.';
+    }
+    if(rtModo) rtModo.addEventListener('change', atualizarDicaDoModo);
 
     if(rtClose) rtClose.addEventListener('click', fecharEditorDeTexto);
 
@@ -16442,6 +16702,8 @@
         subtitulo: rtCampos.subtitulo.value.trim() || null,
         descricao: rtCampos.descricao.value.trim() || null,
         observacao: rtCampos.observacao.value.trim() || null,
+        subitens_modo: (rtModo && rtModo.value === 'um') ? 'um' : 'todos',
+        area: areaEscolhida(),
         atualizado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
       };
       const { error } = await supa.from('requisitos_personalizados').upsert(payload);
@@ -16479,6 +16741,15 @@
         if(error) return error.message;
       }
       return null;
+    }
+
+    // Só guarda a área quando ela difere da do catálogo; assim o requisito volta
+    // sozinho pro lugar de origem se o catálogo mudar.
+    function areaEscolhida(){
+      if(!rtArea || !rtArea.value) return null;
+      const card = document.querySelector('.cl-activity-card[data-class="' + CSS.escape(rtClasse) + '"][data-title="' + CSS.escape(rtRequisito) + '"]');
+      const original = card ? (card.dataset.areaOriginal || card.dataset.area || '') : '';
+      return rtArea.value === original ? null : rtArea.value;
     }
 
     // O id vem do app pra dispensar gen_random_uuid() no banco (ver schema.sql).

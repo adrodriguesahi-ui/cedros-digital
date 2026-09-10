@@ -1128,3 +1128,23 @@ create policy p_subitens on requisito_subitens for all using(true) with check(tr
 
 drop policy if exists p_progsub on progresso_subitens;
 create policy p_progsub on progresso_subitens for all using(true) with check(true);
+
+-- Como o requisito é cumprido quando tem sub-itens: 'todos' (o padrão, precisa
+-- cumprir todos) ou 'um' (basta cumprir uma das alternativas — os requisitos do
+-- tipo "faça uma das seguintes"). Nulo vale como 'todos'.
+alter table requisitos_personalizados add column if not exists subitens_modo text;
+
+-- Área do requisito escolhida pelo Coordenador, quando ele quer tirar um item
+-- de "Geral" e pôr em "Vida Espiritual", por exemplo. Nulo mantém a área do
+-- catálogo. Não mexe na chave do requisito, então o progresso segue intacto.
+alter table requisitos_personalizados add column if not exists area text;
+
+-- Nome que a área recebe naquele cartão ("Vida Espiritual" virar outro título).
+-- A coluna area é sempre o nome do catálogo, que é o que agrupa a lista; titulo
+-- é só o que aparece no cabeçalho.
+create table if not exists areas_personalizadas(classe text,area text,titulo text,primary key(classe,area));
+
+alter table areas_personalizadas enable row level security;
+
+drop policy if exists p_areaspers on areas_personalizadas;
+create policy p_areaspers on areas_personalizadas for all using(true) with check(true);
