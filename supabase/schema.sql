@@ -1103,3 +1103,28 @@ alter table requisitos_personalizados enable row level security;
 
 drop policy if exists p_reqpers on requisitos_personalizados;
 create policy p_reqpers on requisitos_personalizados for all using(true) with check(true);
+
+-- Sub-itens de um requisito (o "a) b) c) d)" que alguns requisitos trazem
+-- dentro da descrição). Quem define é o Coordenador do cartão, no mesmo editor
+-- de texto do requisito. O id é gerado no app (crypto.randomUUID) pra não
+-- depender de gen_random_uuid() — assim o SQL fica fácil de colar no celular,
+-- onde o editor do Supabase fecha parêntese sozinho.
+create table if not exists requisito_subitens(id uuid primary key,classe text,requisito_titulo text,ordem int,texto text);
+
+-- O que cada desbravador já cumpriu, sub-item por sub-item, com o resumo do
+-- que foi feito. A chave é o id do sub-item, então reordenar a lista não
+-- embaralha o que já foi marcado.
+create table if not exists progresso_subitens(desbravador_id uuid,subitem_id uuid,feito boolean not null default false,resumo text,primary key(desbravador_id,subitem_id));
+
+-- Anexo presos a um sub-item específico; nulo continua sendo comprovação do
+-- requisito inteiro, como era antes.
+alter table comprovante_arquivos add column if not exists subitem_id uuid;
+
+alter table requisito_subitens enable row level security;
+alter table progresso_subitens enable row level security;
+
+drop policy if exists p_subitens on requisito_subitens;
+create policy p_subitens on requisito_subitens for all using(true) with check(true);
+
+drop policy if exists p_progsub on progresso_subitens;
+create policy p_progsub on progresso_subitens for all using(true) with check(true);

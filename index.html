@@ -1686,6 +1686,62 @@
   .cl-hub-row-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:7px; }
   .cl-hub-row-name{ font-size:14.5px; font-weight:800; color:var(--cream); line-height:1.28; }
   .cl-hub-row-progress{ display:flex; align-items:center; gap:9px; }
+  /* Andamento dos sub-itens, na linha do requisito. */
+  .cl-sub-selo{
+    flex-shrink:0; align-self:center; padding:3px 7px; border-radius:8px; margin-right:6px;
+    background:rgba(216,168,62,0.16); color:var(--gold);
+    font-size:10.5px; font-weight:900; letter-spacing:0.02em;
+  }
+  .cl-sub-selo.completo{ background:rgba(63,203,107,0.16); color:var(--accent); }
+
+  /* Sub-itens do requisito, no editor de texto. */
+  .cp-sub-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin:12px 2px 6px; }
+  .cp-sub-separar{
+    border:1px solid rgba(255,255,255,0.14); background:rgba(255,255,255,0.06);
+    color:var(--cream); border-radius:9px; padding:5px 10px;
+    font-size:11px; font-weight:800; font-family:inherit; cursor:pointer;
+  }
+  .cp-sub-separar:active{ transform:scale(0.95); }
+  .cp-sub-hint{ margin:7px 2px 0; font-size:11px; line-height:1.45; color:rgba(245,239,225,0.45); }
+
+  /* Lista de sub-itens na ficha do desbravador. */
+  .cl-sub-lista{ display:flex; flex-direction:column; gap:8px; margin-top:12px; }
+  .cl-sub-titulo{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    margin:16px 2px 0; font-size:11.5px; font-weight:800; letter-spacing:0.03em;
+    text-transform:uppercase; color:rgba(245,239,225,0.55);
+  }
+  .cl-sub-contagem{ font-size:11.5px; font-weight:900; color:var(--gold); text-transform:none; letter-spacing:0; }
+  .cl-sub-item{
+    border:1px solid rgba(255,255,255,0.09); border-radius:13px;
+    background:rgba(255,255,255,0.03); overflow:hidden;
+  }
+  .cl-sub-item.feito{ border-color:rgba(63,203,107,0.35); background:rgba(63,203,107,0.07); }
+  .cl-sub-linha{ display:flex; align-items:flex-start; gap:10px; padding:11px 12px; cursor:pointer; }
+  .cl-sub-caixa{
+    flex-shrink:0; width:20px; height:20px; border-radius:6px; margin-top:1px;
+    border:1.6px solid rgba(255,255,255,0.25); display:flex; align-items:center; justify-content:center;
+    color:transparent;
+  }
+  .cl-sub-item.feito .cl-sub-caixa{ background:var(--accent); border-color:var(--accent); color:#08130A; }
+  .cl-sub-texto{ flex:1; min-width:0; font-size:13px; line-height:1.45; color:rgba(245,239,225,0.85); }
+  .cl-sub-detalhe{ padding:0 12px 12px; }
+  .cl-sub-detalhe textarea{ width:100%; margin-bottom:8px; }
+  .cl-sub-acoes{ display:flex; gap:8px; }
+  .cl-sub-btn{
+    flex:1; display:flex; align-items:center; justify-content:center; gap:6px;
+    border:1px solid rgba(255,255,255,0.14); background:rgba(255,255,255,0.06);
+    color:var(--cream); border-radius:10px; padding:9px; font-size:12px; font-weight:800;
+    font-family:inherit; cursor:pointer;
+  }
+  .cl-sub-btn:active{ transform:scale(0.97); }
+  .cl-sub-anexos{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+  .cl-sub-anexo{
+    display:flex; align-items:center; gap:5px; padding:4px 8px; border-radius:8px;
+    background:rgba(216,168,62,0.12); color:var(--gold); font-size:11px; font-weight:800;
+  }
+  .cl-sub-anexo button{ border:none; background:none; color:inherit; cursor:pointer; padding:0; display:flex; }
+
   /* Lápis pra reescrever o texto do requisito, na linha do cronograma. */
   .cp-req-editar{
     flex-shrink:0; display:flex; align-items:center; justify-content:center;
@@ -8487,6 +8543,18 @@
           <p class="cl-req-descricao" id="clStatusPickDesc" style="display:none;"></p>
           <p class="cl-req-observacao" id="clStatusPickObs" style="display:none;"></p>
 
+          <!-- Sub-itens do requisito, quando o Coordenador definiu algum. Cada um
+               guarda sua marcação, seu resumo e seus anexos, e juntos decidem o
+               status do requisito. Ver requisito_subitens no schema.sql. -->
+          <div id="clSubitensBloco" style="display:none;">
+            <div class="cl-sub-titulo">
+              <span>O que já cumpriu</span>
+              <span class="cl-sub-contagem" id="clSubContagem"></span>
+            </div>
+            <div class="cl-sub-lista" id="clSubLista"></div>
+            <p class="pl-reminder-hint" id="clSubStatusHint">O status abaixo acompanha os sub-itens marcados.</p>
+          </div>
+
           <div class="cl-status-pick-options">
             <button type="button" class="cl-status-pick-btn" data-status="todo" data-color="gray" data-label="Não iniciada">Não iniciada</button>
             <button type="button" class="cl-status-pick-btn" data-status="progress" data-color="gold" data-label="Em andamento">Em andamento</button>
@@ -10229,6 +10297,16 @@
 
         <label class="pl-field-label" for="cpReqTextoObservacao">Observação</label>
         <textarea class="pl-input pl-textarea" id="cpReqTextoObservacao" rows="3" placeholder="Recado do coordenador sobre este requisito"></textarea>
+
+        <!-- Sub-itens: o "a) b) c) d)" que alguns requisitos trazem dentro da
+             descrição. Um por linha; cada um vira uma marcação separada na
+             ficha do desbravador (ver requisito_subitens no schema.sql). -->
+        <div class="cp-sub-head">
+          <label class="pl-field-label" for="cpReqTextoSubitens" style="margin:0;">Sub-itens</label>
+          <button type="button" class="cp-sub-separar" id="cpReqTextoSepararBtn">Separar da descrição</button>
+        </div>
+        <textarea class="pl-input pl-textarea" id="cpReqTextoSubitens" rows="5" placeholder="Um por linha. Ex.:&#10;a) Criação: o que Deus criou em cada dia&#10;b) 10 Pragas: quais caíram sobre o Egito"></textarea>
+        <p class="cp-sub-hint" id="cpReqTextoSubHint">Deixe em branco se o requisito for único. Com sub-itens, o requisito fecha sozinho quando o desbravador cumprir todos.</p>
 
         <p class="pl-reminder-hint" id="cpReqTextoLeitura" style="display:none;">Só o Coordenador desta classe (ou o Administrador) pode mudar este texto.</p>
 
@@ -14287,6 +14365,44 @@
     window.__clTituloExibicao = tituloExibicao;
     window.__clTextoDoRequisito = textoDoRequisito;
 
+    // Sub-itens por requisito: REQ_SUBITENS["classe|título"] = [{id, ordem, texto}]
+    const REQ_SUBITENS = {};
+    function subitensDoRequisito(className, titulo){
+      return REQ_SUBITENS[requisitoKey(className, titulo)] || [];
+    }
+    window.__clSubitens = subitensDoRequisito;
+
+    // SUB_FEITOS[subitem_id] = { feito, resumo } do aluno selecionado no momento.
+    let SUB_FEITOS = {};
+    // SUB_ANEXOS[subitem_id] = [{ id, foto, nome }] — comprovantes daquele sub-item.
+    const SUB_ANEXOS = {};
+
+    async function loadSubitens(){
+      if(!supa) return;
+      const { data, error } = await supa.from('requisito_subitens')
+        .select('id, classe, requisito_titulo, ordem, texto');
+      if(error){ console.error('Erro ao carregar sub-itens:', error.message); return; }
+      Object.keys(REQ_SUBITENS).forEach(k => delete REQ_SUBITENS[k]);
+      (data || []).forEach(r => {
+        const k = requisitoKey(r.classe, r.requisito_titulo);
+        if(!REQ_SUBITENS[k]) REQ_SUBITENS[k] = [];
+        REQ_SUBITENS[k].push({ id: r.id, ordem: r.ordem || 0, texto: r.texto || '' });
+      });
+      Object.keys(REQ_SUBITENS).forEach(k => REQ_SUBITENS[k].sort((a, b) => a.ordem - b.ordem));
+    }
+
+    // O que o aluno escolhido já cumpriu. Sem aluno, não há o que carregar.
+    async function loadProgressoSubitens(){
+      SUB_FEITOS = {};
+      if(!supa || !selectedStudent || !currentClass) return;
+      const alunoId = (STUDENT_IDS[currentClass] || {})[selectedStudent];
+      if(!alunoId) return;
+      const { data, error } = await supa.from('progresso_subitens')
+        .select('subitem_id, feito, resumo').eq('desbravador_id', alunoId);
+      if(error){ console.error('Erro ao carregar progresso dos sub-itens:', error.message); return; }
+      (data || []).forEach(r => { SUB_FEITOS[r.subitem_id] = { feito: !!r.feito, resumo: r.resumo || '' }; });
+    }
+
     async function loadRequisitosPersonalizados(){
       if(!supa) return;
       const { data, error } = await supa.from('requisitos_personalizados')
@@ -14299,6 +14415,8 @@
           descricao: r.descricao || '', observacao: r.observacao || ''
         };
       });
+      await loadSubitens();
+      await loadProgressoSubitens();
       aplicarTextosNosCards();
       if(currentClass) applyStudentProgressToCards();
       if(window.__cpRefresh) window.__cpRefresh();
@@ -14342,8 +14460,16 @@
       const { data: progresso, error: progressoErr } = await supa.from('progresso_requisitos').select('desbravador_id, requisito_titulo, status, resumo');
       if(progressoErr) console.error('Erro ao carregar progresso:', progressoErr.message);
 
-      const { data: arquivos, error: arquivosErr } = await supa.from('comprovante_arquivos').select('id, desbravador_id, requisito_titulo, arquivo_data, arquivo_nome').order('created_at');
+      const { data: arquivos, error: arquivosErr } = await supa.from('comprovante_arquivos').select('id, desbravador_id, requisito_titulo, arquivo_data, arquivo_nome, subitem_id').order('created_at');
       if(arquivosErr) console.error('Erro ao carregar comprovantes:', arquivosErr.message);
+
+      // Anexo com subitem_id pertence àquele sub-item, não ao requisito inteiro:
+      // fica numa lista separada pra não aparecer duas vezes.
+      Object.keys(SUB_ANEXOS).forEach(k => delete SUB_ANEXOS[k]);
+      (arquivos || []).filter(a => a.subitem_id).forEach(a => {
+        if(!SUB_ANEXOS[a.subitem_id]) SUB_ANEXOS[a.subitem_id] = [];
+        SUB_ANEXOS[a.subitem_id].push({ id: a.id, foto: a.arquivo_data, nome: a.arquivo_nome || '' });
+      });
 
       const progressoByAluno = {};
       const resumoByAluno = {};
@@ -14357,7 +14483,7 @@
       });
 
       const comprovanteByAluno = {};
-      (arquivos || []).forEach(a => {
+      (arquivos || []).filter(a => !a.subitem_id).forEach(a => {
         if(!comprovanteByAluno[a.desbravador_id]) comprovanteByAluno[a.desbravador_id] = {};
         if(!comprovanteByAluno[a.desbravador_id][a.requisito_titulo]) comprovanteByAluno[a.desbravador_id][a.requisito_titulo] = [];
         comprovanteByAluno[a.desbravador_id][a.requisito_titulo].push({ id: a.id, foto: a.arquivo_data, nome: a.arquivo_nome || '' });
@@ -14443,10 +14569,13 @@
       setTimeout(() => studentNameInput.focus(), 150);
     }
 
-    function selectStudent(name){
+    async function selectStudent(name){
       selectedStudent = name;
       studentModeLabel.textContent = name ? ('Marcando presença para: ' + name) : 'Editando requisitos da classe';
       renderStudentBar(currentClass);
+      applyStudentProgressToCards();
+      // Os sub-itens cumpridos são de cada desbravador, então recarregam ao trocar.
+      await loadProgressoSubitens();
       applyStudentProgressToCards();
     }
 
@@ -14477,6 +14606,22 @@
         tag.className = 'pl-event-tag pl-tag-' + color;
         // A tarja lateral do card segue este status (ver CSS [data-view-status]).
         card.dataset.viewStatus = status;
+
+        // Requisito com sub-itens mostra o andamento na própria lista.
+        const subsDoCard = subitensDoRequisito(currentClass, card.dataset.title);
+        let selo = card.querySelector('.cl-sub-selo');
+        if(subsDoCard.length && progressForStudent){
+          const feitos = subsDoCard.filter(x => (SUB_FEITOS[x.id] || {}).feito).length;
+          if(!selo){
+            selo = document.createElement('span');
+            selo.className = 'cl-sub-selo';
+            tag.parentNode.insertBefore(selo, tag);
+          }
+          selo.textContent = feitos + '/' + subsDoCard.length;
+          selo.classList.toggle('completo', feitos === subsDoCard.length);
+        } else if(selo){
+          selo.remove();
+        }
 
         // Avisa na própria lista quais requisitos vão pedir resumo pra concluir.
         const meta = card.querySelector('.pl-event-meta');
@@ -14640,6 +14785,186 @@
       }
     }
 
+    // ---- Sub-itens na ficha do desbravador ----
+    const subBloco = document.getElementById('clSubitensBloco');
+    const subLista = document.getElementById('clSubLista');
+    const subContagem = document.getElementById('clSubContagem');
+    const subStatusHint = document.getElementById('clSubStatusHint');
+    let subEmEdicao = null; // id do sub-item com o detalhe aberto
+
+    function statusPelosSubitens(subs){
+      const feitos = subs.filter(x => (SUB_FEITOS[x.id] || {}).feito).length;
+      if(!subs.length) return null;
+      if(feitos === subs.length) return 'done';
+      return feitos > 0 ? 'progress' : 'todo';
+    }
+    window.__clStatusPelosSubitens = statusPelosSubitens;
+
+    function renderSubitens(card){
+      if(!subBloco) return;
+      const subs = subitensDoRequisito(currentClass, card.dataset.title);
+      if(!subs.length || !selectedStudent){
+        subBloco.style.display = 'none';
+        return;
+      }
+      subBloco.style.display = '';
+      const feitos = subs.filter(x => (SUB_FEITOS[x.id] || {}).feito).length;
+      subContagem.textContent = feitos + ' de ' + subs.length;
+      if(subStatusHint){
+        subStatusHint.textContent = feitos === subs.length
+          ? 'Todos cumpridos — o requisito fica como Concluída.'
+          : 'O status abaixo acompanha os sub-itens marcados.';
+      }
+
+      subLista.innerHTML = '';
+      subs.forEach(sub => {
+        const estado = SUB_FEITOS[sub.id] || { feito: false, resumo: '' };
+        const item = document.createElement('div');
+        item.className = 'cl-sub-item' + (estado.feito ? ' feito' : '');
+
+        const linha = document.createElement('div');
+        linha.className = 'cl-sub-linha';
+        linha.innerHTML =
+          '<span class="cl-sub-caixa"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>' +
+          '<span class="cl-sub-texto"></span>';
+        linha.querySelector('.cl-sub-texto').textContent = sub.texto;
+        linha.addEventListener('click', () => marcarSubitem(card, sub, !((SUB_FEITOS[sub.id] || {}).feito)));
+        item.appendChild(linha);
+
+        // O detalhe (resumo e anexos) abre no sub-item marcado, pra registrar a
+        // evidência logo depois de marcar.
+        if(estado.feito || subEmEdicao === sub.id){
+          const detalhe = document.createElement('div');
+          detalhe.className = 'cl-sub-detalhe';
+
+          const anexos = SUB_ANEXOS[sub.id] || [];
+          if(anexos.length){
+            const wrap = document.createElement('div');
+            wrap.className = 'cl-sub-anexos';
+            anexos.forEach(a => {
+              const chip = document.createElement('span');
+              chip.className = 'cl-sub-anexo';
+              chip.innerHTML = '<span></span><button type="button" aria-label="Remover anexo"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+              chip.querySelector('span').textContent = a.nome || 'comprovante';
+              chip.querySelector('button').addEventListener('click', () => removerAnexoSubitem(card, sub, a.id));
+              wrap.appendChild(chip);
+            });
+            detalhe.appendChild(wrap);
+          }
+
+          const resumo = document.createElement('textarea');
+          resumo.className = 'pl-input';
+          resumo.rows = 2;
+          resumo.maxLength = 500;
+          resumo.placeholder = 'Como cumpriu este item (opcional)';
+          resumo.value = estado.resumo || '';
+          resumo.addEventListener('focus', () => { subEmEdicao = sub.id; });
+          resumo.addEventListener('change', async () => {
+            await gravarSubitem(card, sub, estado.feito, resumo.value);
+            // Escrever o resumo que faltava pode ser o que destrava a conclusão.
+            await marcarSubitem(card, sub, estado.feito);
+          });
+          detalhe.appendChild(resumo);
+
+          const acoes = document.createElement('div');
+          acoes.className = 'cl-sub-acoes';
+          const anexar = document.createElement('label');
+          anexar.className = 'cl-sub-btn';
+          anexar.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Anexar evidência';
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = 'image/*,application/pdf';
+          input.hidden = true;
+          input.addEventListener('change', (e) => {
+            const arquivo = e.target.files && e.target.files[0];
+            if(arquivo) anexarNoSubitem(card, sub, arquivo);
+            e.target.value = '';
+          });
+          anexar.appendChild(input);
+          acoes.appendChild(anexar);
+          detalhe.appendChild(acoes);
+
+          item.appendChild(detalhe);
+        }
+
+        subLista.appendChild(item);
+      });
+    }
+
+    async function gravarSubitem(card, sub, feito, resumo){
+      const alunoId = (STUDENT_IDS[currentClass] || {})[selectedStudent];
+      SUB_FEITOS[sub.id] = { feito: !!feito, resumo: resumo || '' };
+      if(supa && alunoId){
+        const { error } = await supa.from('progresso_subitens')
+          .upsert({ desbravador_id: alunoId, subitem_id: sub.id, feito: !!feito, resumo: resumo || null });
+        if(error){
+          console.error('Erro ao salvar sub-item:', error.message);
+          alert('Não consegui salvar este item: ' + error.message);
+          return false;
+        }
+      }
+      return true;
+    }
+
+    async function marcarSubitem(card, sub, feito){
+      const estado = SUB_FEITOS[sub.id] || { resumo: '' };
+      subEmEdicao = feito ? sub.id : null;
+      const ok = await gravarSubitem(card, sub, feito, estado.resumo);
+      if(!ok) return;
+      renderSubitens(card);
+
+      // Marcar o último item conclui o requisito; desmarcar volta pra andamento.
+      const subs = subitensDoRequisito(currentClass, card.dataset.title);
+      let novo = statusPelosSubitens(subs);
+      // Requisito que exige comprovação só fecha com o resumo de cada sub-item —
+      // mesma regra do requisito solto, aplicada item a item.
+      if(novo === 'done' && exigeComprovacao(currentClass, card.dataset.title)){
+        const semResumo = subs.filter(x => !((SUB_FEITOS[x.id] || {}).resumo || '').trim());
+        if(semResumo.length){
+          novo = 'progress';
+          if(subStatusHint){
+            subStatusHint.textContent = 'Este requisito exige comprovação: escreva o resumo de cada item pra ele fechar como Concluída.';
+          }
+        }
+      }
+      if(novo) await aplicarStatusRequisito(card, novo);
+    }
+
+    async function anexarNoSubitem(card, sub, arquivo){
+      const alunoId = (STUDENT_IDS[currentClass] || {})[selectedStudent];
+      const dataUrl = await new Promise(res => {
+        const fr = new FileReader();
+        fr.onload = () => res(fr.result);
+        fr.readAsDataURL(arquivo);
+      });
+      let id = 'local-' + Date.now();
+      if(supa && alunoId){
+        const { data, error } = await supa.from('comprovante_arquivos')
+          .insert({ desbravador_id: alunoId, requisito_titulo: card.dataset.title,
+                    arquivo_data: dataUrl, arquivo_nome: arquivo.name || null, subitem_id: sub.id })
+          .select('id').single();
+        if(error){ alert('Não consegui anexar: ' + error.message); return; }
+        if(data && data.id) id = data.id;
+      }
+      if(!SUB_ANEXOS[sub.id]) SUB_ANEXOS[sub.id] = [];
+      SUB_ANEXOS[sub.id].push({ id: id, foto: dataUrl, nome: arquivo.name || '' });
+      subEmEdicao = sub.id;
+      renderSubitens(card);
+    }
+
+    async function removerAnexoSubitem(card, sub, id){
+      const lista = SUB_ANEXOS[sub.id] || [];
+      const i = lista.findIndex(a => String(a.id) === String(id));
+      if(i === -1) return;
+      lista.splice(i, 1);
+      subEmEdicao = sub.id;
+      renderSubitens(card);
+      if(supa && String(id).indexOf('local-') !== 0){
+        const { error } = await supa.from('comprovante_arquivos').delete().eq('id', id);
+        if(error) console.error('Erro ao remover anexo do sub-item:', error.message);
+      }
+    }
+
     function openStatusPick(card){
       statusPickCard = card;
       const texto = textoDoRequisito(currentClass, card.dataset.title);
@@ -14656,6 +14981,8 @@
         statusPickObs.textContent = observacao;
         statusPickObs.style.display = observacao ? '' : 'none';
       }
+      subEmEdicao = null;
+      renderSubitens(card);
       const currentStatus = (CLASS_PROGRESS[currentClass][selectedStudent] || {})[card.dataset.title] || 'todo';
       statusPickOverlay.querySelectorAll('.cl-status-pick-btn').forEach(btn => {
         btn.classList.toggle('selected', btn.getAttribute('data-status') === currentStatus);
@@ -14736,11 +15063,55 @@
       if(window.__usRefreshDashboardRanking) window.__usRefreshDashboardRanking();
     }
 
+    // Grava o status do requisito na ficha do aluno. Chamado pelos botões de
+    // status e também pelos sub-itens, que decidem o status sozinhos — por isso
+    // "fecharModal" é opcional: marcando sub-item a pessoa continua na tela.
+    async function aplicarStatusRequisito(card, status, opts){
+      opts = opts || {};
+      if(!card || !selectedStudent) return false;
+      ensureClassData(currentClass);
+      if(!CLASS_PROGRESS[currentClass][selectedStudent]) CLASS_PROGRESS[currentClass][selectedStudent] = {};
+      const requisitoTitulo = card.dataset.title;
+      const resumo = ('resumo' in opts)
+        ? (opts.resumo || '')
+        : ((CLASS_RESUMOS[currentClass][selectedStudent] || {})[requisitoTitulo] || '');
+
+      const previousStatus = CLASS_PROGRESS[currentClass][selectedStudent][requisitoTitulo] || 'todo';
+      if(previousStatus === status && !opts.forcar) {
+        if(opts.fecharModal) statusPickOverlay.classList.remove('show');
+        return true;
+      }
+      CLASS_PROGRESS[currentClass][selectedStudent][requisitoTitulo] = status;
+      if(!CLASS_RESUMOS[currentClass][selectedStudent]) CLASS_RESUMOS[currentClass][selectedStudent] = {};
+      CLASS_RESUMOS[currentClass][selectedStudent][requisitoTitulo] = resumo;
+      applyStudentProgressToCards();
+      updateHubCounts();
+      // Mantém o botão marcado igual ao status real — os sub-itens mudam o
+      // status sem ninguém tocar nesses botões.
+      statusPickOverlay.querySelectorAll('.cl-status-pick-btn').forEach(b => {
+        b.classList.toggle('selected', b.getAttribute('data-status') === status);
+      });
+      if(opts.fecharModal) statusPickOverlay.classList.remove('show');
+
+      const desbravadorId = STUDENT_IDS[currentClass] && STUDENT_IDS[currentClass][selectedStudent];
+      if(supa && desbravadorId){
+        const { error } = await supa.from('progresso_requisitos')
+          .upsert({ desbravador_id: desbravadorId, requisito_titulo: requisitoTitulo, status, resumo: resumo || null }, { onConflict: 'desbravador_id,requisito_titulo' });
+        if(error) console.error('Erro ao salvar progresso:', error.message);
+
+        if(status === 'done' && previousStatus !== 'done'){
+          await awardRequisitoPoints(desbravadorId, requisitoTitulo, selectedStudent);
+        } else if(status !== 'done' && previousStatus === 'done'){
+          await revokeRequisitoPoints(desbravadorId, requisitoTitulo);
+        }
+      }
+      return true;
+    }
+    window.__clAplicarStatusRequisito = aplicarStatusRequisito;
+
     statusPickOverlay.querySelectorAll('.cl-status-pick-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         if(!statusPickCard || !selectedStudent) return;
-        ensureClassData(currentClass);
-        if(!CLASS_PROGRESS[currentClass][selectedStudent]) CLASS_PROGRESS[currentClass][selectedStudent] = {};
         const status = btn.getAttribute('data-status');
         const requisitoTitulo = statusPickCard.dataset.title;
         const resumo = fieldResumo ? fieldResumo.value.trim() : '';
@@ -14756,26 +15127,7 @@
           return;
         }
 
-        const previousStatus = CLASS_PROGRESS[currentClass][selectedStudent][requisitoTitulo] || 'todo';
-        CLASS_PROGRESS[currentClass][selectedStudent][requisitoTitulo] = status;
-        if(!CLASS_RESUMOS[currentClass][selectedStudent]) CLASS_RESUMOS[currentClass][selectedStudent] = {};
-        CLASS_RESUMOS[currentClass][selectedStudent][requisitoTitulo] = resumo;
-        applyStudentProgressToCards();
-        updateHubCounts();
-        statusPickOverlay.classList.remove('show');
-
-        const desbravadorId = STUDENT_IDS[currentClass] && STUDENT_IDS[currentClass][selectedStudent];
-        if(supa && desbravadorId){
-          const { error } = await supa.from('progresso_requisitos')
-            .upsert({ desbravador_id: desbravadorId, requisito_titulo: requisitoTitulo, status, resumo: resumo || null }, { onConflict: 'desbravador_id,requisito_titulo' });
-          if(error) console.error('Erro ao salvar progresso:', error.message);
-
-          if(status === 'done' && previousStatus !== 'done'){
-            await awardRequisitoPoints(desbravadorId, requisitoTitulo, selectedStudent);
-          } else if(status !== 'done' && previousStatus === 'done'){
-            await revokeRequisitoPoints(desbravadorId, requisitoTitulo);
-          }
-        }
+        await aplicarStatusRequisito(statusPickCard, status, { resumo: resumo, fecharModal: true });
       });
     });
 
@@ -15995,6 +16347,9 @@
     const rtSalvar = document.getElementById('cpReqTextoSalvar');
     const rtReset = document.getElementById('cpReqTextoReset');
     const rtLeituraHint = document.getElementById('cpReqTextoLeitura');
+    const rtSubitens = document.getElementById('cpReqTextoSubitens');
+    const rtSepararBtn = document.getElementById('cpReqTextoSepararBtn');
+    const rtSubHint = document.getElementById('cpReqTextoSubHint');
     const rtCampos = {
       titulo: document.getElementById('cpReqTextoTitulo'),
       subtitulo: document.getElementById('cpReqTextoSubtitulo'),
@@ -16026,9 +16381,16 @@
       // em cima dela, em vez de obrigar a redigitar tudo.
       if(!rtCampos.descricao.value) rtCampos.descricao.value = descricaoDoCatalogo(alvo, titulo);
 
+      // Um sub-item por linha, na ordem em que estão salvos.
+      const subs = (window.__clSubitens && window.__clSubitens(alvo, titulo)) || [];
+      if(rtSubitens) rtSubitens.value = subs.map(x => x.texto).join('\n');
+
       // Quem não gerencia o cartão abre só pra ler.
       const pode = canManageRoster(alvo);
       Object.keys(rtCampos).forEach(k => { rtCampos[k].disabled = !pode; });
+      if(rtSubitens) rtSubitens.disabled = !pode;
+      if(rtSepararBtn) rtSepararBtn.style.display = pode ? '' : 'none';
+      if(rtSubHint) rtSubHint.style.display = pode ? '' : 'none';
       if(rtSalvar) rtSalvar.style.display = pode ? '' : 'none';
       if(rtReset) rtReset.style.display = pode ? '' : 'none';
       if(rtLeituraHint) rtLeituraHint.style.display = pode ? 'none' : '';
@@ -16042,6 +16404,31 @@
       rtOverlay.classList.remove('show');
       rtRequisito = null;
     }
+
+    // Quebra a descrição nos marcadores "a)", "1.", "-" e afins. O resultado é
+    // só um rascunho: fica no campo pra o Coordenador corrigir antes de salvar.
+    function separarEmSubitens(texto){
+      if(!texto) return [];
+      // Uma quebra antes de cada marcador, pra funcionar mesmo com tudo na
+      // mesma linha (é assim que vem a maioria das descrições do catálogo).
+      const marcado = texto.replace(/\s+(?=(?:[a-z]\)|\d+[).])\s)/gi, '\n');
+      const partes = marcado.split(/\n+/).map(l => l.trim()).filter(Boolean);
+      // A frase de abertura ("Memorizar e demonstrar o seu conhecimento:") não é
+      // um item: quando vem antes dos marcadores, sai da lista.
+      const ehMarcado = l => /^(?:[a-z]\)|\d+[).])/i.test(l);
+      if(partes.length > 1 && !ehMarcado(partes[0]) && partes.slice(1).every(ehMarcado)) partes.shift();
+      return partes;
+    }
+
+    if(rtSepararBtn) rtSepararBtn.addEventListener('click', () => {
+      const partes = separarEmSubitens(rtCampos.descricao.value);
+      if(partes.length < 2){
+        alert('Não achei itens separados nesta descrição. Escreva um por linha à mão.');
+        return;
+      }
+      if(rtSubitens.value.trim() && !confirm('Isso substitui os sub-itens já escritos. Continuar?')) return;
+      rtSubitens.value = partes.join('\n');
+    });
 
     if(rtClose) rtClose.addEventListener('click', fecharEditorDeTexto);
 
@@ -16058,11 +16445,50 @@
         atualizado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
       };
       const { error } = await supa.from('requisitos_personalizados').upsert(payload);
+      if(error){ rtSalvar.disabled = false; alert('Não consegui salvar o texto: ' + error.message); return; }
+
+      const erroSub = await salvarSubitens();
       rtSalvar.disabled = false;
-      if(error){ alert('Não consegui salvar o texto: ' + error.message); return; }
+      if(erroSub){ alert('O texto foi salvo, mas os sub-itens não: ' + erroSub); return; }
+
       fecharEditorDeTexto();
       if(window.__clReloadTextosRequisitos) await window.__clReloadTextosRequisitos();
     });
+
+    // Guarda o id dos sub-itens cujo texto não mudou, pra não perder o que os
+    // desbravadores já marcaram (progresso_subitens aponta pra esse id).
+    async function salvarSubitens(){
+      const linhas = (rtSubitens.value || '').split('\n').map(l => l.trim()).filter(Boolean);
+      const atuais = (window.__clSubitens && window.__clSubitens(rtClasse, rtRequisito)) || [];
+      const sobrando = atuais.slice();
+      const paraGravar = [];
+
+      linhas.forEach((texto, i) => {
+        const idx = sobrando.findIndex(x => x.texto === texto);
+        // Mesmo texto: reaproveita o id (só a ordem pode ter mudado).
+        const id = idx >= 0 ? sobrando.splice(idx, 1)[0].id : novoId();
+        paraGravar.push({ id: id, classe: rtClasse, requisito_titulo: rtRequisito, ordem: i, texto: texto });
+      });
+
+      if(sobrando.length){
+        const { error } = await supa.from('requisito_subitens').delete().in('id', sobrando.map(x => x.id));
+        if(error) return error.message;
+      }
+      if(paraGravar.length){
+        const { error } = await supa.from('requisito_subitens').upsert(paraGravar);
+        if(error) return error.message;
+      }
+      return null;
+    }
+
+    // O id vem do app pra dispensar gen_random_uuid() no banco (ver schema.sql).
+    function novoId(){
+      if(window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : ((r & 0x3) | 0x8)).toString(16);
+      });
+    }
 
     if(rtReset) rtReset.addEventListener('click', async () => {
       if(!rtRequisito || !rtClasse || !supa) return;
@@ -16070,6 +16496,9 @@
       const { error } = await supa.from('requisitos_personalizados').delete()
         .eq('classe', rtClasse).eq('requisito_titulo', rtRequisito);
       if(error){ alert('Não consegui restaurar: ' + error.message); return; }
+      // Os sub-itens também eram texto do Coordenador, então voltam com ele.
+      await supa.from('requisito_subitens').delete()
+        .eq('classe', rtClasse).eq('requisito_titulo', rtRequisito);
       fecharEditorDeTexto();
       if(window.__clReloadTextosRequisitos) await window.__clReloadTextosRequisitos();
     });
