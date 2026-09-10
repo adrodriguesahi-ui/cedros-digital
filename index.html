@@ -12856,7 +12856,7 @@
         }));
     }
 
-    function confirmReminderRead(card){
+    async function confirmReminderRead(card){
       const today = new Date(); today.setHours(0,0,0,0);
       const todayStr = today.toISOString().slice(0, 10);
       const timesConfirmed = (parseInt(card.dataset.reminderConfirmedTimes, 10) || 0) + 1;
@@ -12866,14 +12866,19 @@
       refreshReminderBell();
       // Sem isso, a confirmação só existia na tela: recarregar a página
       // esquecia tudo e o lembrete voltava a aparecer do zero, ignorando o
-      // limite de repetições já configurado (lembrete_repetir_vezes).
+      // limite de repetições já configurado (lembrete_repetir_vezes). O
+      // "await" aqui não é só estilo — sem ele o update nunca saía do lugar:
+      // o builder do Supabase só dispara a requisição quando é de fato
+      // aguardado/`.then()`, e essa chamada ficava solta sem nenhum dos
+      // dois, então a confirmação nunca chegava a ser salva de verdade.
       if(supa && card.dataset.id){
-        supa.from('eventos_agenda').update({
+        const { error } = await supa.from('eventos_agenda').update({
           lembrete_confirmado: true,
           lembrete_confirmado_vezes: timesConfirmed,
           lembrete_ultima_confirmacao: todayStr,
           lembrete_confirmado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
         }).eq('id', card.dataset.id);
+        if(error) console.error('Erro ao confirmar lembrete:', error.message);
       }
     }
 
