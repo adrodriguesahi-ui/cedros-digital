@@ -1791,6 +1791,64 @@
   }
   .cp-resp-btn.ativo{ background:rgba(216,168,62,0.18); border-color:var(--gold); color:var(--gold); }
 
+  /* Requisitos agrupados numa mesma aula, como chips removíveis */
+  .cl-req-add-row{ display:flex; gap:8px; align-items:stretch; }
+  .cl-req-add-row .pl-input{ flex:1; min-width:0; }
+  .cl-req-add-btn{
+    flex-shrink:0; background:rgba(63,203,107,0.16); color:var(--accent);
+    border:none; border-radius:12px; padding:0 14px; font-size:12px; font-weight:800; cursor:pointer;
+  }
+  .cl-req-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .cl-req-chip-item{
+    display:inline-flex; align-items:center; gap:6px;
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+    border-radius:16px; padding:5px 8px 5px 11px; font-size:11.5px; font-weight:700; color:var(--cream);
+    max-width:100%;
+  }
+  .cl-req-chip-item span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cl-req-chip-item button{
+    flex-shrink:0; width:18px; height:18px; display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,0.08); border:none; border-radius:50%;
+    color:rgba(245,239,225,0.6); cursor:pointer; padding:0;
+  }
+
+  /* Calendário do cartão */
+  .cp-view-toggle{ display:flex; gap:8px; margin-bottom:14px; }
+  .cp-view-btn{
+    flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12);
+    color:rgba(245,239,225,0.7); border-radius:12px; padding:9px 0;
+    font-size:12.5px; font-weight:800; cursor:pointer;
+  }
+  .cp-view-btn.ativo{ background:var(--accent); border-color:var(--accent); color:#08130A; }
+  .cp-cal-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+  .cp-cal-mes{ font-size:14px; font-weight:900; color:var(--cream); text-transform:capitalize; }
+  .cp-cal-nav{
+    width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+    border-radius:50%; color:var(--cream); cursor:pointer;
+  }
+  .cp-cal-grid{ display:grid; grid-template-columns:repeat(7, 1fr); gap:4px; }
+  .cp-cal-dow{ text-align:center; font-size:10px; font-weight:800; color:rgba(245,239,225,0.4); padding-bottom:4px; }
+  .cp-cal-dia{
+    aspect-ratio:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    background:rgba(255,255,255,0.04); border:1px solid transparent; border-radius:10px;
+    font-size:12px; font-weight:700; color:rgba(245,239,225,0.75); cursor:pointer; padding:0;
+  }
+  .cp-cal-dia.vazio{ background:transparent; cursor:default; }
+  .cp-cal-dia.hoje{ border-color:rgba(245,239,225,0.35); }
+  .cp-cal-dia.tem-aula{ background:rgba(63,203,107,0.16); color:var(--cream); }
+  .cp-cal-dia.acompanha{ background:rgba(216,168,62,0.2); }
+  .cp-cal-dots{ display:flex; gap:3px; }
+  .cp-cal-dot{ width:4px; height:4px; border-radius:50%; background:var(--accent); }
+  .cp-cal-dot.gold{ background:var(--gold); }
+  .cp-cal-legenda{ display:flex; gap:14px; margin-top:10px; font-size:10.5px; font-weight:700; color:rgba(245,239,225,0.45); }
+  .cp-cal-legenda span{ display:inline-flex; align-items:center; gap:5px; }
+  .cp-dia-titulo{ margin:16px 0 8px; font-size:12.5px; font-weight:900; color:var(--gold); text-transform:uppercase; letter-spacing:0.04em; }
+  .cp-selo{
+    display:inline-flex; align-items:center; gap:3px; margin-left:6px;
+    font-size:10px; font-weight:800; color:var(--gold);
+  }
+
   /* Marca, na lista, os requisitos que exigem comprovação pra concluir. */
   .cl-req-exige-badge{
     display:inline-flex; align-items:center; gap:3px; margin-left:6px;
@@ -8439,7 +8497,20 @@
           </div>
           <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Instrutor responsável</label>
           <select class="pl-input" id="clPlanField_instrutor"></select>
+          <input type="text" class="pl-input" id="clPlanField_instrutorConvidado" placeholder="Nome do instrutor convidado" maxlength="60" style="display:none; margin-top:8px;">
           <p class="pl-reminder-hint" id="clPlanInstrutorHint" style="display:none;">Nenhum instrutor definido pra este cartão ainda — quem define é o Coordenador, no ícone de instrutores da área Planejamento de Classes.</p>
+
+          <label class="pl-reminder-toggle-row" for="clPlanField_coordAcompanha" id="clPlanCoordRow" style="display:none; margin:12px 0 4px;">
+            <span class="pl-reminder-toggle-text">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              Vou acompanhar esta aula
+            </span>
+            <span class="pl-switch">
+              <input type="checkbox" id="clPlanField_coordAcompanha">
+              <span class="pl-switch-track"><span class="pl-switch-thumb"></span></span>
+            </span>
+          </label>
+          <p class="pl-reminder-hint" id="clPlanCoordHint" style="display:none; margin:-8px 0 6px;">Marca no cronograma que o Coordenador da classe estará presente nesta atividade.</p>
           <div class="pl-field-row">
             <div class="pl-field-col">
               <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Qtd. de desbravadores</label>
@@ -8453,8 +8524,13 @@
 
           <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>2. Atividade</label>
           <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Requisito da classe</label>
-          <input type="text" class="pl-input" id="clPlanField_requisito" list="clPlanningRequisitoOptions" placeholder="Selecione ou digite o requisito" maxlength="120">
+          <div class="cl-req-add-row">
+            <input type="text" class="pl-input" id="clPlanField_requisito" list="clPlanningRequisitoOptions" placeholder="Selecione ou digite o requisito" maxlength="120">
+            <button type="button" class="cl-req-add-btn" id="clPlanReqAddBtn">Adicionar</button>
+          </div>
           <datalist id="clPlanningRequisitoOptions"></datalist>
+          <div class="cl-req-chips" id="clPlanReqChips"></div>
+          <p class="pl-reminder-hint">Dá pra juntar mais de um requisito na mesma aula: adicione quantos forem cobertos nessa data.</p>
           <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Tema</label>
           <input type="text" class="pl-input" id="clPlanField_tema" placeholder="Ex.: Conhecendo a Bíblia" maxlength="80">
           <div class="pl-field-row">
@@ -9982,13 +10058,38 @@
 
           <p class="pl-reminder-hint" id="cpReadOnlyHint" style="display:none;">Você pode acompanhar o cronograma, mas quem monta é o instrutor responsável deste cartão (ou o Coordenador da classe e o Administrador).</p>
 
-          <h4 class="un-section-title">Agendados</h4>
-          <div id="cpScheduled"></div>
-          <p class="un-empty-hint" id="cpScheduledEmpty" style="display:none;">Nenhuma aula agendada neste cartão ainda.</p>
+          <div class="cp-view-toggle">
+            <button type="button" class="cp-view-btn ativo" id="cpViewLista">Lista</button>
+            <button type="button" class="cp-view-btn" id="cpViewCal">Calendário</button>
+          </div>
 
-          <h4 class="un-section-title">Sem data</h4>
-          <div id="cpUnscheduled"></div>
-          <p class="un-empty-hint" id="cpUnscheduledEmpty" style="display:none;">Todos os requisitos deste cartão já têm data.</p>
+          <div id="cpListaWrap">
+            <h4 class="un-section-title">Agendados</h4>
+            <div id="cpScheduled"></div>
+            <p class="un-empty-hint" id="cpScheduledEmpty" style="display:none;">Nenhuma aula agendada neste cartão ainda.</p>
+
+            <h4 class="un-section-title">Sem data</h4>
+            <div id="cpUnscheduled"></div>
+            <p class="un-empty-hint" id="cpUnscheduledEmpty" style="display:none;">Todos os requisitos deste cartão já têm data.</p>
+          </div>
+
+          <div id="cpCalWrap" style="display:none;">
+            <div class="cp-cal-head">
+              <button type="button" class="cp-cal-nav" id="cpCalPrev" aria-label="Mês anterior">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <span class="cp-cal-mes" id="cpCalMes"></span>
+              <button type="button" class="cp-cal-nav" id="cpCalNext" aria-label="Próximo mês">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+            <div class="cp-cal-grid" id="cpCalGrid"></div>
+            <div class="cp-cal-legenda">
+              <span><i class="cp-cal-dot"></i> aula planejada</span>
+              <span><i class="cp-cal-dot gold"></i> coordenador acompanha</span>
+            </div>
+            <div id="cpDiaWrap"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -14885,6 +14986,57 @@
     // O instrutor da aula sai da lista de instrutores daquele cartão (definida
     // pelo Coordenador na área Planejamento de Classes). Planejamento antigo,
     // feito quando o campo era texto livre, entra como opção pra não sumir.
+    // Uma aula pode cobrir vários requisitos: o campo com datalist vira a
+    // entrada e os escolhidos ficam como chips (ver planejamento_requisitos).
+    const reqChipsEl = document.getElementById('clPlanReqChips');
+    const reqAddBtn = document.getElementById('clPlanReqAddBtn');
+    let reqSelecionados = [];
+
+    function renderReqChips(){
+      if(!reqChipsEl) return;
+      const pode = !window.__cpCanPlan || window.__cpCanPlan(planningClass);
+      reqChipsEl.innerHTML = '';
+      reqSelecionados.forEach(titulo => {
+        const chip = document.createElement('span');
+        chip.className = 'cl-req-chip-item';
+        chip.innerHTML = '<span></span>' + (pode
+          ? '<button type="button" aria-label="Remover requisito"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
+          : '');
+        chip.querySelector('span').textContent = titulo;
+        const btn = chip.querySelector('button');
+        if(btn) btn.addEventListener('click', () => {
+          reqSelecionados = reqSelecionados.filter(t => t !== titulo);
+          renderReqChips();
+        });
+        reqChipsEl.appendChild(chip);
+      });
+    }
+
+    function adicionarRequisito(){
+      const titulo = fields.requisito.value.trim();
+      if(!titulo) return;
+      if(reqSelecionados.indexOf(titulo) === -1) reqSelecionados.push(titulo);
+      fields.requisito.value = '';
+      renderReqChips();
+    }
+    if(reqAddBtn) reqAddBtn.addEventListener('click', adicionarRequisito);
+    if(fields.requisito){
+      fields.requisito.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter'){ e.preventDefault(); adicionarRequisito(); }
+      });
+      // Escolher no datalist já adiciona, sem precisar tocar em "Adicionar".
+      fields.requisito.addEventListener('change', () => {
+        const titulo = fields.requisito.value.trim();
+        const existe = Array.from(requisitoOptions.options).some(o => o.value === titulo);
+        if(existe) adicionarRequisito();
+      });
+    }
+
+    const instrutorConvidado = document.getElementById('clPlanField_instrutorConvidado');
+    const coordRow = document.getElementById('clPlanCoordRow');
+    const coordHint = document.getElementById('clPlanCoordHint');
+    const coordToggle = document.getElementById('clPlanField_coordAcompanha');
+
     const instrutorHint = document.getElementById('clPlanInstrutorHint');
     function populateInstrutorOptions(classe, plan){
       const campo = fields.instrutor;
@@ -14899,28 +15051,47 @@
         opt.textContent = pessoa.nome + (pessoa.responsavel ? ' · responsável do cartão' : '');
         campo.appendChild(opt);
       });
-      const legado = atualNome && !lista.some(p => p.id === atualId);
+      const convidadoOpt = document.createElement('option');
+      convidadoOpt.value = 'convidado';
+      convidadoOpt.textContent = 'Instrutor convidado…';
+      campo.appendChild(convidadoOpt);
+
+      const ehConvidado = plan && plan.instrutor_convidado && atualNome;
+      const legado = !ehConvidado && atualNome && !lista.some(p => p.id === atualId);
       if(legado){
         const opt = document.createElement('option');
         opt.value = 'legado';
         opt.textContent = atualNome + ' (fora da lista)';
         campo.appendChild(opt);
       }
-      campo.value = legado ? 'legado' : (lista.some(p => p.id === atualId) ? atualId : '');
+      campo.value = ehConvidado ? 'convidado' : (legado ? 'legado' : (lista.some(p => p.id === atualId) ? atualId : ''));
+      if(instrutorConvidado){
+        instrutorConvidado.value = ehConvidado ? atualNome : '';
+        instrutorConvidado.style.display = ehConvidado ? '' : 'none';
+      }
       if(instrutorHint) instrutorHint.style.display = lista.length ? 'none' : '';
     }
 
     function instrutorEscolhido(){
       const campo = fields.instrutor;
-      if(!campo || !campo.value) return { id: null, nome: null };
+      if(!campo || !campo.value) return { id: null, nome: null, convidado: false };
+      if(campo.value === 'convidado'){
+        return { id: null, nome: (instrutorConvidado && instrutorConvidado.value.trim()) || null, convidado: true };
+      }
       if(campo.value === 'legado'){
-        return { id: null, nome: (editingPlan && editingPlan.instrutor_responsavel) || null };
+        return { id: null, nome: (editingPlan && editingPlan.instrutor_responsavel) || null, convidado: false };
       }
       // Pelo id, não pelo rótulo: a opção do responsável leva um sufixo que não
       // pode acabar virando o nome salvo.
       const lista = (window.__cpGetInstrutores && window.__cpGetInstrutores(planningClass)) || [];
       const pessoa = lista.find(p => p.id === campo.value);
-      return { id: campo.value, nome: pessoa ? pessoa.nome : null };
+      return { id: campo.value, nome: pessoa ? pessoa.nome : null, convidado: false };
+    }
+
+    if(fields.instrutor){
+      fields.instrutor.addEventListener('change', () => {
+        if(instrutorConvidado) instrutorConvidado.style.display = fields.instrutor.value === 'convidado' ? '' : 'none';
+      });
     }
 
     // Só Administrador e o Coordenador daquele cartão criam/editam; os demais
@@ -14932,6 +15103,13 @@
       if(deleteBtn) deleteBtn.style.display = (pode && editingPlan) ? '' : 'none';
       if(duplicateBtn) duplicateBtn.style.display = (pode && editingPlan) ? '' : 'none';
       formState.querySelectorAll('input, select, textarea').forEach(el => { el.disabled = !pode; });
+      if(reqAddBtn) reqAddBtn.style.display = pode ? '' : 'none';
+      // Quem marca que vai acompanhar é o Coordenador da classe (ou o Admin) —
+      // o instrutor responsável planeja, mas não agenda a presença do coordenador.
+      const ehCoordenador = !window.__cpCanManageRoster || window.__cpCanManageRoster(planningClass);
+      if(coordRow) coordRow.style.display = ehCoordenador ? '' : 'none';
+      if(coordHint) coordHint.style.display = ehCoordenador ? '' : 'none';
+      renderReqChips();
       // Sem permissão o "Modelo Pronto" também some; com permissão quem manda
       // é populateTemplateOptions(), que esconde quando a classe não tem modelo.
       if(!pode && templateWrap) templateWrap.style.display = 'none';
@@ -14958,12 +15136,28 @@
       });
     }
 
+    // Anexa a cada aula a lista completa de requisitos (planejamento_requisitos).
+    async function comRequisitos(rows){
+      if(!rows.length || !supa) return rows;
+      const { data } = await supa.from('planejamento_requisitos')
+        .select('planejamento_id, requisito_titulo')
+        .in('planejamento_id', rows.map(r => r.id));
+      const porAula = {};
+      (data || []).forEach(r => {
+        if(!porAula[r.planejamento_id]) porAula[r.planejamento_id] = [];
+        porAula[r.planejamento_id].push(r.requisito_titulo);
+      });
+      return rows.map(r => Object.assign({}, r, {
+        requisitos: porAula[r.id] || (r.requisito_titulo ? [r.requisito_titulo] : [])
+      }));
+    }
+
     async function loadPlans(classe){
       if(!supa) return;
       const { data, error } = await supa.from('planejamentos_aula').select('*')
         .eq('classe', classe).order('data', { ascending: false });
       if(error || !data) return;
-      plans = data;
+      plans = await comRequisitos(data);
       renderList();
     }
 
@@ -14972,6 +15166,10 @@
       avParticipou.checked = false;
       avCompreendeu.checked = false;
       avCumpriu.checked = false;
+      reqSelecionados = [];
+      renderReqChips();
+      if(instrutorConvidado){ instrutorConvidado.value = ''; instrutorConvidado.style.display = 'none'; }
+      if(coordToggle) coordToggle.checked = false;
     }
 
     function fillFields(plan){
@@ -14981,7 +15179,16 @@
       // opções do cartão e já seleciona a pessoa certa.
       fields.qtd.value = plan.quantidade_desbravadores != null ? plan.quantidade_desbravadores : '';
       fields.local.value = plan.local || '';
-      fields.requisito.value = plan.requisito_titulo || '';
+      // A lista completa de requisitos vem de planejamento_requisitos; quando
+      // não há (planejamento antigo), vale o requisito_titulo que já existia.
+      reqSelecionados = (plan.requisitos && plan.requisitos.length)
+        ? plan.requisitos.slice()
+        : (plan.requisito_titulo ? [plan.requisito_titulo] : []);
+      renderReqChips();
+      if(coordToggle) coordToggle.checked = !!plan.coordenador_acompanha;
+      // O campo de texto é só a entrada para adicionar mais requisitos; os já
+      // escolhidos aparecem nos chips acima dele.
+      fields.requisito.value = '';
       fields.tema.value = plan.tema || '';
       fields.objetivo.value = plan.objetivo || '';
       fields.duracao.value = plan.duracao || '';
@@ -15048,7 +15255,7 @@
     // Chamado pela área Planejamento de Classes: abre direto o formulário da
     // aula, já no cartão certo — editando um planejamento existente ou criando
     // um novo com o requisito que a pessoa tocou no cronograma.
-    window.__clOpenPlanningForm = function(classe, plan, requisitoTitulo){
+    window.__clOpenPlanningForm = function(classe, plan, requisitoTitulo, dataPadrao){
       if(!classe) return;
       planningClass = classe;
       populateRequisitoOptions(classe);
@@ -15056,7 +15263,14 @@
       overlay.classList.add('show');
       loadPlans(classe);
       openForm(plan || null);
-      if(!plan && requisitoTitulo) fields.requisito.value = requisitoTitulo;
+      if(!plan && requisitoTitulo){
+        // Já entra como chip: a aula pode juntar vários requisitos na mesma data.
+        if(reqSelecionados.indexOf(requisitoTitulo) === -1) reqSelecionados.push(requisitoTitulo);
+        fields.requisito.value = '';
+        renderReqChips();
+      }
+      // Veio do calendário: a data do dia tocado já vem preenchida.
+      if(!plan && dataPadrao) fields.data.value = dataPadrao;
       applyPlanningPermission();
     };
 
@@ -15069,15 +15283,20 @@
 
     saveBtn.addEventListener('click', async () => {
       if(!supa || !planningClass) return;
+      // O que ficou digitado e não virou chip ainda entra como requisito.
+      if(fields.requisito.value.trim()) adicionarRequisito();
+      const instrutor = instrutorEscolhido();
       const payload = {
         classe: planningClass,
         data: fields.data.value || null,
         horario: fields.horario.value || null,
-        instrutor_responsavel: instrutorEscolhido().nome,
-        instrutor_usuario_id: instrutorEscolhido().id,
+        instrutor_responsavel: instrutor.nome,
+        instrutor_usuario_id: instrutor.id,
+        instrutor_convidado: !!instrutor.convidado,
+        coordenador_acompanha: coordToggle ? coordToggle.checked : false,
         quantidade_desbravadores: fields.qtd.value ? parseInt(fields.qtd.value, 10) : null,
         local: fields.local.value.trim() || null,
-        requisito_titulo: fields.requisito.value.trim() || null,
+        requisito_titulo: reqSelecionados[0] || null,
         tema: fields.tema.value.trim() || null,
         objetivo: fields.objetivo.value.trim() || null,
         duracao: fields.duracao.value.trim() || null,
@@ -15096,7 +15315,17 @@
       const query = editingPlan
         ? supa.from('planejamentos_aula').update(payload).eq('id', editingPlan.id).select().single()
         : supa.from('planejamentos_aula').insert(payload).select().single();
-      const { error } = await query;
+      const { data: salvo, error } = await query;
+      if(!error && salvo){
+        // Regrava a lista de requisitos da aula do zero — mais simples e seguro
+        // do que tentar casar o que entrou e o que saiu.
+        await supa.from('planejamento_requisitos').delete().eq('planejamento_id', salvo.id);
+        if(reqSelecionados.length){
+          const { error: reqErr } = await supa.from('planejamento_requisitos')
+            .insert(reqSelecionados.map(t => ({ planejamento_id: salvo.id, requisito_titulo: t })));
+          if(reqErr) console.error('Erro ao salvar requisitos da aula:', reqErr.message);
+        }
+      }
       saveBtn.disabled = false;
       if(error){
         alert('Não foi possível salvar o planejamento: ' + (error.message || 'erro desconhecido'));
@@ -15187,6 +15416,7 @@
       return (instrutoresPorClasse[qualClasse] || []).some(p => p.id === u.id && p.responsavel);
     }
     window.__cpCanPlan = canPlan;
+    window.__cpCanManageRoster = canManageRoster;
     window.__cpGetInstrutores = function(qualClasse){ return instrutoresPorClasse[qualClasse] || []; };
 
     function requisitosDaClasse(qualClasse){
@@ -15240,7 +15470,29 @@
       if(!supa || !classe){ plans = []; return; }
       const { data, error } = await supa.from('planejamentos_aula').select('*').eq('classe', classe);
       if(error){ console.error('Erro ao carregar planejamentos:', error.message); plans = []; return; }
-      plans = data || [];
+      const rows = data || [];
+      // Uma aula pode cobrir vários requisitos — a lista completa vem à parte.
+      if(rows.length){
+        const { data: reqs } = await supa.from('planejamento_requisitos')
+          .select('planejamento_id, requisito_titulo')
+          .in('planejamento_id', rows.map(r => r.id));
+        const porAula = {};
+        (reqs || []).forEach(r => {
+          if(!porAula[r.planejamento_id]) porAula[r.planejamento_id] = [];
+          porAula[r.planejamento_id].push(r.requisito_titulo);
+        });
+        rows.forEach(r => {
+          r.requisitos = porAula[r.id] || (r.requisito_titulo ? [r.requisito_titulo] : []);
+        });
+      }
+      plans = rows;
+    }
+
+    // Aula com mais de um requisito mostra o primeiro + quantos vêm junto.
+    function tituloDaAula(plan){
+      const lista = plan.requisitos || [];
+      if(!lista.length) return plan.tema || 'Aula sem requisito';
+      return lista.length === 1 ? lista[0] : lista[0] + ' +' + (lista.length - 1);
     }
 
     function buildRow(opts){
@@ -15258,10 +15510,19 @@
       } else {
         dateBox.querySelector('b').textContent = '—';
       }
-      row.querySelector('.cp-row-title').textContent = opts.titulo;
+      const tituloEl = row.querySelector('.cp-row-title');
+      tituloEl.textContent = opts.titulo;
+      // Selo de quando o Coordenador da classe vai acompanhar a atividade.
+      if(opts.acompanha){
+        const selo = document.createElement('span');
+        selo.className = 'cp-selo';
+        selo.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>coordenador';
+        tituloEl.appendChild(selo);
+      }
       const meta = row.querySelector('.cp-row-meta');
-      if(opts.instrutor){
-        meta.textContent = opts.meta ? opts.instrutor + ' · ' + opts.meta : opts.instrutor;
+      const instrutorTexto = opts.instrutor ? (opts.convidado ? opts.instrutor + ' (convidado)' : opts.instrutor) : '';
+      if(instrutorTexto){
+        meta.textContent = opts.meta ? instrutorTexto + ' · ' + opts.meta : instrutorTexto;
       } else if(opts.data){
         meta.innerHTML = '<span class="cp-sem-instrutor">Sem instrutor escalado</span>' + (opts.meta ? ' · ' + opts.meta : '');
       } else {
@@ -15283,14 +15544,18 @@
       const requisitos = requisitosDaClasse(classe);
       const comData = plans.filter(p => p.data).sort((a, b) => a.data.localeCompare(b.data));
       const semData = plans.filter(p => !p.data);
-      const planejados = new Set(plans.map(p => p.requisito_titulo).filter(Boolean));
+      // Uma aula pode cobrir vários requisitos: todos contam como agendados.
+      const planejados = new Set();
+      plans.forEach(p => (p.requisitos || []).forEach(t => planejados.add(t)));
 
       scheduledEl.innerHTML = '';
       comData.forEach(plan => {
         scheduledEl.appendChild(buildRow({
           data: plan.data,
-          titulo: plan.requisito_titulo || plan.tema || 'Aula sem requisito',
+          titulo: tituloDaAula(plan),
           instrutor: plan.instrutor_responsavel,
+          convidado: plan.instrutor_convidado,
+          acompanha: plan.coordenador_acompanha,
           meta: [plan.horario, plan.local].filter(Boolean).join(' · '),
           plan: plan
         }));
@@ -15301,8 +15566,10 @@
       semData.forEach(plan => {
         unscheduledEl.appendChild(buildRow({
           data: null,
-          titulo: plan.requisito_titulo || plan.tema || 'Aula sem requisito',
+          titulo: tituloDaAula(plan),
           instrutor: plan.instrutor_responsavel,
+          convidado: plan.instrutor_convidado,
+          acompanha: plan.coordenador_acompanha,
           meta: 'Planejamento sem data',
           plan: plan
         }));
@@ -15318,15 +15585,147 @@
       });
       unscheduledEmpty.style.display = unscheduledEl.children.length ? 'none' : '';
 
-      const agendadosDoCartao = new Set(comData.map(p => p.requisito_titulo).filter(t => requisitos.indexOf(t) !== -1));
+      const agendadosDoCartao = new Set();
+      comData.forEach(p => (p.requisitos || []).forEach(t => {
+        if(requisitos.indexOf(t) !== -1) agendadosDoCartao.add(t);
+      }));
       summaryEl.innerHTML = '<span><b>' + agendadosDoCartao.size + '</b> de ' + requisitos.length + ' requisitos com data</span>' +
         '<span>' + comData.length + (comData.length === 1 ? ' aula agendada' : ' aulas agendadas') + '</span>';
     }
+
+    // ---- Calendário do mês ----
+    const listaWrap = document.getElementById('cpListaWrap');
+    const calWrap = document.getElementById('cpCalWrap');
+    const viewListaBtn = document.getElementById('cpViewLista');
+    const viewCalBtn = document.getElementById('cpViewCal');
+    const calGrid = document.getElementById('cpCalGrid');
+    const calMesEl = document.getElementById('cpCalMes');
+    const calPrev = document.getElementById('cpCalPrev');
+    const calNext = document.getElementById('cpCalNext');
+    const diaWrap = document.getElementById('cpDiaWrap');
+    const MES_NOMES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+    const DOW = ['D','S','T','Q','Q','S','S'];
+
+    let modo = 'lista';
+    let calRef = new Date();
+    let diaAberto = null;
+
+    function isoDoDia(ano, mes, dia){
+      return ano + '-' + String(mes + 1).padStart(2, '0') + '-' + String(dia).padStart(2, '0');
+    }
+
+    function renderCalendario(){
+      if(!calGrid) return;
+      const ano = calRef.getFullYear();
+      const mes = calRef.getMonth();
+      calMesEl.textContent = MES_NOMES[mes] + ' ' + ano;
+
+      const porDia = {};
+      plans.filter(p => p.data).forEach(p => {
+        if(!porDia[p.data]) porDia[p.data] = [];
+        porDia[p.data].push(p);
+      });
+
+      const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+      const hojeIso = isoDoDia(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+      const primeiroDow = new Date(ano, mes, 1).getDay();
+      const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+
+      calGrid.innerHTML = '';
+      DOW.forEach(d => {
+        const cel = document.createElement('span');
+        cel.className = 'cp-cal-dow';
+        cel.textContent = d;
+        calGrid.appendChild(cel);
+      });
+      for(let i = 0; i < primeiroDow; i++){
+        const vazio = document.createElement('span');
+        vazio.className = 'cp-cal-dia vazio';
+        calGrid.appendChild(vazio);
+      }
+      for(let dia = 1; dia <= diasNoMes; dia++){
+        const iso = isoDoDia(ano, mes, dia);
+        const doDia = porDia[iso] || [];
+        const acompanhada = doDia.some(p => p.coordenador_acompanha);
+        const cel = document.createElement('button');
+        cel.type = 'button';
+        cel.className = 'cp-cal-dia' + (doDia.length ? ' tem-aula' : '') + (acompanhada ? ' acompanha' : '') + (iso === hojeIso ? ' hoje' : '');
+        cel.innerHTML = '<span>' + dia + '</span><span class="cp-cal-dots"></span>';
+        const dots = cel.querySelector('.cp-cal-dots');
+        doDia.slice(0, 3).forEach(p => {
+          const dot = document.createElement('i');
+          dot.className = 'cp-cal-dot' + (p.coordenador_acompanha ? ' gold' : '');
+          dots.appendChild(dot);
+        });
+        cel.addEventListener('click', () => { diaAberto = iso; renderDia(); });
+        calGrid.appendChild(cel);
+      }
+      renderDia();
+    }
+
+    function renderDia(){
+      if(!diaWrap) return;
+      diaWrap.innerHTML = '';
+      if(!diaAberto) return;
+      const [ano, mes, dia] = diaAberto.split('-');
+      const doDia = plans.filter(p => p.data === diaAberto);
+
+      const titulo = document.createElement('h4');
+      titulo.className = 'cp-dia-titulo';
+      titulo.textContent = dia + ' de ' + MES_NOMES[parseInt(mes, 10) - 1];
+      diaWrap.appendChild(titulo);
+
+      doDia.forEach(plan => {
+        diaWrap.appendChild(buildRow({
+          data: plan.data,
+          titulo: tituloDaAula(plan),
+          instrutor: plan.instrutor_responsavel,
+          convidado: plan.instrutor_convidado,
+          acompanha: plan.coordenador_acompanha,
+          meta: [plan.horario, plan.local].filter(Boolean).join(' · '),
+          plan: plan
+        }));
+      });
+
+      if(!doDia.length){
+        const vazio = document.createElement('p');
+        vazio.className = 'un-empty-hint';
+        vazio.textContent = 'Nenhuma aula nesta data.';
+        diaWrap.appendChild(vazio);
+      }
+
+      if(canPlan(classe)){
+        const novo = document.createElement('button');
+        novo.type = 'button';
+        novo.className = 'pl-btn pl-btn-primary';
+        novo.style.width = '100%';
+        novo.style.marginTop = '10px';
+        novo.textContent = '+ Nova aula nesta data';
+        novo.addEventListener('click', () => {
+          if(window.__clOpenPlanningForm) window.__clOpenPlanningForm(classe, null, '', diaAberto);
+        });
+        diaWrap.appendChild(novo);
+      }
+    }
+
+    function aplicarModo(){
+      const ehCal = modo === 'calendario';
+      if(listaWrap) listaWrap.style.display = ehCal ? 'none' : '';
+      if(calWrap) calWrap.style.display = ehCal ? '' : 'none';
+      if(viewListaBtn) viewListaBtn.classList.toggle('ativo', !ehCal);
+      if(viewCalBtn) viewCalBtn.classList.toggle('ativo', ehCal);
+      if(ehCal) renderCalendario();
+    }
+    if(viewListaBtn) viewListaBtn.addEventListener('click', () => { modo = 'lista'; aplicarModo(); });
+    if(viewCalBtn) viewCalBtn.addEventListener('click', () => { modo = 'calendario'; aplicarModo(); });
+    if(calPrev) calPrev.addEventListener('click', () => { calRef = new Date(calRef.getFullYear(), calRef.getMonth() - 1, 1); diaAberto = null; renderCalendario(); });
+    if(calNext) calNext.addEventListener('click', () => { calRef = new Date(calRef.getFullYear(), calRef.getMonth() + 1, 1); diaAberto = null; renderCalendario(); });
 
     async function refresh(){
       await loadInstrutores();
       await loadPlans();
       render();
+      if(modo === 'calendario') renderCalendario();
     }
     window.__cpRefresh = refresh;
 
@@ -15334,6 +15733,8 @@
       classe = classSelect.value;
       await loadPlans();
       render();
+      // Trocou de cartão com o calendário aberto: recarrega o mês do cartão novo.
+      if(modo === 'calendario'){ diaAberto = null; renderCalendario(); }
     });
 
     // ---- Instrutores do cartão ----

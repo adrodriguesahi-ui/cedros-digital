@@ -1068,3 +1068,25 @@ create policy "classe_instrutores: acesso publico" on classe_instrutores
 -- digitado. instrutor_responsavel continua guardando o nome (inclusive dos
 -- planejamentos antigos, feitos quando o campo era texto livre).
 alter table planejamentos_aula add column if not exists instrutor_usuario_id uuid references usuarios(id) on delete set null;
+
+-- Uma aula pode cobrir vários requisitos de uma vez (ex.: dois requisitos
+-- curtos na mesma data). requisito_titulo continua guardando o primeiro, pra
+-- não quebrar o que já existia; a lista completa vive aqui.
+create table if not exists planejamento_requisitos (
+  planejamento_id uuid not null references planejamentos_aula(id) on delete cascade,
+  requisito_titulo text not null,
+  primary key (planejamento_id, requisito_titulo)
+);
+
+alter table planejamento_requisitos enable row level security;
+
+drop policy if exists "planejamento_requisitos: acesso publico" on planejamento_requisitos;
+create policy "planejamento_requisitos: acesso publico" on planejamento_requisitos
+  for all using (true) with check (true);
+
+-- Aula dada por alguém de fora da lista de instrutores do cartão: o nome fica
+-- em instrutor_responsavel e instrutor_usuario_id fica nulo.
+alter table planejamentos_aula add column if not exists instrutor_convidado boolean not null default false;
+
+-- Aulas que o Coordenador da classe marcou pra acompanhar pessoalmente.
+alter table planejamentos_aula add column if not exists coordenador_acompanha boolean not null default false;
