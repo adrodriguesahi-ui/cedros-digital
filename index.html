@@ -1686,6 +1686,24 @@
   .cl-hub-row-body{ flex:1; min-width:0; display:flex; flex-direction:column; gap:7px; }
   .cl-hub-row-name{ font-size:14.5px; font-weight:800; color:var(--cream); line-height:1.28; }
   .cl-hub-row-progress{ display:flex; align-items:center; gap:9px; }
+  /* Lápis pra reescrever o texto do requisito, na linha do cronograma. */
+  .cp-req-editar{
+    flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    width:30px; height:30px; margin-left:4px; border-radius:9px;
+    background:rgba(255,255,255,0.07); color:rgba(245,239,225,0.6); cursor:pointer;
+  }
+  .cp-req-editar:active{ transform:scale(0.92); }
+
+  /* Descrição e observação do requisito, no detalhe. */
+  .cl-req-descricao{
+    margin:12px 0 0; font-size:13px; line-height:1.5; color:rgba(245,239,225,0.78);
+  }
+  .cl-req-observacao{
+    margin:10px 0 0; padding:10px 12px; border-radius:12px;
+    background:rgba(216,168,62,0.09); border:1px solid rgba(216,168,62,0.22);
+    font-size:12.5px; line-height:1.5; color:rgba(245,239,225,0.8);
+  }
+
   /* Rosca de situação dos requisitos, na tela de Rendimento das Classes. */
   .cl-donut-card{
     background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
@@ -8463,6 +8481,12 @@
             </button>
           </div>
           <p class="pl-reminder-hint" id="clStatusPickSubtitle" style="margin-top:0;"></p>
+
+          <!-- Descrição e observação do requisito, como o Coordenador do cartão
+               escreveu (ver requisitos_personalizados em supabase/schema.sql). -->
+          <p class="cl-req-descricao" id="clStatusPickDesc" style="display:none;"></p>
+          <p class="cl-req-observacao" id="clStatusPickObs" style="display:none;"></p>
+
           <div class="cl-status-pick-options">
             <button type="button" class="cl-status-pick-btn" data-status="todo" data-color="gray" data-label="Não iniciada">Não iniciada</button>
             <button type="button" class="cl-status-pick-btn" data-status="progress" data-color="gold" data-label="Em andamento">Em andamento</button>
@@ -10178,6 +10202,38 @@
         </div>
         <p class="pl-reminder-hint" style="margin-top:0;">Marque quem atende esta classe. São essas pessoas que aparecem pra escalar como instrutor responsável de cada aula.</p>
         <div class="ad-visibility-list" id="cpInstrutoresList"></div>
+      </div>
+    </div>
+
+    <!-- O Coordenador do cartão reescreve o texto do requisito aqui. O título do
+         catálogo continua sendo a chave interna; só muda o que aparece na tela.
+         Ver requisitos_personalizados em supabase/schema.sql. -->
+    <div class="pl-modal-overlay" id="cpReqTextoOverlay">
+      <div class="pl-modal">
+        <div class="pl-modal-head">
+          <h4 class="pl-modal-title">Texto do requisito</h4>
+          <button type="button" class="pl-modal-close" id="cpReqTextoClose" aria-label="Fechar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <p class="pl-reminder-hint" style="margin-top:0;">Requisito do catálogo: <b id="cpReqTextoChave"></b>. Campo em branco volta ao texto original.</p>
+
+        <label class="pl-field-label" for="cpReqTextoTitulo">Título</label>
+        <input type="text" class="pl-input" id="cpReqTextoTitulo" placeholder="Como aparece na lista">
+
+        <label class="pl-field-label" for="cpReqTextoSubtitulo">Subtítulo</label>
+        <input type="text" class="pl-input" id="cpReqTextoSubtitulo" placeholder="Linha menor embaixo do título">
+
+        <label class="pl-field-label" for="cpReqTextoDescricao">Descrição</label>
+        <textarea class="pl-input pl-textarea" id="cpReqTextoDescricao" rows="4" placeholder="O que o desbravador precisa fazer"></textarea>
+
+        <label class="pl-field-label" for="cpReqTextoObservacao">Observação</label>
+        <textarea class="pl-input pl-textarea" id="cpReqTextoObservacao" rows="3" placeholder="Recado do coordenador sobre este requisito"></textarea>
+
+        <div class="pl-modal-actions">
+          <button type="button" class="pl-btn pl-btn-neutral" id="cpReqTextoReset">Restaurar original</button>
+          <button type="button" class="pl-btn pl-btn-primary" id="cpReqTextoSalvar">Salvar</button>
+        </div>
       </div>
     </div>
 
@@ -13716,7 +13772,12 @@
       let visible = 0;
       group.querySelectorAll('.cl-activity-card').forEach(card => {
         const statusOk = reqStatusFilter === 'all' || effectiveCardStatus(card) === reqStatusFilter;
-        const haystack = normalizeReqText((card.dataset.title || '') + ' ' + (card.dataset.area || '') + ' ' + (card.dataset.desc || ''));
+        // A busca acha tanto pelo texto do catálogo quanto pelo que o
+        // Coordenador reescreveu — quem renomeou procura pelo nome novo.
+        const t = textoDoRequisito(currentClass, card.dataset.title) || {};
+        const haystack = normalizeReqText(
+          (card.dataset.title || '') + ' ' + (card.dataset.area || '') + ' ' + (card.dataset.desc || '') + ' ' +
+          (t.titulo || '') + ' ' + (t.subtitulo || '') + ' ' + (t.descricao || '') + ' ' + (t.observacao || ''));
         const termOk = !term || haystack.indexOf(term) !== -1;
         const hide = !(statusOk && termOk);
         card.classList.toggle('cl-hide-filter', hide);
@@ -14162,6 +14223,8 @@
     const statusPickOverlay = document.getElementById('clStatusPickOverlay');
     const statusPickTitle = document.getElementById('clStatusPickTitle');
     const statusPickSubtitle = document.getElementById('clStatusPickSubtitle');
+    const statusPickDesc = document.getElementById('clStatusPickDesc');
+    const statusPickObs = document.getElementById('clStatusPickObs');
     const statusPickClose = document.getElementById('clStatusPickClose');
 
     const CLASS_STUDENTS = {};
@@ -14202,6 +14265,61 @@
       if(error){ console.error('Erro ao carregar requisitos com comprovação:', error.message); return; }
       REQUISITOS_COMPROVACAO = new Set((data || []).map(r => requisitoKey(r.classe, r.requisito_titulo)));
       if(currentClass) applyStudentProgressToCards();
+    }
+
+    // ---- Texto do requisito reescrito pelo Coordenador do cartão ----
+    // O catálogo de requisitos é fixo no HTML e o data-title de cada card é a
+    // CHAVE que amarra progresso, planejamento e comprovação. Então o que o
+    // Coordenador reescreve fica aqui, só para exibição — a chave nunca muda.
+    const REQ_TEXTOS = {};
+
+    function textoDoRequisito(className, titulo){
+      return REQ_TEXTOS[requisitoKey(className, titulo)] || null;
+    }
+
+    // Título que aparece na tela: o reescrito quando existe, senão o do catálogo.
+    function tituloExibicao(className, titulo){
+      const t = textoDoRequisito(className, titulo);
+      return (t && t.titulo) ? t.titulo : titulo;
+    }
+    window.__clTituloExibicao = tituloExibicao;
+    window.__clTextoDoRequisito = textoDoRequisito;
+
+    async function loadRequisitosPersonalizados(){
+      if(!supa) return;
+      const { data, error } = await supa.from('requisitos_personalizados')
+        .select('classe, requisito_titulo, titulo, subtitulo, descricao, observacao');
+      if(error){ console.error('Erro ao carregar textos de requisitos:', error.message); return; }
+      Object.keys(REQ_TEXTOS).forEach(k => delete REQ_TEXTOS[k]);
+      (data || []).forEach(r => {
+        REQ_TEXTOS[requisitoKey(r.classe, r.requisito_titulo)] = {
+          titulo: r.titulo || '', subtitulo: r.subtitulo || '',
+          descricao: r.descricao || '', observacao: r.observacao || ''
+        };
+      });
+      aplicarTextosNosCards();
+      if(currentClass) applyStudentProgressToCards();
+      if(window.__cpRefresh) window.__cpRefresh();
+    }
+    window.__clReloadTextosRequisitos = loadRequisitosPersonalizados;
+
+    // Reescreve o que está visível no card sem encostar no data-title.
+    function aplicarTextosNosCards(){
+      document.querySelectorAll('.cl-activity-card[data-title]').forEach(card => {
+        const classe = card.dataset.class;
+        const chave = card.dataset.title;
+        const t = textoDoRequisito(classe, chave);
+        const tituloEl = card.querySelector('.pl-event-title');
+        if(tituloEl) tituloEl.textContent = (t && t.titulo) ? t.titulo : chave;
+        const metaEl = card.querySelector('.pl-event-meta');
+        if(metaEl){
+          // O subtítulo substitui o "Classe X" padrão; a badge de comprovação é
+          // recolocada depois por applyStudentProgressToCards().
+          const badge = metaEl.querySelector('.cl-req-exige-badge');
+          metaEl.textContent = (t && t.subtitulo) ? t.subtitulo : ('Classe ' + classe);
+          if(badge) metaEl.appendChild(badge);
+        }
+      });
     }
 
     async function loadClassDataFromSupabase(){
@@ -14522,8 +14640,20 @@
 
     function openStatusPick(card){
       statusPickCard = card;
-      statusPickTitle.textContent = card.dataset.title;
+      const texto = textoDoRequisito(currentClass, card.dataset.title);
+      statusPickTitle.textContent = tituloExibicao(currentClass, card.dataset.title);
       statusPickSubtitle.textContent = 'Status de ' + selectedStudent + ' neste requisito:';
+      // A descrição vem do texto reescrito quando existe; senão, do catálogo.
+      const descricao = (texto && texto.descricao) ? texto.descricao : (card.dataset.desc || '');
+      if(statusPickDesc){
+        statusPickDesc.textContent = descricao;
+        statusPickDesc.style.display = descricao ? '' : 'none';
+      }
+      const observacao = texto ? texto.observacao : '';
+      if(statusPickObs){
+        statusPickObs.textContent = observacao;
+        statusPickObs.style.display = observacao ? '' : 'none';
+      }
       const currentStatus = (CLASS_PROGRESS[currentClass][selectedStudent] || {})[card.dataset.title] || 'todo';
       statusPickOverlay.querySelectorAll('.cl-status-pick-btn').forEach(btn => {
         btn.classList.toggle('selected', btn.getAttribute('data-status') === currentStatus);
@@ -15070,6 +15200,7 @@
       applyStudentProgressToCards();
     };
     loadRequisitosComprovacao();
+    loadRequisitosPersonalizados();
     loadClassDataFromSupabase();
 
     // Classe Agrupada — filtro por idade (ver CSS .cl-age-filter). Cada requisito
@@ -15727,7 +15858,8 @@
     function tituloDaAula(plan){
       const lista = plan.requisitos || [];
       if(!lista.length) return plan.tema || 'Aula sem requisito';
-      return lista.length === 1 ? lista[0] : lista[0] + ' +' + (lista.length - 1);
+      const primeiro = window.__clTituloExibicao ? window.__clTituloExibicao(classe, lista[0]) : lista[0];
+      return lista.length === 1 ? primeiro : primeiro + ' +' + (lista.length - 1);
     }
 
     function buildRow(opts){
@@ -15766,6 +15898,22 @@
       row.addEventListener('click', () => {
         if(window.__clOpenPlanningForm) window.__clOpenPlanningForm(classe, opts.plan || null, opts.requisito || '');
       });
+
+      // Lápis pra reescrever o texto do requisito — só o Coordenador do cartão
+      // (ou o Administrador) edita; nas linhas de aula não faz sentido.
+      if(opts.requisito && canManageRoster(classe)){
+        const lapis = document.createElement('span');
+        lapis.className = 'cp-req-editar';
+        lapis.setAttribute('role', 'button');
+        lapis.setAttribute('tabindex', '0');
+        lapis.setAttribute('aria-label', 'Editar texto de ' + opts.requisito);
+        lapis.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+        lapis.addEventListener('click', (e) => {
+          e.stopPropagation();
+          abrirEditorDeTexto(opts.requisito);
+        });
+        row.appendChild(lapis);
+      }
       return row;
     }
 
@@ -15812,7 +15960,7 @@
       requisitos.filter(t => !planejados.has(t)).forEach(titulo => {
         unscheduledEl.appendChild(buildRow({
           data: null,
-          titulo: titulo,
+          titulo: window.__clTituloExibicao ? window.__clTituloExibicao(classe, titulo) : titulo,
           instrutor: null,
           meta: pode ? 'Toque pra planejar' : 'Ainda não planejado',
           requisito: titulo
@@ -15827,6 +15975,78 @@
       summaryEl.innerHTML = '<span><b>' + agendadosDoCartao.size + '</b> de ' + requisitos.length + ' requisitos com data</span>' +
         '<span>' + comData.length + (comData.length === 1 ? ' aula agendada' : ' aulas agendadas') + '</span>';
     }
+
+    // ---- Texto do requisito (título, subtítulo, descrição, observação) ----
+    // Guardado em requisitos_personalizados; o título do catálogo continua sendo
+    // a chave interna, então renomear aqui não desamarra progresso nem aulas.
+    const rtOverlay = document.getElementById('cpReqTextoOverlay');
+    const rtChave = document.getElementById('cpReqTextoChave');
+    const rtClose = document.getElementById('cpReqTextoClose');
+    const rtSalvar = document.getElementById('cpReqTextoSalvar');
+    const rtReset = document.getElementById('cpReqTextoReset');
+    const rtCampos = {
+      titulo: document.getElementById('cpReqTextoTitulo'),
+      subtitulo: document.getElementById('cpReqTextoSubtitulo'),
+      descricao: document.getElementById('cpReqTextoDescricao'),
+      observacao: document.getElementById('cpReqTextoObservacao')
+    };
+    let rtRequisito = null;
+
+    function descricaoDoCatalogo(titulo){
+      const card = document.querySelector('.cl-activity-card[data-class="' + CSS.escape(classe) + '"][data-title="' + CSS.escape(titulo) + '"]');
+      return card ? (card.dataset.desc || '') : '';
+    }
+
+    async function abrirEditorDeTexto(titulo){
+      if(!canManageRoster(classe)) return;
+      rtRequisito = titulo;
+      rtChave.textContent = titulo;
+      const atual = (window.__clTextoDoRequisito && window.__clTextoDoRequisito(classe, titulo)) || null;
+      rtCampos.titulo.value = atual ? (atual.titulo || '') : '';
+      rtCampos.subtitulo.value = atual ? (atual.subtitulo || '') : '';
+      rtCampos.descricao.value = atual ? (atual.descricao || '') : '';
+      rtCampos.observacao.value = atual ? (atual.observacao || '') : '';
+      // Sem texto próprio ainda: já mostra a descrição do catálogo pra editar
+      // em cima dela, em vez de obrigar a redigitar tudo.
+      if(!rtCampos.descricao.value) rtCampos.descricao.value = descricaoDoCatalogo(titulo);
+      rtOverlay.classList.add('show');
+    }
+
+    function fecharEditorDeTexto(){
+      rtOverlay.classList.remove('show');
+      rtRequisito = null;
+    }
+
+    if(rtClose) rtClose.addEventListener('click', fecharEditorDeTexto);
+
+    if(rtSalvar) rtSalvar.addEventListener('click', async () => {
+      if(!rtRequisito || !supa) return;
+      rtSalvar.disabled = true;
+      const payload = {
+        classe: classe,
+        requisito_titulo: rtRequisito,
+        titulo: rtCampos.titulo.value.trim() || null,
+        subtitulo: rtCampos.subtitulo.value.trim() || null,
+        descricao: rtCampos.descricao.value.trim() || null,
+        observacao: rtCampos.observacao.value.trim() || null,
+        atualizado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
+      };
+      const { error } = await supa.from('requisitos_personalizados').upsert(payload);
+      rtSalvar.disabled = false;
+      if(error){ alert('Não consegui salvar o texto: ' + error.message); return; }
+      fecharEditorDeTexto();
+      if(window.__clReloadTextosRequisitos) await window.__clReloadTextosRequisitos();
+    });
+
+    if(rtReset) rtReset.addEventListener('click', async () => {
+      if(!rtRequisito || !supa) return;
+      if(!confirm('Isso apaga o texto reescrito e volta ao original do catálogo. Continuar?')) return;
+      const { error } = await supa.from('requisitos_personalizados').delete()
+        .eq('classe', classe).eq('requisito_titulo', rtRequisito);
+      if(error){ alert('Não consegui restaurar: ' + error.message); return; }
+      fecharEditorDeTexto();
+      if(window.__clReloadTextosRequisitos) await window.__clReloadTextosRequisitos();
+    });
 
     // ---- Calendário do mês ----
     const listaWrap = document.getElementById('cpListaWrap');

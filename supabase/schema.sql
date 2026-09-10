@@ -1090,3 +1090,27 @@ alter table planejamentos_aula add column if not exists instrutor_convidado bool
 
 -- Aulas que o Coordenador da classe marcou pra acompanhar pessoalmente.
 alter table planejamentos_aula add column if not exists coordenador_acompanha boolean not null default false;
+
+-- Texto do requisito ajustado pelo Coordenador daquele cartão: o catálogo de
+-- requisitos é fixo no app, e esta tabela guarda só o que foi reescrito.
+-- ATENÇÃO: requisito_titulo é a CHAVE do requisito no catálogo e nunca muda —
+-- é por ela que progresso_requisitos, planejamento_requisitos e
+-- requisitos_comprovacao amarram os registros. O título que aparece na tela é
+-- a coluna titulo; deixar em branco faz voltar ao texto original.
+create table if not exists requisitos_personalizados (
+  classe text not null,
+  requisito_titulo text not null,
+  titulo text,
+  subtitulo text,
+  descricao text,
+  observacao text,
+  atualizado_por text,
+  updated_at timestamptz not null default now(),
+  primary key (classe, requisito_titulo)
+);
+
+alter table requisitos_personalizados enable row level security;
+
+drop policy if exists "requisitos_personalizados: acesso publico" on requisitos_personalizados;
+create policy "requisitos_personalizados: acesso publico" on requisitos_personalizados
+  for all using (true) with check (true);
