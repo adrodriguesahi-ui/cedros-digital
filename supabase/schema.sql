@@ -96,6 +96,12 @@ alter table usuarios add column if not exists ativo boolean not null default tru
 -- usuario_id) — assim a pessoa já aparece pronta em Classes Regulares pra
 -- marcar requisitos, sem precisar cadastrar de novo lá.
 alter table usuarios add column if not exists classe text;
+-- Classe/cartão que este usuário, quando papel = "Coordenador de Classes",
+-- está autorizado a gerenciar (cadastrar/renomear/excluir desbravadores) em
+-- Classes Regulares — diferente da coluna "classe" acima, que é o cartão do
+-- próprio usuário como desbravador. Nulo = nenhuma classe atribuída ainda
+-- (o coordenador não gerencia nenhuma, até o Administrador definir aqui).
+alter table usuarios add column if not exists classe_coordenada text;
 
 insert into usuarios (nome, email, unidade, papel) values
   ('Adrodrigues Santos', 'adrodrigues@cedrosdigital.org', 'Ype', 'Administrador'),
@@ -948,4 +954,36 @@ create policy "atividades_extras: acesso publico" on atividades_extras
 
 drop policy if exists "atividades_extras_concluidas: acesso publico" on atividades_extras_concluidas;
 create policy "atividades_extras_concluidas: acesso publico" on atividades_extras_concluidas
+  for all using (true) with check (true);
+
+-- ---------------------------------------------------------------------
+-- Cada requisito de Classes Regulares marcado como "Concluída" (status
+-- 'done' em progresso_requisitos) por um desbravador com conta vinculada
+-- (usuario_id) gera um lançamento de 3 pontos pra unidade dele em
+-- unidade_pontos — o Rank das Unidades reflete na hora. Só vale daqui pra
+-- frente (marcar/desmarcar 'done' a partir de agora); requisitos que já
+-- estavam 'done' antes desta coluna existir não geram pontos retroativos.
+-- unidade_ponto_id guarda o lançamento gerado, pra poder desfazer se a
+-- pessoa desmarcar o requisito depois. Desbravador sem usuario_id
+-- vinculado (cadastrado direto em Classes Regulares, sem conta no app)
+-- não tem unidade conhecida, então não gera pontos.
+-- ---------------------------------------------------------------------
+alter table progresso_requisitos add column if not exists unidade_ponto_id uuid references unidade_pontos(id) on delete set null;
+
+-- ---------------------------------------------------------------------
+-- classes_rendimento_papeis_extra: quais papéis, além dos que já enxergam
+-- por padrão (Administrador, Coordenador de Classes, Diretoria, Diretoria
+-- Executiva), podem abrir a tela de Rendimento/Ranking de Classes Regulares.
+-- Lista editável pelo próprio Coordenador de Classes (ou Administrador)
+-- dentro da tela — ver botão de engrenagem no Ranking de Classes.
+-- ---------------------------------------------------------------------
+create table if not exists classes_rendimento_papeis_extra (
+  papel text primary key references papeis(nome) on update cascade on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+alter table classes_rendimento_papeis_extra enable row level security;
+
+drop policy if exists "classes_rendimento_papeis_extra: acesso publico" on classes_rendimento_papeis_extra;
+create policy "classes_rendimento_papeis_extra: acesso publico" on classes_rendimento_papeis_extra
   for all using (true) with check (true);
