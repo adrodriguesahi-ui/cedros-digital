@@ -1690,6 +1690,18 @@
   .cl-sub-item.alternativa .cl-sub-caixa{ border-radius:50%; }
   .cp-sub-modo{ margin-bottom:8px; }
 
+  /* O card do requisito é resumo: título em até 2 linhas e subtítulo em 1, com
+     reticências. O texto inteiro fica na tela do requisito, ao tocar nele. */
+  #view-classes .cl-activity-card .pl-event-title{
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden; overflow-wrap:anywhere;
+  }
+  #view-classes .cl-activity-card .pl-event-meta{
+    display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  /* A badge de comprovação é inline, então continua cabendo na mesma linha. */
+  #view-classes .cl-activity-card .pl-event-meta .cl-req-exige-badge{ vertical-align:-1px; }
+
   /* Andamento dos sub-itens, na linha do requisito. */
   .cl-sub-selo{
     flex-shrink:0; align-self:center; padding:3px 7px; border-radius:8px; margin-right:6px;
@@ -1753,6 +1765,11 @@
     background:rgba(255,255,255,0.07); color:rgba(245,239,225,0.6); cursor:pointer;
   }
   .cp-req-editar:active{ transform:scale(0.92); }
+
+  .cl-req-subtitulo{
+    margin:10px 0 0; font-size:12.5px; line-height:1.45; font-weight:700;
+    color:var(--gold);
+  }
 
   /* Descrição e observação do requisito, no detalhe. */
   .cl-req-descricao{
@@ -8544,6 +8561,7 @@
 
           <!-- Descrição e observação do requisito, como o Coordenador do cartão
                escreveu (ver requisitos_personalizados em supabase/schema.sql). -->
+          <p class="cl-req-subtitulo" id="clStatusPickSub" style="display:none;"></p>
           <p class="cl-req-descricao" id="clStatusPickDesc" style="display:none;"></p>
           <p class="cl-req-observacao" id="clStatusPickObs" style="display:none;"></p>
 
@@ -14311,6 +14329,7 @@
     const statusPickOverlay = document.getElementById('clStatusPickOverlay');
     const statusPickTitle = document.getElementById('clStatusPickTitle');
     const statusPickSubtitle = document.getElementById('clStatusPickSubtitle');
+    const statusPickSub = document.getElementById('clStatusPickSub');
     const statusPickDesc = document.getElementById('clStatusPickDesc');
     const statusPickObs = document.getElementById('clStatusPickObs');
     const statusPickClose = document.getElementById('clStatusPickClose');
@@ -15020,6 +15039,12 @@
       const texto = textoDoRequisito(currentClass, card.dataset.title);
       statusPickTitle.textContent = tituloExibicao(currentClass, card.dataset.title);
       statusPickSubtitle.textContent = 'Status de ' + selectedStudent + ' neste requisito:';
+      // O subtítulo é curto no card, mas aqui aparece inteiro.
+      const subtitulo = texto ? (texto.subtitulo || '') : '';
+      if(statusPickSub){
+        statusPickSub.textContent = subtitulo;
+        statusPickSub.style.display = subtitulo ? '' : 'none';
+      }
       // A descrição vem do texto reescrito quando existe; senão, do catálogo.
       const descricao = (texto && texto.descricao) ? texto.descricao : (card.dataset.desc || '');
       if(statusPickDesc){
