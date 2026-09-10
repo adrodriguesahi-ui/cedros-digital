@@ -15658,7 +15658,7 @@
       areaEmEdicao = { classe: className, area: area };
       areaNomeOriginal.textContent = area;
       areaNomeInput.value = AREA_TITULOS[className + '|' + area] || '';
-      areaNomeOverlay.classList.add('show');
+      mostrarNaViewAtiva(areaNomeOverlay);
       areaNomeInput.focus();
     }
     function fecharEditorDeArea(){
@@ -15747,16 +15747,23 @@
       });
     }
 
+    // Estes overlays são `position:absolute` dentro de uma <section class="view">,
+    // e view que não está na tela fica com opacity:0 e pointer-events:none. Como
+    // a tela de Áreas é aberta pelo Planejamento de Classes (outra view), eles
+    // precisam se mudar pra view que está aparecendo — senão abrem invisíveis.
+    function mostrarNaViewAtiva(overlay){
+      if(!overlay) return;
+      const ativa = document.querySelector('.view.active');
+      if(ativa && overlay.parentElement !== ativa) ativa.appendChild(overlay);
+      overlay.classList.add('show');
+    }
+
     // Aberta pela área Planejamento de Classes (ver window.__clAbrirAreas).
     window.__clAbrirAreas = function(classe){
       if(!classe) return;
       areasClasse = classe;
       renderAreasLista();
-      // O overlay é absoluto dentro de uma .view; view fora da tela fica com
-      // opacity:0, então ele precisa se mudar pra view que está aparecendo.
-      const ativa = document.querySelector('.view.active');
-      if(ativa && areasOverlay.parentElement !== ativa) ativa.appendChild(areasOverlay);
-      areasOverlay.classList.add('show');
+      mostrarNaViewAtiva(areasOverlay);
     };
     if(areasCloseBtn) areasCloseBtn.addEventListener('click', () => areasOverlay.classList.remove('show'));
 
@@ -15800,7 +15807,7 @@
         opt.textContent = tituloDaArea(areasClasse, a);
         areaMoverDestino.appendChild(opt);
       });
-      areaMoverOverlay.classList.add('show');
+      mostrarNaViewAtiva(areaMoverOverlay);
     }
     if(areaMoverClose) areaMoverClose.addEventListener('click', () => {
       areaMoverOverlay.classList.remove('show');
