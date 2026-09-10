@@ -1746,6 +1746,22 @@
     color:rgba(245,239,225,0.55); cursor:pointer;
   }
 
+  /* Busca + filtro por status dos requisitos da classe aberta. Dois filtros
+     diferentes podem esconder um mesmo card (idade, na Classe Agrupada, e
+     busca/status aqui), então cada um usa a sua própria classe — se usassem
+     style.display direto, o último a rodar apagava a decisão do outro. */
+  .cl-req-filter{ display:flex; flex-direction:column; gap:9px; margin-bottom:14px; }
+  .cl-req-filter .cl-req-search{ margin:0; }
+  .cl-req-chips{ display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; -webkit-overflow-scrolling:touch; }
+  .cl-req-chip{
+    flex-shrink:0; white-space:nowrap; cursor:pointer;
+    background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12);
+    color:rgba(245,239,225,0.75); border-radius:20px; padding:7px 13px;
+    font-size:12px; font-weight:800;
+  }
+  .cl-req-chip.active{ background:var(--accent); border-color:var(--accent); color:#08130A; }
+  .cl-activity-card.cl-hide-age, .cl-activity-card.cl-hide-filter{ display:none; }
+
   .cl-status-pick-options{ display:flex; flex-direction:column; gap:8px; margin-top:4px; }
   .cl-status-pick-btn{
     display:flex; align-items:center; gap:10px;
@@ -3930,6 +3946,17 @@
           </div>
           <span class="cl-student-progress-summary" id="clStudentProgressSummary" style="display:none;"></span>
           <div class="cl-student-chips" id="clStudentChips"></div>
+        </div>
+
+        <div class="cl-req-filter" id="clReqFilter" style="display:none;">
+          <input type="search" class="pl-input cl-req-search" id="clReqSearch" placeholder="Buscar requisito por nome, área ou descrição…" autocomplete="off">
+          <div class="cl-req-chips" id="clReqFilterChips">
+            <button type="button" class="cl-req-chip active" data-status="all">Todos</button>
+            <button type="button" class="cl-req-chip" data-status="todo">Faltam</button>
+            <button type="button" class="cl-req-chip" data-status="progress">Em andamento</button>
+            <button type="button" class="cl-req-chip" data-status="done">Concluídos</button>
+          </div>
+          <p class="un-empty-hint" id="clReqEmpty" style="display:none; margin:2px 0 0;">Nenhum requisito encontrado com esse filtro.</p>
         </div>
 
         <div class="pl-content" id="clContent" style="display:none;">
@@ -13267,6 +13294,86 @@
       });
     }
 
+    // ---- Busca + filtro por status dos requisitos da classe aberta ----
+    // O rótulo "N atividades" do grupo mostra o que está realmente à vista, e
+    // por isso considera as duas classes de ocultação (idade e busca/status).
+    const reqFilterBar = document.getElementById('clReqFilter');
+    const reqSearchInput = document.getElementById('clReqSearch');
+    const reqFilterChips = document.getElementById('clReqFilterChips');
+    const reqEmptyHint = document.getElementById('clReqEmpty');
+    let reqStatusFilter = 'all';
+
+    function normalizeReqText(s){
+      return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    }
+
+    function updateGroupVisibleCount(group){
+      if(!group) return;
+      const countEl = group.querySelector('.pl-month-count');
+      if(!countEl) return;
+      const visible = Array.from(group.querySelectorAll('.cl-activity-card'))
+        .filter(c => !c.classList.contains('cl-hide-age') && !c.classList.contains('cl-hide-filter')).length;
+      countEl.textContent = visible === 1 ? '1 atividade' : visible + ' atividades';
+    }
+
+    // Com um aluno selecionado o status que vale é o dele (CLASS_PROGRESS);
+    // no modo "Requisitos (modelo)" vale o status do próprio card.
+    function effectiveCardStatus(card){
+      if(selectedStudent && currentClass){
+        const studentProgress = (CLASS_PROGRESS[currentClass] || {})[selectedStudent] || {};
+        return studentProgress[card.dataset.title] || 'todo';
+      }
+      return card.dataset.status || 'todo';
+    }
+
+    function applyRequisitoFilter(){
+      if(!currentClass) return;
+      const group = findClassGroup(currentClass);
+      if(!group) return;
+      const term = normalizeReqText(reqSearchInput ? reqSearchInput.value.trim() : '');
+      let visible = 0;
+      group.querySelectorAll('.cl-activity-card').forEach(card => {
+        const statusOk = reqStatusFilter === 'all' || effectiveCardStatus(card) === reqStatusFilter;
+        const haystack = normalizeReqText((card.dataset.title || '') + ' ' + (card.dataset.area || '') + ' ' + (card.dataset.desc || ''));
+        const termOk = !term || haystack.indexOf(term) !== -1;
+        const hide = !(statusOk && termOk);
+        card.classList.toggle('cl-hide-filter', hide);
+        if(!hide && !card.classList.contains('cl-hide-age')) visible++;
+      });
+      // Os cards ficam dentro de seções por área (ver regroupByArea): uma área
+      // que ficou sem nenhum card visível vira só um título solto, então some.
+      group.querySelectorAll('.cl-area-section').forEach(section => {
+        const shown = Array.from(section.querySelectorAll('.cl-activity-card'))
+          .filter(c => !c.classList.contains('cl-hide-age') && !c.classList.contains('cl-hide-filter')).length;
+        section.style.display = shown ? '' : 'none';
+        const areaCount = section.querySelector('.cl-area-heading-count');
+        if(areaCount) areaCount.textContent = shown;
+      });
+      if(reqEmptyHint) reqEmptyHint.style.display = visible ? 'none' : '';
+      updateGroupVisibleCount(group);
+    }
+
+    function resetRequisitoFilter(){
+      reqStatusFilter = 'all';
+      if(reqSearchInput) reqSearchInput.value = '';
+      if(reqFilterChips){
+        reqFilterChips.querySelectorAll('.cl-req-chip').forEach(chip => {
+          chip.classList.toggle('active', chip.dataset.status === 'all');
+        });
+      }
+    }
+
+    if(reqSearchInput) reqSearchInput.addEventListener('input', applyRequisitoFilter);
+    if(reqFilterChips){
+      reqFilterChips.querySelectorAll('.cl-req-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          reqStatusFilter = chip.dataset.status;
+          reqFilterChips.querySelectorAll('.cl-req-chip').forEach(c => c.classList.toggle('active', c === chip));
+          applyRequisitoFilter();
+        });
+      });
+    }
+
     const planningOpenBtn = document.getElementById('clPlanningOpenBtn');
 
     // ---- Ranking de Classes: TOP por % de requisitos concluídos, só das 6
@@ -13447,6 +13554,7 @@
       titleEl.textContent = 'Classes Regulares';
       addBtn.style.display = 'none';
       if(studentBar) studentBar.style.display = 'none';
+      if(reqFilterBar) reqFilterBar.style.display = 'none';
       selectedStudent = null;
       updateHubCounts();
       if(planningOpenBtn) planningOpenBtn.style.display = 'none';
@@ -13466,6 +13574,11 @@
         renderStudentBar(className);
         applyStudentProgressToCards();
       }
+      // Cada classe começa sem filtro: um "Faltam" deixado de outra turma
+      // faria parecer que metade do cartão sumiu.
+      if(reqFilterBar) reqFilterBar.style.display = '';
+      resetRequisitoFilter();
+      applyRequisitoFilter();
       if(planningOpenBtn) planningOpenBtn.style.display = '';
     }
 
@@ -13712,6 +13825,10 @@
           studentProgressSummary.style.display = 'none';
         }
       }
+
+      // Trocar de aluno ou marcar um requisito muda o status que o filtro vê —
+      // sem isso, um card recém-concluído continuaria na lista de "Faltam".
+      applyRequisitoFilter();
     }
 
     studentAddBtn.addEventListener('click', () => {
@@ -14288,30 +14405,25 @@
 
     // Classe Agrupada — filtro por idade (ver CSS .cl-age-filter). Cada requisito
     // guarda em data-ages as idades pra quem ele conta (ex.: "13,14,15" = conta
-    // pra quem tem 13, 14 ou 15+ anos); o filtro só alterna display:none, então
-    // regroupByArea()/updateClassCount() continuam contando o total real de
-    // cards — o rótulo "N atividades" do grupo é atualizado à parte aqui, com
-    // o total realmente visível pra idade escolhida.
+    // pra quem tem 13, 14 ou 15+ anos); esconder é só ligar a classe
+    // .cl-hide-age, então regroupByArea()/updateClassCount() continuam contando
+    // o total real de cards e o filtro de busca/status (.cl-hide-filter) pode
+    // conviver com este sem um apagar a decisão do outro.
     (function(){
       const ageFilterEl = document.getElementById('clAgeFilter');
       const agrupadaGroup = document.getElementById('clGroup-ClasseAgrupada');
       if(!ageFilterEl || !agrupadaGroup) return;
       const ageBtns = Array.from(ageFilterEl.querySelectorAll('.cl-age-btn'));
-      const countEl = agrupadaGroup.querySelector('.pl-month-count');
       const STORAGE_KEY = 'cedros_agrupada_age';
 
       function applyAge(age){
         const ageStr = String(age);
-        const cards = agrupadaGroup.querySelectorAll('.cl-activity-card');
-        let visible = 0;
-        cards.forEach(card => {
+        agrupadaGroup.querySelectorAll('.cl-activity-card').forEach(card => {
           const ages = (card.dataset.ages || '').split(',');
-          const match = ages.includes(ageStr);
-          card.style.display = match ? '' : 'none';
-          if(match) visible++;
+          card.classList.toggle('cl-hide-age', !ages.includes(ageStr));
         });
         ageBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.age === ageStr));
-        if(countEl) countEl.textContent = visible === 1 ? '1 atividade' : visible + ' atividades';
+        updateGroupVisibleCount(agrupadaGroup);
         try { localStorage.setItem(STORAGE_KEY, ageStr); } catch(e){}
       }
 
