@@ -1245,6 +1245,8 @@
   /* ---- Unidades: cantinho da unidade ---- */
   .un-section{ margin-bottom:22px; }
   .un-section-title{ margin:0 0 8px; font-size:12px; font-weight:900; letter-spacing:0.03em; text-transform:uppercase; color:var(--gold); }
+  .cl-rank-block{ margin-bottom:20px; }
+  .cl-rank-block:last-child{ margin-bottom:0; }
   .un-desc, .un-resp{ margin:0; font-size:14px; font-weight:600; line-height:1.5; color:rgba(245,239,225,0.85); }
   .un-gallery{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
   .un-photo{ position:relative; border-radius:14px; overflow:hidden; aspect-ratio:1/1; background:rgba(255,255,255,0.05); }
@@ -3768,6 +3770,7 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <h3 class="pl-title" id="clTitle">Classes Regulares</h3>
+          <button type="button" class="pl-back" id="clRankOpenBtn" aria-label="Ranking de Classes"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4z"/><path d="M17 5h2a2 2 0 0 1 2 2 4 4 0 0 1-4 4M7 5H5a2 2 0 0 0-2 2 4 4 0 0 0 4 4"/></svg></button>
           <button type="button" class="pl-back" id="clPlanningOpenBtn" aria-label="Planejamento de Aula" style="display:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></button>
         </div>
 
@@ -8150,6 +8153,26 @@
             <button type="button" class="pl-btn pl-btn-danger" id="clDeleteBtn" style="display:none;">Excluir</button>
             <button type="button" class="pl-btn pl-btn-primary" id="clSaveBtn">Salvar</button>
           </div>
+        </div>
+      </div>
+
+      <!-- Ranking de Classes: TOP por % de requisitos concluídos, uma seção por
+           classe regular (Amigo a Guia — Classe Agrupada/Cartão de Liderança/
+           Líder Master ficam fora). Calculado em cima dos mesmos dados já
+           carregados pra tela (CLASS_STUDENTS/CLASS_PROGRESS), sem tabela nova
+           — ver renderClassRanking() mais abaixo no arquivo. -->
+      <div class="pl-dayview-overlay" id="clRankOverlay">
+        <div class="pl-dayview-head">
+          <button type="button" class="pl-dayview-icon-btn" id="clRankClose" aria-label="Voltar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h3 class="pl-dayview-title" style="text-transform:none;">Ranking de Classes</h3>
+          <span class="pl-dayview-icon-btn" style="visibility:hidden;" aria-hidden="true"></span>
+        </div>
+        <div class="pl-dayview-list-wrap">
+          <p class="sp-disclaimer" style="margin-top:14px;">Quem mais avançou nos requisitos de cada classe, por % concluído.</p>
+          <div id="clRankBlocks"></div>
+          <p class="un-empty-hint" id="clRankEmpty" style="display:none;">Nenhum desbravador cadastrado nas classes regulares ainda.</p>
         </div>
       </div>
 
@@ -13162,6 +13185,73 @@
     }
 
     const planningOpenBtn = document.getElementById('clPlanningOpenBtn');
+
+    // ---- Ranking de Classes: TOP por % de requisitos concluídos, só das 6
+    // classes regulares (Amigo a Guia) — Classe Agrupada/Cartão de
+    // Liderança/Líder Master ficam fora. Reaproveita CLASS_STUDENTS/
+    // CLASS_PROGRESS/findClassGroup já carregados pra esta tela, sem
+    // precisar de tabela nova. ----
+    const REGULAR_CLASSES = ['Amigo', 'Companheiro', 'Pesquisador', 'Pioneiro', 'Excursionista', 'Guia'];
+
+    function computeClassRanking(className){
+      const group = findClassGroup(className);
+      const cards = group ? Array.from(group.querySelectorAll('.cl-activity-card')) : [];
+      const total = cards.length;
+      const students = CLASS_STUDENTS[className] || [];
+      if(!total || !students.length) return [];
+      const progress = CLASS_PROGRESS[className] || {};
+      return students.map(nome => {
+        const studentProgress = progress[nome] || {};
+        const done = cards.filter(c => (studentProgress[c.dataset.title] || 'todo') === 'done').length;
+        return { nome, done, total, pct: Math.round((done / total) * 100) };
+      }).sort((a, b) => b.pct - a.pct);
+    }
+
+    const rankOverlay = document.getElementById('clRankOverlay');
+    const rankBlocks = document.getElementById('clRankBlocks');
+    const rankEmpty = document.getElementById('clRankEmpty');
+    const rankOpenBtn = document.getElementById('clRankOpenBtn');
+    const rankCloseBtn = document.getElementById('clRankClose');
+
+    function renderClassRanking(){
+      if(!rankBlocks) return;
+      rankBlocks.innerHTML = '';
+      let any = false;
+      REGULAR_CLASSES.forEach(className => {
+        const ranking = computeClassRanking(className);
+        if(!ranking.length) return;
+        any = true;
+        const block = document.createElement('div');
+        block.className = 'cl-rank-block';
+        block.innerHTML = '<h4 class="un-section-title"></h4><div class="un-mini-list"></div>';
+        block.querySelector('.un-section-title').textContent = className;
+        const list = block.querySelector('.un-mini-list');
+        ranking.forEach((item, i) => {
+          const rank = i + 1;
+          const row = document.createElement('div');
+          row.className = 'un-mini-row';
+          row.innerHTML =
+            '<span class="us-rank-badge' + (rank <= 3 ? ' r' + rank : '') + '"></span>' +
+            '<span class="un-mini-body"><span class="un-mini-title"></span></span>' +
+            '<span class="un-mini-time"></span>';
+          row.querySelector('.us-rank-badge').textContent = rank;
+          row.querySelector('.un-mini-title').textContent = item.nome;
+          row.querySelector('.un-mini-time').textContent = item.pct + '% (' + item.done + '/' + item.total + ')';
+          list.appendChild(row);
+        });
+        rankBlocks.appendChild(block);
+      });
+      if(rankEmpty) rankEmpty.style.display = any ? 'none' : '';
+    }
+
+    if(rankOpenBtn){
+      rankOpenBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        renderClassRanking();
+        rankOverlay.classList.add('show');
+      });
+    }
+    if(rankCloseBtn) rankCloseBtn.addEventListener('click', () => rankOverlay.classList.remove('show'));
 
     function showHub(){
       currentClass = null;
