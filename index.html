@@ -1221,6 +1221,23 @@
     border:none; color:var(--cream); display:flex; align-items:center; justify-content:center; cursor:pointer;
   }
   .cl-comprovante-item-legenda{ opacity:0.75; }
+  /* Visualizador de anexo: a foto ocupa o espaço que tiver, sem estourar a tela. */
+  .cl-anexo-view-palco{
+    display:flex; align-items:center; justify-content:center;
+    min-height:180px; max-height:58vh; margin:4px 0 12px;
+    border-radius:14px; background:rgba(255,255,255,0.05); overflow:hidden;
+  }
+  .cl-anexo-view-palco img{ max-width:100%; max-height:58vh; object-fit:contain; display:block; }
+  .cl-anexo-view-doc{
+    display:flex; flex-direction:column; align-items:center; gap:8px; padding:26px 16px;
+    color:rgba(245,239,225,0.75); font-size:12.5px; font-weight:700; text-align:center;
+  }
+  .cl-anexo-view-nav{ display:flex; gap:8px; margin-bottom:10px; }
+  /* "Abrir / baixar" é um <a> pra o navegador cuidar do download; sem isto ele
+     herda o sublinhado de link e destoa dos outros botões do modal. */
+  a#clAnexoViewBaixar{ text-decoration:none; text-align:center; }
+  .cl-anexo-view-nav .pl-btn{ flex:1; }
+  .cl-anexo-view .pl-btn[disabled]{ opacity:0.4; pointer-events:none; }
   .cl-qr-box{ display:flex; align-items:center; justify-content:center; margin:10px 0; padding:16px; background:#fff; border-radius:14px; min-height:180px; }
   .cl-qr-box img, .cl-qr-box canvas{ display:block; max-width:100%; }
   .cl-qr-link{ font-size:11.5px; word-break:break-all; color:rgba(245,239,225,0.6); text-align:center; margin:0 0 12px; }
@@ -1242,6 +1259,13 @@
   .cv-status-tag.cv-status-done{ background:rgba(63,203,107,0.18); color:var(--accent); }
   .cv-attachments{ width:100%; display:flex; flex-direction:column; gap:12px; }
   .cv-img{ width:100%; border-radius:16px; display:block; }
+  /* Etiqueta do sub-item a que o anexo pertence, e a legenda do próprio anexo —
+     sem elas, quem confere a ficha vê um monte de foto solta. */
+  .cv-anexo-item{
+    margin:6px 0 -4px; font-size:11px; font-weight:900; letter-spacing:0.04em;
+    text-transform:uppercase; color:var(--gold); text-align:left;
+  }
+  .cv-anexo-legenda{ margin:-4px 0 0; font-size:12px; font-weight:700; color:rgba(245,239,225,0.68); text-align:left; }
   .cv-file-link{
     display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:16px;
     border-radius:14px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14);
@@ -8616,6 +8640,31 @@
         </div>
       </div>
 
+      <!-- Visualizador de anexo: abre a foto em tamanho cheio (ou o cartão do
+           documento) pra quem só precisa conferir — instrutor, coordenador,
+           diretoria. Sem isso, a miniatura de 40px era tudo que dava pra ver
+           dentro do app; só o link público do QR Code mostrava o arquivo. -->
+      <div class="pl-modal-overlay cl-anexo-view" id="clAnexoViewOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title" id="clAnexoViewTitulo">Anexo</h4>
+            <button type="button" class="pl-modal-close" id="clAnexoViewClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <p class="pl-reminder-hint" id="clAnexoViewSub" style="margin-top:0;"></p>
+          <div class="cl-anexo-view-palco" id="clAnexoViewPalco"></div>
+          <div class="cl-anexo-view-nav" id="clAnexoViewNav">
+            <button type="button" class="pl-btn pl-btn-neutral" id="clAnexoViewAnterior">Anterior</button>
+            <button type="button" class="pl-btn pl-btn-neutral" id="clAnexoViewProximo">Próximo</button>
+          </div>
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-neutral" id="clAnexoViewLegenda">Editar legenda</button>
+            <a class="pl-btn pl-btn-primary" id="clAnexoViewBaixar" download>Abrir / baixar</a>
+          </div>
+        </div>
+      </div>
+
       <!-- Legenda do anexo: o nome que aparece na lista de comprovação, nos
            chips do sub-item e na tela pública do QR Code. Começa com o nome do
            arquivo (IMG_2043.jpg), que não diz nada pra quem for conferir. -->
@@ -8737,9 +8786,11 @@
           <p class="pl-reminder-hint" id="clQrSubtitle" style="margin-top:0;"></p>
           <div class="cl-qr-box" id="clQrBox"></div>
           <p class="cl-qr-link" id="clQrLink"></p>
+          <p class="pl-reminder-hint" style="margin-top:0;">Quem receber só precisa abrir o link: a página mostra o comprovante sem instalar o app e sem fazer login.</p>
           <div class="pl-modal-actions">
             <button type="button" class="pl-btn pl-list-template-btn" id="clQrDownloadBtn">Baixar QR Code</button>
-            <button type="button" class="pl-btn pl-btn-primary" id="clQrCopyBtn">Copiar link</button>
+            <button type="button" class="pl-btn pl-list-template-btn" id="clQrCopyBtn">Copiar link</button>
+            <button type="button" class="pl-btn pl-btn-primary" id="clQrShareBtn">Enviar link</button>
           </div>
         </div>
       </div>
@@ -11701,34 +11752,68 @@
     const elBody = document.getElementById('cvBody');
     const elError = document.getElementById('cvError');
     if(!supa){ elLoading.style.display = 'none'; elError.style.display = ''; return; }
-    const [{ data: aluno, error: alunoErr }, { data: prog, error: progErr }, { data: arquivos, error: arquivosErr }] = await Promise.all([
-      supa.from('desbravadores').select('nome, classe').eq('id', desbravadorId).single(),
-      supa.from('progresso_requisitos').select('status').eq('desbravador_id', desbravadorId).eq('requisito_titulo', requisitoTitulo).single(),
-      supa.from('comprovante_arquivos').select('arquivo_data, arquivo_nome').eq('desbravador_id', desbravadorId).eq('requisito_titulo', requisitoTitulo).order('created_at')
+    // maybeSingle nos dois primeiros: um requisito pode ter comprovante anexado
+    // sem nunca ter tido o status gravado, e com .single() o PostgREST devolvia
+    // erro — o link abria em "não foi possível encontrar" com o arquivo lá.
+    const [{ data: aluno, error: alunoErr }, { data: prog }, { data: arquivos, error: arquivosErr }] = await Promise.all([
+      supa.from('desbravadores').select('nome, classe').eq('id', desbravadorId).maybeSingle(),
+      supa.from('progresso_requisitos').select('status').eq('desbravador_id', desbravadorId).eq('requisito_titulo', requisitoTitulo).maybeSingle(),
+      supa.from('comprovante_arquivos').select('arquivo_data, arquivo_nome, subitem_id').eq('desbravador_id', desbravadorId).eq('requisito_titulo', requisitoTitulo).order('created_at')
     ]);
     elLoading.style.display = 'none';
-    if(alunoErr || progErr || arquivosErr || !aluno || !prog || !arquivos || !arquivos.length){
+    if(alunoErr || arquivosErr || !aluno){
+      elError.textContent = 'Não foi possível abrir esse comprovante. O link pode estar errado ou o registro foi removido.';
       elError.style.display = '';
       return;
+    }
+    if(!arquivos || !arquivos.length){
+      // Diferente de "não achei": o desbravador e o requisito existem, o que
+      // falta é o arquivo — quem recebeu o link precisa saber qual dos dois é.
+      elError.textContent = 'Este requisito de ' + aluno.nome + ' ainda não tem nenhum comprovante anexado.';
+      elError.style.display = '';
+      return;
+    }
+    // Os anexos de sub-item ficam na mesma lista; o texto do sub-item vira a
+    // etiqueta, senão quem confere vê quatro fotos soltas sem saber de qual
+    // item cumprido é cada uma.
+    const subTextos = {};
+    if(arquivos.some(a => a.subitem_id)){
+      const { data: subs } = await supa.from('requisito_subitens')
+        .select('id, texto').eq('classe', aluno.classe).eq('requisito_titulo', requisitoTitulo);
+      (subs || []).forEach(x => { subTextos[x.id] = x.texto; });
     }
     elBody.style.display = '';
     document.getElementById('cvNome').textContent = aluno.nome;
     document.getElementById('cvClasse').textContent = aluno.classe;
     document.getElementById('cvRequisito').textContent = requisitoTitulo;
     const statusLabels = { todo: 'Não iniciada', progress: 'Em andamento', done: 'Concluída' };
+    const status = (prog && prog.status) || 'todo';
     const statusEl = document.getElementById('cvStatus');
-    statusEl.textContent = statusLabels[prog.status] || prog.status;
-    statusEl.className = 'cv-status-tag cv-status-' + (prog.status || 'todo');
+    statusEl.textContent = statusLabels[status] || status;
+    statusEl.className = 'cv-status-tag cv-status-' + status;
     const attachmentsEl = document.getElementById('cvAttachments');
     attachmentsEl.innerHTML = '';
     arquivos.forEach(arquivo => {
+      const etiqueta = subTextos[arquivo.subitem_id] || '';
+      if(etiqueta){
+        const cap = document.createElement('p');
+        cap.className = 'cv-anexo-item';
+        cap.textContent = etiqueta;
+        attachmentsEl.appendChild(cap);
+      }
       const isImage = arquivo.arquivo_data.indexOf('data:image') === 0;
       if(isImage){
         const img = document.createElement('img');
         img.className = 'cv-img';
-        img.alt = 'Comprovante';
+        img.alt = arquivo.arquivo_nome || 'Comprovante';
         img.src = arquivo.arquivo_data;
         attachmentsEl.appendChild(img);
+        if(arquivo.arquivo_nome){
+          const legenda = document.createElement('p');
+          legenda.className = 'cv-anexo-legenda';
+          legenda.textContent = arquivo.arquivo_nome;
+          attachmentsEl.appendChild(legenda);
+        }
       } else {
         const link = document.createElement('a');
         link.className = 'cv-file-link';
@@ -15045,12 +15130,14 @@
             anexos.forEach(a => {
               const chip = document.createElement('span');
               chip.className = 'cl-sub-anexo';
-              chip.innerHTML = '<button type="button" class="cl-sub-anexo-nome" aria-label="Editar legenda"></button><button type="button" aria-label="Remover anexo"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
+              chip.innerHTML = '<button type="button" class="cl-sub-anexo-nome" aria-label="Ver anexo"></button><button type="button" aria-label="Remover anexo"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
               const nomeBtn = chip.querySelector('.cl-sub-anexo-nome');
               nomeBtn.textContent = a.nome || 'comprovante';
-              // O sub-item redesenha inteiro ao salvar, então o detalhe precisa
+              // Abre pra ver; a legenda se edita de dentro do visualizador. O
+              // sub-item redesenha inteiro ao salvar, então o detalhe precisa
               // continuar aberto — daí o subEmEdicao antes do render.
-              nomeBtn.addEventListener('click', () => abrirLegenda(a, () => { subEmEdicao = sub.id; renderSubitens(card); }));
+              nomeBtn.addEventListener('click', () => abrirAnexoVista(anexos, anexos.indexOf(a),
+                sub.texto, () => { subEmEdicao = sub.id; renderSubitens(card); }));
               chip.querySelectorAll('button')[1].addEventListener('click', () => removerAnexoSubitem(card, sub, a.id));
               wrap.appendChild(chip);
             });
@@ -15384,6 +15471,77 @@
     const comprovanteListEl = document.getElementById('clComprovanteList');
     const comprovanteQrBtn = document.getElementById('clComprovanteQrBtn');
 
+    // ---- Visualizador de anexo ----
+    // Recebe a lista inteira em que o anexo está (a da Comprovação ou a de um
+    // sub-item) pra dar "Anterior/Próximo" sem fechar e reabrir. `podeEditar`
+    // decide se o botão de legenda aparece: instrutor confere, não reescreve.
+    const anexoViewOverlay = document.getElementById('clAnexoViewOverlay');
+    const anexoViewTitulo = document.getElementById('clAnexoViewTitulo');
+    const anexoViewSub = document.getElementById('clAnexoViewSub');
+    const anexoViewPalco = document.getElementById('clAnexoViewPalco');
+    const anexoViewNav = document.getElementById('clAnexoViewNav');
+    const anexoViewAnterior = document.getElementById('clAnexoViewAnterior');
+    const anexoViewProximo = document.getElementById('clAnexoViewProximo');
+    const anexoViewLegenda = document.getElementById('clAnexoViewLegenda');
+    const anexoViewBaixar = document.getElementById('clAnexoViewBaixar');
+    const anexoViewClose = document.getElementById('clAnexoViewClose');
+    let anexoVista = null; // { lista, i, contexto, aoSalvar }
+
+    function nomeDoAnexo(item, i){
+      return (item && item.nome) ? item.nome : ('Anexo ' + (i + 1));
+    }
+
+    function pintarAnexoVista(){
+      if(!anexoVista) return;
+      const item = anexoVista.lista[anexoVista.i];
+      if(!item){ fecharAnexoVista(); return; }
+      anexoViewTitulo.textContent = nomeDoAnexo(item, anexoVista.i);
+      const contexto = anexoVista.contexto ? (anexoVista.contexto + ' · ') : '';
+      anexoViewSub.textContent = contexto + (anexoVista.i + 1) + ' de ' + anexoVista.lista.length;
+      anexoViewPalco.innerHTML = '';
+      if(String(item.foto).indexOf('data:image') === 0){
+        const img = document.createElement('img');
+        img.src = item.foto;
+        img.alt = nomeDoAnexo(item, anexoVista.i);
+        anexoViewPalco.appendChild(img);
+      } else {
+        const caixa = document.createElement('div');
+        caixa.className = 'cl-anexo-view-doc';
+        caixa.innerHTML = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg><span></span>';
+        caixa.querySelector('span').textContent = 'Documento — use "Abrir / baixar" para ver.';
+        anexoViewPalco.appendChild(caixa);
+      }
+      anexoViewBaixar.href = item.foto;
+      anexoViewBaixar.setAttribute('download', nomeDoAnexo(item, anexoVista.i));
+      anexoViewNav.style.display = anexoVista.lista.length > 1 ? '' : 'none';
+      anexoViewAnterior.disabled = anexoVista.i === 0;
+      anexoViewProximo.disabled = anexoVista.i === anexoVista.lista.length - 1;
+      anexoViewLegenda.style.display = canManageStudents(currentClass) ? '' : 'none';
+    }
+
+    function abrirAnexoVista(lista, i, contexto, aoSalvar){
+      if(!anexoViewOverlay || !lista || !lista.length) return;
+      anexoVista = { lista: lista, i: Math.max(0, Math.min(i, lista.length - 1)), contexto: contexto || '', aoSalvar: aoSalvar };
+      pintarAnexoVista();
+      mostrarNaViewAtiva(anexoViewOverlay);
+    }
+
+    function fecharAnexoVista(){
+      if(anexoViewOverlay) anexoViewOverlay.classList.remove('show');
+      anexoVista = null;
+    }
+
+    if(anexoViewAnterior) anexoViewAnterior.addEventListener('click', () => { if(anexoVista && anexoVista.i > 0){ anexoVista.i--; pintarAnexoVista(); } });
+    if(anexoViewProximo) anexoViewProximo.addEventListener('click', () => { if(anexoVista && anexoVista.i < anexoVista.lista.length - 1){ anexoVista.i++; pintarAnexoVista(); } });
+    if(anexoViewClose) anexoViewClose.addEventListener('click', fecharAnexoVista);
+    if(anexoViewOverlay) anexoViewOverlay.addEventListener('click', (e) => { if(e.target === anexoViewOverlay) fecharAnexoVista(); });
+    if(anexoViewLegenda) anexoViewLegenda.addEventListener('click', () => {
+      if(!anexoVista) return;
+      const item = anexoVista.lista[anexoVista.i];
+      const aoSalvar = anexoVista.aoSalvar;
+      abrirLegenda(item, () => { if(aoSalvar) aoSalvar(); pintarAnexoVista(); });
+    });
+
     // ---- Legenda do anexo (vale pra Comprovação do requisito e pro sub-item) ----
     const anexoNomeOverlay = document.getElementById('clAnexoNomeOverlay');
     const anexoNomeInput = document.getElementById('clAnexoNomeInput');
@@ -15501,13 +15659,17 @@
       const row = e.target.closest('.cl-comprovante-item');
       if(!row) return;
       if(e.target.closest('.cl-comprovante-item-remove')){ removeComprovante(row.dataset.id); return; }
+      if(!statusPickCard || !selectedStudent) return;
+      ensureClassData(currentClass);
+      const lista = (CLASS_COMPROVANTES[currentClass][selectedStudent] || {})[statusPickCard.dataset.title] || [];
+      const idx = lista.findIndex(x => String(x.id) === String(row.dataset.id));
+      if(idx === -1) return;
       if(e.target.closest('.cl-comprovante-item-legenda')){
-        if(!statusPickCard || !selectedStudent) return;
-        ensureClassData(currentClass);
-        const lista = (CLASS_COMPROVANTES[currentClass][selectedStudent] || {})[statusPickCard.dataset.title] || [];
-        const item = lista.find(x => String(x.id) === String(row.dataset.id));
-        if(item) abrirLegenda(item, () => renderComprovante(lista));
+        abrirLegenda(lista[idx], () => renderComprovante(lista));
+        return;
       }
+      // Qualquer outro toque na linha abre o anexo pra ver.
+      abrirAnexoVista(lista, idx, tituloExibicao(currentClass, statusPickCard.dataset.title), () => renderComprovante(lista));
     });
 
     comprovanteCameraInput.addEventListener('change', (e) => {
@@ -15539,6 +15701,7 @@
     const qrLinkEl = document.getElementById('clQrLink');
     const qrCopyBtn = document.getElementById('clQrCopyBtn');
     const qrDownloadBtn = document.getElementById('clQrDownloadBtn');
+    const qrShareBtn = document.getElementById('clQrShareBtn');
 
     // Dentro do app nativo (Capacitor), window.location.origin é um endereço que só
     // existe dentro do WebView daquele aparelho específico — "https://localhost" no
@@ -15585,6 +15748,31 @@
         alert('Não foi possível copiar automaticamente. Copie o link manualmente:\n\n' + qrLinkEl.textContent);
       }
     });
+    // "Enviar link" usa a folha de compartilhamento do próprio celular (WhatsApp,
+    // e-mail, o que a pessoa tiver). Onde não existe — desktop, navegador antigo
+    // — cai no mesmo copiar do botão ao lado, em vez de sumir sem explicação.
+    if(qrShareBtn) qrShareBtn.addEventListener('click', async () => {
+      const link = qrLinkEl.textContent;
+      if(!link) return;
+      const texto = qrSubtitle.textContent || 'Comprovante de requisito';
+      if(navigator.share){
+        try {
+          await navigator.share({ title: 'Comprovante de requisito', text: texto, url: link });
+          return;
+        } catch(e){
+          // Cancelar o compartilhamento não é erro: não cai pro copiar.
+          if(e && e.name === 'AbortError') return;
+        }
+      }
+      try {
+        await navigator.clipboard.writeText(link);
+        qrShareBtn.textContent = 'Link copiado!';
+        setTimeout(() => { qrShareBtn.textContent = 'Enviar link'; }, 1500);
+      } catch(e){
+        alert('Copie o link e mande por onde preferir:\n\n' + link);
+      }
+    });
+
     qrDownloadBtn.addEventListener('click', () => {
       const canvas = qrBox.querySelector('canvas');
       const img = qrBox.querySelector('img');
