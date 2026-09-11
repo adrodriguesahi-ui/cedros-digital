@@ -1765,7 +1765,7 @@
   .cl-sub-texto{ flex:1; min-width:0; font-size:13px; line-height:1.45; color:rgba(245,239,225,0.85); }
   .cl-sub-detalhe{ padding:0 12px 12px; }
   .cl-sub-detalhe textarea{ width:100%; margin-bottom:8px; }
-  .cl-sub-acoes{ display:flex; gap:8px; }
+  .cl-sub-acoes{ display:flex; gap:8px; flex-wrap:wrap; }
   .cl-sub-btn{
     flex:1; display:flex; align-items:center; justify-content:center; gap:6px;
     border:1px solid rgba(255,255,255,0.14); background:rgba(255,255,255,0.06);
@@ -11995,8 +11995,11 @@
   // erro nenhum; agora isso vira uma mensagem clara em vez de falha silenciosa. (2)
   // fotos de câmera de verdade saem enormes (10+ MB); redimensionar evita guardar tudo
   // isso como texto base64 no banco.
-  function readPhotoAsJPEG(file, onDone){
-    if(!file) return;
+  // onFail (opcional) avisa quem chamou que a leitura não foi adiante — sem
+  // isso, quem espera essa foto numa Promise ficaria parado pra sempre quando o
+  // arquivo é um HEIC ou uma imagem corrompida.
+  function readPhotoAsJPEG(file, onDone, onFail){
+    if(!file){ if(onFail) onFail(); return; }
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
@@ -12011,21 +12014,28 @@
       };
       img.onerror = () => {
         alert('Não foi possível abrir essa foto (formato não suportado, como HEIC do iPhone). Tente uma imagem .jpg ou .png.');
+        if(onFail) onFail();
       };
       img.src = e.target.result;
     };
-    reader.onerror = () => { alert('Não foi possível ler o arquivo. Tente novamente.'); };
+    reader.onerror = () => {
+      alert('Não foi possível ler o arquivo. Tente novamente.');
+      if(onFail) onFail();
+    };
     reader.readAsDataURL(file);
   }
 
   // Lê um arquivo qualquer (PDF, doc, imagem) como data URL sem reprocessar —
   // usado pela Comprovação de requisito, que aceita documento além de foto
   // (diferente de readPhotoAsJPEG acima, que só serve pra foto redimensionada).
-  function readFileAsDataURL(file, onDone){
-    if(!file) return;
+  function readFileAsDataURL(file, onDone, onFail){
+    if(!file){ if(onFail) onFail(); return; }
     const reader = new FileReader();
     reader.onload = (e) => onDone(e.target.result, file);
-    reader.onerror = () => { alert('Não foi possível ler o arquivo. Tente novamente.'); };
+    reader.onerror = () => {
+      alert('Não foi possível ler o arquivo. Tente novamente.');
+      if(onFail) onFail();
+    };
     reader.readAsDataURL(file);
   }
 
@@ -15032,20 +15042,34 @@
 
           const acoes = document.createElement('div');
           acoes.className = 'cl-sub-acoes';
-          const anexar = document.createElement('label');
-          anexar.className = 'cl-sub-btn';
-          anexar.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Anexar evidência';
-          const input = document.createElement('input');
-          input.type = 'file';
-          input.accept = 'image/*,application/pdf';
-          input.hidden = true;
-          input.addEventListener('change', (e) => {
-            const arquivo = e.target.files && e.target.files[0];
-            if(arquivo) anexarNoSubitem(card, sub, arquivo);
-            e.target.value = '';
+          // Dois caminhos, como na Comprovação do requisito: a câmera (uma foto
+          // por vez, dá pra repetir) e o seletor de arquivos, que aceita vários
+          // de uma vez. Cada arquivo vira um anexo separado deste sub-item.
+          [
+            { rotulo: 'Tirar foto', camera: true, accept: 'image/*',
+              icone: '<path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h7l1 1.5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.5"/>' },
+            { rotulo: 'Anexar arquivo', camera: false, accept: 'image/*,application/pdf',
+              icone: '<path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>' }
+          ].forEach(cfg => {
+            const botao = document.createElement('label');
+            botao.className = 'cl-sub-btn';
+            botao.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' + cfg.icone + '</svg>' + cfg.rotulo;
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = cfg.accept;
+            if(cfg.camera) input.setAttribute('capture', 'environment');
+            else input.multiple = true;
+            input.hidden = true;
+            input.addEventListener('change', async (e) => {
+              const arquivos = Array.from(e.target.files || []);
+              e.target.value = '';
+              // Um de cada vez: cada anexo é um insert, e o de cima precisa do
+              // id que voltou do banco antes do próximo redesenhar a lista.
+              for(const arquivo of arquivos) await anexarNoSubitem(card, sub, arquivo);
+            });
+            botao.appendChild(input);
+            acoes.appendChild(botao);
           });
-          anexar.appendChild(input);
-          acoes.appendChild(anexar);
           detalhe.appendChild(acoes);
 
           item.appendChild(detalhe);
@@ -15111,12 +15135,17 @@
 
     async function anexarNoSubitem(card, sub, arquivo){
       const alunoId = (STUDENT_IDS[currentClass] || {})[selectedStudent];
+      // Foto de celular vira JPEG redimensionado (igual à Comprovação do
+      // requisito): sem isso, cada anexo ia pro banco com vários MB. Documento
+      // (PDF, doc) vai como está.
       const dataUrl = await new Promise(res => {
-        const fr = new FileReader();
-        fr.onload = () => res(fr.result);
-        fr.readAsDataURL(arquivo);
+        const falhou = () => res(null);
+        if(arquivo.type.indexOf('image/') === 0) readPhotoAsJPEG(arquivo, res, falhou);
+        else readFileAsDataURL(arquivo, res, falhou);
       });
-      let id = 'local-' + Date.now();
+      if(!dataUrl) return;
+      // Com vários arquivos de uma vez, Date.now() sozinho repetia o id.
+      let id = 'local-' + Date.now() + '-' + Math.random().toString(36).slice(2);
       if(supa && alunoId){
         const { data, error } = await supa.from('comprovante_arquivos')
           .insert({ desbravador_id: alunoId, requisito_titulo: card.dataset.title,
@@ -15394,21 +15423,25 @@
     });
 
     comprovanteCameraInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
+      // Alguns navegadores devolvem mais de um arquivo mesmo com capture; cada
+      // um vira um comprovante separado, em vez de só o primeiro entrar.
+      const files = Array.from(e.target.files || []);
       comprovanteCameraInput.value = '';
-      if(!file) return;
-      readPhotoAsJPEG(file, (dataUrl) => addComprovante(dataUrl, file.name));
+      files.forEach(file => readPhotoAsJPEG(file, (dataUrl) => addComprovante(dataUrl, file.name)));
     });
-    comprovanteFileInput.addEventListener('change', (e) => {
+    comprovanteFileInput.addEventListener('change', async (e) => {
       const files = Array.from(e.target.files || []);
       comprovanteFileInput.value = '';
-      files.forEach(file => {
-        if(file.type.indexOf('image/') === 0){
-          readPhotoAsJPEG(file, (dataUrl) => addComprovante(dataUrl, file.name));
-        } else {
-          readFileAsDataURL(file, (dataUrl) => addComprovante(dataUrl, file.name));
-        }
-      });
+      // Um de cada vez pra a lista sair na ordem em que a pessoa escolheu: em
+      // paralelo, um PDF pequeno terminava antes das fotos e furava a fila.
+      for(const file of files){
+        const dataUrl = await new Promise(res => {
+          const falhou = () => res(null);
+          if(file.type.indexOf('image/') === 0) readPhotoAsJPEG(file, res, falhou);
+          else readFileAsDataURL(file, res, falhou);
+        });
+        if(dataUrl) await addComprovante(dataUrl, file.name);
+      }
     });
 
     const qrOverlay = document.getElementById('clQrOverlay');
