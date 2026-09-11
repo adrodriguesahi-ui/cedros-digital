@@ -1152,3 +1152,20 @@ create policy p_areaspers on areas_personalizadas for all using(true) with check
 -- Área criada pelo Coordenador (não existe no catálogo). Ela aparece na lista
 -- mesmo sem requisito dentro, pra ele poder criar primeiro e mover depois.
 alter table areas_personalizadas add column if not exists criada boolean not null default false;
+
+-- ---------------------------------------------------------------------
+-- Comprovantes no Storage, em vez de base64 dentro da tabela.
+-- O bucket "comprovantes" é criado pelo painel (Storage > New bucket,
+-- nome comprovantes, marcado como Public) — pelo SQL do celular o insert
+-- em storage.buckets costuma quebrar por causa dos parênteses.
+-- Linhas antigas continuam com arquivo_data preenchido e arquivo_path
+-- vazio; o app lê os dois formatos, então não precisa migrar nada de uma
+-- vez pra voltar a funcionar.
+-- ---------------------------------------------------------------------
+alter table comprovante_arquivos add column if not exists arquivo_path text;
+
+drop policy if exists p_comprovantes_enviar on storage.objects;
+create policy p_comprovantes_enviar on storage.objects for insert with check (bucket_id = 'comprovantes');
+
+drop policy if exists p_comprovantes_remover on storage.objects;
+create policy p_comprovantes_remover on storage.objects for delete using (bucket_id = 'comprovantes');
