@@ -960,6 +960,11 @@
     display:flex; align-items:center; justify-content:center;
     color:rgba(245,239,225,0.4); overflow:visible;
   }
+  /* A miniatura é o comprovante do desbravador: no modo "Requisitos (modelo)"
+     não há a quem anexar nada, então ela sai da lista e o texto do requisito
+     ocupa a linha inteira. Volta ao escolher um aluno na barra de cima. */
+  #clContent .cl-activity-card .cl-thumb{ display:none; }
+  #clContent.cl-modo-aluno .cl-activity-card .cl-thumb{ display:flex; }
   .cl-thumb-badge{
     position:absolute; bottom:-4px; right:-4px; min-width:18px; height:18px; padding:0 3px;
     border-radius:9px; background:var(--accent); color:#08130A; font-size:10px; font-weight:900;
@@ -14331,6 +14336,7 @@
       if(studentBar) studentBar.style.display = 'none';
       if(reqFilterBar) reqFilterBar.style.display = 'none';
       selectedStudent = null;
+      if(content) content.classList.remove('cl-modo-aluno');
       updateHubCounts();
       if(planningOpenBtn) planningOpenBtn.style.display = 'none';
     }
@@ -14723,6 +14729,7 @@
       const group = findClassGroup(currentClass);
       if(!group) return;
       const progressForStudent = selectedStudent ? (CLASS_PROGRESS[currentClass][selectedStudent] || {}) : null;
+      if(content) content.classList.toggle('cl-modo-aluno', !!progressForStudent);
       let doneCount = 0;
       let totalCount = 0;
 
