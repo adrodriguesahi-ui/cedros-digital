@@ -15616,6 +15616,40 @@
     function tituloDaArea(className, area){
       return AREA_TITULOS[className + '|' + area] || area;
     }
+
+    // O Coordenador costuma numerar as áreas ("I. Gerais", "VIII. Arte de
+    // Acampar"). A ordem do catálogo não sabe disso, então a lista passa a
+    // seguir o número do título. Sem número (ex.: "Classe Avançada"), vai pro
+    // fim — que é onde ela pertence no cartão.
+    const ROMANOS = { I: 1, V: 5, X: 10, L: 50, C: 100 };
+    function numeroDoTitulo(titulo){
+      const m = String(titulo || '').trim().match(/^([IVXLC]+|\d+)\s*[.)\-–]/i);
+      if(!m) return null;
+      const bruto = m[1];
+      if(/^\d+$/.test(bruto)) return parseInt(bruto, 10);
+      const letras = bruto.toUpperCase();
+      let total = 0, maior = 0;
+      for(let i = letras.length - 1; i >= 0; i--){
+        const v = ROMANOS[letras[i]];
+        if(!v) return null;
+        // Notação subtrativa: IV = 4, IX = 9.
+        if(v < maior) total -= v; else { total += v; maior = v; }
+      }
+      return total;
+    }
+
+    // Mantém a ordem de origem no desempate, pra lista não dançar sozinha.
+    function ordenarAreas(className, areas){
+      return areas
+        .map((a, i) => ({ a, i, n: numeroDoTitulo(tituloDaArea(className, a)) }))
+        .sort((x, y) => {
+          if(x.n === null && y.n === null) return x.i - y.i;
+          if(x.n === null) return 1;
+          if(y.n === null) return -1;
+          return (x.n - y.n) || (x.i - y.i);
+        })
+        .map(x => x.a);
+    }
     window.__clTituloDaArea = tituloDaArea;
 
     // Áreas criadas pelo Coordenador: aparecem na lista mesmo sem requisito.
@@ -15720,8 +15754,8 @@
       areasListaEl.innerHTML = '';
       // Só mostra área do catálogo que tem requisito; as criadas aparecem sempre.
       const criadas = areasCriadas(classe);
-      const lista = areasDoCartao(classe)
-        .filter(a => criadas.indexOf(a) !== -1 || contaDaArea(classe, a) > 0);
+      const lista = ordenarAreas(classe, areasDoCartao(classe)
+        .filter(a => criadas.indexOf(a) !== -1 || contaDaArea(classe, a) > 0));
 
       if(!lista.length){
         areasListaEl.innerHTML = '<p class="un-empty-hint">Este cartão ainda não tem áreas.</p>';
@@ -15879,7 +15913,8 @@
       // Área criada entra na lista mesmo vazia, senão ela some assim que o
       // Coordenador cria e ele não tem pra onde mover os requisitos.
       areasCriadas(className).forEach(a => { if(!byArea[a]) byArea[a] = []; });
-      const orderedAreas = AREA_ORDER.filter(a => byArea[a]).concat(Object.keys(byArea).filter(a => AREA_ORDER.indexOf(a) === -1));
+      const orderedAreas = ordenarAreas(className,
+        AREA_ORDER.filter(a => byArea[a]).concat(Object.keys(byArea).filter(a => AREA_ORDER.indexOf(a) === -1)));
       orderedAreas.forEach(area => {
         const key = className + '|' + area;
         const isCollapsed = !!collapsedAreas[key];
