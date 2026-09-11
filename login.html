@@ -11752,7 +11752,50 @@
   // é o link que o QR Code gera, pra quem confere a ficha (pastor, Associação/Missão)
   // e não tem conta no app. leaveSplash() e o callback de getSession() mais abaixo checam
   // isComprovanteRoute pra nunca sobrescrever essa tela com login/dashboard.
-  const comprovanteRouteMatch = /^#comprovante=([^|]+)\|(.+)$/.exec(window.location.hash);
+  //
+  // O link antigo era `#comprovante=<id>|<titulo>`. O `|` cru é o problema: não
+  // é caractere válido de URL, então WhatsApp e outros mensageiros cortam o
+  // link nele na hora de transformar o texto em link — quem recebia abria
+  // `#comprovante=<id>` sozinho, o padrão não batia, e o app seguia pro fluxo
+  // normal (capa/login). Daí a impressão de que era preciso ter conta.
+  //
+  // Agora o link leva um token único em base64url (sem `|`, sem acento, sem
+  // `%`), aceito tanto no `#` quanto na query `?comprovante=` — alguns
+  // aplicativos descartam o fragmento ao redirecionar. O formato antigo
+  // continua sendo lido, pra não quebrar QR Code já impresso ou já enviado.
+  function tokenComprovante(desbravadorId, requisitoTitulo){
+    const bruto = JSON.stringify([desbravadorId, requisitoTitulo]);
+    return btoa(unescape(encodeURIComponent(bruto)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  function lerTokenComprovante(token){
+    try {
+      const base = token.replace(/-/g, '+').replace(/_/g, '/');
+      const par = JSON.parse(decodeURIComponent(escape(atob(base))));
+      if(Array.isArray(par) && par.length === 2 && par[0] && par[1]) return par;
+    } catch(e){ /* não é token: cai pro formato antigo */ }
+    return null;
+  }
+
+  // Devolve [desbravadorId, requisitoTitulo] a partir do hash ou da query.
+  function rotaDoComprovante(){
+    const doHash = /^#comprovante=(.+)$/.exec(window.location.hash);
+    const daQuery = /[?&]comprovante=([^&]+)/.exec(window.location.search);
+    const valor = doHash ? doHash[1] : (daQuery ? daQuery[1] : null);
+    if(!valor) return null;
+    const porToken = lerTokenComprovante(valor);
+    if(porToken) return porToken;
+    // Formato antigo: <id>|<titulo>, cada parte com encodeURIComponent.
+    const antigo = /^([^|]+)\|(.+)$/.exec(valor);
+    if(antigo){
+      try { return [decodeURIComponent(antigo[1]), decodeURIComponent(antigo[2])]; }
+      catch(e){ return [antigo[1], antigo[2]]; }
+    }
+    return null;
+  }
+
+  const comprovanteRouteMatch = rotaDoComprovante();
   const isComprovanteRoute = !!comprovanteRouteMatch;
 
   async function loadPublicComprovante(desbravadorId, requisitoTitulo){
@@ -11773,7 +11816,13 @@
     ]);
     elLoading.style.display = 'none';
     if(alunoErr || arquivosErr || !aluno){
-      elError.textContent = 'Não foi possível abrir esse comprovante. O link pode estar errado ou o registro foi removido.';
+      const falha = alunoErr || arquivosErr;
+      // Mostra o motivo de verdade quando o banco recusou (ex.: política de
+      // acesso faltando). Sem isso, um erro de permissão parecia "link errado"
+      // e não dava pra saber o que arrumar.
+      elError.textContent = falha
+        ? ('Não foi possível abrir esse comprovante. Detalhe: ' + (falha.message || falha.code || 'erro desconhecido'))
+        : 'Não foi possível abrir esse comprovante. O link pode estar errado ou o registro foi removido.';
       elError.style.display = '';
       return;
     }
@@ -11965,7 +12014,7 @@
 
   // Só agora (depois de showView/views prontos) dá pra disparar a rota pública de
   // comprovante — chamar mais cedo batia num TDZ error (views ainda não existia).
-  if(isComprovanteRoute) loadPublicComprovante(decodeURIComponent(comprovanteRouteMatch[1]), decodeURIComponent(comprovanteRouteMatch[2]));
+  if(isComprovanteRoute) loadPublicComprovante(comprovanteRouteMatch[0], comprovanteRouteMatch[1]);
   if(isSpecialtyRoute) loadPublicSpecialty(decodeURIComponent(specialtyRouteMatch[1]));
 
   if(tabMoreBtn && tabMoreOverlay){
@@ -15817,7 +15866,9 @@
       const base = isRealPublicOrigin()
         ? window.location.origin + window.location.pathname
         : PUBLIC_APP_URL;
-      return base + '#comprovante=' + encodeURIComponent(desbravadorId) + '|' + encodeURIComponent(requisitoTitulo);
+      // Token base64url (ver tokenComprovante lá em cima): sem `|` nem acento,
+      // que era o que fazia o WhatsApp cortar o link antes do fim.
+      return base + '#comprovante=' + tokenComprovante(desbravadorId, requisitoTitulo);
     }
 
     comprovanteQrBtn.addEventListener('click', () => {
