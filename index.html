@@ -2293,6 +2293,17 @@
     display:flex; align-items:center; justify-content:center; gap:7px;
   }
   .bd-reminder-card-confirm:active{ background:rgba(63,203,107,0.28); transform:scale(0.98); }
+  .bd-reminders-secao{
+    margin:6px 0 -2px; font-size:11px; font-weight:900; letter-spacing:0.06em;
+    text-transform:uppercase; color:rgba(245,239,225,0.45);
+  }
+  /* Lembrete já confirmado: continua na lista, mas discreto e sem botão — é
+     consulta, não pendência. */
+  .bd-reminder-card-lido{ opacity:0.62; }
+  .bd-reminder-card-selo{
+    display:inline-flex; align-items:center; gap:5px; margin-top:10px;
+    font-size:11.5px; font-weight:800; color:var(--accent);
+  }
   .bd-reminders-empty{ padding:60px 20px; text-align:center; font-size:13px; font-weight:600; color:rgba(245,239,225,0.5); }
 
   /* Reused white-card components get a dark surface inside this view */
@@ -13658,6 +13669,50 @@
       return today >= nextDue;
     }
 
+    // Data do evento a partir do que o card guarda (mês 1-12 + dia, ano atual)
+    // — é o que decide até quando um lembrete já lido continua no sino.
+    function dataDoEvento(c){
+      const monIdx = parseInt(c.dataset.monIndex, 10);
+      const day = parseInt(c.dataset.day, 10);
+      if(!monIdx || !day) return null;
+      return new Date(new Date().getFullYear(), monIdx - 1, day);
+    }
+
+    // Lembretes já confirmados que continuam valendo a pena mostrar: o evento
+    // ainda não passou. Confirmar tira do banner e do contador do sino, mas não
+    // some com o lembrete — quem confirmou de bobeira precisa achar de volta.
+    function collectReadReminders(){
+      const today = new Date(); today.setHours(0,0,0,0);
+      const lidos = Array.from(document.querySelectorAll('.pl-event-card'))
+        .filter(c => c.dataset.reminderOn === '1' && c.dataset.reminderDate
+          && c.dataset.reminderConfirmed === '1' && !isReminderCurrentlyDue(c, today))
+        .filter(c => { const d = dataDoEvento(c); return !d || d >= today; })
+        .map(c => ({
+          card: c,
+          title: c.dataset.title,
+          msg: c.dataset.reminderMsg || defaultReminderMessage(c.dataset.title),
+          day: c.dataset.day, monAbbr: c.dataset.monAbbr,
+          repeatOn: c.dataset.reminderRepeatOn === '1', timesLeft: 0,
+          jaLido: true,
+          lidoEm: c.dataset.reminderLastConfirmedDate || '',
+          lidoPor: c.dataset.reminderConfirmedPor || ''
+        }));
+      // O aviso de aniversariantes não tem card: quem sabe se ele foi confirmado
+      // é a própria tela de Aniversariantes (ver getBirthdayReminder).
+      if(typeof window.__btGetBirthdayReminderLido === 'function'){
+        const b = window.__btGetBirthdayReminderLido();
+        if(b){
+          lidos.unshift({
+            card: { dataset: { local: '' } },
+            title: b.title, msg: b.msg, day: b.day, monAbbr: b.monAbbr,
+            repeatOn: false, timesLeft: 0, jaLido: true, lidoEm: '', lidoPor: '',
+            isBirthday: true, meetingId: b.meetingId
+          });
+        }
+      }
+      return lidos;
+    }
+
     function collectDueReminders(){
       const today = new Date(); today.setHours(0,0,0,0);
       const cards = Array.from(document.querySelectorAll('.pl-event-card')).filter(c => c.dataset.reminderOn === '1' && c.dataset.reminderDate);
@@ -13697,6 +13752,9 @@
       card.dataset.reminderConfirmed = '1';
       card.dataset.reminderConfirmedTimes = String(timesConfirmed);
       card.dataset.reminderLastConfirmedDate = todayStr;
+      // Também no card, não só no update: é daqui que o selo "Lido por ..." do
+      // sino lê o nome, e sem isto ele só apareceria depois de recarregar.
+      card.dataset.reminderConfirmedPor = (window.__currentUsuario && window.__currentUsuario.nome) || '';
       refreshReminderBell();
       // Sem isso, a confirmação só existia na tela: recarregar a página
       // esquecia tudo e o lembrete voltava a aparecer do zero, ignorando o
@@ -13730,7 +13788,7 @@
     }
 
     function openRemindersPage(){
-      renderRemindersPage(collectDueReminders());
+      renderRemindersPage(collectDueReminders(), collectReadReminders());
       if(remindersOverlay) remindersOverlay.classList.add('show');
     }
     function closeRemindersPage(){
@@ -13757,7 +13815,7 @@
         bellDot.textContent = due.length > 9 ? '9+' : String(due.length);
       }
       bellBtn.classList.toggle('has-reminder', due.length > 0);
-      if(remindersOverlay && remindersOverlay.classList.contains('show')) renderRemindersPage(due);
+      if(remindersOverlay && remindersOverlay.classList.contains('show')) renderRemindersPage(due, collectReadReminders());
 
       if(reminderBanner){
         if(due.length){
@@ -13776,11 +13834,14 @@
     // Tela cheia de Lembretes: um card por lembrete, com data, local (quando o
     // evento tem um) e o texto completo do lembrete — sem cortar como no
     // painelzinho antigo.
-    function renderRemindersPage(due){
+    function renderRemindersPage(due, lidos){
       if(!remindersList) return;
+      lidos = lidos || [];
       remindersList.innerHTML = '';
-      if(remindersEmpty) remindersEmpty.style.display = due.length ? 'none' : '';
+      if(remindersEmpty) remindersEmpty.style.display = (due.length || lidos.length) ? 'none' : '';
       if(remindersMarkAllBtn) remindersMarkAllBtn.style.display = due.length ? '' : 'none';
+      // Só vale separar em seções quando há os dois tipos na tela.
+      if(due.length && lidos.length) remindersList.appendChild(tituloDeSecao('Ativos'));
       due.forEach(item => {
         const local = item.card.dataset.local || '';
         const card = document.createElement('div');
@@ -13801,6 +13862,44 @@
         card.querySelector('.bd-reminder-card-confirm').addEventListener('click', () => confirmReminderItem(item));
         remindersList.appendChild(card);
       });
+
+      if(lidos.length){
+        remindersList.appendChild(tituloDeSecao('Já lidos'));
+        lidos.forEach(item => remindersList.appendChild(cartaoLido(item)));
+      }
+    }
+
+    function tituloDeSecao(texto){
+      const h = document.createElement('h4');
+      h.className = 'bd-reminders-secao';
+      h.textContent = texto;
+      return h;
+    }
+
+    // Mesmo cartão do lembrete ativo, sem o botão de confirmar e com o selo de
+    // lido: quem leu, quando e (quando o banco guardou) quem marcou.
+    function cartaoLido(item){
+      const local = item.card.dataset.local || '';
+      const card = document.createElement('div');
+      card.className = 'bd-reminder-card bd-reminder-card-lido';
+      card.innerHTML =
+        '<div class="bd-reminder-card-date"></div>' +
+        '<h4 class="bd-reminder-card-title"></h4>' +
+        (local ? '<div class="bd-reminder-card-meta"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg><span></span></div>' : '') +
+        '<p class="bd-reminder-card-msg"></p>' +
+        '<span class="bd-reminder-card-selo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span></span></span>';
+      card.querySelector('.bd-reminder-card-date').textContent = item.day + ' ' + item.monAbbr;
+      card.querySelector('.bd-reminder-card-title').textContent = item.title;
+      if(local) card.querySelector('.bd-reminder-card-meta span').textContent = local;
+      card.querySelector('.bd-reminder-card-msg').textContent = item.msg;
+      const partes = ['Lido'];
+      if(item.lidoEm){
+        const d = item.lidoEm.split('-');
+        if(d.length === 3) partes.push('em ' + d[2] + '/' + d[1]);
+      }
+      if(item.lidoPor) partes.push('por ' + item.lidoPor);
+      card.querySelector('.bd-reminder-card-selo span').textContent = partes.join(' ');
+      return card;
     }
 
     if(bellBtn){
@@ -20273,6 +20372,25 @@
       };
     }
     window.__btGetBirthdayReminder = getBirthdayReminder;
+
+    // Mesma checagem do getBirthdayReminder, só que pro caso oposto: o aviso
+    // desta reunião já foi confirmado. Serve pro sino continuar listando ele
+    // como "já lido" em vez de sumir (ver collectReadReminders).
+    function getBirthdayReminderLido(){
+      if(!notifyConfig.ativo) return null;
+      const todayNow = new Date(); todayNow.setHours(0, 0, 0, 0);
+      const meeting = findNextReuniao(todayNow);
+      if(!meeting || !meeting.id || meeting.id !== notifyConfig.confirmadoEventoId) return null;
+      const names = upcomingBirthdaysInRange(todayNow, meeting.date).map(m => (m.nome || '').split(' ')[0]);
+      if(!names.length) return null;
+      return {
+        meetingId: meeting.id,
+        title: 'Aniversariantes',
+        msg: (names.length === 1 ? names[0] + ' faz aniversário' : names.join(', ') + ' fazem aniversário') + ' até a próxima reunião 🎂',
+        day: meeting.day, monAbbr: meeting.monAbbr
+      };
+    }
+    window.__btGetBirthdayReminderLido = getBirthdayReminderLido;
 
     async function confirmBirthdayReminder(meetingId){
       notifyConfig.confirmadoEventoId = meetingId;
