@@ -14874,16 +14874,17 @@
       const { data: progresso, error: progressoErr } = await supa.from('progresso_requisitos').select('desbravador_id, requisito_titulo, status, resumo');
       if(progressoErr) console.error('Erro ao carregar progresso:', progressoErr.message);
 
-      const { data: arquivos, error: arquivosErr } = await supa.from('comprovante_arquivos').select('id, desbravador_id, requisito_titulo, arquivo_data, arquivo_nome, subitem_id').order('created_at');
+      // De propósito SEM arquivo_data: aqui só entra o que a lista precisa
+      // (quantos anexos, o nome de cada um). Os bytes da foto são o campo mais
+      // pesado da tabela, e trazer os do clube inteiro na abertura fazia o app
+      // baixar tudo de novo a cada carga. Eles vêm depois, só do desbravador
+      // escolhido — ver carregarAnexosDoAluno().
+      const { data: arquivos, error: arquivosErr } = await supa.from('comprovante_arquivos').select('id, desbravador_id, requisito_titulo, arquivo_nome, subitem_id').order('created_at');
       if(arquivosErr) console.error('Erro ao carregar comprovantes:', arquivosErr.message);
 
-      // Anexo com subitem_id pertence àquele sub-item, não ao requisito inteiro:
-      // fica numa lista separada pra não aparecer duas vezes.
+      // SUB_ANEXOS é por sub-item e vale só pro desbravador aberto: quem enche
+      // é o carregarAnexosDoAluno(), junto com os bytes.
       Object.keys(SUB_ANEXOS).forEach(k => delete SUB_ANEXOS[k]);
-      (arquivos || []).filter(a => a.subitem_id).forEach(a => {
-        if(!SUB_ANEXOS[a.subitem_id]) SUB_ANEXOS[a.subitem_id] = [];
-        SUB_ANEXOS[a.subitem_id].push({ id: a.id, foto: a.arquivo_data, nome: a.arquivo_nome || '' });
-      });
 
       const progressoByAluno = {};
       const resumoByAluno = {};
@@ -14900,7 +14901,8 @@
       (arquivos || []).filter(a => !a.subitem_id).forEach(a => {
         if(!comprovanteByAluno[a.desbravador_id]) comprovanteByAluno[a.desbravador_id] = {};
         if(!comprovanteByAluno[a.desbravador_id][a.requisito_titulo]) comprovanteByAluno[a.desbravador_id][a.requisito_titulo] = [];
-        comprovanteByAluno[a.desbravador_id][a.requisito_titulo].push({ id: a.id, foto: a.arquivo_data, nome: a.arquivo_nome || '' });
+        // foto:'' = ainda não baixada (ver carregarAnexosDoAluno)
+        comprovanteByAluno[a.desbravador_id][a.requisito_titulo].push({ id: a.id, foto: '', nome: a.arquivo_nome || '' });
       });
 
       alunos.forEach(aluno => {
@@ -14913,10 +14915,39 @@
       });
 
       updateHubCounts();
+      if(selectedStudent) await carregarAnexosDoAluno();
       if(currentClass){
         renderStudentBar(currentClass);
         applyStudentProgressToCards();
       }
+    }
+
+    // Busca os bytes dos anexos de um desbravador só — o que a tela realmente
+    // precisa mostrar. Também é aqui que SUB_ANEXOS é montado: ele é indexado
+    // por sub-item, então antes ficava com os anexos de todo mundo misturados
+    // e o chip de um desbravador aparecia na tela do outro.
+    async function carregarAnexosDoAluno(){
+      Object.keys(SUB_ANEXOS).forEach(k => delete SUB_ANEXOS[k]);
+      if(!supa || !selectedStudent || !currentClass) return;
+      const alunoId = (STUDENT_IDS[currentClass] || {})[selectedStudent];
+      if(!alunoId) return;
+      const { data, error } = await supa.from('comprovante_arquivos')
+        .select('id, requisito_titulo, arquivo_data, arquivo_nome, subitem_id')
+        .eq('desbravador_id', alunoId).order('created_at');
+      if(error){ console.error('Erro ao carregar anexos do desbravador:', error.message); return; }
+      ensureClassData(currentClass);
+      const doAluno = CLASS_COMPROVANTES[currentClass][selectedStudent] || (CLASS_COMPROVANTES[currentClass][selectedStudent] = {});
+      Object.keys(doAluno).forEach(k => delete doAluno[k]);
+      (data || []).forEach(a => {
+        const item = { id: a.id, foto: a.arquivo_data, nome: a.arquivo_nome || '' };
+        if(a.subitem_id){
+          if(!SUB_ANEXOS[a.subitem_id]) SUB_ANEXOS[a.subitem_id] = [];
+          SUB_ANEXOS[a.subitem_id].push(item);
+        } else {
+          if(!doAluno[a.requisito_titulo]) doAluno[a.requisito_titulo] = [];
+          doAluno[a.requisito_titulo].push(item);
+        }
+      });
     }
 
     // Chamado por Administração (ver adFieldClasse) quando alguém define o
@@ -14988,8 +15019,10 @@
       studentModeLabel.textContent = name ? ('Marcando presença para: ' + name) : 'Editando requisitos da classe';
       renderStudentBar(currentClass);
       applyStudentProgressToCards();
-      // Os sub-itens cumpridos são de cada desbravador, então recarregam ao trocar.
+      // Os sub-itens cumpridos e os anexos são de cada desbravador, então
+      // recarregam ao trocar — os anexos só agora trazem a foto em si.
       await loadProgressoSubitens();
+      await carregarAnexosDoAluno();
       applyStudentProgressToCards();
     }
 
@@ -15067,7 +15100,9 @@
           const comprovantes = progressForStudent ? ((CLASS_COMPROVANTES[currentClass][selectedStudent] || {})[card.dataset.title] || []) : [];
           if(comprovantes.length){
             const primeiro = comprovantes[0];
-            const isImage = primeiro.foto.indexOf('data:image') === 0;
+            // foto vazia = os bytes ainda não chegaram (carregarAnexosDoAluno);
+            // até lá vale o ícone de documento, que não tenta pintar imagem.
+            const isImage = String(primeiro.foto || '').indexOf('data:image') === 0;
             const badgeContent = comprovantes.length > 1 ? String(comprovantes.length) : '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>';
             thumbEl.innerHTML = (isImage
               ? '<img src="' + primeiro.foto + '" alt="Comprovante anexado">'
@@ -15647,7 +15682,12 @@
       const contexto = anexoVista.contexto ? (anexoVista.contexto + ' · ') : '';
       anexoViewSub.textContent = contexto + (anexoVista.i + 1) + ' de ' + anexoVista.lista.length;
       anexoViewPalco.innerHTML = '';
-      if(String(item.foto).indexOf('data:image') === 0){
+      if(!item.foto){
+        const caixa = document.createElement('div');
+        caixa.className = 'cl-anexo-view-doc';
+        caixa.textContent = 'Carregando o anexo…';
+        anexoViewPalco.appendChild(caixa);
+      } else if(String(item.foto).indexOf('data:image') === 0){
         const img = document.createElement('img');
         img.src = item.foto;
         img.alt = nomeDoAnexo(item, anexoVista.i);
@@ -15659,7 +15699,8 @@
         caixa.querySelector('span').textContent = 'Documento — use "Abrir / baixar" para ver.';
         anexoViewPalco.appendChild(caixa);
       }
-      anexoViewBaixar.href = item.foto;
+      anexoViewBaixar.href = item.foto || '#';
+      anexoViewBaixar.style.display = item.foto ? '' : 'none';
       anexoViewBaixar.setAttribute('download', nomeDoAnexo(item, anexoVista.i));
       anexoViewNav.style.display = anexoVista.lista.length > 1 ? '' : 'none';
       anexoViewAnterior.disabled = anexoVista.i === 0;
@@ -15741,7 +15782,7 @@
     function renderComprovante(comprovantes){
       const list = comprovantes || [];
       comprovanteListEl.innerHTML = list.map(item => {
-        const isImage = item.foto.indexOf('data:image') === 0;
+        const isImage = String(item.foto || '').indexOf('data:image') === 0;
         const thumb = isImage
           ? '<img src="' + item.foto + '" alt="">'
           : '<span class="cl-comprovante-item-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg></span>';
