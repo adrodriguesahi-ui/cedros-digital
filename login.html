@@ -11825,7 +11825,9 @@
     const [{ data: aluno, error: alunoErr }, { data: prog }, { data: arquivos, error: arquivosErr }] = await Promise.all([
       supa.from('desbravadores').select('nome, classe').eq('id', desbravadorId).maybeSingle(),
       supa.from('progresso_requisitos').select('status').eq('desbravador_id', desbravadorId).eq('requisito_titulo', requisitoTitulo).maybeSingle(),
-      supa.from('comprovante_arquivos').select('arquivo_data, arquivo_path, arquivo_nome, subitem_id').eq('desbravador_id', desbravadorId).eq('requisito_titulo', requisitoTitulo).order('created_at')
+      lerComColunaOpcional(
+        cols => supa.from('comprovante_arquivos').select(cols).eq('desbravador_id', desbravadorId).eq('requisito_titulo', requisitoTitulo).order('created_at'),
+        'arquivo_data, arquivo_path, arquivo_nome, subitem_id', 'arquivo_data, arquivo_nome, subitem_id')
     ]);
     elLoading.style.display = 'none';
     if(alunoErr || arquivosErr || !aluno){
@@ -12226,6 +12228,24 @@
       if(onFail) onFail();
     };
     reader.readAsDataURL(file);
+  }
+
+  // Coluna nova + banco sem a migration = o select inteiro falha, e a tela fica
+  // como se nada tivesse sido personalizado — foi o que aconteceu quando a
+  // coluna "cor" entrou: os nomes de área que o Coordenador já tinha dado
+  // sumiram todos de uma vez. Aqui a leitura tenta de novo sem as colunas
+  // novas: perde só o recurso novo, não o que já existia.
+  function ehColunaInexistente(erro){
+    if(!erro) return false;
+    return String(erro.code) === '42703' || /column .* does not exist/i.test(erro.message || '');
+  }
+
+  async function lerComColunaOpcional(montar, colunasCompletas, colunasBase){
+    const r = await montar(colunasCompletas);
+    if(!r.error) return r;
+    if(!ehColunaInexistente(r.error)) return r;
+    console.warn('Coluna nova ainda não existe no banco; lendo sem ela. Rode a migration de supabase/schema.sql.');
+    return await montar(colunasBase);
   }
 
   // ---- Comprovantes no Storage ----------------------------------------
@@ -15020,9 +15040,10 @@
       if(!supa || !selectedStudent || !currentClass) return;
       const alunoId = (STUDENT_IDS[currentClass] || {})[selectedStudent];
       if(!alunoId) return;
-      const { data, error } = await supa.from('comprovante_arquivos')
-        .select('id, requisito_titulo, arquivo_data, arquivo_path, arquivo_nome, subitem_id')
-        .eq('desbravador_id', alunoId).order('created_at');
+      const { data, error } = await lerComColunaOpcional(
+        cols => supa.from('comprovante_arquivos').select(cols).eq('desbravador_id', alunoId).order('created_at'),
+        'id, requisito_titulo, arquivo_data, arquivo_path, arquivo_nome, subitem_id',
+        'id, requisito_titulo, arquivo_data, arquivo_nome, subitem_id');
       if(error){ console.error('Erro ao carregar anexos do desbravador:', error.message); return; }
       ensureClassData(currentClass);
       const doAluno = CLASS_COMPROVANTES[currentClass][selectedStudent] || (CLASS_COMPROVANTES[currentClass][selectedStudent] = {});
@@ -16288,7 +16309,9 @@
 
     async function loadAreasPersonalizadas(){
       if(!supa) return;
-      const { data, error } = await supa.from('areas_personalizadas').select('classe, area, titulo, criada, cor');
+      const { data, error } = await lerComColunaOpcional(
+        cols => supa.from('areas_personalizadas').select(cols),
+        'classe, area, titulo, criada, cor', 'classe, area, titulo, criada');
       if(error){ console.error('Erro ao carregar nomes de áreas:', error.message); return; }
       Object.keys(AREA_TITULOS).forEach(k => delete AREA_TITULOS[k]);
       Object.keys(AREA_CORES).forEach(k => delete AREA_CORES[k]);
