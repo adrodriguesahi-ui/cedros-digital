@@ -1169,3 +1169,7 @@ create policy p_comprovantes_enviar on storage.objects for insert with check (bu
 
 drop policy if exists p_comprovantes_remover on storage.objects;
 create policy p_comprovantes_remover on storage.objects for delete using (bucket_id = 'comprovantes');
+
+-- Cor da bolinha da área naquele cartão. Vazio = a cor do catálogo (ou cinza,
+-- no caso de área criada pelo Coordenador, que não está no catálogo).
+alter table areas_personalizadas add column if not exists cor text;

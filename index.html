@@ -8644,6 +8644,19 @@
           </div>
           <p class="pl-reminder-hint" style="margin-top:0;">Área do catálogo: <b id="clAreaNomeOriginal"></b>. Vale só neste cartão; em branco volta ao nome original.</p>
           <input type="text" class="pl-input" id="clAreaNomeInput" maxlength="60" placeholder="Como o grupo aparece na lista">
+          <label class="pl-field-label" style="margin-top:14px;">Cor da bolinha</label>
+          <div class="un-color-picker" id="clAreaCorPicker">
+            <button type="button" class="un-color-swatch" data-color="orange"><span class="cl-class-dot cl-color-orange"></span></button>
+            <button type="button" class="un-color-swatch" data-color="purple"><span class="cl-class-dot cl-color-purple"></span></button>
+            <button type="button" class="un-color-swatch" data-color="gold"><span class="cl-class-dot cl-color-gold"></span></button>
+            <button type="button" class="un-color-swatch" data-color="green"><span class="cl-class-dot cl-color-green"></span></button>
+            <button type="button" class="un-color-swatch" data-color="red"><span class="cl-class-dot cl-color-red"></span></button>
+            <button type="button" class="un-color-swatch" data-color="blue"><span class="cl-class-dot cl-color-blue"></span></button>
+            <button type="button" class="un-color-swatch" data-color="navy"><span class="cl-class-dot cl-color-navy"></span></button>
+            <button type="button" class="un-color-swatch" data-color="olive"><span class="cl-class-dot cl-color-olive"></span></button>
+            <button type="button" class="un-color-swatch" data-color="yellow"><span class="cl-class-dot cl-color-yellow"></span></button>
+            <button type="button" class="un-color-swatch" data-color="gray"><span class="cl-class-dot cl-color-gray"></span></button>
+          </div>
           <div class="pl-modal-actions">
             <button type="button" class="pl-btn pl-btn-neutral" id="clAreaNomeReset">Restaurar original</button>
             <button type="button" class="pl-btn pl-btn-primary" id="clAreaNomeSalvar">Salvar</button>
@@ -16217,6 +16230,13 @@
     // Nome que o Coordenador deu à área no cartão dele: AREA_TITULOS['Classe|Área'].
     // A chave continua sendo o nome do catálogo, que é o que agrupa a lista.
     const AREA_TITULOS = {};
+    // Cor escolhida pro cartão, mesma chave. Sem escolha vale a cor do catálogo
+    // (AREA_COLOR); área criada pelo Coordenador não está lá, então caía sempre
+    // no cinza — é o caso que mais precisava disso.
+    const AREA_CORES = {};
+    function corDaArea(className, area){
+      return AREA_CORES[className + '|' + area] || AREA_COLOR[area] || 'gray';
+    }
     function tituloDaArea(className, area){
       return AREA_TITULOS[className + '|' + area] || area;
     }
@@ -16268,12 +16288,14 @@
 
     async function loadAreasPersonalizadas(){
       if(!supa) return;
-      const { data, error } = await supa.from('areas_personalizadas').select('classe, area, titulo, criada');
+      const { data, error } = await supa.from('areas_personalizadas').select('classe, area, titulo, criada, cor');
       if(error){ console.error('Erro ao carregar nomes de áreas:', error.message); return; }
       Object.keys(AREA_TITULOS).forEach(k => delete AREA_TITULOS[k]);
+      Object.keys(AREA_CORES).forEach(k => delete AREA_CORES[k]);
       Object.keys(AREAS_CRIADAS).forEach(k => delete AREAS_CRIADAS[k]);
       (data || []).forEach(r => {
         if(r.titulo) AREA_TITULOS[r.classe + '|' + r.area] = r.titulo;
+        if(r.cor) AREA_CORES[r.classe + '|' + r.area] = r.cor;
         if(r.criada){
           if(!AREAS_CRIADAS[r.classe]) AREAS_CRIADAS[r.classe] = [];
           AREAS_CRIADAS[r.classe].push(r.area);
@@ -16292,10 +16314,31 @@
     const areaNomeClose = document.getElementById('clAreaNomeClose');
     let areaEmEdicao = null;
 
+    const areaCorPicker = document.getElementById('clAreaCorPicker');
+    let areaCorEscolhida = '';
+
+    function marcarCorEscolhida(cor){
+      areaCorEscolhida = cor || '';
+      if(!areaCorPicker) return;
+      areaCorPicker.querySelectorAll('.un-color-swatch').forEach(b => {
+        b.classList.toggle('selected', b.getAttribute('data-color') === areaCorEscolhida);
+      });
+    }
+    if(areaCorPicker){
+      areaCorPicker.addEventListener('click', (e) => {
+        const b = e.target.closest('.un-color-swatch');
+        if(!b) return;
+        // Tocar de novo na cor já escolhida volta pra cor do catálogo.
+        const cor = b.getAttribute('data-color');
+        marcarCorEscolhida(cor === areaCorEscolhida ? '' : cor);
+      });
+    }
+
     function abrirEditorDeArea(className, area){
       areaEmEdicao = { classe: className, area: area };
       areaNomeOriginal.textContent = area;
       areaNomeInput.value = AREA_TITULOS[className + '|' + area] || '';
+      marcarCorEscolhida(AREA_CORES[className + '|' + area] || '');
       mostrarNaViewAtiva(areaNomeOverlay);
       areaNomeInput.focus();
     }
@@ -16308,24 +16351,29 @@
     if(areaNomeSalvar) areaNomeSalvar.addEventListener('click', async () => {
       if(!areaEmEdicao) return;
       const novo = areaNomeInput.value.trim();
+      const cor = areaCorEscolhida;
       const chave = areaEmEdicao.classe + '|' + areaEmEdicao.area;
       if(novo) AREA_TITULOS[chave] = novo; else delete AREA_TITULOS[chave];
+      if(cor) AREA_CORES[chave] = cor; else delete AREA_CORES[chave];
       const grupo = findClassGroup(areaEmEdicao.classe);
       const alvo = areaEmEdicao;
+      const eraCriada = areasCriadas(alvo.classe).indexOf(alvo.area) !== -1;
       fecharEditorDeArea();
       if(grupo) regroupByArea(grupo);
       if(areasOverlay && areasOverlay.classList.contains('show')) renderAreasLista();
 
       if(!supa) return;
-      // Sem nome próprio a linha sai, em vez de ficar guardando texto vazio.
-      const { error } = novo
-        ? await supa.from('areas_personalizadas').upsert({ classe: alvo.classe, area: alvo.area, titulo: novo })
+      // A linha só sai quando não sobrou nada nela: sem nome, sem cor e não é
+      // área criada aqui. Antes bastava limpar o nome pra apagar tudo junto.
+      const { error } = (novo || cor || eraCriada)
+        ? await supa.from('areas_personalizadas').upsert({ classe: alvo.classe, area: alvo.area, titulo: novo || (eraCriada ? alvo.area : null), cor: cor || null })
         : await supa.from('areas_personalizadas').delete().eq('classe', alvo.classe).eq('area', alvo.area);
-      if(error) alert('Não consegui salvar o nome da área: ' + error.message);
+      if(error) alert('Não consegui salvar a área: ' + error.message);
     });
 
     if(areaNomeReset) areaNomeReset.addEventListener('click', () => {
       areaNomeInput.value = '';
+      marcarCorEscolhida('');
       areaNomeSalvar.click();
     });
 
@@ -16372,7 +16420,7 @@
         const linha = document.createElement('div');
         linha.className = 'cl-area-linha';
         linha.innerHTML =
-          '<span class="cl-class-dot cl-color-' + (AREA_COLOR[area] || 'gray') + '"></span>' +
+          '<span class="cl-class-dot cl-color-' + corDaArea(classe, area) + '"></span>' +
           '<span class="cl-area-linha-body"><span class="cl-area-linha-nome"></span><span class="cl-area-linha-meta"></span></span>' +
           '<button type="button" class="cl-area-acao" data-acao="renomear" aria-label="Renomear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>' +
           '<button type="button" class="cl-area-acao perigo" data-acao="excluir" aria-label="Excluir"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>';
@@ -16422,6 +16470,10 @@
       }
       if(!AREAS_CRIADAS[classe]) AREAS_CRIADAS[classe] = [];
       AREAS_CRIADAS[classe].push(nome);
+      // O insert abaixo grava titulo = nome; sem espelhar aqui, abrir o editor
+      // antes de recarregar mostrava o campo de nome vazio — e salvar dali
+      // apagava o título gravado.
+      AREA_TITULOS[classe + '|' + nome] = nome;
       const grupo = findClassGroup(classe);
       if(grupo) regroupByArea(grupo);
       renderAreasLista();
@@ -16527,7 +16579,7 @@
       orderedAreas.forEach(area => {
         const key = className + '|' + area;
         const isCollapsed = !!collapsedAreas[key];
-        const color = AREA_COLOR[area] || 'gray';
+        const color = corDaArea(className, area);
 
         const section = document.createElement('div');
         section.className = 'cl-area-section' + (isCollapsed ? ' collapsed' : '');
