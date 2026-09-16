@@ -44,7 +44,12 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      # Sem "packages", a action instala o pacote 'tools', que o Google tirou
+      # do repositório — o sdkmanager sai com erro antes de o build começar.
+      # O resto do SDK o Gradle baixa sozinho, com as licenças já aceitas aqui.
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Instalar dependências
         run: npm install
