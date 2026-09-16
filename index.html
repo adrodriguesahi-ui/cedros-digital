@@ -1812,6 +1812,52 @@
     text-underline-offset:2px;
   }
 
+  /* Plano de leitura bíblica: capítulos em grade, agrupados por livro. Com
+     dezenas de leituras a lista em coluna vira uma rolagem sem fim — aqui cada
+     capítulo é um botão de marcar, e o livro fechado ocupa uma linha só. */
+  .cl-leitura{ display:flex; flex-direction:column; gap:8px; }
+  .cl-leitura-grupo{
+    border:1px solid rgba(255,255,255,0.09); border-radius:13px;
+    background:rgba(255,255,255,0.03); overflow:hidden;
+  }
+  .cl-leitura-cab{
+    width:100%; display:flex; align-items:center; gap:9px; padding:11px 12px;
+    border:none; background:none; color:var(--cream); font-family:inherit; cursor:pointer;
+    text-align:left;
+  }
+  .cl-leitura-livro{ flex-shrink:0; color:var(--gold); }
+  .cl-leitura-nome{ font-size:13px; font-weight:900; white-space:nowrap; }
+  .cl-leitura-pct{ font-size:11.5px; font-weight:900; color:var(--gold); margin-left:auto; }
+  .cl-leitura-barra{
+    flex:1; max-width:110px; min-width:42px; height:6px; border-radius:99px;
+    background:rgba(255,255,255,0.12); overflow:hidden;
+  }
+  .cl-leitura-barra i{ display:block; height:100%; border-radius:99px; background:var(--accent); }
+  .cl-leitura-seta{ flex-shrink:0; color:rgba(245,239,225,0.45); transition:transform 0.18s; }
+  .cl-leitura-grupo.aberto .cl-leitura-seta{ transform:rotate(180deg); }
+  .cl-leitura-itens{
+    display:none; grid-template-columns:repeat(auto-fill, minmax(132px, 1fr));
+    gap:6px; padding:0 10px 11px;
+  }
+  .cl-leitura-grupo.aberto .cl-leitura-itens{ display:grid; }
+  .cl-leitura-item{
+    display:flex; align-items:flex-start; gap:7px; padding:8px 9px; border-radius:10px;
+    border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.04);
+    color:rgba(245,239,225,0.85); font-family:inherit; font-size:12px; font-weight:700;
+    text-align:left; cursor:pointer;
+  }
+  .cl-leitura-item:active{ transform:scale(0.97); }
+  .cl-leitura-item.feito{
+    border-color:rgba(63,203,107,0.35); background:rgba(63,203,107,0.09); color:var(--cream);
+  }
+  .cl-leitura-marca{
+    flex-shrink:0; width:18px; height:18px; border-radius:50%;
+    border:1.6px solid rgba(255,255,255,0.25); display:flex; align-items:center;
+    justify-content:center; color:transparent;
+  }
+  .cl-leitura-item.feito .cl-leitura-marca{ background:var(--accent); border-color:var(--accent); color:#08130A; }
+  .cl-leitura-ref{ flex:1; min-width:0; line-height:1.35; word-break:break-word; }
+
   /* Lápis pra reescrever o texto do requisito, na linha do cronograma. */
   .cp-req-editar{
     flex-shrink:0; display:flex; align-items:center; justify-content:center;
@@ -15357,6 +15403,150 @@
     const subStatusHint = document.getElementById('clSubStatusHint');
     let subEmEdicao = null; // id do sub-item com o detalhe aberto
 
+    // ---- Plano de leitura bíblica ----
+    // "Gn 1", "1 Sm 17", "Êx 4:1-17; 27-31": um livro seguido do capítulo.
+    const LIVRO_BIBLICO = /^(?:[123]\s+)?[A-Za-zÀ-ÿ]{2,6}\.?\s+\d/;
+    const LIVRO_ABREV = /^((?:[123]\s+)?[A-Za-zÀ-ÿ]{2,6}\.?)\s+/;
+    // Só os livros que aparecem nos planos de leitura das classes.
+    const NOME_DO_LIVRO = {
+      'Gn': 'Gênesis', 'Êx': 'Êxodo', 'Lv': 'Levítico', 'Nm': 'Números', 'Dt': 'Deuteronômio',
+      'Js': 'Josué', 'Jz': 'Juízes', 'Rt': 'Rute', '1 Sm': '1 Samuel', '2 Sm': '2 Samuel',
+      '1 Rs': '1 Reis', '2 Rs': '2 Reis', '1 Cr': '1 Crônicas', '2 Cr': '2 Crônicas',
+      'Ed': 'Esdras', 'Ne': 'Neemias', 'Ester': 'Ester', 'Jó': 'Jó', 'Sl': 'Salmos',
+      'Pv': 'Provérbios', 'Ec': 'Eclesiastes', 'Ct': 'Cantares', 'Is': 'Isaías',
+      'Jr': 'Jeremias', 'Ez': 'Ezequiel', 'Dn': 'Daniel', 'Os': 'Oseias', 'Jn': 'Jonas',
+      'Mt': 'Mateus', 'Mc': 'Marcos', 'Lc': 'Lucas', 'Jo': 'João', 'At': 'Atos',
+      'Rm': 'Romanos', 'Ap': 'Apocalipse'
+    };
+
+    function abreviaturaDoTrecho(texto){
+      if(!LIVRO_BIBLICO.test(texto || '')) return '';
+      const m = (texto || '').match(LIVRO_ABREV);
+      return m ? m[1].replace(/\.$/, '') : '';
+    }
+
+    // Quebra "Leitura bíblica: Gn 1, Gn 2, Gn 4:1-16, ..." numa leitura por
+    // linha, pra o desbravador ir marcando o que já leu em vez de encarar a
+    // lista inteira como um requisito só.
+    function separarLeituraBiblica(texto){
+      if(!texto) return [];
+      // Fora o rótulo da frente ("Leitura bíblica:") e o ponto do fim.
+      const corpo = texto.trim().replace(/^[A-Za-zÀ-ÿ\s]{3,40}:\s*/, '').replace(/\.\s*$/, '');
+      const pedacos = corpo.split(',').map(x => x.trim()).filter(Boolean);
+      const comLivro = pedacos.filter(x => LIVRO_BIBLICO.test(x));
+      // Sem vários trechos com nome de livro não é plano de leitura: melhor não
+      // sair picando a descrição de um requisito comum que tenha vírgulas.
+      if(comLivro.length < 2 || pedacos.length < 4) return [];
+
+      // Duas escritas convivem no catálogo. Quando quase todo trecho repete o
+      // livro (Amigo: "Gn 23, Gn 24:1-46, 48"), o trecho sem livro é continuação
+      // do anterior. Quando o livro só aparece de vez em quando (Companheiro:
+      // "Nm 9:15-23, 11, 12"), cada trecho é uma leitura e herda o livro.
+      const repeteLivro = comLivro.length >= pedacos.length * 0.6;
+      const itens = [];
+      let livro = '';
+      pedacos.forEach(pedaco => {
+        const abrev = abreviaturaDoTrecho(pedaco);
+        if(abrev){ livro = abrev; itens.push(pedaco); }
+        else if(repeteLivro && itens.length) itens[itens.length - 1] += ', ' + pedaco;
+        else itens.push(livro ? livro + ' ' + pedaco : pedaco);
+      });
+      return itens.length >= 4 ? itens : [];
+    }
+    // O editor de texto do requisito usa o mesmo separador.
+    window.__clSepararLeituraBiblica = separarLeituraBiblica;
+
+    // Lista longa e quase toda de referências bíblicas ganha a tela de leitura:
+    // os capítulos agrupados por livro, em grade, com o quanto já foi lido.
+    function agruparLeitura(subs){
+      if(subs.length < 12) return null;
+      const comLivro = subs.filter(x => LIVRO_BIBLICO.test(x.texto || ''));
+      if(comLivro.length < subs.length * 0.7) return null;
+      const grupos = [];
+      const porChave = {};
+      subs.forEach(sub => {
+        const abrev = abreviaturaDoTrecho(sub.texto);
+        // O que não é referência fica num grupo à parte, no fim.
+        const chave = abrev || '\u0000outros';
+        if(!porChave[chave]){
+          porChave[chave] = { chave: chave, nome: abrev ? (NOME_DO_LIVRO[abrev] || abrev) : 'Leitura complementar', itens: [] };
+          grupos.push(porChave[chave]);
+        }
+        porChave[chave].itens.push(sub);
+      });
+      return grupos;
+    }
+
+    // Qual livro fica aberto, por requisito. Sem isso, marcar um capítulo
+    // redesenha a lista e fecha o que a pessoa estava lendo.
+    const LEITURA_ABERTA = {};
+
+    function pintarLeitura(card, grupos){
+      const chaveReq = requisitoKey(currentClass, card.dataset.title);
+      const feitosDo = g => g.itens.filter(x => (SUB_FEITOS[x.id] || {}).feito).length;
+      // Primeira visita: abre o primeiro livro que ainda tem capítulo a ler.
+      if(!(chaveReq in LEITURA_ABERTA)){
+        const pendente = grupos.find(g => feitosDo(g) < g.itens.length) || grupos[0];
+        LEITURA_ABERTA[chaveReq] = pendente ? pendente.chave : null;
+      }
+
+      // A grade já é a lista de leituras: repetir a descrição inteira em cima
+      // dela só empurra os capítulos pra fora da tela.
+      if(statusPickDesc) statusPickDesc.style.display = 'none';
+
+      subLista.innerHTML = '';
+      const painel = document.createElement('div');
+      painel.className = 'cl-leitura';
+
+      grupos.forEach(grupo => {
+        const feitos = feitosDo(grupo);
+        const pct = Math.round(feitos * 100 / grupo.itens.length);
+        const aberto = LEITURA_ABERTA[chaveReq] === grupo.chave;
+
+        const bloco = document.createElement('div');
+        bloco.className = 'cl-leitura-grupo' + (aberto ? ' aberto' : '');
+
+        const cab = document.createElement('button');
+        cab.type = 'button';
+        cab.className = 'cl-leitura-cab';
+        cab.innerHTML =
+          '<svg class="cl-leitura-livro" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22Z"/><path d="M12 2v18"/></svg>' +
+          '<span class="cl-leitura-nome"></span>' +
+          '<span class="cl-leitura-pct"></span>' +
+          '<span class="cl-leitura-barra"><i></i></span>' +
+          '<svg class="cl-leitura-seta" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+        cab.querySelector('.cl-leitura-nome').textContent = grupo.nome;
+        cab.querySelector('.cl-leitura-pct').textContent = pct + '%';
+        cab.querySelector('.cl-leitura-barra i').style.width = pct + '%';
+        // Um livro aberto por vez: tocar no aberto fecha.
+        cab.addEventListener('click', () => {
+          LEITURA_ABERTA[chaveReq] = aberto ? null : grupo.chave;
+          renderSubitens(card);
+        });
+        bloco.appendChild(cab);
+
+        const grade = document.createElement('div');
+        grade.className = 'cl-leitura-itens';
+        grupo.itens.forEach(sub => {
+          const feito = !!(SUB_FEITOS[sub.id] || {}).feito;
+          const chip = document.createElement('button');
+          chip.type = 'button';
+          chip.className = 'cl-leitura-item' + (feito ? ' feito' : '');
+          chip.setAttribute('aria-pressed', feito ? 'true' : 'false');
+          chip.innerHTML =
+            '<span class="cl-leitura-marca"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>' +
+            '<span class="cl-leitura-ref"></span>';
+          chip.querySelector('.cl-leitura-ref').textContent = sub.texto;
+          chip.addEventListener('click', () => marcarSubitem(card, sub, !((SUB_FEITOS[sub.id] || {}).feito)));
+          grade.appendChild(chip);
+        });
+        bloco.appendChild(grade);
+        painel.appendChild(bloco);
+      });
+
+      subLista.appendChild(painel);
+    }
+
     function statusPelosSubitens(subs, modo){
       if(!subs.length) return null;
       const feitos = subs.filter(x => (SUB_FEITOS[x.id] || {}).feito).length;
@@ -15379,14 +15569,24 @@
       const feitos = subs.filter(x => (SUB_FEITOS[x.id] || {}).feito).length;
       const escolhido = subs.find(x => (SUB_FEITOS[x.id] || {}).feito);
 
+      // Plano de leitura: os capítulos em grade, agrupados por livro. Aqui não
+      // cabe resumo nem anexo por item — são dezenas de leituras, e o que
+      // interessa é marcar o que já foi lido.
+      const grupos = modo === 'um' ? null : agruparLeitura(subs);
+
       if(subTituloTexto){
-        subTituloTexto.textContent = modo === 'um' ? 'Escolha o que foi cumprido' : 'O que já cumpriu';
+        subTituloTexto.textContent = grupos ? 'Plano de leitura'
+          : (modo === 'um' ? 'Escolha o que foi cumprido' : 'O que já cumpriu');
       }
       subContagem.textContent = modo === 'um'
         ? (escolhido ? 'escolhido' : 'nenhum')
-        : (feitos + ' de ' + subs.length);
+        : (feitos + ' de ' + subs.length + (grupos ? ' · ' + Math.round(feitos * 100 / subs.length) + '%' : ''));
       if(subStatusHint){
-        if(modo === 'um'){
+        if(grupos){
+          subStatusHint.textContent = feitos === subs.length
+            ? 'Leitura completa — o requisito fica como Concluída.'
+            : 'Toque no capítulo assim que terminar a leitura.';
+        } else if(modo === 'um'){
           subStatusHint.textContent = escolhido
             ? 'Uma alternativa basta — o requisito fica como Concluída.'
             : 'Basta cumprir uma destas alternativas.';
@@ -15396,6 +15596,8 @@
             : 'O status abaixo acompanha os sub-itens marcados.';
         }
       }
+
+      if(grupos){ pintarLeitura(card, grupos); return; }
 
       subLista.innerHTML = '';
       subs.forEach(sub => {
@@ -15530,7 +15732,10 @@
       let novo = statusPelosSubitens(subs, modo);
       // Requisito que exige comprovação só fecha com o resumo de cada sub-item —
       // mesma regra do requisito solto, aplicada item a item.
-      if(novo === 'done' && exigeComprovacao(currentClass, card.dataset.title)){
+      // Plano de leitura não cobra resumo item a item: não há onde escrever um
+      // por capítulo, e a comprovação do requisito continua valendo inteira.
+      const ehLeitura = !!agruparLeitura(subs);
+      if(novo === 'done' && !ehLeitura && exigeComprovacao(currentClass, card.dataset.title)){
         // No modo "um", só a alternativa escolhida precisa do resumo.
         const cobrar = modo === 'um' ? subs.filter(x => (SUB_FEITOS[x.id] || {}).feito) : subs;
         const semResumo = cobrar.filter(x => !((SUB_FEITOS[x.id] || {}).resumo || '').trim());
@@ -17612,18 +17817,26 @@
       return partes;
     }
 
+    // Primeiro tenta os marcadores; se não houver, tenta o plano de leitura
+    // bíblica (o separador mora junto da lista de sub-itens, que também o usa).
+    function separarRascunho(texto){
+      const porMarcador = separarEmSubitens(texto);
+      if(porMarcador.length >= 2) return porMarcador;
+      return (window.__clSepararLeituraBiblica && window.__clSepararLeituraBiblica(texto)) || [];
+    }
+
     if(rtSepararBtn) rtSepararBtn.addEventListener('click', () => {
       // Separa a descrição; se ela estiver vazia (ou sem marcadores), tenta o
       // que já está no próprio campo de sub-itens — é comum colar tudo ali numa
       // linha só e querer quebrar depois.
-      const daDescricao = separarEmSubitens(rtCampos.descricao.value);
-      const doCampo = separarEmSubitens(rtSubitens.value);
+      const daDescricao = separarRascunho(rtCampos.descricao.value);
+      const doCampo = separarRascunho(rtSubitens.value);
       const usarDescricao = daDescricao.length >= 2;
       const partes = usarDescricao ? daDescricao : doCampo;
 
       if(partes.length < 2){
         alert(rtCampos.descricao.value.trim() || rtSubitens.value.trim()
-          ? 'Não achei marcadores como "a)" ou "1." pra separar. Escreva um sub-item por linha à mão.'
+          ? 'Não achei marcadores como "a)" ou "1.", nem uma lista de leitura bíblica, pra separar. Escreva um sub-item por linha à mão.'
           : 'Escreva a descrição (ou cole os itens aqui embaixo) pra eu separar.');
         return;
       }
