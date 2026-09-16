@@ -1816,15 +1816,50 @@
      dezenas de leituras a lista em coluna vira uma rolagem sem fim — aqui cada
      capítulo é um botão de marcar, e o livro fechado ocupa uma linha só. */
   .cl-leitura{ display:flex; flex-direction:column; gap:8px; }
+  /* Capa do plano: dá nome à tela e carrega o versículo, do jeito que a
+     Leitura Bíblica aparece no material impresso da classe. */
+  .cl-leitura-capa{
+    display:flex; align-items:center; gap:12px; padding:13px 14px; border-radius:14px;
+    background:linear-gradient(135deg, rgba(216,168,62,0.16), rgba(12,26,15,0.6));
+    border:1px solid rgba(216,168,62,0.22);
+  }
+  .cl-leitura-capa svg{ flex-shrink:0; color:var(--gold); }
+  .cl-leitura-capa h4{ margin:0 0 3px; font-size:15px; font-weight:900; color:var(--cream); }
+  .cl-leitura-versiculo{
+    margin:0; font-size:10.5px; line-height:1.45; font-style:italic;
+    color:rgba(245,239,225,0.6);
+  }
+  .cl-leitura-versiculo b{ font-style:normal; font-weight:800; color:rgba(216,168,62,0.85); }
+
+  /* Resumo: o quanto já foi lido, em anel e em número. */
+  .cl-leitura-resumo{
+    display:flex; align-items:center; flex-wrap:wrap; gap:12px; padding:12px 14px;
+    border-radius:14px; border:1px solid rgba(255,255,255,0.09); background:rgba(255,255,255,0.03);
+  }
+  .cl-leitura-instrucao{ flex:1; min-width:150px; margin:0; font-size:12px; line-height:1.45; color:rgba(245,239,225,0.65); }
+  .cl-leitura-anel{ position:relative; width:66px; height:66px; flex-shrink:0; }
+  .cl-leitura-anel-txt{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:1px;
+  }
+  .cl-leitura-anel-pct{ font-size:15px; font-weight:900; color:var(--cream); line-height:1; }
+  .cl-leitura-anel-rot{ font-size:7px; font-weight:800; letter-spacing:0; text-transform:uppercase; color:rgba(245,239,225,0.45); }
+  .cl-leitura-numeros{ display:flex; flex-direction:column; gap:7px; }
+  .cl-leitura-numero{ display:flex; align-items:center; gap:8px; }
+  .cl-leitura-numero svg{ flex-shrink:0; color:rgba(245,239,225,0.45); }
+  .cl-leitura-numero.feitos svg{ color:var(--accent); }
+  .cl-leitura-numero span{ display:block; font-size:9.5px; font-weight:800; letter-spacing:0.03em; text-transform:uppercase; color:rgba(245,239,225,0.45); }
+  .cl-leitura-numero b{ display:block; font-size:14px; font-weight:900; color:var(--cream); line-height:1.15; }
   .cl-leitura-grupo{
     border:1px solid rgba(255,255,255,0.09); border-radius:13px;
     background:rgba(255,255,255,0.03); overflow:hidden;
   }
   .cl-leitura-cab{
     width:100%; display:flex; align-items:center; gap:9px; padding:11px 12px;
-    border:none; background:none; color:var(--cream); font-family:inherit; cursor:pointer;
-    text-align:left;
+    border:none; background:rgba(255,255,255,0.05); color:var(--cream); font-family:inherit;
+    cursor:pointer; text-align:left;
   }
+  .cl-leitura-grupo.aberto .cl-leitura-cab{ background:rgba(216,168,62,0.13); }
   .cl-leitura-livro{ flex-shrink:0; color:var(--gold); }
   .cl-leitura-nome{ font-size:13px; font-weight:900; white-space:nowrap; }
   .cl-leitura-pct{ font-size:11.5px; font-weight:900; color:var(--gold); margin-left:auto; }
@@ -15491,12 +15526,52 @@
       }
 
       // A grade já é a lista de leituras: repetir a descrição inteira em cima
-      // dela só empurra os capítulos pra fora da tela.
+      // dela só empurra os capítulos pra fora da tela. A linha de título do
+      // bloco também sai — o cartão de resumo diz o mesmo, e melhor.
       if(statusPickDesc) statusPickDesc.style.display = 'none';
+      if(subTituloTexto && subTituloTexto.parentNode) subTituloTexto.parentNode.style.display = 'none';
 
       subLista.innerHTML = '';
       const painel = document.createElement('div');
       painel.className = 'cl-leitura';
+
+      const totalItens = grupos.reduce((n, g) => n + g.itens.length, 0);
+      const totalFeitos = grupos.reduce((n, g) => n + feitosDo(g), 0);
+      const pctGeral = Math.round(totalFeitos * 100 / totalItens);
+
+      const capa = document.createElement('div');
+      capa.className = 'cl-leitura-capa';
+      capa.innerHTML =
+        '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5C10.5 6 8.3 5.4 5.6 5.4A1.6 1.6 0 0 0 4 7v10.2c0 .9.7 1.6 1.6 1.6 2.7 0 4.9.6 6.4 2.1 1.5-1.5 3.7-2.1 6.4-2.1.9 0 1.6-.7 1.6-1.6V7a1.6 1.6 0 0 0-1.6-1.6c-2.7 0-4.9.6-6.4 2.1Z"/><path d="M12 7.5v13.4"/><path d="M12 4.2 11 2.6M12 4.2l1-1.6"/></svg>' +
+        '<div><h4>Leitura Bíblica</h4>' +
+        '<p class="cl-leitura-versiculo">“Lâmpada para os meus pés é a tua palavra e luz para o meu caminho.” <b>Salmos 119:105</b></p></div>';
+      painel.appendChild(capa);
+
+      // Anel de progresso: um círculo por cima do outro, o de cima recortado
+      // pelo dasharray na proporção lida.
+      const RAIO = 27;
+      const VOLTA = 2 * Math.PI * RAIO;
+      const resumo = document.createElement('div');
+      resumo.className = 'cl-leitura-resumo';
+      resumo.innerHTML =
+        '<p class="cl-leitura-instrucao">Leia os capítulos indicados e marque cada um como concluído.</p>' +
+        '<div class="cl-leitura-anel">' +
+          '<svg width="66" height="66" viewBox="0 0 66 66">' +
+            '<circle cx="33" cy="33" r="' + RAIO + '" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="7"/>' +
+            '<circle cx="33" cy="33" r="' + RAIO + '" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round"' +
+              ' stroke-dasharray="' + VOLTA.toFixed(1) + '" stroke-dashoffset="' + (VOLTA * (1 - pctGeral / 100)).toFixed(1) + '"' +
+              ' transform="rotate(-90 33 33)"/>' +
+          '</svg>' +
+          '<div class="cl-leitura-anel-txt"><span class="cl-leitura-anel-pct"></span><span class="cl-leitura-anel-rot">Concluído</span></div>' +
+        '</div>' +
+        '<div class="cl-leitura-numeros">' +
+          '<div class="cl-leitura-numero"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22Z"/><path d="M12 2v18"/></svg><div><span>Total de itens</span><b class="cl-leitura-total"></b></div></div>' +
+          '<div class="cl-leitura-numero feitos"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="8.5 12.2 11 14.7 15.8 9.9"/></svg><div><span>Concluídos</span><b class="cl-leitura-feitos"></b></div></div>' +
+        '</div>';
+      resumo.querySelector('.cl-leitura-anel-pct').textContent = pctGeral + '%';
+      resumo.querySelector('.cl-leitura-total').textContent = totalItens;
+      resumo.querySelector('.cl-leitura-feitos').textContent = totalFeitos;
+      painel.appendChild(resumo);
 
       grupos.forEach(grupo => {
         const feitos = feitosDo(grupo);
@@ -15597,6 +15672,7 @@
         }
       }
 
+      if(subTituloTexto && subTituloTexto.parentNode) subTituloTexto.parentNode.style.display = '';
       if(grupos){ pintarLeitura(card, grupos); return; }
 
       subLista.innerHTML = '';
