@@ -1971,6 +1971,11 @@
   .lb-item.feito .lb-marca{ background:var(--lb-verde); border-color:var(--lb-verde); color:#fff; }
   .lb-ref{ flex:1; min-width:0; line-height:1.3; word-break:break-word; }
 
+  /* Selão de data num evento de período: em cima vai "a 17" no lugar da
+     sigla do dia da semana, e ele precisa de um pouco mais de largura. */
+  .pl-event-date.periodo em{ font-size:9.5px; letter-spacing:0; white-space:nowrap; }
+  .pl-event-date.periodo{ color:var(--gold); }
+
   /* Referência bíblica citada no texto do requisito: tocável, discreta. */
   .cl-ref-link{
     border:none; background:none; padding:0; margin:0; font:inherit; cursor:pointer;
@@ -4110,6 +4115,10 @@
               <label class="pl-field-label">Dia</label>
               <input type="number" class="pl-input" id="plFieldDay" min="1" max="31" placeholder="Dia">
             </div>
+            <div class="pl-field-col">
+              <label class="pl-field-label">Até o dia</label>
+              <input type="number" class="pl-input" id="plFieldDayEnd" min="1" max="31" placeholder="—">
+            </div>
             <div class="pl-field-col pl-field-col-wide">
               <label class="pl-field-label">Mês</label>
               <select class="pl-input" id="plFieldMonth">
@@ -4128,6 +4137,8 @@
               </select>
             </div>
           </div>
+
+          <p class="pl-reminder-hint" style="margin:-4px 2px 10px;">Evento de vários dias: preencha "Até o dia". Em branco, vale só o dia de início. O período fica dentro do mesmo mês.</p>
 
           <div class="pl-field-row">
             <div class="pl-field-col">
@@ -13023,6 +13034,7 @@
 
     const fieldTitle = document.getElementById('plFieldTitle');
     const fieldDay = document.getElementById('plFieldDay');
+    const fieldDayEnd = document.getElementById('plFieldDayEnd');
     const fieldMonth = document.getElementById('plFieldMonth');
     const fieldTime = document.getElementById('plFieldTime');
     const fieldTimeEnd = document.getElementById('plFieldTimeEnd');
@@ -13364,6 +13376,7 @@
         deleteBtn.style.display = '';
         fieldTitle.value = card.dataset.title || '';
         fieldDay.value = card.dataset.day || '';
+        if(fieldDayEnd) fieldDayEnd.value = card.dataset.dayEnd || '';
         fieldMonth.value = card.dataset.monIndex || '5';
         fieldTime.value = card.dataset.time || '09:00';
         fieldTimeEnd.value = card.dataset.timeEnd || '';
@@ -13407,6 +13420,7 @@
         deleteBtn.style.display = 'none';
         fieldTitle.value = '';
         fieldDay.value = preset ? preset.day : '';
+        if(fieldDayEnd) fieldDayEnd.value = '';
         if(preset) fieldMonth.value = preset.monIdx;
         fieldTime.value = '09:00';
         fieldTimeEnd.value = '';
@@ -13496,6 +13510,7 @@
       a.className = 'pl-event-card';
       a.dataset.id = data.id || '';
       a.dataset.day = data.day;
+      a.dataset.dayEnd = data.dayEnd || '';
       a.dataset.monAbbr = data.monAbbr;
       a.dataset.monName = data.monName;
       a.dataset.monIndex = data.monIdx;
@@ -13530,8 +13545,12 @@
       a.dataset.reminderLastConfirmedDate = data.reminderLastConfirmedDate || '';
       a.dataset.reminderConfirmedPor = data.reminderConfirmedPor || '';
       const dowAbbr = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'][new Date(new Date().getFullYear(), data.monIdx - 1, parseInt(data.day, 10)).getDay()];
+      // Num período, o dia da semana do início diz pouco: o selão mostra
+      // "a 17" em cima do 14, em vez da sigla.
+      const ehPeriodo = !!data.dayEnd && data.dayEnd !== data.day;
       a.innerHTML =
-        '<div class="pl-event-date"><em>' + dowAbbr + '</em><b>' + data.day + '</b></div>' +
+        '<div class="pl-event-date' + (ehPeriodo ? ' periodo' : '') + '"><em>' +
+          (ehPeriodo ? ('a ' + data.dayEnd) : dowAbbr) + '</em><b>' + data.day + '</b></div>' +
         '<div class="pl-event-body">' +
           '<h4 class="pl-event-title"></h4>' +
           '<p class="pl-event-meta">' +
@@ -13603,6 +13622,7 @@
       return {
         id: row.id,
         day: String(row.dia).padStart(2, '0'),
+        dayEnd: row.dia_fim ? String(row.dia_fim).padStart(2, '0') : '',
         monIdx: row.mes_indice,
         monAbbr: MONTH_ABBR_PT[row.mes_indice - 1] || '',
         monName: monthName.charAt(0).toUpperCase() + monthName.slice(1),
@@ -13679,7 +13699,11 @@
         if(parseInt(card.dataset.monIndex, 10) !== calViewMonth) return;
         const day = parseInt(card.dataset.day, 10);
         if(!day) return;
-        (dayTags[day] || (dayTags[day] = [])).push(card.dataset.tag || 'gray');
+        // Evento de período pinta todos os dias que ocupa, não só o primeiro.
+        const fim = Math.min(parseInt(card.dataset.dayEnd, 10) || day, daysInMonth);
+        for(let d = day; d <= fim; d++){
+          (dayTags[d] || (dayTags[d] = [])).push(card.dataset.tag || 'gray');
+        }
       });
 
       grid.innerHTML = '';
@@ -13747,8 +13771,13 @@
     }
 
     function dayHasEventOn(monIdx, day){
-      const dayStr = String(day).padStart(2, '0');
-      return !!document.querySelector('#view-planning .pl-content .pl-event-card[data-mon-index="' + monIdx + '"][data-day="' + dayStr + '"]');
+      // Precisa olhar o período inteiro: um evento de 14 a 17 também ocupa o 15.
+      return Array.from(document.querySelectorAll(
+        '#view-planning .pl-content .pl-event-card[data-mon-index="' + monIdx + '"]')).some(c => {
+          const ini = parseInt(c.dataset.day, 10);
+          const fim = parseInt(c.dataset.dayEnd, 10) || ini;
+          return day >= ini && day <= fim;
+        });
     }
 
     function openDayView(monIdx, day){
@@ -13810,7 +13839,12 @@
       const { monIdx, day } = dayViewDate;
       const dayStr = String(day).padStart(2, '0');
       const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'))
-        .filter(c => parseInt(c.dataset.monIndex, 10) === monIdx && c.dataset.day === dayStr)
+        .filter(c => {
+          if(parseInt(c.dataset.monIndex, 10) !== monIdx) return false;
+          const ini = parseInt(c.dataset.day, 10);
+          const fim = parseInt(c.dataset.dayEnd, 10) || ini;
+          return day >= ini && day <= fim;
+        })
         .sort((a, b) => (a.dataset.time || '').localeCompare(b.dataset.time || ''));
       listEl.innerHTML = '';
       cards.forEach(card => listEl.appendChild(buildDayViewItem(card)));
@@ -13901,6 +13935,7 @@
     async function saveEvent(){
       const title = fieldTitle.value.trim();
       const day = fieldDay.value.trim();
+      const dayEnd = fieldDayEnd ? fieldDayEnd.value.trim() : '';
       const monIdx = parseInt(fieldMonth.value, 10);
       const time = fieldTime.value || '09:00';
       const timeEnd = fieldTimeEnd.value || '';
@@ -13939,6 +13974,18 @@
         fieldDay.style.borderColor = day ? '' : '#FF6B5C';
         return;
       }
+      // O fim, quando existe, tem que vir depois do início e ainda caber no mês.
+      if(dayEnd){
+        const diasDoMes = new Date(new Date().getFullYear(), monIdx, 0).getDate();
+        const ini = parseInt(day, 10), fim = parseInt(dayEnd, 10);
+        if(!(fim > ini) || fim > diasDoMes){
+          fieldDayEnd.style.borderColor = '#FF6B5C';
+          alert(fim > diasDoMes
+            ? 'O mês escolhido não tem dia ' + fim + '.'
+            : 'O dia final precisa ser depois do dia de início. Pra um dia só, deixe em branco.');
+          return;
+        }
+      }
       if(reminderOn && !reminderDate){
         fieldReminderDate.style.borderColor = '#FF6B5C';
         return;
@@ -13968,6 +14015,7 @@
 
       const payload = {
         dia: dayInt,
+        dia_fim: dayEnd ? parseInt(dayEnd, 10) : null,
         mes_indice: monIdx,
         titulo: title,
         horario: time,
@@ -13998,10 +14046,24 @@
       };
 
       saveBtn.disabled = true;
-      const query = (editingCard && editingCard.dataset.id)
-        ? supa.from('eventos_agenda').update(payload).eq('id', editingCard.dataset.id).select().single()
-        : supa.from('eventos_agenda').insert(payload).select().single();
-      const { data: row, error } = await query;
+      const gravar = (corpo) => (editingCard && editingCard.dataset.id)
+        ? supa.from('eventos_agenda').update(corpo).eq('id', editingCard.dataset.id).select().single()
+        : supa.from('eventos_agenda').insert(corpo).select().single();
+
+      // dia_fim é coluna nova. Num banco que ainda não rodou a migration, mandá-la
+      // faria o PostgREST recusar a gravação inteira — e ninguém conseguiria
+      // salvar evento nenhum, nem os de um dia só. Tenta de novo sem ela.
+      let resposta = await gravar(payload);
+      if(resposta.error && ehColunaInexistente(resposta.error)){
+        console.warn('Coluna dia_fim ainda não existe no banco; salvando sem o período. Rode a migration de supabase/schema.sql.');
+        const semPeriodo = Object.assign({}, payload);
+        delete semPeriodo.dia_fim;
+        resposta = await gravar(semPeriodo);
+        if(!resposta.error && payload.dia_fim){
+          alert('O evento foi salvo, mas o período não: o banco ainda não tem a coluna dia_fim. Rode a migration de supabase/schema.sql.');
+        }
+      }
+      const { data: row, error } = resposta;
       saveBtn.disabled = false;
       if(error || !row){
         console.error('Erro ao salvar evento:', error);

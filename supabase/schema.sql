@@ -1173,3 +1173,9 @@ create policy p_comprovantes_remover on storage.objects for delete using (bucket
 -- Cor da bolinha da área naquele cartão. Vazio = a cor do catálogo (ou cinza,
 -- no caso de área criada pelo Coordenador, que não está no catálogo).
 alter table areas_personalizadas add column if not exists cor text;
+
+-- Evento que ocupa vários dias (feriado prolongado, acampamento). Vazio = um
+-- dia só, que é como todo evento existente fica. O período vive dentro do mesmo
+-- mês: a tabela guarda dia e mês sem ano, então um intervalo que vira o ano não
+-- teria como ser interpretado.
+alter table eventos_agenda add column if not exists dia_fim int;
