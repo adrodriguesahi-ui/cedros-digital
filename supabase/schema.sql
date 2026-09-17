@@ -1179,3 +1179,8 @@ alter table areas_personalizadas add column if not exists cor text;
 -- mês: a tabela guarda dia e mês sem ano, então um intervalo que vira o ano não
 -- teria como ser interpretado.
 alter table eventos_agenda add column if not exists dia_fim int;
+
+-- Mês do fim, quando o período atravessa o mês (29/03 a 04/04). Vazio = o
+-- período termina no mesmo mês em que começou. Um período que vira o ano fica
+-- de fora: a tabela guarda dia e mês sem ano, e não haveria como lê-lo.
+alter table eventos_agenda add column if not exists mes_fim_indice int;
