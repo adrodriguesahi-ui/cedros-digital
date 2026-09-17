@@ -3630,6 +3630,75 @@
     #adModalOverlay .ad-field-row{ display:flex; gap:14px; }
     #adModalOverlay .ad-field-row > *{ flex:1; min-width:0; }
   }
+
+  /* ================================================================
+     NAVEGADOR: UMA COLUNA SÓ
+     O bloco acima centrou o conteúdo (.bd-content em 920px, x=260) mas
+     deixou cabeçalho, avisos, carrossel e barra de abas com padding de
+     5vw — ou seja, 1440px começando em x=0. Duas colunas diferentes na
+     mesma tela, e daí a impressão de app de celular esticado.
+     Aqui todos passam a seguir a mesma largura do conteúdo.
+     Não toca no celular nem no app instalado: abaixo de 900px nada disto
+     vale, e a largura da coluna nunca é menor que a da tela.
+     ================================================================ */
+  @media (min-width:900px){
+    :root{
+      --col-inicio: clamp(920px, 62vw, 1200px);
+      --col-planejamento: clamp(640px, 46vw, 820px);
+    }
+
+    /* Início */
+    .bd-topbar, .bd-quicknav, .bd-greeting, .bd-greeting-unit,
+    .bd-reminder-banner, .bd-stats-ticker, .bd-banner-row, .bd-banner-dots{
+      width:100%;
+      max-width:var(--col-inicio);
+      margin-left:auto; margin-right:auto;
+      padding-left:0; padding-right:0;
+      box-sizing:border-box;
+    }
+    /* O aviso tem cantos arredondados e precisa de respiro nas laterais. */
+    .bd-reminder-banner{ width:auto; }
+    /* Sem rolagem horizontal numa coluna que já cabe inteira. */
+    .bd-quicknav{ justify-content:flex-start; gap:10px; }
+
+    /* A barra de abas acompanha a coluna em vez de atravessar a tela. */
+    .bd-tabbar{
+      left:50%; right:auto; transform:translateX(-50%);
+      width:var(--col-inicio); max-width:100vw;
+      border-left:1px solid rgba(255,255,255,0.09);
+      border-right:1px solid rgba(255,255,255,0.09);
+      border-radius:16px 16px 0 0;
+    }
+
+    /* Planejamento, Classes e as demais telas internas.
+       O width:100% é necessário: só com max-width o elemento encolhe até a
+       largura do conteúdo, e o topo ficava com 239px no meio da tela. */
+    .pl-topbar{
+      width:100%;
+      max-width:var(--col-planejamento);
+      margin-left:auto; margin-right:auto;
+      padding-left:0; padding-right:0;
+    }
+    /* A lista segue a mesma coluna do topo, sem o padding que a encolhia — e
+       com width:100%, pelo mesmo motivo do .pl-topbar acima. */
+    .pl-content, .cl-hub{ width:100%; box-sizing:border-box; padding-left:0; padding-right:0; }
+    /* A Administração é tabela larga de propósito: o cabeçalho dela
+       acompanha a própria largura, não a da coluna de leitura. */
+    #view-admin .pl-topbar{ max-width:clamp(1040px, 74vw, 1320px); }
+
+    /* O conteúdo já está na coluna: o padding de 5vw por dentro só encolhia
+       o Rank em relação ao banner logo acima. */
+    .view-bdash .bd-content{ padding-left:0; padding-right:0; }
+
+    /* O card do carrossel cortava o título do evento. O bloco acima subiu o
+       card pra 220px mas deixou a linha que o contém em 172px, com
+       overflow:hidden — o card ficava mais alto que o próprio contêiner. */
+    .bd-banner-row{ height:220px; }
+
+    /* Plano de leitura: a grade ganha a coluna, não a tela inteira. */
+    .lb-view .pl-scroll > *{ max-width:var(--col-inicio); margin-left:auto; margin-right:auto; }
+    .lb-view .lb-corpo{ padding-left:0; padding-right:0; }
+  }
 </style>
 </head>
 <body>
