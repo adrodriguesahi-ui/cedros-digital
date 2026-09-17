@@ -1854,6 +1854,59 @@
 
   .lb-corpo{ padding:0 14px; margin-top:-16px; position:relative; }
 
+  /* Leitor da passagem, no lugar da capa. */
+  .lb-leitor{ background:var(--lb-tinta); padding:10px 0 0; }
+  .lb-leitor-topo{ display:flex; align-items:center; gap:10px; padding:4px 14px 10px; }
+  .lb-leitor-fechar{
+    width:34px; height:34px; flex-shrink:0; border-radius:50%; border:none; cursor:pointer;
+    background:rgba(255,255,255,0.14); display:flex; align-items:center; justify-content:center;
+  }
+  .lb-leitor-fechar svg{ color:#fff; }
+  .lb-leitor-ref{
+    margin:0; flex:1; min-width:0; font-size:17px; font-weight:900; color:#fff;
+    font-family:'Playfair Display', Georgia, serif; font-style:italic;
+  }
+  .lb-leitor-corpo{
+    max-height:46vh; overflow-y:auto; padding:14px; background:var(--lb-cartao);
+    font-size:14.5px; line-height:1.65;
+  }
+  .lb-leitor-corpo p{ margin:0 0 9px; }
+  .lb-leitor-corpo p:last-child{ margin-bottom:0; }
+  .lb-leitor-num{
+    font-size:10px; font-weight:900; vertical-align:super; margin-right:3px;
+    color:var(--lb-tinta-fraca);
+  }
+  .lb-leitor-cap{
+    margin:14px 0 7px; font-size:11px; font-weight:900; letter-spacing:0.04em;
+    text-transform:uppercase; color:var(--lb-tinta-fraca);
+  }
+  .lb-leitor-cap:first-child{ margin-top:0; }
+  .lb-leitor-aviso{ margin:0; font-size:13px; line-height:1.55; color:var(--lb-tinta-fraca); }
+  .lb-leitor-aviso b{ color:var(--lb-tinta); }
+  .lb-leitor-retry{
+    margin-top:10px; padding:9px 14px; border:none; border-radius:9px; cursor:pointer;
+    background:var(--lb-tinta); color:#fff; font-family:inherit; font-size:12.5px; font-weight:800;
+  }
+  .lb-leitor-fonte{ margin:9px 0 0; font-size:10.5px; color:var(--lb-tinta-fraca); }
+  .lb-leitor-rodape{ padding:10px 14px 12px; background:var(--lb-cartao); }
+  .lb-leitor-marcar{
+    width:100%; padding:12px; border:none; border-radius:11px; cursor:pointer;
+    background:var(--lb-verde); color:#fff; font-family:inherit; font-size:14px; font-weight:900;
+  }
+  .lb-leitor-marcar.desmarcar{ background:var(--lb-papel); color:var(--lb-tinta); }
+
+  /* O texto da referência abre a leitura; o círculo marca como lido. Dois
+     alvos no mesmo chip, cada um com sua área de toque. */
+  .lb-marca-btn{
+    flex-shrink:0; padding:0; border:none; background:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .lb-ref-btn{
+    flex:1; min-width:0; padding:0; border:none; background:none; cursor:pointer;
+    font-family:inherit; font-size:13.5px; font-weight:600; text-align:left;
+    line-height:1.3; word-break:break-word; color:inherit;
+  }
+
   .lb-resumo{
     display:flex; align-items:center; flex-wrap:wrap; gap:12px; padding:14px;
     border-radius:16px; background:var(--lb-cartao); box-shadow:0 6px 18px rgba(30,58,95,0.09);
@@ -1907,10 +1960,9 @@
   .lb-grupo.aberto .lb-itens{ display:grid; }
   .lb-item{
     display:flex; align-items:center; gap:9px; padding:9px 11px; border-radius:9px;
-    border:none; background:var(--lb-papel); cursor:pointer; text-align:left;
-    font-family:inherit; font-size:13.5px; font-weight:600;
+    background:var(--lb-papel); font-size:13.5px; font-weight:600;
   }
-  .lb-item:active{ transform:scale(0.98); }
+  .lb-item.lendo{ background:#DCE7F5; }
   .lb-marca{
     flex-shrink:0; width:20px; height:20px; border-radius:50%;
     border:1.8px solid #C3CCD8; background:var(--lb-cartao);
@@ -11383,6 +11435,21 @@
           </div>
         </div>
 
+        <!-- Ocupa o lugar da capa quando o desbravador toca numa referência:
+             mesmo campo do versículo, com o texto do capítulo pra ler. -->
+        <div class="lb-leitor" id="lbLeitor" style="display:none;">
+          <div class="lb-leitor-topo">
+            <button type="button" class="lb-leitor-fechar" id="lbLeitorFechar" aria-label="Fechar leitura">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <h3 class="lb-leitor-ref" id="lbLeitorRef"></h3>
+          </div>
+          <div class="lb-leitor-corpo" id="lbLeitorCorpo"></div>
+          <div class="lb-leitor-rodape">
+            <button type="button" class="lb-leitor-marcar" id="lbLeitorMarcar"></button>
+          </div>
+        </div>
+
         <div class="lb-corpo">
           <div class="lb-resumo">
             <div class="lb-resumo-icone">
@@ -15630,6 +15697,104 @@
     // redesenha a lista e fecha o que a pessoa estava lendo.
     const LEITURA_ABERTA = {};
 
+    // ---- Texto da passagem ----
+    // O plano diz "Gn 4:1-16"; quem lê precisa do texto. A busca é feita na
+    // hora numa API pública de Almeida (domínio público) — guardar a Bíblia
+    // inteira dentro do arquivo do app nunca ia caber.
+    const LIVRO_API = {
+      'Gn':'genesis','Êx':'exodus','Lv':'leviticus','Nm':'numbers','Dt':'deuteronomy',
+      'Js':'joshua','Jz':'judges','Rt':'ruth','1 Sm':'1 samuel','2 Sm':'2 samuel',
+      '1 Rs':'1 kings','2 Rs':'2 kings','1 Cr':'1 chronicles','2 Cr':'2 chronicles',
+      'Ed':'ezra','Ne':'nehemiah','Ester':'esther','Jó':'job','Sl':'psalms',
+      'Pv':'proverbs','Ec':'ecclesiastes','Ct':'song of solomon','Is':'isaiah',
+      'Jr':'jeremiah','Ez':'ezekiel','Dn':'daniel','Os':'hosea','Jn':'jonah',
+      'Mt':'matthew','Mc':'mark','Lc':'luke','Jo':'john','At':'acts',
+      'Rm':'romans','Ap':'revelation'
+    };
+    // Quantos capítulos tem cada livro. Serve pra desempatar número solto: se
+    // não existe capítulo com aquele número, só pode ser versículo.
+    const CAPITULOS_DO_LIVRO = {
+      'Gn':50,'Êx':40,'Lv':27,'Nm':36,'Dt':34,'Js':24,'Jz':21,'Rt':4,'1 Sm':31,'2 Sm':24,
+      '1 Rs':22,'2 Rs':25,'1 Cr':29,'2 Cr':36,'Ed':10,'Ne':13,'Ester':10,'Jó':42,'Sl':150,
+      'Pv':31,'Ec':12,'Ct':8,'Is':66,'Jr':52,'Ez':48,'Dn':12,'Os':14,'Jn':4,
+      'Mt':28,'Mc':16,'Lc':24,'Jo':21,'At':28,'Rm':16,'Ap':22
+    };
+
+    // "Gn 30:25-31; 31:2-3, 17-18" vira três consultas. A parte difícil é o
+    // número solto depois de um trecho com versículos: em "Gn 24:1-46, 48" o 48
+    // é versículo, e em "Êx 13:17-22; 14" o 14 é capítulo. Decide assim:
+    // intervalo é sempre versículo; número maior que o total de capítulos do
+    // livro é versículo; no resto, vírgula liga versículos e ";"/"e" abrem
+    // capítulo novo.
+    function segmentosDaReferencia(texto){
+      const m = (texto || '').match(LIVRO_ABREV);
+      if(!m) return [];
+      const abrev = m[1].replace(/\.$/, '');
+      const livro = LIVRO_API[abrev];
+      if(!livro) return [];
+      const maxCap = CAPITULOS_DO_LIVRO[abrev] || 0;
+      const resto = texto.slice(m[0].length).trim();
+
+      const partes = [];
+      let buf = '', sep = '';
+      resto.split(/(\s*[;,]\s*|\s+e\s+)/).forEach(pedaco => {
+        if(/^\s*[;,]\s*$|^\s+e\s+$/.test(pedaco)){
+          partes.push({ txt: buf.trim(), sep: sep });
+          sep = pedaco.indexOf(',') !== -1 ? ',' : ';';
+          buf = '';
+        } else buf += pedaco;
+      });
+      if(buf.trim()) partes.push({ txt: buf.trim(), sep: sep });
+
+      const saida = [];
+      let capAtual = null, ultimoTeveVerso = false;
+      partes.forEach(function(parte){
+        const comVerso = parte.txt.match(/^(\d+)\s*:\s*(.+)$/);
+        if(comVerso){
+          capAtual = comVerso[1];
+          ultimoTeveVerso = true;
+          saida.push(livro + ' ' + capAtual + ':' + comVerso[2].replace(/\s+/g, ''));
+          return;
+        }
+        if(!/^\d+(?:\s*-\s*\d+)?$/.test(parte.txt)) return;
+        const limpo = parte.txt.replace(/\s+/g, '');
+        let ehVerso;
+        if(!ultimoTeveVerso) ehVerso = false;
+        else if(limpo.indexOf('-') !== -1) ehVerso = true;
+        else if(maxCap && parseInt(limpo, 10) > maxCap) ehVerso = true;
+        else ehVerso = parte.sep === ',';
+        if(ehVerso && capAtual) saida.push(livro + ' ' + capAtual + ':' + limpo);
+        else { capAtual = limpo; ultimoTeveVerso = false; saida.push(livro + ' ' + capAtual); }
+      });
+      return saida;
+    }
+
+    // Uma vez buscada, a passagem fica na memória da sessão: reabrir o mesmo
+    // capítulo não volta na rede.
+    const PASSAGENS = {};
+
+    async function buscarPassagem(referencia){
+      if(PASSAGENS[referencia]) return PASSAGENS[referencia];
+      const segmentos = segmentosDaReferencia(referencia);
+      if(!segmentos.length) throw new Error('referência não reconhecida');
+      const versos = [];
+      for(const seg of segmentos){
+        const r = await fetch('https://bible-api.com/' + encodeURIComponent(seg) + '?translation=almeida');
+        if(!r.ok) throw new Error('a busca respondeu ' + r.status);
+        const j = await r.json();
+        if(j && j.verses && j.verses.length){
+          j.verses.forEach(v => versos.push({
+            cap: v.chapter, n: v.verse, texto: String(v.text || '').trim()
+          }));
+        } else if(j && j.text){
+          versos.push({ cap: null, n: null, texto: String(j.text).trim() });
+        } else throw new Error('vieram 0 versículos');
+      }
+      if(!versos.length) throw new Error('vieram 0 versículos');
+      PASSAGENS[referencia] = versos;
+      return versos;
+    }
+
     // ---- Tela cheia do plano de leitura ----
     // Mesmos dados do bloco de sub-itens; só muda onde aparecem. Marcar aqui
     // passa por marcarSubitem, então o status do requisito segue igual.
@@ -15640,6 +15805,14 @@
     const lbFeitosEl = document.getElementById('lbFeitos');
     const lbAlunoEl = document.getElementById('lbAluno');
     const lbBackBtn = document.getElementById('lbBackBtn');
+    const lbCapaEl = document.querySelector('#view-leitura .lb-capa');
+    const lbLeitor = document.getElementById('lbLeitor');
+    const lbLeitorRef = document.getElementById('lbLeitorRef');
+    const lbLeitorCorpo = document.getElementById('lbLeitorCorpo');
+    const lbLeitorMarcar = document.getElementById('lbLeitorMarcar');
+    const lbLeitorFechar = document.getElementById('lbLeitorFechar');
+    // Sub-item aberto no leitor, quando há um.
+    let lbLendo = null;
     // Qual requisito a tela está mostrando, e pra onde o botão de voltar leva.
     let lbCard = null;
     let lbVoltarPara = 'view-classes';
@@ -15701,18 +15874,22 @@
         grade.className = 'lb-itens';
         grupo.itens.forEach(sub => {
           const feito = !!(SUB_FEITOS[sub.id] || {}).feito;
-          const chip = document.createElement('button');
-          chip.type = 'button';
-          chip.className = 'lb-item' + (feito ? ' feito' : '');
-          chip.setAttribute('aria-pressed', feito ? 'true' : 'false');
+          const chip = document.createElement('div');
+          chip.className = 'lb-item' + (feito ? ' feito' : '') +
+            (lbLendo && lbLendo.id === sub.id ? ' lendo' : '');
           chip.innerHTML =
-            '<span class="lb-marca"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>' +
-            '<span class="lb-ref"></span>';
-          chip.querySelector('.lb-ref').textContent = sub.texto;
-          chip.addEventListener('click', async () => {
+            '<button type="button" class="lb-marca-btn" aria-label="Marcar como lido"><span class="lb-marca">' +
+            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+            '</span></button><button type="button" class="lb-ref-btn"></button>';
+          const marcaBtn = chip.querySelector('.lb-marca-btn');
+          marcaBtn.setAttribute('aria-pressed', feito ? 'true' : 'false');
+          marcaBtn.addEventListener('click', async () => {
             await marcarSubitem(lbCard, sub, !((SUB_FEITOS[sub.id] || {}).feito));
             pintarLeituraCheia();
           });
+          const refBtn = chip.querySelector('.lb-ref-btn');
+          refBtn.textContent = sub.texto;
+          refBtn.addEventListener('click', () => abrirLeitor(sub));
           grade.appendChild(chip);
         });
         bloco.appendChild(grade);
@@ -15720,9 +15897,96 @@
       });
     }
 
+    function fecharLeitor(){
+      lbLendo = null;
+      if(lbLeitor) lbLeitor.style.display = 'none';
+      if(lbCapaEl) lbCapaEl.style.display = '';
+      pintarLeituraCheia();
+    }
+
+    function pintarBotaoMarcar(sub){
+      if(!lbLeitorMarcar) return;
+      const feito = !!(SUB_FEITOS[sub.id] || {}).feito;
+      lbLeitorMarcar.textContent = feito ? 'Desmarcar' : 'Marcar como lido';
+      lbLeitorMarcar.classList.toggle('desmarcar', feito);
+    }
+
+    function abrirLeitor(sub){
+      if(!lbLeitor || !lbLeitorCorpo) return;
+      lbLendo = sub;
+      if(lbCapaEl) lbCapaEl.style.display = 'none';
+      lbLeitor.style.display = '';
+      lbLeitorRef.textContent = sub.texto;
+      pintarBotaoMarcar(sub);
+      pintarLeituraCheia();
+      lbLeitorCorpo.innerHTML = '<p class="lb-leitor-aviso">Buscando o texto…</p>';
+      const rolagem = document.querySelector('#view-leitura .pl-scroll');
+      if(rolagem) rolagem.scrollTop = 0;
+
+      buscarPassagem(sub.texto).then(versos => {
+        // Outra referência pode ter sido aberta enquanto esta buscava.
+        if(!lbLendo || lbLendo.id !== sub.id) return;
+        lbLeitorCorpo.innerHTML = '';
+        let capMostrado = null;
+        versos.forEach(v => {
+          if(v.cap && v.cap !== capMostrado){
+            capMostrado = v.cap;
+            const h = document.createElement('p');
+            h.className = 'lb-leitor-cap';
+            h.textContent = 'Capítulo ' + v.cap;
+            lbLeitorCorpo.appendChild(h);
+          }
+          const linha = document.createElement('p');
+          if(v.n){
+            const num = document.createElement('span');
+            num.className = 'lb-leitor-num';
+            num.textContent = v.n;
+            linha.appendChild(num);
+          }
+          linha.appendChild(document.createTextNode(v.texto));
+          lbLeitorCorpo.appendChild(linha);
+        });
+        const fonte = document.createElement('p');
+        fonte.className = 'lb-leitor-fonte';
+        fonte.textContent = 'Almeida — texto buscado em bible-api.com';
+        lbLeitorCorpo.appendChild(fonte);
+      }).catch(erro => {
+        if(!lbLendo || lbLendo.id !== sub.id) return;
+        lbLeitorCorpo.innerHTML = '';
+        const aviso = document.createElement('p');
+        aviso.className = 'lb-leitor-aviso';
+        aviso.innerHTML = 'Não consegui trazer o texto de <b></b> agora. ' +
+          'Costuma ser falta de internet no momento. A marcação continua funcionando normalmente.';
+        aviso.querySelector('b').textContent = sub.texto;
+        lbLeitorCorpo.appendChild(aviso);
+        const detalhe = document.createElement('p');
+        detalhe.className = 'lb-leitor-fonte';
+        detalhe.textContent = 'Motivo: ' + (erro && erro.message ? erro.message : 'desconhecido');
+        lbLeitorCorpo.appendChild(detalhe);
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.className = 'lb-leitor-retry';
+        retry.textContent = 'Tentar de novo';
+        retry.addEventListener('click', () => abrirLeitor(sub));
+        lbLeitorCorpo.appendChild(retry);
+      });
+    }
+
+    if(lbLeitorFechar) lbLeitorFechar.addEventListener('click', fecharLeitor);
+    if(lbLeitorMarcar) lbLeitorMarcar.addEventListener('click', async () => {
+      const sub = lbLendo;
+      if(!sub) return;
+      await marcarSubitem(lbCard, sub, !((SUB_FEITOS[sub.id] || {}).feito));
+      pintarBotaoMarcar(sub);
+      pintarLeituraCheia();
+    });
+
     function abrirLeituraCheia(card){
       lbCard = card;
       lbVoltarPara = 'view-classes';
+      lbLendo = null;
+      if(lbLeitor) lbLeitor.style.display = 'none';
+      if(lbCapaEl) lbCapaEl.style.display = '';
       pintarLeituraCheia();
       // Fecha o modal do requisito antes de trocar de tela: ele é absoluto
       // dentro da view das Classes e ficaria aberto por baixo ao voltar.
