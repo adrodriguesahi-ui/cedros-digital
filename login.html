@@ -15,7 +15,7 @@
 <title>Cedros Digital — Entrar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <style>
   :root{
@@ -1812,86 +1812,128 @@
     text-underline-offset:2px;
   }
 
-  /* Plano de leitura bíblica: capítulos em grade, agrupados por livro. Com
-     dezenas de leituras a lista em coluna vira uma rolagem sem fim — aqui cada
-     capítulo é um botão de marcar, e o livro fechado ocupa uma linha só. */
-  .cl-leitura{ display:flex; flex-direction:column; gap:8px; }
-  /* Capa do plano: dá nome à tela e carrega o versículo, do jeito que a
-     Leitura Bíblica aparece no material impresso da classe. */
-  .cl-leitura-capa{
-    display:flex; align-items:center; gap:12px; padding:13px 14px; border-radius:14px;
-    background:linear-gradient(135deg, rgba(216,168,62,0.16), rgba(12,26,15,0.6));
-    border:1px solid rgba(216,168,62,0.22);
-  }
-  .cl-leitura-capa svg{ flex-shrink:0; color:var(--gold); }
-  .cl-leitura-capa h4{ margin:0 0 3px; font-size:15px; font-weight:900; color:var(--cream); }
-  .cl-leitura-versiculo{
-    margin:0; font-size:10.5px; line-height:1.45; font-style:italic;
-    color:rgba(245,239,225,0.6);
-  }
-  .cl-leitura-versiculo b{ font-style:normal; font-weight:800; color:rgba(216,168,62,0.85); }
+  /* ===== Tela cheia do plano de leitura bíblica =====
+     É a única tela clara do app. A lista passa de 100 capítulos nas classes
+     maiores, e no escuro ela vira uma parede; em papel claro se lê como o
+     material impresso da classe. As cores vivem só aqui dentro. */
+  .lb-view{ --lb-papel:#EAEEF3; --lb-cartao:#FFFFFF; --lb-tinta:#1E3A5F;
+            --lb-tinta-fraca:#64748B; --lb-linha:#DDE3EA; --lb-verde:#22C55E;
+            --lb-ouro:#E8B93B; }
+  .lb-view .pl-scroll{ background:var(--lb-papel); padding:0 0 28px; color:var(--lb-tinta); }
 
-  /* Resumo: o quanto já foi lido, em anel e em número. */
-  .cl-leitura-resumo{
-    display:flex; align-items:center; flex-wrap:wrap; gap:12px; padding:12px 14px;
-    border-radius:14px; border:1px solid rgba(255,255,255,0.09); background:rgba(255,255,255,0.03);
+  .lb-capa{ position:relative; }
+  .lb-cena{ display:block; width:100%; height:212px; }
+  /* Véu escuro em cima da paisagem: sem ele o título branco some no céu claro. */
+  .lb-capa::after{
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(180deg, rgba(20,38,58,0.34) 0%, rgba(20,38,58,0.12) 45%, rgba(20,38,58,0.42) 100%);
   }
-  .cl-leitura-instrucao{ flex:1; min-width:150px; margin:0; font-size:12px; line-height:1.45; color:rgba(245,239,225,0.65); }
-  .cl-leitura-anel{ position:relative; width:66px; height:66px; flex-shrink:0; }
-  .cl-leitura-anel-txt{
-    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; gap:1px;
+  .lb-capa-txt{ z-index:1; }
+  .lb-voltar{ z-index:2; }
+  .lb-voltar{
+    position:absolute; top:12px; left:12px; width:38px; height:38px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    border:none; background:rgba(12,24,38,0.4); backdrop-filter:blur(4px);
   }
-  .cl-leitura-anel-pct{ font-size:15px; font-weight:900; color:var(--cream); line-height:1; }
-  .cl-leitura-anel-rot{ font-size:7px; font-weight:800; letter-spacing:0; text-transform:uppercase; color:rgba(245,239,225,0.45); }
-  .cl-leitura-numeros{ display:flex; flex-direction:column; gap:7px; }
-  .cl-leitura-numero{ display:flex; align-items:center; gap:8px; }
-  .cl-leitura-numero svg{ flex-shrink:0; color:rgba(245,239,225,0.45); }
-  .cl-leitura-numero.feitos svg{ color:var(--accent); }
-  .cl-leitura-numero span{ display:block; font-size:9.5px; font-weight:800; letter-spacing:0.03em; text-transform:uppercase; color:rgba(245,239,225,0.45); }
-  .cl-leitura-numero b{ display:block; font-size:14px; font-weight:900; color:var(--cream); line-height:1.15; }
-  .cl-leitura-grupo{
-    border:1px solid rgba(255,255,255,0.09); border-radius:13px;
-    background:rgba(255,255,255,0.03); overflow:hidden;
+  .lb-voltar svg{ color:#fff; }
+  .lb-capa-txt{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; padding:14px 26px 18px;
   }
-  .cl-leitura-cab{
-    width:100%; display:flex; align-items:center; gap:9px; padding:11px 12px;
-    border:none; background:rgba(255,255,255,0.05); color:var(--cream); font-family:inherit;
-    cursor:pointer; text-align:left;
+  .lb-capa-livro{ color:#fff; opacity:0.9; }
+  .lb-capa-nome{
+    margin:4px 0 6px; font-size:31px; line-height:1.05; font-weight:700;
+    font-family:'Playfair Display', Georgia, serif; font-style:italic; color:#fff;
+    text-shadow:0 2px 12px rgba(12,24,38,0.45);
   }
-  .cl-leitura-grupo.aberto .cl-leitura-cab{ background:rgba(216,168,62,0.13); }
-  .cl-leitura-livro{ flex-shrink:0; color:var(--gold); }
-  .cl-leitura-nome{ font-size:13px; font-weight:900; white-space:nowrap; }
-  .cl-leitura-pct{ font-size:11.5px; font-weight:900; color:var(--gold); margin-left:auto; }
-  .cl-leitura-barra{
-    flex:1; max-width:110px; min-width:42px; height:6px; border-radius:99px;
-    background:rgba(255,255,255,0.12); overflow:hidden;
+  .lb-capa-versiculo{
+    margin:0; max-width:310px; font-size:12px; line-height:1.55; font-style:italic;
+    color:#fff; text-shadow:0 1px 6px rgba(12,24,38,0.5);
   }
-  .cl-leitura-barra i{ display:block; height:100%; border-radius:99px; background:var(--accent); }
-  .cl-leitura-seta{ flex-shrink:0; color:rgba(245,239,225,0.45); transition:transform 0.18s; }
-  .cl-leitura-grupo.aberto .cl-leitura-seta{ transform:rotate(180deg); }
-  .cl-leitura-itens{
-    display:none; grid-template-columns:repeat(auto-fill, minmax(132px, 1fr));
-    gap:6px; padding:0 10px 11px;
+  .lb-capa-ref{ margin-top:3px; font-size:10px; font-weight:800; color:#fff; opacity:0.85; }
+
+  .lb-corpo{ padding:0 14px; margin-top:-16px; position:relative; }
+
+  .lb-resumo{
+    display:flex; align-items:center; flex-wrap:wrap; gap:12px; padding:14px;
+    border-radius:16px; background:var(--lb-cartao); box-shadow:0 6px 18px rgba(30,58,95,0.09);
   }
-  .cl-leitura-grupo.aberto .cl-leitura-itens{ display:grid; }
-  .cl-leitura-item{
-    display:flex; align-items:flex-start; gap:7px; padding:8px 9px; border-radius:10px;
-    border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.04);
-    color:rgba(245,239,225,0.85); font-family:inherit; font-size:12px; font-weight:700;
-    text-align:left; cursor:pointer;
+  .lb-resumo-icone{
+    flex-shrink:0; width:52px; height:52px; border-radius:50%; background:var(--lb-tinta);
+    display:flex; align-items:center; justify-content:center;
   }
-  .cl-leitura-item:active{ transform:scale(0.97); }
-  .cl-leitura-item.feito{
-    border-color:rgba(63,203,107,0.35); background:rgba(63,203,107,0.09); color:var(--cream);
+  .lb-resumo-icone svg{ color:#fff; }
+  .lb-resumo-txt{ flex:1; min-width:130px; }
+  .lb-resumo-txt h3{ margin:0 0 2px; font-size:16px; font-weight:900; }
+  .lb-resumo-txt p{ margin:0; font-size:12px; line-height:1.4; color:var(--lb-tinta-fraca); }
+  .lb-resumo-aluno{ display:block; margin-top:4px; font-size:11px; font-weight:800; color:var(--lb-tinta); }
+
+  .lb-anel{ position:relative; width:78px; height:78px; flex-shrink:0; }
+  .lb-anel-txt{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
   }
-  .cl-leitura-marca{
-    flex-shrink:0; width:18px; height:18px; border-radius:50%;
-    border:1.6px solid rgba(255,255,255,0.25); display:flex; align-items:center;
-    justify-content:center; color:transparent;
+  .lb-anel-txt b{ font-size:17px; font-weight:900; line-height:1; }
+  .lb-anel-txt span{ font-size:8px; font-weight:800; text-transform:uppercase; color:var(--lb-tinta-fraca); }
+
+  .lb-numeros{
+    display:flex; flex-direction:column; gap:9px; padding:10px 12px;
+    border-radius:12px; background:var(--lb-papel);
   }
-  .cl-leitura-item.feito .cl-leitura-marca{ background:var(--accent); border-color:var(--accent); color:#08130A; }
-  .cl-leitura-ref{ flex:1; min-width:0; line-height:1.35; word-break:break-word; }
+  .lb-numero{ display:flex; align-items:center; gap:9px; }
+  .lb-numero svg{ flex-shrink:0; color:var(--lb-tinta); }
+  .lb-numero.feitos svg{ color:var(--lb-verde); }
+  .lb-numero span{ display:block; font-size:10px; font-weight:700; color:var(--lb-tinta-fraca); }
+  .lb-numero b{ display:block; font-size:17px; font-weight:900; line-height:1.15; }
+
+  .lb-grupos{ display:flex; flex-direction:column; gap:12px; margin-top:14px; }
+  .lb-grupo{ border-radius:16px; overflow:hidden; box-shadow:0 4px 14px rgba(30,58,95,0.07); }
+  .lb-cab{
+    width:100%; display:flex; align-items:center; gap:10px; padding:13px 14px;
+    border:none; background:var(--lb-tinta); cursor:pointer; text-align:left;
+    font-family:inherit;
+  }
+  .lb-cab *, .lb-cab svg{ color:#fff; }
+  .lb-cab-nome{ font-size:16px; font-weight:900; white-space:nowrap; }
+  .lb-cab-pct{ margin-left:auto; font-size:13px; font-weight:900; }
+  .lb-barra{ flex:1; max-width:150px; min-width:48px; height:8px; border-radius:99px; background:rgba(255,255,255,0.26); overflow:hidden; }
+  .lb-barra i{ display:block; height:100%; border-radius:99px; background:var(--lb-verde); }
+  .lb-seta{ flex-shrink:0; transition:transform 0.18s; }
+  .lb-grupo.aberto .lb-seta{ transform:rotate(180deg); }
+  .lb-itens{
+    display:none; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
+    gap:8px; padding:12px; background:var(--lb-cartao);
+  }
+  .lb-grupo.aberto .lb-itens{ display:grid; }
+  .lb-item{
+    display:flex; align-items:center; gap:9px; padding:9px 11px; border-radius:9px;
+    border:none; background:var(--lb-papel); cursor:pointer; text-align:left;
+    font-family:inherit; font-size:13.5px; font-weight:600;
+  }
+  .lb-item:active{ transform:scale(0.98); }
+  .lb-marca{
+    flex-shrink:0; width:20px; height:20px; border-radius:50%;
+    border:1.8px solid #C3CCD8; background:var(--lb-cartao);
+    display:flex; align-items:center; justify-content:center; color:transparent;
+  }
+  .lb-item.feito .lb-marca{ background:var(--lb-verde); border-color:var(--lb-verde); color:#fff; }
+  .lb-ref{ flex:1; min-width:0; line-height:1.3; word-break:break-word; }
+
+  /* Porta de entrada da tela cheia do plano de leitura, dentro do requisito. */
+  .cl-leitura-chamada{
+    width:100%; display:flex; align-items:center; gap:11px; padding:13px;
+    border:1px solid rgba(216,168,62,0.28); border-radius:14px;
+    background:linear-gradient(135deg, rgba(216,168,62,0.14), rgba(12,26,15,0.5));
+    color:var(--cream); font-family:inherit; cursor:pointer; text-align:left;
+  }
+  .cl-leitura-chamada:active{ transform:scale(0.98); }
+  .cl-leitura-chamada > svg:first-child{ flex-shrink:0; color:var(--gold); }
+  .cl-leitura-chamada > svg:last-child{ flex-shrink:0; color:rgba(245,239,225,0.45); }
+  .cl-leitura-chamada-txt{ flex:1; min-width:0; }
+  .cl-leitura-chamada-txt b{ display:block; font-size:13.5px; font-weight:900; }
+  .cl-leitura-chamada-sub{ display:block; margin:2px 0 6px; font-size:11.5px; font-style:normal; color:rgba(245,239,225,0.6); }
+  .cl-leitura-chamada-barra{ display:block; height:6px; border-radius:99px; background:rgba(255,255,255,0.12); overflow:hidden; }
+  .cl-leitura-chamada-barra i{ display:block; height:100%; border-radius:99px; background:var(--accent); }
 
   /* Lápis pra reescrever o texto do requisito, na linha do cronograma. */
   .cp-req-editar{
@@ -11305,6 +11347,78 @@
       </div>
     </section>
 
+    <!-- ===== Plano de leitura bíblica em tela cheia =====
+         Aberta pelo requisito de Leitura bíblica quando ele tem sub-itens. É a
+         única tela clara do app, de propósito: a lista de capítulos é longa e
+         se lê melhor em papel claro, como no material impresso da classe. -->
+    <section class="view lb-view" id="view-leitura">
+      <div class="pl-scroll">
+
+        <div class="lb-capa">
+          <svg class="lb-cena" viewBox="0 0 400 190" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+              <linearGradient id="lbCeu" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#7FA9CE"/><stop offset="55%" stop-color="#E6C89A"/><stop offset="100%" stop-color="#F3DCB6"/>
+              </linearGradient>
+              <radialGradient id="lbSol" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#FFF3D0" stop-opacity="0.95"/><stop offset="100%" stop-color="#FFF3D0" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <rect width="400" height="190" fill="url(#lbCeu)"/>
+            <circle cx="286" cy="120" r="72" fill="url(#lbSol)"/>
+            <path d="M0 132 L54 88 L92 118 L132 76 L186 132 Z" fill="#8FA9BE" opacity="0.75"/>
+            <path d="M140 134 L196 84 L232 116 L272 74 L330 134 Z" fill="#7F99B0" opacity="0.8"/>
+            <path d="M0 150 L46 116 L86 142 L128 110 L176 150 Z" fill="#5C7489" opacity="0.85"/>
+            <path d="M232 150 L282 112 L322 142 L362 108 L400 150 L400 190 L232 190 Z" fill="#54697D" opacity="0.85"/>
+            <rect y="146" width="400" height="44" fill="#3E5165"/>
+          </svg>
+          <button type="button" class="lb-voltar" id="lbBackBtn" aria-label="Voltar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="lb-capa-txt">
+            <svg class="lb-capa-livro" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5C10.5 6 8.3 5.4 5.6 5.4A1.6 1.6 0 0 0 4 7v10.2c0 .9.7 1.6 1.6 1.6 2.7 0 4.9.6 6.4 2.1 1.5-1.5 3.7-2.1 6.4-2.1.9 0 1.6-.7 1.6-1.6V7a1.6 1.6 0 0 0-1.6-1.6c-2.7 0-4.9.6-6.4 2.1Z"/><path d="M12 7.5v13.4"/></svg>
+            <h2 class="lb-capa-nome">Leitura Bíblica</h2>
+            <p class="lb-capa-versiculo">“Lâmpada para os meus pés é a tua palavra e luz para o meu caminho.”</p>
+            <span class="lb-capa-ref">Salmos 119:105</span>
+          </div>
+        </div>
+
+        <div class="lb-corpo">
+          <div class="lb-resumo">
+            <div class="lb-resumo-icone">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5C10.5 6 8.3 5.4 5.6 5.4A1.6 1.6 0 0 0 4 7v10.2c0 .9.7 1.6 1.6 1.6 2.7 0 4.9.6 6.4 2.1 1.5-1.5 3.7-2.1 6.4-2.1.9 0 1.6-.7 1.6-1.6V7a1.6 1.6 0 0 0-1.6-1.6c-2.7 0-4.9.6-6.4 2.1Z"/><path d="M12 7.5v13.4"/></svg>
+            </div>
+            <div class="lb-resumo-txt">
+              <h3>Leitura Bíblica</h3>
+              <p>Leia os capítulos indicados e marque cada um como concluído.</p>
+              <span class="lb-resumo-aluno" id="lbAluno"></span>
+            </div>
+            <div class="lb-anel">
+              <svg width="78" height="78" viewBox="0 0 78 78">
+                <circle cx="39" cy="39" r="32" fill="none" stroke="#D7DEE7" stroke-width="8"/>
+                <circle cx="39" cy="39" r="32" fill="none" stroke="#22C55E" stroke-width="8" stroke-linecap="round"
+                        id="lbAnelArco" transform="rotate(-90 39 39)"/>
+              </svg>
+              <div class="lb-anel-txt"><b id="lbAnelPct">0%</b><span>Concluído</span></div>
+            </div>
+            <div class="lb-numeros">
+              <div class="lb-numero">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22Z"/><path d="M12 2v18"/></svg>
+                <div><span>Total de itens</span><b id="lbTotal">0</b></div>
+              </div>
+              <div class="lb-numero feitos">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="8.5 12.2 11 14.7 15.8 9.9"/></svg>
+                <div><span>Concluídos</span><b id="lbFeitos">0</b></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="lb-grupos" id="lbGrupos"></div>
+        </div>
+
+      </div>
+    </section>
+
     <!-- ===== VIEW 6: DASHBOARD (home after login) — Bet365-inspired layout ===== -->
     <section class="view view-bdash" id="view-dashboard">
       <div class="bd-scroll">
@@ -15516,110 +15630,136 @@
     // redesenha a lista e fecha o que a pessoa estava lendo.
     const LEITURA_ABERTA = {};
 
-    function pintarLeitura(card, grupos){
-      const chaveReq = requisitoKey(currentClass, card.dataset.title);
+    // ---- Tela cheia do plano de leitura ----
+    // Mesmos dados do bloco de sub-itens; só muda onde aparecem. Marcar aqui
+    // passa por marcarSubitem, então o status do requisito segue igual.
+    const lbGruposEl = document.getElementById('lbGrupos');
+    const lbAnelArco = document.getElementById('lbAnelArco');
+    const lbAnelPct = document.getElementById('lbAnelPct');
+    const lbTotalEl = document.getElementById('lbTotal');
+    const lbFeitosEl = document.getElementById('lbFeitos');
+    const lbAlunoEl = document.getElementById('lbAluno');
+    const lbBackBtn = document.getElementById('lbBackBtn');
+    // Qual requisito a tela está mostrando, e pra onde o botão de voltar leva.
+    let lbCard = null;
+    let lbVoltarPara = 'view-classes';
+
+    function pintarLeituraCheia(){
+      if(!lbCard || !lbGruposEl) return;
+      const subs = subitensDoRequisito(currentClass, lbCard.dataset.title);
+      const grupos = agruparLeitura(subs);
+      if(!grupos) return;
+
       const feitosDo = g => g.itens.filter(x => (SUB_FEITOS[x.id] || {}).feito).length;
-      // Primeira visita: abre o primeiro livro que ainda tem capítulo a ler.
+      const total = subs.length;
+      const feitos = subs.filter(x => (SUB_FEITOS[x.id] || {}).feito).length;
+      const pct = total ? Math.round(feitos * 100 / total) : 0;
+
+      if(lbAlunoEl) lbAlunoEl.textContent = selectedStudent || '';
+      if(lbTotalEl) lbTotalEl.textContent = total;
+      if(lbFeitosEl) lbFeitosEl.textContent = feitos;
+      if(lbAnelPct) lbAnelPct.textContent = pct + '%';
+      if(lbAnelArco){
+        const volta = 2 * Math.PI * 32;
+        lbAnelArco.setAttribute('stroke-dasharray', volta.toFixed(1));
+        lbAnelArco.setAttribute('stroke-dashoffset', (volta * (1 - pct / 100)).toFixed(1));
+      }
+
+      const chaveReq = requisitoKey(currentClass, lbCard.dataset.title);
       if(!(chaveReq in LEITURA_ABERTA)){
         const pendente = grupos.find(g => feitosDo(g) < g.itens.length) || grupos[0];
         LEITURA_ABERTA[chaveReq] = pendente ? pendente.chave : null;
       }
 
-      // A grade já é a lista de leituras: repetir a descrição inteira em cima
-      // dela só empurra os capítulos pra fora da tela. A linha de título do
-      // bloco também sai — o cartão de resumo diz o mesmo, e melhor.
-      if(statusPickDesc) statusPickDesc.style.display = 'none';
-      if(subTituloTexto && subTituloTexto.parentNode) subTituloTexto.parentNode.style.display = 'none';
-
-      subLista.innerHTML = '';
-      const painel = document.createElement('div');
-      painel.className = 'cl-leitura';
-
-      const totalItens = grupos.reduce((n, g) => n + g.itens.length, 0);
-      const totalFeitos = grupos.reduce((n, g) => n + feitosDo(g), 0);
-      const pctGeral = Math.round(totalFeitos * 100 / totalItens);
-
-      const capa = document.createElement('div');
-      capa.className = 'cl-leitura-capa';
-      capa.innerHTML =
-        '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5C10.5 6 8.3 5.4 5.6 5.4A1.6 1.6 0 0 0 4 7v10.2c0 .9.7 1.6 1.6 1.6 2.7 0 4.9.6 6.4 2.1 1.5-1.5 3.7-2.1 6.4-2.1.9 0 1.6-.7 1.6-1.6V7a1.6 1.6 0 0 0-1.6-1.6c-2.7 0-4.9.6-6.4 2.1Z"/><path d="M12 7.5v13.4"/><path d="M12 4.2 11 2.6M12 4.2l1-1.6"/></svg>' +
-        '<div><h4>Leitura Bíblica</h4>' +
-        '<p class="cl-leitura-versiculo">“Lâmpada para os meus pés é a tua palavra e luz para o meu caminho.” <b>Salmos 119:105</b></p></div>';
-      painel.appendChild(capa);
-
-      // Anel de progresso: um círculo por cima do outro, o de cima recortado
-      // pelo dasharray na proporção lida.
-      const RAIO = 27;
-      const VOLTA = 2 * Math.PI * RAIO;
-      const resumo = document.createElement('div');
-      resumo.className = 'cl-leitura-resumo';
-      resumo.innerHTML =
-        '<p class="cl-leitura-instrucao">Leia os capítulos indicados e marque cada um como concluído.</p>' +
-        '<div class="cl-leitura-anel">' +
-          '<svg width="66" height="66" viewBox="0 0 66 66">' +
-            '<circle cx="33" cy="33" r="' + RAIO + '" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="7"/>' +
-            '<circle cx="33" cy="33" r="' + RAIO + '" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round"' +
-              ' stroke-dasharray="' + VOLTA.toFixed(1) + '" stroke-dashoffset="' + (VOLTA * (1 - pctGeral / 100)).toFixed(1) + '"' +
-              ' transform="rotate(-90 33 33)"/>' +
-          '</svg>' +
-          '<div class="cl-leitura-anel-txt"><span class="cl-leitura-anel-pct"></span><span class="cl-leitura-anel-rot">Concluído</span></div>' +
-        '</div>' +
-        '<div class="cl-leitura-numeros">' +
-          '<div class="cl-leitura-numero"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22Z"/><path d="M12 2v18"/></svg><div><span>Total de itens</span><b class="cl-leitura-total"></b></div></div>' +
-          '<div class="cl-leitura-numero feitos"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="8.5 12.2 11 14.7 15.8 9.9"/></svg><div><span>Concluídos</span><b class="cl-leitura-feitos"></b></div></div>' +
-        '</div>';
-      resumo.querySelector('.cl-leitura-anel-pct').textContent = pctGeral + '%';
-      resumo.querySelector('.cl-leitura-total').textContent = totalItens;
-      resumo.querySelector('.cl-leitura-feitos').textContent = totalFeitos;
-      painel.appendChild(resumo);
-
+      lbGruposEl.innerHTML = '';
       grupos.forEach(grupo => {
-        const feitos = feitosDo(grupo);
-        const pct = Math.round(feitos * 100 / grupo.itens.length);
+        const feitosG = feitosDo(grupo);
+        const pctG = Math.round(feitosG * 100 / grupo.itens.length);
         const aberto = LEITURA_ABERTA[chaveReq] === grupo.chave;
 
         const bloco = document.createElement('div');
-        bloco.className = 'cl-leitura-grupo' + (aberto ? ' aberto' : '');
+        bloco.className = 'lb-grupo' + (aberto ? ' aberto' : '');
 
         const cab = document.createElement('button');
         cab.type = 'button';
-        cab.className = 'cl-leitura-cab';
+        cab.className = 'lb-cab';
         cab.innerHTML =
-          '<svg class="cl-leitura-livro" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22Z"/><path d="M12 2v18"/></svg>' +
-          '<span class="cl-leitura-nome"></span>' +
-          '<span class="cl-leitura-pct"></span>' +
-          '<span class="cl-leitura-barra"><i></i></span>' +
-          '<svg class="cl-leitura-seta" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
-        cab.querySelector('.cl-leitura-nome').textContent = grupo.nome;
-        cab.querySelector('.cl-leitura-pct').textContent = pct + '%';
-        cab.querySelector('.cl-leitura-barra i').style.width = pct + '%';
-        // Um livro aberto por vez: tocar no aberto fecha.
+          '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v18H6.5A2.5 2.5 0 0 0 4 22Z"/><path d="M12 2v18"/></svg>' +
+          '<span class="lb-cab-nome"></span><span class="lb-cab-pct"></span>' +
+          '<span class="lb-barra"><i></i></span>' +
+          '<svg class="lb-seta" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+        cab.querySelector('.lb-cab-nome').textContent = grupo.nome;
+        cab.querySelector('.lb-cab-pct').textContent = pctG + '%';
+        cab.querySelector('.lb-barra i').style.width = pctG + '%';
         cab.addEventListener('click', () => {
           LEITURA_ABERTA[chaveReq] = aberto ? null : grupo.chave;
-          renderSubitens(card);
+          pintarLeituraCheia();
         });
         bloco.appendChild(cab);
 
         const grade = document.createElement('div');
-        grade.className = 'cl-leitura-itens';
+        grade.className = 'lb-itens';
         grupo.itens.forEach(sub => {
           const feito = !!(SUB_FEITOS[sub.id] || {}).feito;
           const chip = document.createElement('button');
           chip.type = 'button';
-          chip.className = 'cl-leitura-item' + (feito ? ' feito' : '');
+          chip.className = 'lb-item' + (feito ? ' feito' : '');
           chip.setAttribute('aria-pressed', feito ? 'true' : 'false');
           chip.innerHTML =
-            '<span class="cl-leitura-marca"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>' +
-            '<span class="cl-leitura-ref"></span>';
-          chip.querySelector('.cl-leitura-ref').textContent = sub.texto;
-          chip.addEventListener('click', () => marcarSubitem(card, sub, !((SUB_FEITOS[sub.id] || {}).feito)));
+            '<span class="lb-marca"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>' +
+            '<span class="lb-ref"></span>';
+          chip.querySelector('.lb-ref').textContent = sub.texto;
+          chip.addEventListener('click', async () => {
+            await marcarSubitem(lbCard, sub, !((SUB_FEITOS[sub.id] || {}).feito));
+            pintarLeituraCheia();
+          });
           grade.appendChild(chip);
         });
         bloco.appendChild(grade);
-        painel.appendChild(bloco);
+        lbGruposEl.appendChild(bloco);
       });
+    }
 
-      subLista.appendChild(painel);
+    function abrirLeituraCheia(card){
+      lbCard = card;
+      lbVoltarPara = 'view-classes';
+      pintarLeituraCheia();
+      // Fecha o modal do requisito antes de trocar de tela: ele é absoluto
+      // dentro da view das Classes e ficaria aberto por baixo ao voltar.
+      if(statusPickOverlay) statusPickOverlay.classList.remove('show');
+      showView('view-leitura');
+      const rolagem = document.querySelector('#view-leitura .pl-scroll');
+      if(rolagem) rolagem.scrollTop = 0;
+    }
+
+    if(lbBackBtn) lbBackBtn.addEventListener('click', () => {
+      showView(lbVoltarPara);
+      lbCard = null;
+    });
+
+    // No modal, o plano de leitura não tenta caber: mostra o andamento e manda
+    // pra tela cheia, que é onde os capítulos têm espaço pra serem lidos.
+    function pintarChamadaLeitura(card, subs, feitos){
+      if(statusPickDesc) statusPickDesc.style.display = 'none';
+      if(subTituloTexto && subTituloTexto.parentNode) subTituloTexto.parentNode.style.display = 'none';
+
+      const pct = subs.length ? Math.round(feitos * 100 / subs.length) : 0;
+      subLista.innerHTML = '';
+
+      const chamada = document.createElement('button');
+      chamada.type = 'button';
+      chamada.className = 'cl-leitura-chamada';
+      chamada.innerHTML =
+        '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5C10.5 6 8.3 5.4 5.6 5.4A1.6 1.6 0 0 0 4 7v10.2c0 .9.7 1.6 1.6 1.6 2.7 0 4.9.6 6.4 2.1 1.5-1.5 3.7-2.1 6.4-2.1.9 0 1.6-.7 1.6-1.6V7a1.6 1.6 0 0 0-1.6-1.6c-2.7 0-4.9.6-6.4 2.1Z"/><path d="M12 7.5v13.4"/></svg>' +
+        '<span class="cl-leitura-chamada-txt"><b>Abrir plano de leitura</b>' +
+        '<i class="cl-leitura-chamada-sub"></i>' +
+        '<span class="cl-leitura-chamada-barra"><i></i></span></span>' +
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+      chamada.querySelector('.cl-leitura-chamada-sub').textContent =
+        feitos + ' de ' + subs.length + ' capítulos · ' + pct + '%';
+      chamada.querySelector('.cl-leitura-chamada-barra i').style.width = pct + '%';
+      chamada.addEventListener('click', () => abrirLeituraCheia(card));
+      subLista.appendChild(chamada);
     }
 
     function statusPelosSubitens(subs, modo){
@@ -15673,7 +15813,7 @@
       }
 
       if(subTituloTexto && subTituloTexto.parentNode) subTituloTexto.parentNode.style.display = '';
-      if(grupos){ pintarLeitura(card, grupos); return; }
+      if(grupos){ pintarChamadaLeitura(card, subs, feitos); return; }
 
       subLista.innerHTML = '';
       subs.forEach(sub => {
