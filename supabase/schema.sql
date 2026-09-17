@@ -1184,3 +1184,10 @@ alter table eventos_agenda add column if not exists dia_fim int;
 -- período termina no mesmo mês em que começou. Um período que vira o ano fica
 -- de fora: a tabela guarda dia e mês sem ano, e não haveria como lê-lo.
 alter table eventos_agenda add column if not exists mes_fim_indice int;
+
+-- Oficiais de Dia por dia do período, em evento de vários dias. Chave "mes-dia"
+-- ("3-29"), valor { ids: [...], nomes: [...] }. Evento de um dia não usa: ele
+-- continua em oficiais_dia_ids/oficiais_dia_nomes, como sempre esteve.
+-- A programação por dia não precisou de coluna: cada item de programacao_dia
+-- passou a poder levar dia e mes, e item sem eles é do evento inteiro.
+alter table eventos_agenda add column if not exists oficiais_por_dia jsonb not null default '{}'::jsonb;

@@ -1971,6 +1971,25 @@
   .lb-item.feito .lb-marca{ background:var(--lb-verde); border-color:var(--lb-verde); color:#fff; }
   .lb-ref{ flex:1; min-width:0; line-height:1.3; word-break:break-word; }
 
+  /* Barra de dias do período, no editor do evento. */
+  .pl-dias-periodo{
+    margin:0 0 14px; padding:11px 12px; border-radius:13px;
+    border:1px solid rgba(216,168,62,0.22); background:rgba(216,168,62,0.08);
+  }
+  .pl-dias-periodo-rotulo{
+    display:block; margin-bottom:8px; font-size:10.5px; font-weight:800;
+    letter-spacing:0.04em; text-transform:uppercase; color:var(--gold);
+  }
+  .pl-dias-periodo-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .pl-dia-chip{
+    padding:7px 11px; border-radius:9px; cursor:pointer; font-family:inherit;
+    font-size:12px; font-weight:800; border:1px solid rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.05); color:rgba(245,239,225,0.7);
+  }
+  .pl-dia-chip.ativo{ background:var(--gold); border-color:var(--gold); color:var(--night); }
+  .pl-dia-chip .pl-dia-chip-marca{ color:var(--accent); margin-left:4px; }
+  .pl-dia-chip.ativo .pl-dia-chip-marca{ color:var(--night); }
+
   /* Selão de data num evento de período: em cima vai "a 17" no lugar da
      sigla do dia da semana, e ele precisa de um pouco mais de largura. */
   .pl-event-date.periodo em{ font-size:9.5px; letter-spacing:0; white-space:nowrap; }
@@ -4232,6 +4251,13 @@
           <textarea class="pl-input pl-textarea" id="plFieldNote" rows="2" placeholder="Observações internas, o que levar, etc." maxlength="300"></textarea>
 
           <div class="pl-schedule-section">
+            <!-- Só aparece em evento de período: escolhe de qual dia são os
+                 oficiais e a programação logo abaixo. -->
+            <div class="pl-dias-periodo" id="plDiasPeriodo" style="display:none;">
+              <span class="pl-dias-periodo-rotulo">Definindo o dia</span>
+              <div class="pl-dias-periodo-chips" id="plDiasPeriodoChips"></div>
+            </div>
+
             <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Oficial de Dia (1)</label>
             <select class="pl-input" id="plFieldOfficer1"><option value="">Nenhum</option></select>
 
@@ -13088,6 +13114,127 @@
     }
     loadOfficerOptions();
     const scheduleList = document.getElementById('plScheduleList');
+    const diasPeriodoEl = document.getElementById('plDiasPeriodo');
+    const diasPeriodoChips = document.getElementById('plDiasPeriodoChips');
+
+    // ---- Programação e oficiais por dia, em evento de período ----
+    // O formulário edita um dia por vez; estes mapas guardam os outros enquanto
+    // isso. Chave "mes-dia" ("3-29"), a mesma que vai pro banco.
+    let progPorDia = {};
+    let oficiaisPorDia = {};
+    let diaEmEdicao = null;   // "3-29", ou null em evento de um dia
+    let diasDoPeriodo = [];   // [{ chave, dia, mes, rotulo }]
+
+    function chaveDoDia(mes, dia){ return mes + '-' + dia; }
+
+    // Todos os dias entre o início e o fim, atravessando o mês quando precisa.
+    function listarDiasDoPeriodo(diaIni, mesIni, diaFim, mesFim){
+      const dias = [];
+      const ano = new Date().getFullYear();
+      let mes = mesIni, dia = diaIni;
+      // Um período não passa de um ano; o teto evita laço infinito se vier
+      // data incoerente do banco.
+      for(let passo = 0; passo < 400; passo++){
+        dias.push({ chave: chaveDoDia(mes, dia), dia: dia, mes: mes,
+                    rotulo: dia + '/' + String(mes).padStart(2, '0') });
+        if(mes === mesFim && dia === diaFim) break;
+        const ultimo = new Date(ano, mes, 0).getDate();
+        if(dia >= ultimo){ dia = 1; mes = mes + 1; if(mes > 12) break; }
+        else dia = dia + 1;
+      }
+      return dias;
+    }
+
+    function lerProgramacaoDaTela(){
+      return Array.from(scheduleList.querySelectorAll('.pl-schedule-row')).map(row => ({
+        horario: row.querySelector('.pl-schedule-time').value || '',
+        atividade: getScheduleRowActivity(row)
+      })).filter(item => item.horario || item.atividade);
+    }
+
+    function lerOficiaisDaTela(){
+      const id1 = fieldOfficer1.value || '';
+      const id2 = fieldOfficer2.value || '';
+      const nome = (sel) => sel.value ? sel.options[sel.selectedIndex].textContent : '';
+      return { ids: [id1, id2].filter(Boolean),
+               nomes: [nome(fieldOfficer1), nome(fieldOfficer2)].filter(Boolean) };
+    }
+
+    // Guarda o que está na tela no dia que estava aberto.
+    function guardarDiaEmEdicao(){
+      if(!diaEmEdicao) return;
+      progPorDia[diaEmEdicao] = lerProgramacaoDaTela();
+      oficiaisPorDia[diaEmEdicao] = lerOficiaisDaTela();
+    }
+
+    function mostrarDia(chave){
+      diaEmEdicao = chave;
+      scheduleList.innerHTML = '';
+      (progPorDia[chave] || []).forEach(item => buildScheduleRow(scheduleList, item.horario, item.atividade));
+      const of = oficiaisPorDia[chave] || { ids: [] };
+      fieldOfficer1.value = of.ids[0] || '';
+      fieldOfficer2.value = of.ids[1] || '';
+      pintarChipsDoPeriodo();
+    }
+
+    function pintarChipsDoPeriodo(){
+      if(!diasPeriodoChips) return;
+      diasPeriodoChips.innerHTML = '';
+      diasDoPeriodo.forEach(d => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'pl-dia-chip' + (d.chave === diaEmEdicao ? ' ativo' : '');
+        // Uma marca discreta diz quais dias já têm alguma coisa definida.
+        const temAlgo = (progPorDia[d.chave] || []).length > 0 ||
+                        ((oficiaisPorDia[d.chave] || {}).ids || []).length > 0;
+        chip.innerHTML = '<span></span>' + (temAlgo ? '<span class="pl-dia-chip-marca">\u2022</span>' : '');
+        chip.querySelector('span').textContent = d.rotulo;
+        chip.addEventListener('click', () => { guardarDiaEmEdicao(); mostrarDia(d.chave); });
+        diasPeriodoChips.appendChild(chip);
+      });
+    }
+
+    // Monta (ou esconde) a barra de dias a partir do que está nos campos de data.
+    function montarBarraDeDias(){
+      const diaIni = parseInt(fieldDay.value, 10);
+      const mesIni = parseInt(fieldMonth.value, 10);
+      const diaFim = fieldDayEnd ? parseInt(fieldDayEnd.value, 10) : 0;
+      const mesFim = (fieldMonthEnd ? parseInt(fieldMonthEnd.value, 10) : 0) || mesIni;
+      const ehPeriodo = !!(diaIni && diaFim && (diaFim !== diaIni || mesFim !== mesIni));
+      if(!ehPeriodo){
+        // Evento de um dia: tudo volta a ser do evento inteiro, como sempre foi.
+        if(diaEmEdicao) guardarDiaEmEdicao();
+        const unico = diaEmEdicao ? (progPorDia[diaEmEdicao] || []) : lerProgramacaoDaTela();
+        const ofUnico = diaEmEdicao ? (oficiaisPorDia[diaEmEdicao] || { ids: [] }) : lerOficiaisDaTela();
+        diaEmEdicao = null;
+        diasDoPeriodo = [];
+        if(diasPeriodoEl) diasPeriodoEl.style.display = 'none';
+        scheduleList.innerHTML = '';
+        unico.forEach(item => buildScheduleRow(scheduleList, item.horario, item.atividade));
+        fieldOfficer1.value = (ofUnico.ids || [])[0] || '';
+        fieldOfficer2.value = (ofUnico.ids || [])[1] || '';
+        return;
+      }
+      guardarDiaEmEdicao();
+      diasDoPeriodo = listarDiasDoPeriodo(diaIni, mesIni, diaFim, mesFim);
+      if(diasPeriodoEl) diasPeriodoEl.style.display = '';
+      // Virou período agora: o que já estava na tela passa a ser do primeiro dia.
+      if(!diaEmEdicao){
+        const primeira = diasDoPeriodo[0].chave;
+        if(!progPorDia[primeira]) progPorDia[primeira] = lerProgramacaoDaTela();
+        if(!oficiaisPorDia[primeira]) oficiaisPorDia[primeira] = lerOficiaisDaTela();
+        mostrarDia(primeira);
+        return;
+      }
+      // O dia que estava aberto pode ter saído do período ao encurtar a data.
+      const aindaExiste = diasDoPeriodo.some(d => d.chave === diaEmEdicao);
+      mostrarDia(aindaExiste ? diaEmEdicao : diasDoPeriodo[0].chave);
+    }
+
+    [fieldDay, fieldMonth, fieldDayEnd, fieldMonthEnd].forEach(campo => {
+      if(campo) campo.addEventListener('change', montarBarraDeDias);
+    });
+    if(fieldDayEnd) fieldDayEnd.addEventListener('input', montarBarraDeDias);
     const scheduleAddBtn = document.getElementById('plScheduleAddBtn');
     const checklistList = document.getElementById('plChecklistList');
     const checklistAddBtn = document.getElementById('plChecklistAddBtn');
@@ -13204,8 +13351,33 @@
       });
     }
 
+    // Num evento de período, a ficha aberta a partir de um dia mostra só a
+    // programação daquele dia. Item sem "dia" é do evento inteiro e aparece
+    // sempre — é o formato de antes desta mudança.
+    function programacaoDoDia(card, mes, dia){
+      const todos = parseJSONSafe(card.dataset.schedule);
+      if(!mes || !dia) return todos;
+      const temPorDia = todos.some(x => x.dia);
+      if(!temPorDia) return todos;
+      return todos.filter(x => !x.dia || (x.dia === dia && (x.mes || mes) === mes));
+    }
+
+    function oficiaisDoDia(card, mes, dia){
+      const porDia = parseJSONSafe(card.dataset.oficiaisPorDia) || {};
+      const doDia = (mes && dia) ? porDia[mes + '-' + dia] : null;
+      if(doDia && doDia.nomes && doDia.nomes.length) return doDia.nomes;
+      // Sem nada pra esse dia, cai nos oficiais do evento.
+      return parseJSONSafe(card.dataset.officerNames);
+    }
+
+    // Preenchido pela tela de dia antes de abrir a ficha, pra ela saber de que
+    // dia está falando. Fora dali fica null, e a ficha mostra o evento inteiro.
+    let diaDaFichaAberta = null;
+
     function renderViewSchedule(card){
-      const list = parseJSONSafe(card.dataset.schedule);
+      const list = diaDaFichaAberta
+        ? programacaoDoDia(card, diaDaFichaAberta.mes, diaDaFichaAberta.dia)
+        : parseJSONSafe(card.dataset.schedule);
       viewScheduleBlock.style.display = list.length ? '' : 'none';
       viewSchedule.innerHTML = '';
       list.forEach(item => {
@@ -13257,7 +13429,9 @@
       viewDesc.textContent = desc;
       viewNoteBlock.style.display = note ? '' : 'none';
       viewNote.textContent = note;
-      const officerNames = parseJSONSafe(card.dataset.officerNames);
+      const officerNames = diaDaFichaAberta
+        ? oficiaisDoDia(card, diaDaFichaAberta.mes, diaDaFichaAberta.dia)
+        : parseJSONSafe(card.dataset.officerNames);
       viewOfficersBlock.style.display = officerNames.length ? '' : 'none';
       viewOfficers.textContent = officerNames.join(' e ');
       const notice = card.dataset.notice || '';
@@ -13411,7 +13585,23 @@
         fieldOfficer2.value = editOfficerIds[1] || '';
         fieldNotice.value = card.dataset.notice || '';
         scheduleList.innerHTML = '';
-        parseJSONSafe(card.dataset.schedule).forEach(item => buildScheduleRow(scheduleList, item.horario, item.atividade));
+        // Reparte a programação pelos dias. Item sem "dia" é de antes desta
+        // mudança e vale pro evento inteiro: cai no primeiro dia.
+        progPorDia = {};
+        oficiaisPorDia = parseJSONSafe(card.dataset.oficiaisPorDia) || {};
+        diaEmEdicao = null;
+        const chavePrimeiro = chaveDoDia(parseInt(card.dataset.monIndex, 10), parseInt(card.dataset.day, 10));
+        parseJSONSafe(card.dataset.schedule).forEach(item => {
+          const chave = item.dia
+            ? chaveDoDia(item.mes || parseInt(card.dataset.monIndex, 10), item.dia)
+            : chavePrimeiro;
+          (progPorDia[chave] || (progPorDia[chave] = [])).push({ horario: item.horario, atividade: item.atividade });
+        });
+        // Oficiais do evento inteiro (formato antigo) viram os do primeiro dia.
+        if(!oficiaisPorDia[chavePrimeiro] && editOfficerIds.length){
+          oficiaisPorDia[chavePrimeiro] = { ids: editOfficerIds, nomes: parseJSONSafe(card.dataset.officerNames) };
+        }
+        (progPorDia[chavePrimeiro] || []).forEach(item => buildScheduleRow(scheduleList, item.horario, item.atividade));
         checklistList.innerHTML = '';
         parseJSONSafe(card.dataset.checklist).forEach(item => addChecklistRowEl(item.texto, item.feito));
         fieldShowGallery.checked = card.dataset.showGallery !== '0';
@@ -13455,6 +13645,10 @@
         fieldOfficer2.value = '';
         fieldNotice.value = '';
         scheduleList.innerHTML = '';
+        progPorDia = {};
+        oficiaisPorDia = {};
+        diaEmEdicao = null;
+        diasDoPeriodo = [];
         checklistList.innerHTML = '';
         fieldShowGallery.checked = true;
         fieldGalleryFrom.value = '';
@@ -13473,6 +13667,9 @@
       toggleRepeatFields();
       toggleCustomTagFields();
       toggleGalleryFromField();
+      // Depois de os campos de data estarem preenchidos: decide se mostra a
+      // barra de dias e abre o primeiro.
+      montarBarraDeDias();
       overlay.classList.add('show');
       setTimeout(() => fieldTitle.focus(), 150);
     }
@@ -13548,6 +13745,7 @@
       a.dataset.note = data.note;
       a.dataset.officerIds = JSON.stringify(data.officerIds || []);
       a.dataset.officerNames = JSON.stringify(data.officerNames || []);
+      a.dataset.oficiaisPorDia = JSON.stringify(data.oficiaisPorDia || {});
       a.dataset.escalaOculta = data.escalaOculta ? '1' : '';
       a.dataset.notice = data.notice || '';
       a.dataset.schedule = JSON.stringify(data.schedule || []);
@@ -13608,7 +13806,7 @@
         bellMark.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>';
         a.querySelector('.pl-event-body').appendChild(bellMark);
       }
-      a.addEventListener('click', (e) => { e.preventDefault(); readOnlyMode ? openViewOnly(a) : openModal('edit', a); });
+      a.addEventListener('click', (e) => { e.preventDefault(); diaDaFichaAberta = null; readOnlyMode ? openViewOnly(a) : openModal('edit', a); });
       addGCalButton(a);
       return a;
     }
@@ -13665,6 +13863,7 @@
         note: row.observacao || '',
         officerIds: Array.isArray(row.oficiais_dia_ids) ? row.oficiais_dia_ids : [],
         officerNames: Array.isArray(row.oficiais_dia_nomes) ? row.oficiais_dia_nomes : [],
+        oficiaisPorDia: (row.oficiais_por_dia && typeof row.oficiais_por_dia === 'object') ? row.oficiais_por_dia : {},
         escalaOculta: !!row.escala_oculta,
         notice: row.aviso_membros || '',
         schedule: Array.isArray(row.programacao_dia) ? row.programacao_dia : [],
@@ -13918,7 +14117,13 @@
       item.querySelector('.pl-event-tag').textContent = card.dataset.tagLabel || '';
       item.querySelector('.pl-dayview-item-time').lastChild.textContent = timeLabel;
       item.querySelector('.pl-dayview-item-local').lastChild.textContent = card.dataset.local || '';
-      item.addEventListener('click', (e) => { e.preventDefault(); readOnlyMode ? openViewOnly(card) : openModal('edit', card); });
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        // A ficha vinda da tela de dia mostra a programação e os oficiais
+        // daquele dia, não do evento inteiro.
+        diaDaFichaAberta = dayViewDate ? { mes: dayViewDate.monIdx, dia: dayViewDate.day } : null;
+        if(readOnlyMode) openViewOnly(card); else openModal('edit', card);
+      });
       return item;
     }
 
@@ -13993,13 +14198,36 @@
       const officer1Name = officer1Id ? fieldOfficer1.options[fieldOfficer1.selectedIndex].textContent : '';
       const officer2Id = fieldOfficer2.value || '';
       const officer2Name = officer2Id ? fieldOfficer2.options[fieldOfficer2.selectedIndex].textContent : '';
-      const officerIds = [officer1Id, officer2Id].filter(Boolean);
-      const officerNames = [officer1Name, officer2Name].filter(Boolean);
+      let officerIds = [officer1Id, officer2Id].filter(Boolean);
+      let officerNames = [officer1Name, officer2Name].filter(Boolean);
       const notice = fieldNotice.value.trim();
-      const schedule = Array.from(scheduleList.querySelectorAll('.pl-schedule-row')).map(row => ({
-        horario: row.querySelector('.pl-schedule-time').value || '',
-        atividade: getScheduleRowActivity(row)
-      })).filter(item => item.horario || item.atividade);
+      // Num período, o que está na tela é só o dia aberto: guarda antes de ler
+      // todos. Num evento de um dia, diaEmEdicao é null e nada disso pesa.
+      guardarDiaEmEdicao();
+      let schedule, oficiaisPorDiaPayload;
+      if(diaEmEdicao){
+        schedule = [];
+        diasDoPeriodo.forEach(d => {
+          (progPorDia[d.chave] || []).forEach(item => {
+            if(item.horario || item.atividade){
+              schedule.push({ dia: d.dia, mes: d.mes, horario: item.horario, atividade: item.atividade });
+            }
+          });
+        });
+        oficiaisPorDiaPayload = {};
+        diasDoPeriodo.forEach(d => {
+          const of = oficiaisPorDia[d.chave];
+          if(of && of.ids && of.ids.length) oficiaisPorDiaPayload[d.chave] = of;
+        });
+        // O card continua guardando os oficiais do primeiro dia: o PDF e a
+        // permissão de editar a programação leem oficiais_dia_ids.
+        const doPrimeiro = oficiaisPorDia[diasDoPeriodo[0].chave] || { ids: [], nomes: [] };
+        officerIds = doPrimeiro.ids || [];
+        officerNames = doPrimeiro.nomes || [];
+      } else {
+        schedule = lerProgramacaoDaTela();
+        oficiaisPorDiaPayload = {};
+      }
       const checklist = Array.from(checklistList.querySelectorAll('.pl-checklist-row')).map(row => ({
         texto: row.querySelector('.pl-checklist-text').value.trim(),
         feito: row.querySelector('.pl-checklist-done').checked
@@ -14080,6 +14308,7 @@
         observacao: note || null,
         oficiais_dia_ids: officerIds,
         oficiais_dia_nomes: officerNames,
+        oficiais_por_dia: oficiaisPorDiaPayload,
         aviso_membros: notice || null,
         programacao_dia: schedule,
         checklist_atividades: checklist,
@@ -14111,6 +14340,7 @@
         const semPeriodo = Object.assign({}, payload);
         delete semPeriodo.dia_fim;
         delete semPeriodo.mes_fim_indice;
+        delete semPeriodo.oficiais_por_dia;
         resposta = await gravar(semPeriodo);
         if(!resposta.error && payload.dia_fim){
           alert('O evento foi salvo, mas o período não: o banco ainda não tem as colunas dia_fim e mes_fim_indice. Rode a migration de supabase/schema.sql.');
