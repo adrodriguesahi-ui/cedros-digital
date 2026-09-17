@@ -1971,6 +1971,11 @@
   .lb-item.feito .lb-marca{ background:var(--lb-verde); border-color:var(--lb-verde); color:#fff; }
   .lb-ref{ flex:1; min-width:0; line-height:1.3; word-break:break-word; }
 
+  /* Selão de data num evento de período: em cima vai "a 17" no lugar da
+     sigla do dia da semana, e ele precisa de um pouco mais de largura. */
+  .pl-event-date.periodo em{ font-size:9.5px; letter-spacing:0; white-space:nowrap; }
+  .pl-event-date.periodo{ color:var(--gold); }
+
   /* Referência bíblica citada no texto do requisito: tocável, discreta. */
   .cl-ref-link{
     border:none; background:none; padding:0; margin:0; font:inherit; cursor:pointer;
@@ -3630,6 +3635,75 @@
     #adModalOverlay .ad-field-row{ display:flex; gap:14px; }
     #adModalOverlay .ad-field-row > *{ flex:1; min-width:0; }
   }
+
+  /* ================================================================
+     NAVEGADOR: UMA COLUNA SÓ
+     O bloco acima centrou o conteúdo (.bd-content em 920px, x=260) mas
+     deixou cabeçalho, avisos, carrossel e barra de abas com padding de
+     5vw — ou seja, 1440px começando em x=0. Duas colunas diferentes na
+     mesma tela, e daí a impressão de app de celular esticado.
+     Aqui todos passam a seguir a mesma largura do conteúdo.
+     Não toca no celular nem no app instalado: abaixo de 900px nada disto
+     vale, e a largura da coluna nunca é menor que a da tela.
+     ================================================================ */
+  @media (min-width:900px){
+    :root{
+      --col-inicio: clamp(920px, 62vw, 1200px);
+      --col-planejamento: clamp(640px, 46vw, 820px);
+    }
+
+    /* Início */
+    .bd-topbar, .bd-quicknav, .bd-greeting, .bd-greeting-unit,
+    .bd-reminder-banner, .bd-stats-ticker, .bd-banner-row, .bd-banner-dots{
+      width:100%;
+      max-width:var(--col-inicio);
+      margin-left:auto; margin-right:auto;
+      padding-left:0; padding-right:0;
+      box-sizing:border-box;
+    }
+    /* O aviso tem cantos arredondados e precisa de respiro nas laterais. */
+    .bd-reminder-banner{ width:auto; }
+    /* Sem rolagem horizontal numa coluna que já cabe inteira. */
+    .bd-quicknav{ justify-content:flex-start; gap:10px; }
+
+    /* A barra de abas acompanha a coluna em vez de atravessar a tela. */
+    .bd-tabbar{
+      left:50%; right:auto; transform:translateX(-50%);
+      width:var(--col-inicio); max-width:100vw;
+      border-left:1px solid rgba(255,255,255,0.09);
+      border-right:1px solid rgba(255,255,255,0.09);
+      border-radius:16px 16px 0 0;
+    }
+
+    /* Planejamento, Classes e as demais telas internas.
+       O width:100% é necessário: só com max-width o elemento encolhe até a
+       largura do conteúdo, e o topo ficava com 239px no meio da tela. */
+    .pl-topbar{
+      width:100%;
+      max-width:var(--col-planejamento);
+      margin-left:auto; margin-right:auto;
+      padding-left:0; padding-right:0;
+    }
+    /* A lista segue a mesma coluna do topo, sem o padding que a encolhia — e
+       com width:100%, pelo mesmo motivo do .pl-topbar acima. */
+    .pl-content, .cl-hub{ width:100%; box-sizing:border-box; padding-left:0; padding-right:0; }
+    /* A Administração é tabela larga de propósito: o cabeçalho dela
+       acompanha a própria largura, não a da coluna de leitura. */
+    #view-admin .pl-topbar{ max-width:clamp(1040px, 74vw, 1320px); }
+
+    /* O conteúdo já está na coluna: o padding de 5vw por dentro só encolhia
+       o Rank em relação ao banner logo acima. */
+    .view-bdash .bd-content{ padding-left:0; padding-right:0; }
+
+    /* O card do carrossel cortava o título do evento. O bloco acima subiu o
+       card pra 220px mas deixou a linha que o contém em 172px, com
+       overflow:hidden — o card ficava mais alto que o próprio contêiner. */
+    .bd-banner-row{ height:220px; }
+
+    /* Plano de leitura: a grade ganha a coluna, não a tela inteira. */
+    .lb-view .pl-scroll > *{ max-width:var(--col-inicio); margin-left:auto; margin-right:auto; }
+    .lb-view .lb-corpo{ padding-left:0; padding-right:0; }
+  }
 </style>
 </head>
 <body>
@@ -4059,6 +4133,31 @@
               </select>
             </div>
           </div>
+
+          <div class="pl-field-row">
+            <div class="pl-field-col">
+              <label class="pl-field-label">Até o dia</label>
+              <input type="number" class="pl-input" id="plFieldDayEnd" min="1" max="31" placeholder="—">
+            </div>
+            <div class="pl-field-col pl-field-col-wide">
+              <label class="pl-field-label">Mês do fim</label>
+              <select class="pl-input" id="plFieldMonthEnd">
+                <option value="1" data-abbr="JAN">Janeiro</option>
+                <option value="2" data-abbr="FEV">Fevereiro</option>
+                <option value="3" data-abbr="MAR">Março</option>
+                <option value="4" data-abbr="ABR">Abril</option>
+                <option value="5" data-abbr="MAI">Maio</option>
+                <option value="6" data-abbr="JUN">Junho</option>
+                <option value="7" data-abbr="JUL">Julho</option>
+                <option value="8" data-abbr="AGO">Agosto</option>
+                <option value="9" data-abbr="SET">Setembro</option>
+                <option value="10" data-abbr="OUT">Outubro</option>
+                <option value="11" data-abbr="NOV">Novembro</option>
+                <option value="12" data-abbr="DEZ">Dezembro</option>
+              </select>
+            </div>
+          </div>
+          <p class="pl-reminder-hint" style="margin:-4px 2px 10px;">Evento de vários dias: preencha "Até o dia". Em branco, vale só o dia de início. O período pode atravessar o mês — 29 de março a 4 de abril, por exemplo.</p>
 
           <div class="pl-field-row">
             <div class="pl-field-col">
@@ -12954,6 +13053,8 @@
 
     const fieldTitle = document.getElementById('plFieldTitle');
     const fieldDay = document.getElementById('plFieldDay');
+    const fieldDayEnd = document.getElementById('plFieldDayEnd');
+    const fieldMonthEnd = document.getElementById('plFieldMonthEnd');
     const fieldMonth = document.getElementById('plFieldMonth');
     const fieldTime = document.getElementById('plFieldTime');
     const fieldTimeEnd = document.getElementById('plFieldTimeEnd');
@@ -13295,6 +13396,8 @@
         deleteBtn.style.display = '';
         fieldTitle.value = card.dataset.title || '';
         fieldDay.value = card.dataset.day || '';
+        if(fieldDayEnd) fieldDayEnd.value = card.dataset.dayEnd || '';
+        if(fieldMonthEnd) fieldMonthEnd.value = card.dataset.monEnd || card.dataset.monIndex || '';
         fieldMonth.value = card.dataset.monIndex || '5';
         fieldTime.value = card.dataset.time || '09:00';
         fieldTimeEnd.value = card.dataset.timeEnd || '';
@@ -13338,6 +13441,8 @@
         deleteBtn.style.display = 'none';
         fieldTitle.value = '';
         fieldDay.value = preset ? preset.day : '';
+        if(fieldDayEnd) fieldDayEnd.value = '';
+        if(fieldMonthEnd) fieldMonthEnd.value = fieldMonth.value;
         if(preset) fieldMonth.value = preset.monIdx;
         fieldTime.value = '09:00';
         fieldTimeEnd.value = '';
@@ -13427,6 +13532,8 @@
       a.className = 'pl-event-card';
       a.dataset.id = data.id || '';
       a.dataset.day = data.day;
+      a.dataset.dayEnd = data.dayEnd || '';
+      a.dataset.monEnd = data.monEnd || '';
       a.dataset.monAbbr = data.monAbbr;
       a.dataset.monName = data.monName;
       a.dataset.monIndex = data.monIdx;
@@ -13461,8 +13568,16 @@
       a.dataset.reminderLastConfirmedDate = data.reminderLastConfirmedDate || '';
       a.dataset.reminderConfirmedPor = data.reminderConfirmedPor || '';
       const dowAbbr = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'][new Date(new Date().getFullYear(), data.monIdx - 1, parseInt(data.day, 10)).getDay()];
+      // Num período, o dia da semana do início diz pouco: o selão mostra
+      // "a 17" em cima do 14 — e "a 4/4" quando o fim cai noutro mês.
+      const mesFimCard = parseInt(data.monEnd, 10) || data.monIdx;
+      const ehPeriodo = !!data.dayEnd && (data.dayEnd !== data.day || mesFimCard !== data.monIdx);
+      const rotuloFim = mesFimCard !== data.monIdx
+        ? ('a ' + parseInt(data.dayEnd, 10) + '/' + mesFimCard)
+        : ('a ' + data.dayEnd);
       a.innerHTML =
-        '<div class="pl-event-date"><em>' + dowAbbr + '</em><b>' + data.day + '</b></div>' +
+        '<div class="pl-event-date' + (ehPeriodo ? ' periodo' : '') + '"><em>' +
+          (ehPeriodo ? rotuloFim : dowAbbr) + '</em><b>' + data.day + '</b></div>' +
         '<div class="pl-event-body">' +
           '<h4 class="pl-event-title"></h4>' +
           '<p class="pl-event-meta">' +
@@ -13534,6 +13649,8 @@
       return {
         id: row.id,
         day: String(row.dia).padStart(2, '0'),
+        dayEnd: row.dia_fim ? String(row.dia_fim).padStart(2, '0') : '',
+        monEnd: row.dia_fim ? (row.mes_fim_indice || row.mes_indice) : '',
         monIdx: row.mes_indice,
         monAbbr: MONTH_ABBR_PT[row.mes_indice - 1] || '',
         monName: monthName.charAt(0).toUpperCase() + monthName.slice(1),
@@ -13607,10 +13724,13 @@
 
       const dayTags = {};
       document.querySelectorAll('#view-planning .pl-content .pl-event-card').forEach(card => {
-        if(parseInt(card.dataset.monIndex, 10) !== calViewMonth) return;
-        const day = parseInt(card.dataset.day, 10);
-        if(!day) return;
-        (dayTags[day] || (dayTags[day] = [])).push(card.dataset.tag || 'gray');
+        // Evento de período pinta todos os dias que ocupa neste mês — e pode
+        // ter começado no mês anterior ou terminar no seguinte.
+        const t = trechoNoMes(card, calViewMonth, calViewYear);
+        if(!t) return;
+        for(let d = t.de; d <= Math.min(t.ate, daysInMonth); d++){
+          (dayTags[d] || (dayTags[d] = [])).push(card.dataset.tag || 'gray');
+        }
       });
 
       grid.innerHTML = '';
@@ -13677,9 +13797,30 @@
       chip.style.display = '';
     }
 
+    // Um período pode atravessar o mês (29/03 a 04/04). Devolve o trecho do
+    // evento que cai no mês pedido, ou null quando ele não encosta nesse mês.
+    function trechoNoMes(card, mes, ano){
+      const diaIni = parseInt(card.dataset.day, 10);
+      const mesIni = parseInt(card.dataset.monIndex, 10);
+      if(!diaIni || !mesIni) return null;
+      const diaFim = parseInt(card.dataset.dayEnd, 10) || diaIni;
+      const mesFim = parseInt(card.dataset.monEnd, 10) || mesIni;
+      if(mes < mesIni || mes > mesFim) return null;
+      const ultimoDoMes = new Date(ano, mes, 0).getDate();
+      return {
+        de: mes === mesIni ? diaIni : 1,
+        ate: mes === mesFim ? Math.min(diaFim, ultimoDoMes) : ultimoDoMes
+      };
+    }
+
     function dayHasEventOn(monIdx, day){
-      const dayStr = String(day).padStart(2, '0');
-      return !!document.querySelector('#view-planning .pl-content .pl-event-card[data-mon-index="' + monIdx + '"][data-day="' + dayStr + '"]');
+      // Precisa olhar o período inteiro, e ele pode ter começado noutro mês —
+      // por isso a busca não filtra mais por data-mon-index.
+      return Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'))
+        .some(c => {
+          const t = trechoNoMes(c, monIdx, calViewYear);
+          return !!t && day >= t.de && day <= t.ate;
+        });
     }
 
     function openDayView(monIdx, day){
@@ -13741,7 +13882,10 @@
       const { monIdx, day } = dayViewDate;
       const dayStr = String(day).padStart(2, '0');
       const cards = Array.from(document.querySelectorAll('#view-planning .pl-content .pl-event-card'))
-        .filter(c => parseInt(c.dataset.monIndex, 10) === monIdx && c.dataset.day === dayStr)
+        .filter(c => {
+          const t = trechoNoMes(c, monIdx, calViewYear);
+          return !!t && day >= t.de && day <= t.ate;
+        })
         .sort((a, b) => (a.dataset.time || '').localeCompare(b.dataset.time || ''));
       listEl.innerHTML = '';
       cards.forEach(card => listEl.appendChild(buildDayViewItem(card)));
@@ -13832,6 +13976,8 @@
     async function saveEvent(){
       const title = fieldTitle.value.trim();
       const day = fieldDay.value.trim();
+      const dayEnd = fieldDayEnd ? fieldDayEnd.value.trim() : '';
+      const monEndIdx = fieldMonthEnd ? parseInt(fieldMonthEnd.value, 10) : 0;
       const monIdx = parseInt(fieldMonth.value, 10);
       const time = fieldTime.value || '09:00';
       const timeEnd = fieldTimeEnd.value || '';
@@ -13870,6 +14016,27 @@
         fieldDay.style.borderColor = day ? '' : '#FF6B5C';
         return;
       }
+      // O fim, quando existe, tem que vir depois do início no calendário.
+      // O período pode atravessar o mês; só não pode voltar.
+      const mesDoFim = dayEnd ? (monEndIdx || monIdx) : monIdx;
+      if(dayEnd){
+        const ini = parseInt(day, 10), fim = parseInt(dayEnd, 10);
+        const diasDoMesFim = new Date(new Date().getFullYear(), mesDoFim, 0).getDate();
+        if(fim > diasDoMesFim){
+          fieldDayEnd.style.borderColor = '#FF6B5C';
+          alert(MONTH_NAMES_PT[mesDoFim - 1] + ' não tem dia ' + fim + '.');
+          return;
+        }
+        // A agenda guarda dia e mês sem ano, então um período que vira o ano
+        // (28/12 a 3/1) não teria como ser lido — esse caso fica de fora.
+        if(mesDoFim < monIdx || (mesDoFim === monIdx && fim <= ini)){
+          fieldDayEnd.style.borderColor = '#FF6B5C';
+          alert(mesDoFim < monIdx
+            ? 'O fim do período precisa vir depois do início. Pra um evento que vira o ano, cadastre um em dezembro e outro em janeiro.'
+            : 'O dia final precisa ser depois do dia de início. Pra um dia só, deixe "Até o dia" em branco.');
+          return;
+        }
+      }
       if(reminderOn && !reminderDate){
         fieldReminderDate.style.borderColor = '#FF6B5C';
         return;
@@ -13899,6 +14066,8 @@
 
       const payload = {
         dia: dayInt,
+        dia_fim: dayEnd ? parseInt(dayEnd, 10) : null,
+        mes_fim_indice: dayEnd ? mesDoFim : null,
         mes_indice: monIdx,
         titulo: title,
         horario: time,
@@ -13929,10 +14098,25 @@
       };
 
       saveBtn.disabled = true;
-      const query = (editingCard && editingCard.dataset.id)
-        ? supa.from('eventos_agenda').update(payload).eq('id', editingCard.dataset.id).select().single()
-        : supa.from('eventos_agenda').insert(payload).select().single();
-      const { data: row, error } = await query;
+      const gravar = (corpo) => (editingCard && editingCard.dataset.id)
+        ? supa.from('eventos_agenda').update(corpo).eq('id', editingCard.dataset.id).select().single()
+        : supa.from('eventos_agenda').insert(corpo).select().single();
+
+      // dia_fim é coluna nova. Num banco que ainda não rodou a migration, mandá-la
+      // faria o PostgREST recusar a gravação inteira — e ninguém conseguiria
+      // salvar evento nenhum, nem os de um dia só. Tenta de novo sem ela.
+      let resposta = await gravar(payload);
+      if(resposta.error && ehColunaInexistente(resposta.error)){
+        console.warn('As colunas do período ainda não existem no banco; salvando sem ele. Rode a migration de supabase/schema.sql.');
+        const semPeriodo = Object.assign({}, payload);
+        delete semPeriodo.dia_fim;
+        delete semPeriodo.mes_fim_indice;
+        resposta = await gravar(semPeriodo);
+        if(!resposta.error && payload.dia_fim){
+          alert('O evento foi salvo, mas o período não: o banco ainda não tem as colunas dia_fim e mes_fim_indice. Rode a migration de supabase/schema.sql.');
+        }
+      }
+      const { data: row, error } = resposta;
       saveBtn.disabled = false;
       if(error || !row){
         console.error('Erro ao salvar evento:', error);
@@ -14001,7 +14185,10 @@
       document.querySelectorAll('#view-planning .pl-content .pl-event-card').forEach(card => {
         const matchesTerm = !term || normalizePl(card.dataset.title).includes(term) || normalizePl(card.dataset.local).includes(term);
         const matchesTag = activeTagFilters.size === 0 || activeTagFilters.has(card.dataset.tag);
-        const matchesMonth = !monthFilterOn || term || parseInt(card.dataset.monIndex, 10) === calViewMonth;
+        // Vale tocar o mês, não começar nele: a Semana Santa de 29/03 a 04/04
+        // tem que aparecer também na lista de abril, como já aparece no
+        // calendário de abril.
+        const matchesMonth = !monthFilterOn || term || !!trechoNoMes(card, calViewMonth, calViewYear);
         card.style.display = (matchesTerm && matchesTag && matchesMonth) ? '' : 'none';
       });
     }
