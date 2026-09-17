@@ -1971,6 +1971,34 @@
   .lb-item.feito .lb-marca{ background:var(--lb-verde); border-color:var(--lb-verde); color:#fff; }
   .lb-ref{ flex:1; min-width:0; line-height:1.3; word-break:break-word; }
 
+  /* Referência bíblica citada no texto do requisito: tocável, discreta. */
+  .cl-ref-link{
+    border:none; background:none; padding:0; margin:0; font:inherit; cursor:pointer;
+    color:var(--gold); text-decoration:underline; text-decoration-style:dotted;
+    text-underline-offset:2px;
+  }
+  .cl-passagem-corpo{
+    max-height:58vh; overflow-y:auto; font-size:14px; line-height:1.65;
+    color:rgba(245,239,225,0.88);
+  }
+  .cl-passagem-corpo p{ margin:0 0 9px; }
+  .cl-passagem-corpo p:last-child{ margin-bottom:0; }
+  .cl-passagem-num{
+    font-size:10px; font-weight:900; vertical-align:super; margin-right:3px; color:var(--gold);
+  }
+  .cl-passagem-cap{
+    margin:14px 0 7px; font-size:11px; font-weight:900; letter-spacing:0.04em;
+    text-transform:uppercase; color:rgba(245,239,225,0.45);
+  }
+  .cl-passagem-cap:first-child{ margin-top:0; }
+  .cl-passagem-aviso{ margin:0; font-size:13px; line-height:1.55; color:rgba(245,239,225,0.6); }
+  .cl-passagem-fonte{ margin:9px 0 0; font-size:10.5px; color:rgba(245,239,225,0.4); }
+  .cl-passagem-retry{
+    margin-top:10px; padding:9px 14px; border:none; border-radius:9px; cursor:pointer;
+    background:rgba(255,255,255,0.1); color:var(--cream); font-family:inherit;
+    font-size:12.5px; font-weight:800;
+  }
+
   /* Porta de entrada da tela cheia do plano de leitura, dentro do requisito. */
   .cl-leitura-chamada{
     width:100%; display:flex; align-items:center; gap:11px; padding:13px;
@@ -8867,6 +8895,21 @@
       <!-- Legenda do anexo: o nome que aparece na lista de comprovação, nos
            chips do sub-item e na tela pública do QR Code. Começa com o nome do
            arquivo (IMG_2043.jpg), que não diz nada pra quem for conferir. -->
+      <!-- Leitor de passagem aberto por uma referência citada na descrição do
+           requisito. O plano de leitura tem o leitor na própria tela; aqui,
+           onde a referência é avulsa, ele vem por cima em modal. -->
+      <div class="pl-modal-overlay" id="clPassagemOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title" id="clPassagemTitulo">Passagem</h4>
+            <button type="button" class="pl-modal-close" id="clPassagemClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="cl-passagem-corpo" id="clPassagemCorpo"></div>
+        </div>
+      </div>
+
       <div class="pl-modal-overlay" id="clAnexoNomeOverlay">
         <div class="pl-modal">
           <div class="pl-modal-head">
@@ -15773,27 +15816,208 @@
     // capítulo não volta na rede.
     const PASSAGENS = {};
 
+    async function buscarConsulta(consulta){
+      const r = await fetch('https://bible-api.com/' + encodeURIComponent(consulta) + '?translation=almeida');
+      if(!r.ok) throw new Error('a busca respondeu ' + r.status);
+      const j = await r.json();
+      const versos = [];
+      if(j && j.verses && j.verses.length){
+        j.verses.forEach(v => versos.push({
+          cap: v.chapter, n: v.verse, texto: String(v.text || '').trim()
+        }));
+      } else if(j && j.text){
+        versos.push({ cap: null, n: null, texto: String(j.text).trim() });
+      }
+      if(!versos.length) throw new Error('vieram 0 versículos');
+      return versos;
+    }
+
+    // Referência do plano ("Gn 30:25-31; 31:2-3"), que pode virar várias consultas.
     async function buscarPassagem(referencia){
       if(PASSAGENS[referencia]) return PASSAGENS[referencia];
       const segmentos = segmentosDaReferencia(referencia);
       if(!segmentos.length) throw new Error('referência não reconhecida');
       const versos = [];
-      for(const seg of segmentos){
-        const r = await fetch('https://bible-api.com/' + encodeURIComponent(seg) + '?translation=almeida');
-        if(!r.ok) throw new Error('a busca respondeu ' + r.status);
-        const j = await r.json();
-        if(j && j.verses && j.verses.length){
-          j.verses.forEach(v => versos.push({
-            cap: v.chapter, n: v.verse, texto: String(v.text || '').trim()
-          }));
-        } else if(j && j.text){
-          versos.push({ cap: null, n: null, texto: String(j.text).trim() });
-        } else throw new Error('vieram 0 versículos');
-      }
-      if(!versos.length) throw new Error('vieram 0 versículos');
+      for(const seg of segmentos) (await buscarConsulta(seg)).forEach(v => versos.push(v));
       PASSAGENS[referencia] = versos;
       return versos;
     }
+
+    // Citação já traduzida ("2 timothy 3:16"), de uma vez só.
+    async function buscarPassagemPorConsulta(consulta){
+      if(PASSAGENS[consulta]) return PASSAGENS[consulta];
+      const versos = await buscarConsulta(consulta);
+      PASSAGENS[consulta] = versos;
+      return versos;
+    }
+
+    // ---- Referência citada no texto do requisito ----
+    // Fora do plano de leitura, o catálogo escreve a passagem por extenso:
+    // "João 3:16", "I Coríntios 9:24-27", "II Timóteo 3:16". Aqui elas viram
+    // toque, que abre o mesmo leitor num modal.
+    const LIVRO_POR_EXTENSO = {
+      'genesis':'genesis','exodo':'exodus','levitico':'leviticus','numeros':'numbers',
+      'deuteronomio':'deuteronomy','josue':'joshua','juizes':'judges','rute':'ruth',
+      'samuel':'samuel','reis':'kings','cronicas':'chronicles','esdras':'ezra',
+      'neemias':'nehemiah','ester':'esther','jo':'job','salmo':'psalms','salmos':'psalms',
+      'proverbios':'proverbs','eclesiastes':'ecclesiastes','cantares':'song of solomon',
+      'isaias':'isaiah','jeremias':'jeremiah','lamentacoes':'lamentations','ezequiel':'ezekiel',
+      'daniel':'daniel','oseias':'hosea','joel':'joel','amos':'amos','jonas':'jonah',
+      'miqueias':'micah','habacuque':'habakkuk','sofonias':'zephaniah','ageu':'haggai',
+      'zacarias':'zechariah','malaquias':'malachi','mateus':'matthew','marcos':'mark',
+      'lucas':'luke','joao':'john','atos':'acts','romanos':'romans','corintios':'corinthians',
+      'galatas':'galatians','efesios':'ephesians','filipenses':'philippians',
+      'colossenses':'colossians','tessalonicenses':'thessalonians','timoteo':'timothy',
+      'tito':'titus','filemom':'philemon','hebreus':'hebrews','tiago':'james',
+      'pedro':'peter','judas':'jude','apocalipse':'revelation'
+    };
+    // Livros que só existem numerados: sem o número na frente, não dá pra saber
+    // qual é, então a referência não vira toque.
+    const LIVRO_PRECISA_NUMERO = { 'samuel':1, 'reis':1, 'cronicas':1, 'corintios':1,
+      'tessalonicenses':1, 'timoteo':1, 'pedro':1 };
+
+    const ROMANO = { 'i':'1', 'ii':'2', 'iii':'3' };
+    const NOMES_EXTENSO = Object.keys(LIVRO_POR_EXTENSO).sort((a, b) => b.length - a.length);
+
+    function semAcento(t){
+      return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    }
+
+    // "II Timóteo 3:16" → "2 timothy 3:16". Devolve null quando não reconhece,
+    // pra a referência continuar sendo texto comum em vez de abrir errado.
+    function passagemDaCitacao(citacao){
+      const m = String(citacao || '').match(/^\s*(?:([123]|[IiVv]{1,3})\s+)?(\S+)\s+(\d+)(?:\s*:\s*(\d+(?:\s*-\s*\d+)?))?\s*$/);
+      if(!m) return null;
+      const chave = semAcento(m[2]);
+      // "Jó" e "Jo" viram a mesma chave sem acento, e são livros diferentes:
+      // com acento é Jó, sem acento é João (é assim que o catálogo escreve nos
+      // planos de leitura: "Mt 24, Mc 7, Lc 1:4-25, Jo 1").
+      const livro = chave === 'jo'
+        ? (/ó/i.test(m[2]) ? 'job' : 'john')
+        : LIVRO_POR_EXTENSO[chave];
+      if(!livro) return null;
+      let numero = m[1] ? (ROMANO[String(m[1]).toLowerCase()] || m[1]) : '';
+      if(LIVRO_PRECISA_NUMERO[chave] && !numero) return null;
+      const nome = (numero ? numero + ' ' : '') + livro;
+      return nome + ' ' + m[3] + (m[4] ? ':' + m[4].replace(/\s+/g, '') : '');
+    }
+
+    // O padrão pega "palavra + número" e deixa passagemDaCitacao decidir se
+    // aquilo é mesmo um livro. Listar os nomes no próprio regex não funciona:
+    // as chaves do mapa são sem acento e o texto do catálogo tem acento.
+    // "Lição 3" casa aqui e é descartado logo depois, virando texto comum.
+    const RX_CITACAO = /(?:(?:[123]|I{1,3})\s+)?[A-Za-z\u00C0-\u00FF]{2,20}\s+\d+(?:\s*:\s*\d+(?:\s*-\s*\d+)?)?/g;
+
+    function ligarCitacoes(el){
+      if(!el) return;
+      const texto = el.textContent || '';
+      if(!texto) return;
+      RX_CITACAO.lastIndex = 0;
+      let m, ultimo = 0, achou = false;
+      const pedacos = document.createDocumentFragment();
+      while((m = RX_CITACAO.exec(texto)) !== null){
+        // O trecho e a posição precisam sair do match agora: quem escuta o
+        // clique só roda depois do laço, e aí "m" já é null.
+        const trecho = m[0];
+        const onde = m.index;
+        const consulta = passagemDaCitacao(trecho);
+        if(!consulta) continue;
+        achou = true;
+        if(onde > ultimo) pedacos.appendChild(document.createTextNode(texto.slice(ultimo, onde)));
+        const botao = document.createElement('button');
+        botao.type = 'button';
+        botao.className = 'cl-ref-link';
+        botao.textContent = trecho;
+        botao.addEventListener('click', () => abrirPassagemModal(trecho, consulta));
+        pedacos.appendChild(botao);
+        ultimo = onde + trecho.length;
+      }
+      if(!achou) return;
+      if(ultimo < texto.length) pedacos.appendChild(document.createTextNode(texto.slice(ultimo)));
+      el.textContent = '';
+      el.appendChild(pedacos);
+    }
+
+    // Desenha os versículos num contêiner qualquer — serve pro modal e pra
+    // tela cheia, que usam a mesma busca.
+    function desenharVersos(alvo, versos, prefixo){
+      alvo.innerHTML = '';
+      // Com um capítulo só, o título da passagem já diz qual é — repetir
+      // "Capítulo 3" em cima de um versículo só é ruído.
+      const varios = versos.some(v => v.cap && v.cap !== versos[0].cap);
+      let capMostrado = null;
+      versos.forEach(v => {
+        if(varios && v.cap && v.cap !== capMostrado){
+          capMostrado = v.cap;
+          const h = document.createElement('p');
+          h.className = prefixo + '-cap';
+          h.textContent = 'Capítulo ' + v.cap;
+          alvo.appendChild(h);
+        }
+        const linha = document.createElement('p');
+        if(v.n){
+          const num = document.createElement('span');
+          num.className = prefixo + '-num';
+          num.textContent = v.n;
+          linha.appendChild(num);
+        }
+        linha.appendChild(document.createTextNode(v.texto));
+        alvo.appendChild(linha);
+      });
+      const fonte = document.createElement('p');
+      fonte.className = prefixo + '-fonte';
+      fonte.textContent = 'Almeida — texto buscado em bible-api.com';
+      alvo.appendChild(fonte);
+    }
+
+    function desenharFalha(alvo, rotulo, erro, prefixo, aoTentar){
+      alvo.innerHTML = '';
+      const aviso = document.createElement('p');
+      aviso.className = prefixo + '-aviso';
+      aviso.innerHTML = 'Não consegui trazer o texto de <b></b> agora. ' +
+        'Costuma ser falta de internet no momento.';
+      aviso.querySelector('b').textContent = rotulo;
+      alvo.appendChild(aviso);
+      const detalhe = document.createElement('p');
+      detalhe.className = prefixo + '-fonte';
+      detalhe.textContent = 'Motivo: ' + (erro && erro.message ? erro.message : 'desconhecido');
+      alvo.appendChild(detalhe);
+      const retry = document.createElement('button');
+      retry.type = 'button';
+      retry.className = prefixo + '-retry';
+      retry.textContent = 'Tentar de novo';
+      retry.addEventListener('click', aoTentar);
+      alvo.appendChild(retry);
+    }
+
+    const passagemOverlay = document.getElementById('clPassagemOverlay');
+    const passagemTitulo = document.getElementById('clPassagemTitulo');
+    const passagemCorpo = document.getElementById('clPassagemCorpo');
+    const passagemClose = document.getElementById('clPassagemClose');
+    let passagemAberta = null;
+
+    function abrirPassagemModal(rotulo, consulta){
+      if(!passagemOverlay || !passagemCorpo) return;
+      passagemAberta = consulta;
+      passagemTitulo.textContent = rotulo;
+      passagemCorpo.innerHTML = '<p class="cl-passagem-aviso">Buscando o texto…</p>';
+      mostrarNaViewAtiva(passagemOverlay);
+      buscarPassagemPorConsulta(consulta).then(versos => {
+        if(passagemAberta !== consulta) return;
+        desenharVersos(passagemCorpo, versos, 'cl-passagem');
+      }).catch(erro => {
+        if(passagemAberta !== consulta) return;
+        desenharFalha(passagemCorpo, rotulo, erro, 'cl-passagem', () => abrirPassagemModal(rotulo, consulta));
+      });
+    }
+
+    if(passagemClose) passagemClose.addEventListener('click', () => {
+      passagemAberta = null;
+      passagemOverlay.classList.remove('show');
+    });
+    if(passagemOverlay) passagemOverlay.addEventListener('click', (e) => {
+      if(e.target === passagemOverlay){ passagemAberta = null; passagemOverlay.classList.remove('show'); }
+    });
 
     // ---- Tela cheia do plano de leitura ----
     // Mesmos dados do bloco de sub-itens; só muda onde aparecem. Marcar aqui
@@ -15926,49 +16150,10 @@
       buscarPassagem(sub.texto).then(versos => {
         // Outra referência pode ter sido aberta enquanto esta buscava.
         if(!lbLendo || lbLendo.id !== sub.id) return;
-        lbLeitorCorpo.innerHTML = '';
-        let capMostrado = null;
-        versos.forEach(v => {
-          if(v.cap && v.cap !== capMostrado){
-            capMostrado = v.cap;
-            const h = document.createElement('p');
-            h.className = 'lb-leitor-cap';
-            h.textContent = 'Capítulo ' + v.cap;
-            lbLeitorCorpo.appendChild(h);
-          }
-          const linha = document.createElement('p');
-          if(v.n){
-            const num = document.createElement('span');
-            num.className = 'lb-leitor-num';
-            num.textContent = v.n;
-            linha.appendChild(num);
-          }
-          linha.appendChild(document.createTextNode(v.texto));
-          lbLeitorCorpo.appendChild(linha);
-        });
-        const fonte = document.createElement('p');
-        fonte.className = 'lb-leitor-fonte';
-        fonte.textContent = 'Almeida — texto buscado em bible-api.com';
-        lbLeitorCorpo.appendChild(fonte);
+        desenharVersos(lbLeitorCorpo, versos, 'lb-leitor');
       }).catch(erro => {
         if(!lbLendo || lbLendo.id !== sub.id) return;
-        lbLeitorCorpo.innerHTML = '';
-        const aviso = document.createElement('p');
-        aviso.className = 'lb-leitor-aviso';
-        aviso.innerHTML = 'Não consegui trazer o texto de <b></b> agora. ' +
-          'Costuma ser falta de internet no momento. A marcação continua funcionando normalmente.';
-        aviso.querySelector('b').textContent = sub.texto;
-        lbLeitorCorpo.appendChild(aviso);
-        const detalhe = document.createElement('p');
-        detalhe.className = 'lb-leitor-fonte';
-        detalhe.textContent = 'Motivo: ' + (erro && erro.message ? erro.message : 'desconhecido');
-        lbLeitorCorpo.appendChild(detalhe);
-        const retry = document.createElement('button');
-        retry.type = 'button';
-        retry.className = 'lb-leitor-retry';
-        retry.textContent = 'Tentar de novo';
-        retry.addEventListener('click', () => abrirLeitor(sub));
-        lbLeitorCorpo.appendChild(retry);
+        desenharFalha(lbLeitorCorpo, sub.texto, erro, 'lb-leitor', () => abrirLeitor(sub));
       });
     }
 
@@ -16303,6 +16488,8 @@
         statusPickObs.textContent = observacao;
         statusPickObs.style.display = observacao ? '' : 'none';
       }
+      // Toda passagem citada no texto vira toque, e abre o leitor por cima.
+      [statusPickSub, statusPickDesc, statusPickObs].forEach(ligarCitacoes);
       subEmEdicao = null;
       renderSubitens(card);
       const currentStatus = (CLASS_PROGRESS[currentClass][selectedStudent] || {})[card.dataset.title] || 'todo';
