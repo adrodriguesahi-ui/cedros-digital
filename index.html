@@ -1971,6 +1971,65 @@
   .lb-item.feito .lb-marca{ background:var(--lb-verde); border-color:var(--lb-verde); color:#fff; }
   .lb-ref{ flex:1; min-width:0; line-height:1.3; word-break:break-word; }
 
+  /* ===== Acerte ou Cai ===== */
+  .qz-entrada{
+    width:100%; display:flex; align-items:center; gap:11px; padding:13px;
+    margin-bottom:18px; border-radius:14px; cursor:pointer; text-align:left;
+    border:1px solid rgba(216,168,62,0.28); font-family:inherit;
+    background:linear-gradient(135deg, rgba(216,168,62,0.16), rgba(12,26,15,0.5));
+    color:var(--cream);
+  }
+  .qz-entrada:active{ transform:scale(0.98); }
+  .qz-entrada-icone{ font-size:22px; flex-shrink:0; }
+  .qz-entrada-txt{ flex:1; min-width:0; }
+  .qz-entrada-txt b{ display:block; font-size:14px; font-weight:900; }
+  .qz-entrada-txt i{ display:block; margin-top:2px; font-size:11.5px; font-style:normal; color:rgba(245,239,225,0.6); }
+  .qz-entrada > svg{ flex-shrink:0; color:rgba(245,239,225,0.45); }
+
+  .qz-capa{
+    text-align:center; padding:20px 16px; border-radius:16px; margin-bottom:14px;
+    border:1px solid rgba(216,168,62,0.22);
+    background:linear-gradient(135deg, rgba(216,168,62,0.14), rgba(12,26,15,0.55));
+  }
+  .qz-capa-icone{ font-size:38px; display:block; margin-bottom:6px; }
+  .qz-capa h4{ margin:0 0 6px; font-size:19px; font-weight:900; color:var(--cream); }
+  .qz-capa p{ margin:0; font-size:12.5px; line-height:1.55; color:rgba(245,239,225,0.65); }
+
+  .qz-placar{ display:flex; gap:10px; margin-bottom:14px; }
+  .qz-placar > div{
+    flex:1; padding:12px; border-radius:13px; text-align:center;
+    border:1px solid rgba(255,255,255,0.09); background:rgba(255,255,255,0.03);
+  }
+  .qz-placar span{ display:block; font-size:10px; font-weight:800; letter-spacing:0.03em; text-transform:uppercase; color:rgba(245,239,225,0.45); }
+  .qz-placar b{ display:block; margin-top:3px; font-size:22px; font-weight:900; color:var(--gold); }
+  .qz-btn-largo{ width:100%; margin-bottom:10px; }
+
+  .qz-barra{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .qz-barra-acertos{ font-size:13px; font-weight:900; color:var(--accent); }
+  .qz-barra-fonte{ font-size:10.5px; font-weight:800; letter-spacing:0.03em; text-transform:uppercase; color:rgba(245,239,225,0.4); }
+  .qz-pergunta{
+    margin:0 0 16px; font-size:16px; line-height:1.5; font-weight:800; color:var(--cream);
+  }
+  .qz-alternativas{ display:flex; flex-direction:column; gap:9px; }
+  .qz-alt{
+    width:100%; padding:14px; border-radius:13px; cursor:pointer; text-align:left;
+    border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04);
+    color:var(--cream); font-family:inherit; font-size:13.5px; font-weight:700;
+    line-height:1.4;
+  }
+  .qz-alt:active{ transform:scale(0.99); }
+  .qz-alt.certa{ border-color:var(--accent); background:rgba(63,203,107,0.16); }
+  .qz-alt.errada{ border-color:#FF6B5C; background:rgba(255,107,92,0.14); }
+  .qz-alt:disabled{ cursor:default; }
+  .qz-resposta-certa{
+    margin:0 0 14px; padding:11px 13px; border-radius:12px; font-size:12.5px; line-height:1.5;
+    background:rgba(63,203,107,0.1); border:1px solid rgba(63,203,107,0.25); color:rgba(245,239,225,0.8);
+  }
+  .qz-resposta-certa b{ color:var(--accent); }
+  .qz-alt-edit{ display:flex; flex-direction:column; gap:7px; margin-top:10px; }
+  .qz-alt-edit-linha{ display:flex; align-items:center; gap:8px; }
+  .qz-alt-edit-linha input[type="radio"]{ flex-shrink:0; width:18px; height:18px; accent-color:var(--accent); }
+
   /* Barra de dias do período, no editor do evento. */
   .pl-dias-periodo{
     margin:0 0 14px; padding:11px 12px; border-radius:13px;
@@ -11046,6 +11105,15 @@
         <div class="pl-content">
           <p class="sp-disclaimer">Tarefas cadastradas pela Diretoria. Marque como concluída pra somar pontos e subir no ranking "Seja Destaque".</p>
 
+          <button type="button" class="qz-entrada" id="qzEntradaBtn">
+            <span class="qz-entrada-icone">🎯</span>
+            <span class="qz-entrada-txt">
+              <b>Acerte ou Cai</b>
+              <i id="qzEntradaSub">Responda sem errar e suba no ranking.</i>
+            </span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+
           <h4 class="un-section-title" style="margin-top:0;">Missões ativas</h4>
           <div class="un-mini-list" id="msMissionList" style="margin-bottom:18px;">
             <p class="un-empty-hint">Carregando...</p>
@@ -11079,6 +11147,85 @@
             <button type="button" class="pl-btn pl-btn-danger" id="msDeleteBtn" style="display:none;">Excluir</button>
             <button type="button" class="pl-btn pl-btn-primary" id="msSaveBtn">Salvar</button>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== VIEW: ACERTE OU CAI =====
+         Quiz do Desafio Só Desbravador. Errou, acabou; a melhor rodada de cada
+         um vira ponto no ranking "Seja Destaque", junto com as Missões. -->
+    <section class="view view-planning" id="view-quiz">
+      <div class="pl-scroll">
+        <div class="pl-topbar">
+          <button type="button" class="pl-back" data-back="view-missions" aria-label="Voltar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h3 class="pl-title">Acerte ou Cai</h3>
+          <span class="pl-topbar-spacer" aria-hidden="true"></span>
+        </div>
+        <div class="pl-content">
+
+          <!-- 1. Antes de começar -->
+          <div id="qzInicio">
+            <div class="qz-capa">
+              <span class="qz-capa-icone">🎯</span>
+              <h4>Acerte ou Cai</h4>
+              <p>Uma pergunta de cada vez, sobre as classes e as especialidades. Errou, a rodada acaba. Quanto mais longe, mais pontos.</p>
+            </div>
+            <div class="qz-placar">
+              <div><span>Seu recorde</span><b id="qzRecorde">0</b></div>
+              <div><span>Perguntas no banco</span><b id="qzBanco">—</b></div>
+            </div>
+            <button type="button" class="pl-btn pl-btn-primary qz-btn-largo" id="qzComecarBtn">Começar rodada</button>
+            <p class="pl-reminder-hint" id="qzAdminHint" style="display:none;">Você também pode cadastrar perguntas próprias no botão abaixo — as que dependem de conhecimento bíblico ou de doutrina precisam ser escritas por você.</p>
+            <button type="button" class="pl-list-add-btn" id="qzGerenciarBtn" style="display:none;">Perguntas cadastradas pelo clube</button>
+          </div>
+
+          <!-- 2. Jogando -->
+          <div id="qzJogo" style="display:none;">
+            <div class="qz-barra">
+              <span class="qz-barra-acertos" id="qzAcertos">0 acertos</span>
+              <span class="qz-barra-fonte" id="qzFonte"></span>
+            </div>
+            <p class="qz-pergunta" id="qzPergunta"></p>
+            <div class="qz-alternativas" id="qzAlternativas"></div>
+          </div>
+
+          <!-- 3. Fim da rodada -->
+          <div id="qzFim" style="display:none;">
+            <div class="qz-capa">
+              <span class="qz-capa-icone" id="qzFimIcone">💪</span>
+              <h4 id="qzFimTitulo">Fim da rodada</h4>
+              <p id="qzFimTexto"></p>
+            </div>
+            <div class="qz-placar">
+              <div><span>Acertos</span><b id="qzFimAcertos">0</b></div>
+              <div><span>Seu recorde</span><b id="qzFimRecorde">0</b></div>
+            </div>
+            <p class="qz-resposta-certa" id="qzRespostaCerta"></p>
+            <button type="button" class="pl-btn pl-btn-primary qz-btn-largo" id="qzDeNovoBtn">Jogar de novo</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Perguntas cadastradas pelo clube -->
+      <div class="pl-modal-overlay" id="qzAdminOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Perguntas do clube</h4>
+            <button type="button" class="pl-modal-close" id="qzAdminClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <p class="pl-reminder-hint" style="margin-top:0;">Estas entram no jogo junto com as geradas do catálogo. Marque a alternativa certa.</p>
+          <label class="pl-field-label" style="margin-top:0;">Pergunta</label>
+          <textarea class="pl-input pl-textarea" id="qzFieldPergunta" rows="2" maxlength="200" placeholder="Ex.: Em que ano foi fundado o Clube de Desbravadores?"></textarea>
+          <div class="qz-alt-edit" id="qzAltEdit"></div>
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-primary" id="qzAdminSalvar">Adicionar</button>
+          </div>
+          <div class="un-mini-list" id="qzAdminLista" style="margin-top:14px;"></div>
         </div>
       </div>
     </section>
@@ -23078,10 +23225,15 @@ const REQ_SUMMARIES = {
 
     window.__msComputeRanking = async function(){
       if(!supa) return [];
-      const [{ data: concluidas }, { data: missoes }, { data: users }] = await Promise.all([
+      // A tabela do quiz pode não existir ainda; o ranking das Missões não
+      // pode cair por causa disso.
+      const pegarPartidas = supa.from('quiz_partidas').select('usuario_id, pontos')
+        .then(r => r.error ? { data: [] } : r, () => ({ data: [] }));
+      const [{ data: concluidas }, { data: missoes }, { data: users }, { data: partidas }] = await Promise.all([
         supa.from('missoes_concluidas').select('usuario_id, missao_id'),
         supa.from('missoes').select('id, pontos'),
-        supa.from('usuarios').select('id, nome')
+        supa.from('usuarios').select('id, nome'),
+        pegarPartidas
       ]);
       const pointsByMission = {};
       (missoes || []).forEach(m => { pointsByMission[m.id] = m.pontos || 0; });
@@ -23090,6 +23242,16 @@ const REQ_SUMMARIES = {
       const totals = {};
       (concluidas || []).forEach(row => {
         totals[row.usuario_id] = (totals[row.usuario_id] || 0) + (pointsByMission[row.missao_id] || 0);
+      });
+      // Do Acerte ou Cai entra só a melhor rodada de cada um — senão quem joga
+      // muitas vezes passa na frente de quem foi mais longe.
+      const melhorPartida = {};
+      (partidas || []).forEach(row => {
+        const p = row.pontos || 0;
+        if(p > (melhorPartida[row.usuario_id] || 0)) melhorPartida[row.usuario_id] = p;
+      });
+      Object.keys(melhorPartida).forEach(id => {
+        totals[id] = (totals[id] || 0) + melhorPartida[id];
       });
       return Object.keys(totals)
         .map(id => ({ nome: nameById[id] || 'Desconhecido', total: totals[id] }))
@@ -23241,6 +23403,377 @@ const REQ_SUMMARIES = {
       renderRanking();
     };
     document.addEventListener('cedros:loggedin', () => window.__msRefresh());
+  })();
+
+  // ===== Acerte ou Cai: quiz do Desafio Só Desbravador =====
+  // Perguntas de duas fontes. As geradas saem do próprio catálogo do app
+  // (SPECIALTY_DB, REQ_SUMMARIES e os cartões de requisito) — a resposta certa
+  // vem do dado, não de conhecimento de fora, então não há gabarito inventado.
+  // As de conhecimento (Bíblia, doutrina, história) ficam em quiz_perguntas,
+  // escritas por quem responde pelo clube.
+  (function(){
+    function baralhar(lista){
+      const copia = lista.slice();
+      for(let i = copia.length - 1; i > 0; i--){
+        const j = Math.floor(Math.random() * (i + 1));
+        const t = copia[i]; copia[i] = copia[j]; copia[j] = t;
+      }
+      return copia;
+    }
+
+    // Monta a pergunta já com as alternativas embaralhadas, e diz qual índice
+    // ficou sendo o certo.
+    function montar(pergunta, certa, erradas, fonte){
+      const unicas = [];
+      erradas.forEach(e => { if(e !== certa && unicas.indexOf(e) === -1) unicas.push(e); });
+      if(unicas.length < 3) return null;
+      const alternativas = baralhar([certa].concat(unicas.slice(0, 3)));
+      return { pergunta: pergunta, alternativas: alternativas,
+               correta: alternativas.indexOf(certa), fonte: fonte };
+    }
+
+    function gerarPerguntasDoCatalogo(){
+      const perguntas = [];
+      const areas = Object.keys(SPECIALTY_DB || {});
+      if(!areas.length) return perguntas;
+
+      // 1) De qual área é esta especialidade?
+      areas.forEach(area => {
+        (SPECIALTY_DB[area] || []).forEach(esp => {
+          const outras = baralhar(areas.filter(a => a !== area)).slice(0, 3);
+          const q = montar('A especialidade \u201c' + esp + '\u201d é de qual área?', area, outras, 'especialidades');
+          if(q) perguntas.push(q);
+        });
+      });
+
+      // 2) Qual destas é uma especialidade desta área?
+      areas.forEach(area => {
+        const daArea = SPECIALTY_DB[area] || [];
+        const deFora = [];
+        areas.forEach(a => { if(a !== area) (SPECIALTY_DB[a] || []).forEach(e => deFora.push(e)); });
+        baralhar(daArea).slice(0, 6).forEach(esp => {
+          const q = montar('Qual destas é uma especialidade da área \u201c' + area + '\u201d?',
+                           esp, baralhar(deFora).slice(0, 3), 'especialidades');
+          if(q) perguntas.push(q);
+        });
+      });
+
+      // 3) Qual especialidade pede isto? (usa a descrição do catálogo)
+      const comDescricao = Object.keys(REQ_SUMMARIES || {});
+      const quantasComEsseTexto = {};
+      comDescricao.forEach(e => {
+        const t = REQ_SUMMARIES[e];
+        if(t) quantasComEsseTexto[t] = (quantasComEsseTexto[t] || 0) + 1;
+      });
+      comDescricao.forEach(esp => {
+        const texto = REQ_SUMMARIES[esp];
+        if(!texto || texto.length < 40) return;
+        // Descrição repetida em duas especialidades daria duas respostas certas.
+        if(quantasComEsseTexto[texto] > 1) return;
+        const trecho = texto.length > 150 ? texto.slice(0, 150).replace(/\s+\S*$/, '') + '…' : texto;
+        const q = montar('Qual especialidade pede: \u201c' + trecho + '\u201d?',
+                         esp, baralhar(comDescricao.filter(x => x !== esp)).slice(0, 3), 'especialidades');
+        if(q) perguntas.push(q);
+      });
+
+      // 4) De qual classe é este requisito?
+      // Só vale pra requisito cujo título existe numa classe só. "GE-1. Idade
+      // mínima" está em seis classes: a pergunta teria seis respostas certas e o
+      // jogo aceitaria uma, derrubando quem respondeu certo. 79 dos 315 títulos
+      // do catálogo se repetem assim.
+      const cards = Array.from(document.querySelectorAll('.cl-activity-card[data-class][data-title]'));
+      const classesPorTitulo = {};
+      cards.forEach(c => {
+        (classesPorTitulo[c.dataset.title] || (classesPorTitulo[c.dataset.title] = new Set())).add(c.dataset.class);
+      });
+      const classes = Array.from(new Set(cards.map(c => c.dataset.class)));
+      if(classes.length >= 4){
+        const jaUsado = {};
+        cards.forEach(card => {
+          const titulo = card.dataset.title;
+          if(classesPorTitulo[titulo].size !== 1) return;
+          if(jaUsado[titulo]) return;
+          jaUsado[titulo] = true;
+          const classe = card.dataset.class;
+          const q = montar('O requisito \u201c' + titulo + '\u201d é de qual classe?',
+                           classe, baralhar(classes.filter(c => c !== classe)).slice(0, 3), 'classes');
+          if(q) perguntas.push(q);
+        });
+      }
+
+      return perguntas;
+    }
+
+    window.__quizGerarDoCatalogo = gerarPerguntasDoCatalogo;
+
+    // ---- O jogo ----
+    const entradaBtn = document.getElementById('qzEntradaBtn');
+    const entradaSub = document.getElementById('qzEntradaSub');
+    const telaInicio = document.getElementById('qzInicio');
+    const telaJogo = document.getElementById('qzJogo');
+    const telaFim = document.getElementById('qzFim');
+    const elRecorde = document.getElementById('qzRecorde');
+    const elBanco = document.getElementById('qzBanco');
+    const elAcertos = document.getElementById('qzAcertos');
+    const elFonte = document.getElementById('qzFonte');
+    const elPergunta = document.getElementById('qzPergunta');
+    const elAlternativas = document.getElementById('qzAlternativas');
+    if(!telaInicio) return;
+
+    let baralho = [];      // perguntas da rodada, já embaralhadas
+    let posicao = 0;
+    let acertos = 0;
+    let recorde = 0;
+    let doClube = [];      // perguntas de quiz_perguntas
+    let respondendo = false;
+
+    function mostrar(qual){
+      telaInicio.style.display = qual === 'inicio' ? '' : 'none';
+      telaJogo.style.display = qual === 'jogo' ? '' : 'none';
+      telaFim.style.display = qual === 'fim' ? '' : 'none';
+    }
+
+    async function carregarDoClube(){
+      if(!supa) return [];
+      const { data, error } = await supa.from('quiz_perguntas').select('*').eq('ativa', true);
+      if(error){
+        // Tabela ainda não criada: o jogo roda só com as geradas, sem quebrar.
+        console.warn('quiz_perguntas indisponível; jogando só com as perguntas do catálogo.', error.message);
+        return [];
+      }
+      return (data || []).map(r => ({
+        pergunta: r.pergunta,
+        alternativas: Array.isArray(r.alternativas) ? r.alternativas : [],
+        correta: r.correta || 0,
+        fonte: 'clube'
+      })).filter(q => q.alternativas.length >= 2);
+    }
+
+    async function carregarRecorde(){
+      const user = window.__currentUsuario;
+      if(!supa || !user) return 0;
+      const { data, error } = await supa.from('quiz_partidas')
+        .select('acertos').eq('usuario_id', user.id)
+        .order('acertos', { ascending: false }).limit(1);
+      if(error) return 0;
+      return (data && data[0]) ? (data[0].acertos || 0) : 0;
+    }
+
+    async function abrirQuiz(){
+      mostrar('inicio');
+      showView('view-quiz');
+      doClube = await carregarDoClube();
+      const geradas = gerarPerguntasDoCatalogo();
+      if(elBanco) elBanco.textContent = geradas.length + doClube.length;
+      recorde = await carregarRecorde();
+      if(elRecorde) elRecorde.textContent = recorde;
+      if(entradaSub) entradaSub.textContent = recorde
+        ? ('Seu recorde: ' + recorde + ' acertos seguidos.')
+        : 'Responda sem errar e suba no ranking.';
+      const podeGerenciar = !!(window.__currentUsuario &&
+        ['Administrador','Diretoria','Diretoria Executiva'].indexOf(window.__currentUsuario.papel) !== -1);
+      const gerenciarBtn = document.getElementById('qzGerenciarBtn');
+      const adminHint = document.getElementById('qzAdminHint');
+      if(gerenciarBtn) gerenciarBtn.style.display = podeGerenciar ? '' : 'none';
+      if(adminHint) adminHint.style.display = podeGerenciar ? '' : 'none';
+    }
+
+    function comecar(){
+      // As do clube primeiro na fila de sorteio, pra elas aparecerem mesmo
+      // sendo poucas perto das 1500 geradas.
+      const geradas = baralhar(gerarPerguntasDoCatalogo()).slice(0, 60);
+      baralho = baralhar(doClube.concat(geradas));
+      posicao = 0;
+      acertos = 0;
+      if(!baralho.length){ alert('Ainda não há perguntas pra jogar.'); return; }
+      mostrar('jogo');
+      proxima();
+    }
+
+    function proxima(){
+      if(posicao >= baralho.length){ terminar(true); return; }
+      const q = baralho[posicao];
+      respondendo = true;
+      elAcertos.textContent = acertos + (acertos === 1 ? ' acerto' : ' acertos');
+      elFonte.textContent = q.fonte === 'clube' ? 'pergunta do clube' : q.fonte;
+      elPergunta.textContent = q.pergunta;
+      elAlternativas.innerHTML = '';
+      q.alternativas.forEach((alt, i) => {
+        const botao = document.createElement('button');
+        botao.type = 'button';
+        botao.className = 'qz-alt';
+        botao.textContent = alt;
+        botao.addEventListener('click', () => responder(i, botao));
+        elAlternativas.appendChild(botao);
+      });
+    }
+
+    function responder(escolhida, botao){
+      if(!respondendo) return;
+      respondendo = false;
+      const q = baralho[posicao];
+      const certa = escolhida === q.correta;
+      const botoes = Array.from(elAlternativas.querySelectorAll('.qz-alt'));
+      botoes.forEach((b, i) => {
+        b.disabled = true;
+        if(i === q.correta) b.classList.add('certa');
+      });
+      if(!certa) botao.classList.add('errada');
+      // Um instante pra ver a resposta certa antes de seguir ou encerrar.
+      setTimeout(() => {
+        if(certa){ acertos++; posicao++; proxima(); }
+        else terminar(false, q);
+      }, certa ? 450 : 1100);
+    }
+
+    async function terminar(acabouOBaralho, perguntaErrada){
+      mostrar('fim');
+      document.getElementById('qzFimAcertos').textContent = acertos;
+      const bateuRecorde = acertos > recorde;
+      if(bateuRecorde) recorde = acertos;
+      document.getElementById('qzFimRecorde').textContent = recorde;
+      document.getElementById('qzFimIcone').textContent = bateuRecorde ? '\u{1F3C6}' : (acertos ? '\u{1F4AA}' : '\u{1F643}');
+      document.getElementById('qzFimTitulo').textContent = acabouOBaralho
+        ? 'Acabaram as perguntas!'
+        : (bateuRecorde ? 'Novo recorde!' : 'Fim da rodada');
+      document.getElementById('qzFimTexto').textContent = acertos
+        ? (acertos + (acertos === 1 ? ' acerto seguido.' : ' acertos seguidos.'))
+        : 'Nenhum acerto desta vez. Tente de novo.';
+      const respostaEl = document.getElementById('qzRespostaCerta');
+      if(perguntaErrada){
+        respostaEl.style.display = '';
+        respostaEl.innerHTML = 'A resposta certa era <b></b>.';
+        respostaEl.querySelector('b').textContent = perguntaErrada.alternativas[perguntaErrada.correta];
+      } else respostaEl.style.display = 'none';
+
+      // Grava a rodada. O ranking usa só a melhor de cada um.
+      const user = window.__currentUsuario;
+      if(supa && user && acertos > 0){
+        const { error } = await supa.from('quiz_partidas')
+          .insert({ usuario_id: user.id, acertos: acertos, pontos: acertos });
+        if(error) console.warn('Não consegui gravar a rodada:', error.message);
+        else if(window.__msRefresh) window.__msRefresh();
+      }
+    }
+
+    // ---- Perguntas escritas pelo clube ----
+    // As de conhecimento (Bíblia, doutrina, história) não dá pra deduzir do
+    // catálogo sem inventar gabarito, então quem responde pelo clube escreve.
+    const adminOverlay = document.getElementById('qzAdminOverlay');
+    const adminLista = document.getElementById('qzAdminLista');
+    const campoPergunta = document.getElementById('qzFieldPergunta');
+    const altEdit = document.getElementById('qzAltEdit');
+
+    function montarCamposDeAlternativa(){
+      if(!altEdit) return;
+      altEdit.innerHTML = '';
+      for(let i = 0; i < 4; i++){
+        const linha = document.createElement('div');
+        linha.className = 'qz-alt-edit-linha';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'qzCorreta';
+        radio.value = String(i);
+        radio.title = 'Marcar como a certa';
+        if(i === 0) radio.checked = true;
+        const texto = document.createElement('input');
+        texto.type = 'text';
+        texto.className = 'pl-input qz-alt-edit-texto';
+        texto.maxLength = 90;
+        texto.placeholder = 'Alternativa ' + (i + 1) + (i === 0 ? ' (marque a certa →)' : '');
+        linha.appendChild(radio);
+        linha.appendChild(texto);
+        altEdit.appendChild(linha);
+      }
+    }
+
+    async function renderAdminLista(){
+      if(!adminLista || !supa) return;
+      const { data, error } = await supa.from('quiz_perguntas').select('*').order('created_at', { ascending: false });
+      adminLista.innerHTML = '';
+      if(error){
+        adminLista.innerHTML = '<p class="un-empty-hint">A tabela quiz_perguntas ainda não existe. Rode a migration de supabase/schema.sql.</p>';
+        return;
+      }
+      if(!(data || []).length){
+        adminLista.innerHTML = '<p class="un-empty-hint">Nenhuma pergunta do clube ainda. As geradas do catálogo já estão no jogo.</p>';
+        return;
+      }
+      data.forEach(row => {
+        const item = document.createElement('div');
+        item.className = 'un-mini-row';
+        const alts = Array.isArray(row.alternativas) ? row.alternativas : [];
+        item.innerHTML = '<div style="flex:1; min-width:0;"><b style="display:block; font-size:12.5px;"></b>' +
+          '<span style="font-size:11px; color:rgba(245,239,225,0.5);"></span></div>' +
+          '<button type="button" class="pl-list-remove-btn" aria-label="Excluir">×</button>';
+        item.querySelector('b').textContent = row.pergunta;
+        item.querySelector('span').textContent = 'Certa: ' + (alts[row.correta] || '—');
+        item.querySelector('button').addEventListener('click', async () => {
+          if(!confirm('Excluir esta pergunta?')) return;
+          await supa.from('quiz_perguntas').delete().eq('id', row.id);
+          renderAdminLista();
+        });
+        adminLista.appendChild(item);
+      });
+    }
+
+    const gerenciarBtn2 = document.getElementById('qzGerenciarBtn');
+    if(gerenciarBtn2) gerenciarBtn2.addEventListener('click', () => {
+      campoPergunta.value = '';
+      montarCamposDeAlternativa();
+      renderAdminLista();
+      mostrarNaViewAtivaQz(adminOverlay);
+    });
+    // Mesma armadilha dos outros modais: sendo absoluto dentro de uma .view,
+    // ele precisa estar na view ativa pra não abrir invisível.
+    function mostrarNaViewAtivaQz(overlay){
+      if(!overlay) return;
+      const ativa = document.querySelector('.view.active');
+      if(ativa) ativa.appendChild(overlay);
+      overlay.classList.add('show');
+    }
+    const adminClose = document.getElementById('qzAdminClose');
+    if(adminClose) adminClose.addEventListener('click', () => adminOverlay.classList.remove('show'));
+
+    const adminSalvar = document.getElementById('qzAdminSalvar');
+    if(adminSalvar) adminSalvar.addEventListener('click', async () => {
+      const pergunta = campoPergunta.value.trim();
+      const textos = Array.from(altEdit.querySelectorAll('.qz-alt-edit-texto')).map(i => i.value.trim());
+      const marcada = altEdit.querySelector('input[name="qzCorreta"]:checked');
+      const correta = marcada ? parseInt(marcada.value, 10) : 0;
+      const preenchidas = textos.filter(Boolean);
+      if(!pergunta){ campoPergunta.style.borderColor = '#FF6B5C'; return; }
+      campoPergunta.style.borderColor = '';
+      if(preenchidas.length < 2){ alert('Escreva pelo menos duas alternativas.'); return; }
+      if(new Set(preenchidas).size !== preenchidas.length){ alert('Há duas alternativas iguais.'); return; }
+      if(!textos[correta]){ alert('A alternativa marcada como certa está vazia.'); return; }
+      // Guarda só as preenchidas, corrigindo o índice da certa.
+      const certaTexto = textos[correta];
+      const { error } = await supa.from('quiz_perguntas').insert({
+        pergunta: pergunta,
+        alternativas: preenchidas,
+        correta: preenchidas.indexOf(certaTexto),
+        // Explícito de propósito: a leitura filtra por ativa = true, e contar
+        // com o default do banco faria a pergunta sumir do jogo em silêncio se
+        // ele mudasse.
+        ativa: true,
+        criado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
+      });
+      if(error){ alert('Não consegui salvar: ' + error.message); return; }
+      campoPergunta.value = '';
+      montarCamposDeAlternativa();
+      renderAdminLista();
+      doClube = await carregarDoClube();
+      const geradas = gerarPerguntasDoCatalogo();
+      if(elBanco) elBanco.textContent = geradas.length + doClube.length;
+    });
+
+    if(entradaBtn) entradaBtn.addEventListener('click', abrirQuiz);
+    const comecarBtn = document.getElementById('qzComecarBtn');
+    if(comecarBtn) comecarBtn.addEventListener('click', comecar);
+    const deNovoBtn = document.getElementById('qzDeNovoBtn');
+    if(deNovoBtn) deNovoBtn.addEventListener('click', comecar);
+    window.__quizAbrir = abrirQuiz;
   })();
 
   // Organização de Eventos: tarefas, responsáveis e prazos por evento

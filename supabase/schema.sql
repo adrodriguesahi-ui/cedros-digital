@@ -1191,3 +1191,40 @@ alter table eventos_agenda add column if not exists mes_fim_indice int;
 -- A programação por dia não precisou de coluna: cada item de programacao_dia
 -- passou a poder levar dia e mes, e item sem eles é do evento inteiro.
 alter table eventos_agenda add column if not exists oficiais_por_dia jsonb not null default '{}'::jsonb;
+
+-- ---------------------------------------------------------------------
+-- Acerte ou Cai: quiz do Desafio Só Desbravador.
+-- As perguntas geradas do catálogo (especialidades, classes) não ficam no
+-- banco — saem do próprio app a cada rodada. Aqui ficam só as que alguém do
+-- clube escreveu: conhecimento bíblico, doutrina, história, que o app não
+-- tem como deduzir do catálogo sem inventar gabarito.
+-- ---------------------------------------------------------------------
+create table if not exists quiz_perguntas (
+  id uuid primary key default gen_random_uuid(),
+  pergunta text not null,
+  alternativas jsonb not null default '[]'::jsonb,
+  correta int not null default 0,
+  ativa boolean not null default true,
+  criado_por text,
+  created_at timestamptz not null default now()
+);
+
+alter table quiz_perguntas enable row level security;
+
+drop policy if exists p_quiz_perguntas on quiz_perguntas;
+create policy p_quiz_perguntas on quiz_perguntas for all using(true) with check(true);
+
+-- Uma linha por rodada jogada. O ranking usa só a melhor de cada pessoa, pra
+-- quem joga muitas vezes não passar na frente de quem foi mais longe.
+create table if not exists quiz_partidas (
+  id uuid primary key default gen_random_uuid(),
+  usuario_id uuid not null,
+  acertos int not null default 0,
+  pontos int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+alter table quiz_partidas enable row level security;
+
+drop policy if exists p_quiz_partidas on quiz_partidas;
+create policy p_quiz_partidas on quiz_partidas for all using(true) with check(true);
