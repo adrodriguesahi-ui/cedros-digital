@@ -1971,7 +1971,7 @@
   .lb-item.feito .lb-marca{ background:var(--lb-verde); border-color:var(--lb-verde); color:#fff; }
   .lb-ref{ flex:1; min-width:0; line-height:1.3; word-break:break-word; }
 
-  /* ===== Acerte ou Cai ===== */
+  /* ===== Trilha do Saber ===== */
   .qz-entrada{
     width:100%; display:flex; align-items:center; gap:11px; padding:13px;
     margin-bottom:18px; border-radius:14px; cursor:pointer; text-align:left;
@@ -2007,6 +2007,21 @@
   .qz-barra{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
   .qz-barra-acertos{ font-size:13px; font-weight:900; color:var(--accent); }
   .qz-barra-fonte{ font-size:10.5px; font-weight:800; letter-spacing:0.03em; text-transform:uppercase; color:rgba(245,239,225,0.4); }
+  .qz-tempo{ display:flex; align-items:center; gap:9px; margin-bottom:16px; }
+  .qz-tempo-barra{
+    flex:1; height:7px; border-radius:99px; background:rgba(255,255,255,0.1); overflow:hidden;
+  }
+  .qz-tempo-barra i{
+    display:block; height:100%; width:100%; border-radius:99px; background:var(--accent);
+    transition:width 1s linear, background .3s ease;
+  }
+  .qz-tempo.apertado .qz-tempo-barra i{ background:#E8B93B; }
+  .qz-tempo.acabando .qz-tempo-barra i{ background:#FF6B5C; }
+  .qz-tempo-num{
+    min-width:26px; text-align:right; font-size:13px; font-weight:900; color:rgba(245,239,225,0.6);
+  }
+  .qz-tempo.acabando .qz-tempo-num{ color:#FF6B5C; }
+
   .qz-pergunta{
     margin:0 0 16px; font-size:16px; line-height:1.5; font-weight:800; color:var(--cream);
   }
@@ -11106,10 +11121,10 @@
           <p class="sp-disclaimer">Tarefas cadastradas pela Diretoria. Marque como concluída pra somar pontos e subir no ranking "Seja Destaque".</p>
 
           <button type="button" class="qz-entrada" id="qzEntradaBtn">
-            <span class="qz-entrada-icone">🎯</span>
+            <span class="qz-entrada-icone">🧭</span>
             <span class="qz-entrada-txt">
-              <b>Acerte ou Cai</b>
-              <i id="qzEntradaSub">Responda sem errar e suba no ranking.</i>
+              <b>Trilha do Saber</b>
+              <i id="qzEntradaSub">Quantos passos você aguenta sem tropeçar?</i>
             </span>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
@@ -11160,7 +11175,7 @@
           <button type="button" class="pl-back" data-back="view-missions" aria-label="Voltar">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
-          <h3 class="pl-title">Acerte ou Cai</h3>
+          <h3 class="pl-title">Trilha do Saber</h3>
           <span class="pl-topbar-spacer" aria-hidden="true"></span>
         </div>
         <div class="pl-content">
@@ -11168,12 +11183,12 @@
           <!-- 1. Antes de começar -->
           <div id="qzInicio">
             <div class="qz-capa">
-              <span class="qz-capa-icone">🎯</span>
-              <h4>Acerte ou Cai</h4>
-              <p>Uma pergunta de cada vez, sobre as classes e as especialidades. Errou, a rodada acaba. Quanto mais longe, mais pontos.</p>
+              <span class="qz-capa-icone">🧭</span>
+              <h4>Trilha do Saber</h4>
+              <p>Cada resposta certa é um passo na trilha. Errou ou deixou o tempo acabar, a caminhada termina — e quanto mais longe você for, mais pontos leva.</p>
             </div>
             <div class="qz-placar">
-              <div><span>Seu recorde</span><b id="qzRecorde">0</b></div>
+              <div><span>Sua maior trilha</span><b id="qzRecorde">0</b></div>
               <div><span>Perguntas no banco</span><b id="qzBanco">—</b></div>
             </div>
             <button type="button" class="pl-btn pl-btn-primary qz-btn-largo" id="qzComecarBtn">Começar rodada</button>
@@ -11184,8 +11199,12 @@
           <!-- 2. Jogando -->
           <div id="qzJogo" style="display:none;">
             <div class="qz-barra">
-              <span class="qz-barra-acertos" id="qzAcertos">0 acertos</span>
+              <span class="qz-barra-acertos" id="qzAcertos">0 passos</span>
               <span class="qz-barra-fonte" id="qzFonte"></span>
+            </div>
+            <div class="qz-tempo">
+              <span class="qz-tempo-barra"><i id="qzTempoBarra"></i></span>
+              <span class="qz-tempo-num" id="qzTempoNum">30</span>
             </div>
             <p class="qz-pergunta" id="qzPergunta"></p>
             <div class="qz-alternativas" id="qzAlternativas"></div>
@@ -11199,8 +11218,8 @@
               <p id="qzFimTexto"></p>
             </div>
             <div class="qz-placar">
-              <div><span>Acertos</span><b id="qzFimAcertos">0</b></div>
-              <div><span>Seu recorde</span><b id="qzFimRecorde">0</b></div>
+              <div><span>Passos</span><b id="qzFimAcertos">0</b></div>
+              <div><span>Sua maior trilha</span><b id="qzFimRecorde">0</b></div>
             </div>
             <p class="qz-resposta-certa" id="qzRespostaCerta"></p>
             <button type="button" class="pl-btn pl-btn-primary qz-btn-largo" id="qzDeNovoBtn">Jogar de novo</button>
@@ -23243,7 +23262,7 @@ const REQ_SUMMARIES = {
       (concluidas || []).forEach(row => {
         totals[row.usuario_id] = (totals[row.usuario_id] || 0) + (pointsByMission[row.missao_id] || 0);
       });
-      // Do Acerte ou Cai entra só a melhor rodada de cada um — senão quem joga
+      // Do Trilha do Saber entra só a melhor rodada de cada um — senão quem joga
       // muitas vezes passa na frente de quem foi mais longe.
       const melhorPartida = {};
       (partidas || []).forEach(row => {
@@ -23405,7 +23424,7 @@ const REQ_SUMMARIES = {
     document.addEventListener('cedros:loggedin', () => window.__msRefresh());
   })();
 
-  // ===== Acerte ou Cai: quiz do Desafio Só Desbravador =====
+  // ===== Trilha do Saber: quiz do Desafio Só Desbravador =====
   // Perguntas de duas fontes. As geradas saem do próprio catálogo do app
   // (SPECIALTY_DB, REQ_SUMMARIES e os cartões de requisito) — a resposta certa
   // vem do dado, não de conhecimento de fora, então não há gabarito inventado.
@@ -23527,6 +23546,53 @@ const REQ_SUMMARIES = {
     let doClube = [];      // perguntas de quiz_perguntas
     let respondendo = false;
 
+    // ---- Cronômetro ----
+    const SEGUNDOS_POR_PERGUNTA = 30;
+    const elTempo = document.querySelector('#view-quiz .qz-tempo');
+    const elTempoBarra = document.getElementById('qzTempoBarra');
+    const elTempoNum = document.getElementById('qzTempoNum');
+    let tempoRestante = 0;
+    let tempoTimer = null;
+
+    function pararRelogio(){
+      if(tempoTimer){ clearInterval(tempoTimer); tempoTimer = null; }
+    }
+
+    function pintarRelogio(){
+      if(elTempoBarra) elTempoBarra.style.width = (tempoRestante / SEGUNDOS_POR_PERGUNTA * 100) + '%';
+      if(elTempoNum) elTempoNum.textContent = tempoRestante;
+      if(elTempo){
+        elTempo.classList.toggle('apertado', tempoRestante <= 15 && tempoRestante > 7);
+        elTempo.classList.toggle('acabando', tempoRestante <= 7);
+      }
+    }
+
+    function comecarRelogio(){
+      pararRelogio();
+      tempoRestante = SEGUNDOS_POR_PERGUNTA;
+      pintarRelogio();
+      tempoTimer = setInterval(() => {
+        tempoRestante--;
+        pintarRelogio();
+        if(tempoRestante <= 0){
+          pararRelogio();
+          acabouOTempo();
+        }
+      }, 1000);
+    }
+
+    // Tempo esgotado conta como erro: mostra a certa e encerra a caminhada.
+    function acabouOTempo(){
+      if(!respondendo) return;
+      respondendo = false;
+      const q = baralho[posicao];
+      Array.from(elAlternativas.querySelectorAll('.qz-alt')).forEach((b, i) => {
+        b.disabled = true;
+        if(i === q.correta) b.classList.add('certa');
+      });
+      setTimeout(() => terminar(false, q, true), 1100);
+    }
+
     function mostrar(qual){
       telaInicio.style.display = qual === 'inicio' ? '' : 'none';
       telaJogo.style.display = qual === 'jogo' ? '' : 'none';
@@ -23586,6 +23652,7 @@ const REQ_SUMMARIES = {
       posicao = 0;
       acertos = 0;
       if(!baralho.length){ alert('Ainda não há perguntas pra jogar.'); return; }
+      pararRelogio();
       mostrar('jogo');
       proxima();
     }
@@ -23594,7 +23661,7 @@ const REQ_SUMMARIES = {
       if(posicao >= baralho.length){ terminar(true); return; }
       const q = baralho[posicao];
       respondendo = true;
-      elAcertos.textContent = acertos + (acertos === 1 ? ' acerto' : ' acertos');
+      elAcertos.textContent = acertos + (acertos === 1 ? ' passo' : ' passos');
       elFonte.textContent = q.fonte === 'clube' ? 'pergunta do clube' : q.fonte;
       elPergunta.textContent = q.pergunta;
       elAlternativas.innerHTML = '';
@@ -23606,11 +23673,13 @@ const REQ_SUMMARIES = {
         botao.addEventListener('click', () => responder(i, botao));
         elAlternativas.appendChild(botao);
       });
+      comecarRelogio();
     }
 
     function responder(escolhida, botao){
       if(!respondendo) return;
       respondendo = false;
+      pararRelogio();
       const q = baralho[posicao];
       const certa = escolhida === q.correta;
       const botoes = Array.from(elAlternativas.querySelectorAll('.qz-alt'));
@@ -23626,7 +23695,8 @@ const REQ_SUMMARIES = {
       }, certa ? 450 : 1100);
     }
 
-    async function terminar(acabouOBaralho, perguntaErrada){
+    async function terminar(acabouOBaralho, perguntaErrada, porTempo){
+      pararRelogio();
       mostrar('fim');
       document.getElementById('qzFimAcertos').textContent = acertos;
       const bateuRecorde = acertos > recorde;
@@ -23634,11 +23704,11 @@ const REQ_SUMMARIES = {
       document.getElementById('qzFimRecorde').textContent = recorde;
       document.getElementById('qzFimIcone').textContent = bateuRecorde ? '\u{1F3C6}' : (acertos ? '\u{1F4AA}' : '\u{1F643}');
       document.getElementById('qzFimTitulo').textContent = acabouOBaralho
-        ? 'Acabaram as perguntas!'
-        : (bateuRecorde ? 'Novo recorde!' : 'Fim da rodada');
+        ? 'Você percorreu a trilha inteira!'
+        : (porTempo ? 'O tempo acabou' : (bateuRecorde ? 'Trilha mais longa!' : 'Fim da caminhada'));
       document.getElementById('qzFimTexto').textContent = acertos
-        ? (acertos + (acertos === 1 ? ' acerto seguido.' : ' acertos seguidos.'))
-        : 'Nenhum acerto desta vez. Tente de novo.';
+        ? (acertos + (acertos === 1 ? ' passo na trilha.' : ' passos na trilha.'))
+        : 'Nenhum passo desta vez. Tente de novo.';
       const respostaEl = document.getElementById('qzRespostaCerta');
       if(perguntaErrada){
         respostaEl.style.display = '';
@@ -23767,6 +23837,11 @@ const REQ_SUMMARIES = {
       const geradas = gerarPerguntasDoCatalogo();
       if(elBanco) elBanco.textContent = geradas.length + doClube.length;
     });
+
+    // Voltar no meio da rodada precisa parar o relógio: senão ele dispara
+    // noutra tela e encerra uma caminhada que nem começou.
+    const voltarDoQuiz = document.querySelector('#view-quiz .pl-back');
+    if(voltarDoQuiz) voltarDoQuiz.addEventListener('click', () => { pararRelogio(); respondendo = false; });
 
     if(entradaBtn) entradaBtn.addEventListener('click', abrirQuiz);
     const comecarBtn = document.getElementById('qzComecarBtn');
