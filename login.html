@@ -1971,6 +1971,99 @@
   .lb-item.feito .lb-marca{ background:var(--lb-verde); border-color:var(--lb-verde); color:#fff; }
   .lb-ref{ flex:1; min-width:0; line-height:1.3; word-break:break-word; }
 
+  /* ===== Trilha do Saber ===== */
+  .qz-entrada{
+    width:100%; display:flex; align-items:center; gap:11px; padding:13px;
+    margin-bottom:18px; border-radius:14px; cursor:pointer; text-align:left;
+    border:1px solid rgba(216,168,62,0.28); font-family:inherit;
+    background:linear-gradient(135deg, rgba(216,168,62,0.16), rgba(12,26,15,0.5));
+    color:var(--cream);
+  }
+  .qz-entrada:active{ transform:scale(0.98); }
+  .qz-entrada-icone{ font-size:22px; flex-shrink:0; }
+  .qz-entrada-txt{ flex:1; min-width:0; }
+  .qz-entrada-txt b{ display:block; font-size:14px; font-weight:900; }
+  .qz-entrada-txt i{ display:block; margin-top:2px; font-size:11.5px; font-style:normal; color:rgba(245,239,225,0.6); }
+  .qz-entrada > svg{ flex-shrink:0; color:rgba(245,239,225,0.45); }
+
+  .qz-capa{
+    text-align:center; padding:20px 16px; border-radius:16px; margin-bottom:14px;
+    border:1px solid rgba(216,168,62,0.22);
+    background:linear-gradient(135deg, rgba(216,168,62,0.14), rgba(12,26,15,0.55));
+  }
+  .qz-capa-icone{ font-size:38px; display:block; margin-bottom:6px; }
+  .qz-capa h4{ margin:0 0 6px; font-size:19px; font-weight:900; color:var(--cream); }
+  .qz-capa p{ margin:0; font-size:12.5px; line-height:1.55; color:rgba(245,239,225,0.65); }
+
+  .qz-placar{ display:flex; gap:10px; margin-bottom:14px; }
+  .qz-placar > div{
+    flex:1; padding:12px; border-radius:13px; text-align:center;
+    border:1px solid rgba(255,255,255,0.09); background:rgba(255,255,255,0.03);
+  }
+  .qz-placar span{ display:block; font-size:10px; font-weight:800; letter-spacing:0.03em; text-transform:uppercase; color:rgba(245,239,225,0.45); }
+  .qz-placar b{ display:block; margin-top:3px; font-size:22px; font-weight:900; color:var(--gold); }
+  .qz-btn-largo{ width:100%; margin-bottom:10px; }
+
+  .qz-barra{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .qz-barra-acertos{ font-size:13px; font-weight:900; color:var(--accent); }
+  .qz-barra-fonte{ font-size:10.5px; font-weight:800; letter-spacing:0.03em; text-transform:uppercase; color:rgba(245,239,225,0.4); }
+  .qz-tempo{ display:flex; align-items:center; gap:9px; margin-bottom:16px; }
+  .qz-tempo-barra{
+    flex:1; height:7px; border-radius:99px; background:rgba(255,255,255,0.1); overflow:hidden;
+  }
+  .qz-tempo-barra i{
+    display:block; height:100%; width:100%; border-radius:99px; background:var(--accent);
+    transition:width 1s linear, background .3s ease;
+  }
+  .qz-tempo.apertado .qz-tempo-barra i{ background:#E8B93B; }
+  .qz-tempo.acabando .qz-tempo-barra i{ background:#FF6B5C; }
+  .qz-tempo-num{
+    min-width:26px; text-align:right; font-size:13px; font-weight:900; color:rgba(245,239,225,0.6);
+  }
+  .qz-tempo.acabando .qz-tempo-num{ color:#FF6B5C; }
+
+  .qz-pergunta{
+    margin:0 0 16px; font-size:16px; line-height:1.5; font-weight:800; color:var(--cream);
+  }
+  .qz-alternativas{ display:flex; flex-direction:column; gap:9px; }
+  .qz-alt{
+    width:100%; padding:14px; border-radius:13px; cursor:pointer; text-align:left;
+    border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04);
+    color:var(--cream); font-family:inherit; font-size:13.5px; font-weight:700;
+    line-height:1.4;
+  }
+  .qz-alt:active{ transform:scale(0.99); }
+  .qz-alt.certa{ border-color:var(--accent); background:rgba(63,203,107,0.16); }
+  .qz-alt.errada{ border-color:#FF6B5C; background:rgba(255,107,92,0.14); }
+  .qz-alt:disabled{ cursor:default; }
+  .qz-resposta-certa{
+    margin:0 0 14px; padding:11px 13px; border-radius:12px; font-size:12.5px; line-height:1.5;
+    background:rgba(63,203,107,0.1); border:1px solid rgba(63,203,107,0.25); color:rgba(245,239,225,0.8);
+  }
+  .qz-resposta-certa b{ color:var(--accent); }
+  .qz-alt-edit{ display:flex; flex-direction:column; gap:7px; margin-top:10px; }
+  .qz-alt-edit-linha{ display:flex; align-items:center; gap:8px; }
+  .qz-alt-edit-linha input[type="radio"]{ flex-shrink:0; width:18px; height:18px; accent-color:var(--accent); }
+
+  /* Barra de dias do período, no editor do evento. */
+  .pl-dias-periodo{
+    margin:0 0 14px; padding:11px 12px; border-radius:13px;
+    border:1px solid rgba(216,168,62,0.22); background:rgba(216,168,62,0.08);
+  }
+  .pl-dias-periodo-rotulo{
+    display:block; margin-bottom:8px; font-size:10.5px; font-weight:800;
+    letter-spacing:0.04em; text-transform:uppercase; color:var(--gold);
+  }
+  .pl-dias-periodo-chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .pl-dia-chip{
+    padding:7px 11px; border-radius:9px; cursor:pointer; font-family:inherit;
+    font-size:12px; font-weight:800; border:1px solid rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.05); color:rgba(245,239,225,0.7);
+  }
+  .pl-dia-chip.ativo{ background:var(--gold); border-color:var(--gold); color:var(--night); }
+  .pl-dia-chip .pl-dia-chip-marca{ color:var(--accent); margin-left:4px; }
+  .pl-dia-chip.ativo .pl-dia-chip-marca{ color:var(--night); }
+
   /* Selão de data num evento de período: em cima vai "a 17" no lugar da
      sigla do dia da semana, e ele precisa de um pouco mais de largura. */
   .pl-event-date.periodo em{ font-size:9.5px; letter-spacing:0; white-space:nowrap; }
@@ -4232,6 +4325,13 @@
           <textarea class="pl-input pl-textarea" id="plFieldNote" rows="2" placeholder="Observações internas, o que levar, etc." maxlength="300"></textarea>
 
           <div class="pl-schedule-section">
+            <!-- Só aparece em evento de período: escolhe de qual dia são os
+                 oficiais e a programação logo abaixo. -->
+            <div class="pl-dias-periodo" id="plDiasPeriodo" style="display:none;">
+              <span class="pl-dias-periodo-rotulo">Definindo o dia</span>
+              <div class="pl-dias-periodo-chips" id="plDiasPeriodoChips"></div>
+            </div>
+
             <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Oficial de Dia (1)</label>
             <select class="pl-input" id="plFieldOfficer1"><option value="">Nenhum</option></select>
 
@@ -11020,6 +11120,15 @@
         <div class="pl-content">
           <p class="sp-disclaimer">Tarefas cadastradas pela Diretoria. Marque como concluída pra somar pontos e subir no ranking "Seja Destaque".</p>
 
+          <button type="button" class="qz-entrada" id="qzEntradaBtn">
+            <span class="qz-entrada-icone">🧭</span>
+            <span class="qz-entrada-txt">
+              <b>Trilha do Saber</b>
+              <i id="qzEntradaSub">Quantos passos você aguenta sem tropeçar?</i>
+            </span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+
           <h4 class="un-section-title" style="margin-top:0;">Missões ativas</h4>
           <div class="un-mini-list" id="msMissionList" style="margin-bottom:18px;">
             <p class="un-empty-hint">Carregando...</p>
@@ -11053,6 +11162,89 @@
             <button type="button" class="pl-btn pl-btn-danger" id="msDeleteBtn" style="display:none;">Excluir</button>
             <button type="button" class="pl-btn pl-btn-primary" id="msSaveBtn">Salvar</button>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== VIEW: ACERTE OU CAI =====
+         Quiz do Desafio Só Desbravador. Errou, acabou; a melhor rodada de cada
+         um vira ponto no ranking "Seja Destaque", junto com as Missões. -->
+    <section class="view view-planning" id="view-quiz">
+      <div class="pl-scroll">
+        <div class="pl-topbar">
+          <button type="button" class="pl-back" data-back="view-missions" aria-label="Voltar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h3 class="pl-title">Trilha do Saber</h3>
+          <span class="pl-topbar-spacer" aria-hidden="true"></span>
+        </div>
+        <div class="pl-content">
+
+          <!-- 1. Antes de começar -->
+          <div id="qzInicio">
+            <div class="qz-capa">
+              <span class="qz-capa-icone">🧭</span>
+              <h4>Trilha do Saber</h4>
+              <p>Cada resposta certa é um passo na trilha. Errou ou deixou o tempo acabar, a caminhada termina — e quanto mais longe você for, mais pontos leva.</p>
+            </div>
+            <div class="qz-placar">
+              <div><span>Sua maior trilha</span><b id="qzRecorde">0</b></div>
+              <div><span>Perguntas no banco</span><b id="qzBanco">—</b></div>
+            </div>
+            <button type="button" class="pl-btn pl-btn-primary qz-btn-largo" id="qzComecarBtn">Começar rodada</button>
+            <p class="pl-reminder-hint" id="qzAdminHint" style="display:none;">Você também pode cadastrar perguntas próprias no botão abaixo — as que dependem de conhecimento bíblico ou de doutrina precisam ser escritas por você.</p>
+            <button type="button" class="pl-list-add-btn" id="qzGerenciarBtn" style="display:none;">Perguntas cadastradas pelo clube</button>
+          </div>
+
+          <!-- 2. Jogando -->
+          <div id="qzJogo" style="display:none;">
+            <div class="qz-barra">
+              <span class="qz-barra-acertos" id="qzAcertos">0 passos</span>
+              <span class="qz-barra-fonte" id="qzFonte"></span>
+            </div>
+            <div class="qz-tempo">
+              <span class="qz-tempo-barra"><i id="qzTempoBarra"></i></span>
+              <span class="qz-tempo-num" id="qzTempoNum">30</span>
+            </div>
+            <p class="qz-pergunta" id="qzPergunta"></p>
+            <div class="qz-alternativas" id="qzAlternativas"></div>
+          </div>
+
+          <!-- 3. Fim da rodada -->
+          <div id="qzFim" style="display:none;">
+            <div class="qz-capa">
+              <span class="qz-capa-icone" id="qzFimIcone">💪</span>
+              <h4 id="qzFimTitulo">Fim da rodada</h4>
+              <p id="qzFimTexto"></p>
+            </div>
+            <div class="qz-placar">
+              <div><span>Passos</span><b id="qzFimAcertos">0</b></div>
+              <div><span>Sua maior trilha</span><b id="qzFimRecorde">0</b></div>
+            </div>
+            <p class="qz-resposta-certa" id="qzRespostaCerta"></p>
+            <button type="button" class="pl-btn pl-btn-primary qz-btn-largo" id="qzDeNovoBtn">Jogar de novo</button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Perguntas cadastradas pelo clube -->
+      <div class="pl-modal-overlay" id="qzAdminOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Perguntas do clube</h4>
+            <button type="button" class="pl-modal-close" id="qzAdminClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <p class="pl-reminder-hint" style="margin-top:0;">Estas entram no jogo junto com as geradas do catálogo. Marque a alternativa certa.</p>
+          <label class="pl-field-label" style="margin-top:0;">Pergunta</label>
+          <textarea class="pl-input pl-textarea" id="qzFieldPergunta" rows="2" maxlength="200" placeholder="Ex.: Em que ano foi fundado o Clube de Desbravadores?"></textarea>
+          <div class="qz-alt-edit" id="qzAltEdit"></div>
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-primary" id="qzAdminSalvar">Adicionar</button>
+          </div>
+          <div class="un-mini-list" id="qzAdminLista" style="margin-top:14px;"></div>
         </div>
       </div>
     </section>
@@ -13088,6 +13280,127 @@
     }
     loadOfficerOptions();
     const scheduleList = document.getElementById('plScheduleList');
+    const diasPeriodoEl = document.getElementById('plDiasPeriodo');
+    const diasPeriodoChips = document.getElementById('plDiasPeriodoChips');
+
+    // ---- Programação e oficiais por dia, em evento de período ----
+    // O formulário edita um dia por vez; estes mapas guardam os outros enquanto
+    // isso. Chave "mes-dia" ("3-29"), a mesma que vai pro banco.
+    let progPorDia = {};
+    let oficiaisPorDia = {};
+    let diaEmEdicao = null;   // "3-29", ou null em evento de um dia
+    let diasDoPeriodo = [];   // [{ chave, dia, mes, rotulo }]
+
+    function chaveDoDia(mes, dia){ return mes + '-' + dia; }
+
+    // Todos os dias entre o início e o fim, atravessando o mês quando precisa.
+    function listarDiasDoPeriodo(diaIni, mesIni, diaFim, mesFim){
+      const dias = [];
+      const ano = new Date().getFullYear();
+      let mes = mesIni, dia = diaIni;
+      // Um período não passa de um ano; o teto evita laço infinito se vier
+      // data incoerente do banco.
+      for(let passo = 0; passo < 400; passo++){
+        dias.push({ chave: chaveDoDia(mes, dia), dia: dia, mes: mes,
+                    rotulo: dia + '/' + String(mes).padStart(2, '0') });
+        if(mes === mesFim && dia === diaFim) break;
+        const ultimo = new Date(ano, mes, 0).getDate();
+        if(dia >= ultimo){ dia = 1; mes = mes + 1; if(mes > 12) break; }
+        else dia = dia + 1;
+      }
+      return dias;
+    }
+
+    function lerProgramacaoDaTela(){
+      return Array.from(scheduleList.querySelectorAll('.pl-schedule-row')).map(row => ({
+        horario: row.querySelector('.pl-schedule-time').value || '',
+        atividade: getScheduleRowActivity(row)
+      })).filter(item => item.horario || item.atividade);
+    }
+
+    function lerOficiaisDaTela(){
+      const id1 = fieldOfficer1.value || '';
+      const id2 = fieldOfficer2.value || '';
+      const nome = (sel) => sel.value ? sel.options[sel.selectedIndex].textContent : '';
+      return { ids: [id1, id2].filter(Boolean),
+               nomes: [nome(fieldOfficer1), nome(fieldOfficer2)].filter(Boolean) };
+    }
+
+    // Guarda o que está na tela no dia que estava aberto.
+    function guardarDiaEmEdicao(){
+      if(!diaEmEdicao) return;
+      progPorDia[diaEmEdicao] = lerProgramacaoDaTela();
+      oficiaisPorDia[diaEmEdicao] = lerOficiaisDaTela();
+    }
+
+    function mostrarDia(chave){
+      diaEmEdicao = chave;
+      scheduleList.innerHTML = '';
+      (progPorDia[chave] || []).forEach(item => buildScheduleRow(scheduleList, item.horario, item.atividade));
+      const of = oficiaisPorDia[chave] || { ids: [] };
+      fieldOfficer1.value = of.ids[0] || '';
+      fieldOfficer2.value = of.ids[1] || '';
+      pintarChipsDoPeriodo();
+    }
+
+    function pintarChipsDoPeriodo(){
+      if(!diasPeriodoChips) return;
+      diasPeriodoChips.innerHTML = '';
+      diasDoPeriodo.forEach(d => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'pl-dia-chip' + (d.chave === diaEmEdicao ? ' ativo' : '');
+        // Uma marca discreta diz quais dias já têm alguma coisa definida.
+        const temAlgo = (progPorDia[d.chave] || []).length > 0 ||
+                        ((oficiaisPorDia[d.chave] || {}).ids || []).length > 0;
+        chip.innerHTML = '<span></span>' + (temAlgo ? '<span class="pl-dia-chip-marca">\u2022</span>' : '');
+        chip.querySelector('span').textContent = d.rotulo;
+        chip.addEventListener('click', () => { guardarDiaEmEdicao(); mostrarDia(d.chave); });
+        diasPeriodoChips.appendChild(chip);
+      });
+    }
+
+    // Monta (ou esconde) a barra de dias a partir do que está nos campos de data.
+    function montarBarraDeDias(){
+      const diaIni = parseInt(fieldDay.value, 10);
+      const mesIni = parseInt(fieldMonth.value, 10);
+      const diaFim = fieldDayEnd ? parseInt(fieldDayEnd.value, 10) : 0;
+      const mesFim = (fieldMonthEnd ? parseInt(fieldMonthEnd.value, 10) : 0) || mesIni;
+      const ehPeriodo = !!(diaIni && diaFim && (diaFim !== diaIni || mesFim !== mesIni));
+      if(!ehPeriodo){
+        // Evento de um dia: tudo volta a ser do evento inteiro, como sempre foi.
+        if(diaEmEdicao) guardarDiaEmEdicao();
+        const unico = diaEmEdicao ? (progPorDia[diaEmEdicao] || []) : lerProgramacaoDaTela();
+        const ofUnico = diaEmEdicao ? (oficiaisPorDia[diaEmEdicao] || { ids: [] }) : lerOficiaisDaTela();
+        diaEmEdicao = null;
+        diasDoPeriodo = [];
+        if(diasPeriodoEl) diasPeriodoEl.style.display = 'none';
+        scheduleList.innerHTML = '';
+        unico.forEach(item => buildScheduleRow(scheduleList, item.horario, item.atividade));
+        fieldOfficer1.value = (ofUnico.ids || [])[0] || '';
+        fieldOfficer2.value = (ofUnico.ids || [])[1] || '';
+        return;
+      }
+      guardarDiaEmEdicao();
+      diasDoPeriodo = listarDiasDoPeriodo(diaIni, mesIni, diaFim, mesFim);
+      if(diasPeriodoEl) diasPeriodoEl.style.display = '';
+      // Virou período agora: o que já estava na tela passa a ser do primeiro dia.
+      if(!diaEmEdicao){
+        const primeira = diasDoPeriodo[0].chave;
+        if(!progPorDia[primeira]) progPorDia[primeira] = lerProgramacaoDaTela();
+        if(!oficiaisPorDia[primeira]) oficiaisPorDia[primeira] = lerOficiaisDaTela();
+        mostrarDia(primeira);
+        return;
+      }
+      // O dia que estava aberto pode ter saído do período ao encurtar a data.
+      const aindaExiste = diasDoPeriodo.some(d => d.chave === diaEmEdicao);
+      mostrarDia(aindaExiste ? diaEmEdicao : diasDoPeriodo[0].chave);
+    }
+
+    [fieldDay, fieldMonth, fieldDayEnd, fieldMonthEnd].forEach(campo => {
+      if(campo) campo.addEventListener('change', montarBarraDeDias);
+    });
+    if(fieldDayEnd) fieldDayEnd.addEventListener('input', montarBarraDeDias);
     const scheduleAddBtn = document.getElementById('plScheduleAddBtn');
     const checklistList = document.getElementById('plChecklistList');
     const checklistAddBtn = document.getElementById('plChecklistAddBtn');
@@ -13204,8 +13517,33 @@
       });
     }
 
+    // Num evento de período, a ficha aberta a partir de um dia mostra só a
+    // programação daquele dia. Item sem "dia" é do evento inteiro e aparece
+    // sempre — é o formato de antes desta mudança.
+    function programacaoDoDia(card, mes, dia){
+      const todos = parseJSONSafe(card.dataset.schedule);
+      if(!mes || !dia) return todos;
+      const temPorDia = todos.some(x => x.dia);
+      if(!temPorDia) return todos;
+      return todos.filter(x => !x.dia || (x.dia === dia && (x.mes || mes) === mes));
+    }
+
+    function oficiaisDoDia(card, mes, dia){
+      const porDia = parseJSONSafe(card.dataset.oficiaisPorDia) || {};
+      const doDia = (mes && dia) ? porDia[mes + '-' + dia] : null;
+      if(doDia && doDia.nomes && doDia.nomes.length) return doDia.nomes;
+      // Sem nada pra esse dia, cai nos oficiais do evento.
+      return parseJSONSafe(card.dataset.officerNames);
+    }
+
+    // Preenchido pela tela de dia antes de abrir a ficha, pra ela saber de que
+    // dia está falando. Fora dali fica null, e a ficha mostra o evento inteiro.
+    let diaDaFichaAberta = null;
+
     function renderViewSchedule(card){
-      const list = parseJSONSafe(card.dataset.schedule);
+      const list = diaDaFichaAberta
+        ? programacaoDoDia(card, diaDaFichaAberta.mes, diaDaFichaAberta.dia)
+        : parseJSONSafe(card.dataset.schedule);
       viewScheduleBlock.style.display = list.length ? '' : 'none';
       viewSchedule.innerHTML = '';
       list.forEach(item => {
@@ -13257,7 +13595,9 @@
       viewDesc.textContent = desc;
       viewNoteBlock.style.display = note ? '' : 'none';
       viewNote.textContent = note;
-      const officerNames = parseJSONSafe(card.dataset.officerNames);
+      const officerNames = diaDaFichaAberta
+        ? oficiaisDoDia(card, diaDaFichaAberta.mes, diaDaFichaAberta.dia)
+        : parseJSONSafe(card.dataset.officerNames);
       viewOfficersBlock.style.display = officerNames.length ? '' : 'none';
       viewOfficers.textContent = officerNames.join(' e ');
       const notice = card.dataset.notice || '';
@@ -13411,7 +13751,23 @@
         fieldOfficer2.value = editOfficerIds[1] || '';
         fieldNotice.value = card.dataset.notice || '';
         scheduleList.innerHTML = '';
-        parseJSONSafe(card.dataset.schedule).forEach(item => buildScheduleRow(scheduleList, item.horario, item.atividade));
+        // Reparte a programação pelos dias. Item sem "dia" é de antes desta
+        // mudança e vale pro evento inteiro: cai no primeiro dia.
+        progPorDia = {};
+        oficiaisPorDia = parseJSONSafe(card.dataset.oficiaisPorDia) || {};
+        diaEmEdicao = null;
+        const chavePrimeiro = chaveDoDia(parseInt(card.dataset.monIndex, 10), parseInt(card.dataset.day, 10));
+        parseJSONSafe(card.dataset.schedule).forEach(item => {
+          const chave = item.dia
+            ? chaveDoDia(item.mes || parseInt(card.dataset.monIndex, 10), item.dia)
+            : chavePrimeiro;
+          (progPorDia[chave] || (progPorDia[chave] = [])).push({ horario: item.horario, atividade: item.atividade });
+        });
+        // Oficiais do evento inteiro (formato antigo) viram os do primeiro dia.
+        if(!oficiaisPorDia[chavePrimeiro] && editOfficerIds.length){
+          oficiaisPorDia[chavePrimeiro] = { ids: editOfficerIds, nomes: parseJSONSafe(card.dataset.officerNames) };
+        }
+        (progPorDia[chavePrimeiro] || []).forEach(item => buildScheduleRow(scheduleList, item.horario, item.atividade));
         checklistList.innerHTML = '';
         parseJSONSafe(card.dataset.checklist).forEach(item => addChecklistRowEl(item.texto, item.feito));
         fieldShowGallery.checked = card.dataset.showGallery !== '0';
@@ -13455,6 +13811,10 @@
         fieldOfficer2.value = '';
         fieldNotice.value = '';
         scheduleList.innerHTML = '';
+        progPorDia = {};
+        oficiaisPorDia = {};
+        diaEmEdicao = null;
+        diasDoPeriodo = [];
         checklistList.innerHTML = '';
         fieldShowGallery.checked = true;
         fieldGalleryFrom.value = '';
@@ -13473,6 +13833,9 @@
       toggleRepeatFields();
       toggleCustomTagFields();
       toggleGalleryFromField();
+      // Depois de os campos de data estarem preenchidos: decide se mostra a
+      // barra de dias e abre o primeiro.
+      montarBarraDeDias();
       overlay.classList.add('show');
       setTimeout(() => fieldTitle.focus(), 150);
     }
@@ -13548,6 +13911,7 @@
       a.dataset.note = data.note;
       a.dataset.officerIds = JSON.stringify(data.officerIds || []);
       a.dataset.officerNames = JSON.stringify(data.officerNames || []);
+      a.dataset.oficiaisPorDia = JSON.stringify(data.oficiaisPorDia || {});
       a.dataset.escalaOculta = data.escalaOculta ? '1' : '';
       a.dataset.notice = data.notice || '';
       a.dataset.schedule = JSON.stringify(data.schedule || []);
@@ -13608,7 +13972,7 @@
         bellMark.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>';
         a.querySelector('.pl-event-body').appendChild(bellMark);
       }
-      a.addEventListener('click', (e) => { e.preventDefault(); readOnlyMode ? openViewOnly(a) : openModal('edit', a); });
+      a.addEventListener('click', (e) => { e.preventDefault(); diaDaFichaAberta = null; readOnlyMode ? openViewOnly(a) : openModal('edit', a); });
       addGCalButton(a);
       return a;
     }
@@ -13665,6 +14029,7 @@
         note: row.observacao || '',
         officerIds: Array.isArray(row.oficiais_dia_ids) ? row.oficiais_dia_ids : [],
         officerNames: Array.isArray(row.oficiais_dia_nomes) ? row.oficiais_dia_nomes : [],
+        oficiaisPorDia: (row.oficiais_por_dia && typeof row.oficiais_por_dia === 'object') ? row.oficiais_por_dia : {},
         escalaOculta: !!row.escala_oculta,
         notice: row.aviso_membros || '',
         schedule: Array.isArray(row.programacao_dia) ? row.programacao_dia : [],
@@ -13918,7 +14283,13 @@
       item.querySelector('.pl-event-tag').textContent = card.dataset.tagLabel || '';
       item.querySelector('.pl-dayview-item-time').lastChild.textContent = timeLabel;
       item.querySelector('.pl-dayview-item-local').lastChild.textContent = card.dataset.local || '';
-      item.addEventListener('click', (e) => { e.preventDefault(); readOnlyMode ? openViewOnly(card) : openModal('edit', card); });
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        // A ficha vinda da tela de dia mostra a programação e os oficiais
+        // daquele dia, não do evento inteiro.
+        diaDaFichaAberta = dayViewDate ? { mes: dayViewDate.monIdx, dia: dayViewDate.day } : null;
+        if(readOnlyMode) openViewOnly(card); else openModal('edit', card);
+      });
       return item;
     }
 
@@ -13993,13 +14364,36 @@
       const officer1Name = officer1Id ? fieldOfficer1.options[fieldOfficer1.selectedIndex].textContent : '';
       const officer2Id = fieldOfficer2.value || '';
       const officer2Name = officer2Id ? fieldOfficer2.options[fieldOfficer2.selectedIndex].textContent : '';
-      const officerIds = [officer1Id, officer2Id].filter(Boolean);
-      const officerNames = [officer1Name, officer2Name].filter(Boolean);
+      let officerIds = [officer1Id, officer2Id].filter(Boolean);
+      let officerNames = [officer1Name, officer2Name].filter(Boolean);
       const notice = fieldNotice.value.trim();
-      const schedule = Array.from(scheduleList.querySelectorAll('.pl-schedule-row')).map(row => ({
-        horario: row.querySelector('.pl-schedule-time').value || '',
-        atividade: getScheduleRowActivity(row)
-      })).filter(item => item.horario || item.atividade);
+      // Num período, o que está na tela é só o dia aberto: guarda antes de ler
+      // todos. Num evento de um dia, diaEmEdicao é null e nada disso pesa.
+      guardarDiaEmEdicao();
+      let schedule, oficiaisPorDiaPayload;
+      if(diaEmEdicao){
+        schedule = [];
+        diasDoPeriodo.forEach(d => {
+          (progPorDia[d.chave] || []).forEach(item => {
+            if(item.horario || item.atividade){
+              schedule.push({ dia: d.dia, mes: d.mes, horario: item.horario, atividade: item.atividade });
+            }
+          });
+        });
+        oficiaisPorDiaPayload = {};
+        diasDoPeriodo.forEach(d => {
+          const of = oficiaisPorDia[d.chave];
+          if(of && of.ids && of.ids.length) oficiaisPorDiaPayload[d.chave] = of;
+        });
+        // O card continua guardando os oficiais do primeiro dia: o PDF e a
+        // permissão de editar a programação leem oficiais_dia_ids.
+        const doPrimeiro = oficiaisPorDia[diasDoPeriodo[0].chave] || { ids: [], nomes: [] };
+        officerIds = doPrimeiro.ids || [];
+        officerNames = doPrimeiro.nomes || [];
+      } else {
+        schedule = lerProgramacaoDaTela();
+        oficiaisPorDiaPayload = {};
+      }
       const checklist = Array.from(checklistList.querySelectorAll('.pl-checklist-row')).map(row => ({
         texto: row.querySelector('.pl-checklist-text').value.trim(),
         feito: row.querySelector('.pl-checklist-done').checked
@@ -14080,6 +14474,7 @@
         observacao: note || null,
         oficiais_dia_ids: officerIds,
         oficiais_dia_nomes: officerNames,
+        oficiais_por_dia: oficiaisPorDiaPayload,
         aviso_membros: notice || null,
         programacao_dia: schedule,
         checklist_atividades: checklist,
@@ -14111,6 +14506,7 @@
         const semPeriodo = Object.assign({}, payload);
         delete semPeriodo.dia_fim;
         delete semPeriodo.mes_fim_indice;
+        delete semPeriodo.oficiais_por_dia;
         resposta = await gravar(semPeriodo);
         if(!resposta.error && payload.dia_fim){
           alert('O evento foi salvo, mas o período não: o banco ainda não tem as colunas dia_fim e mes_fim_indice. Rode a migration de supabase/schema.sql.');
@@ -22848,10 +23244,15 @@ const REQ_SUMMARIES = {
 
     window.__msComputeRanking = async function(){
       if(!supa) return [];
-      const [{ data: concluidas }, { data: missoes }, { data: users }] = await Promise.all([
+      // A tabela do quiz pode não existir ainda; o ranking das Missões não
+      // pode cair por causa disso.
+      const pegarPartidas = supa.from('quiz_partidas').select('usuario_id, pontos')
+        .then(r => r.error ? { data: [] } : r, () => ({ data: [] }));
+      const [{ data: concluidas }, { data: missoes }, { data: users }, { data: partidas }] = await Promise.all([
         supa.from('missoes_concluidas').select('usuario_id, missao_id'),
         supa.from('missoes').select('id, pontos'),
-        supa.from('usuarios').select('id, nome')
+        supa.from('usuarios').select('id, nome'),
+        pegarPartidas
       ]);
       const pointsByMission = {};
       (missoes || []).forEach(m => { pointsByMission[m.id] = m.pontos || 0; });
@@ -22860,6 +23261,16 @@ const REQ_SUMMARIES = {
       const totals = {};
       (concluidas || []).forEach(row => {
         totals[row.usuario_id] = (totals[row.usuario_id] || 0) + (pointsByMission[row.missao_id] || 0);
+      });
+      // Do Trilha do Saber entra só a melhor rodada de cada um — senão quem joga
+      // muitas vezes passa na frente de quem foi mais longe.
+      const melhorPartida = {};
+      (partidas || []).forEach(row => {
+        const p = row.pontos || 0;
+        if(p > (melhorPartida[row.usuario_id] || 0)) melhorPartida[row.usuario_id] = p;
+      });
+      Object.keys(melhorPartida).forEach(id => {
+        totals[id] = (totals[id] || 0) + melhorPartida[id];
       });
       return Object.keys(totals)
         .map(id => ({ nome: nameById[id] || 'Desconhecido', total: totals[id] }))
@@ -23011,6 +23422,433 @@ const REQ_SUMMARIES = {
       renderRanking();
     };
     document.addEventListener('cedros:loggedin', () => window.__msRefresh());
+  })();
+
+  // ===== Trilha do Saber: quiz do Desafio Só Desbravador =====
+  // Perguntas de duas fontes. As geradas saem do próprio catálogo do app
+  // (SPECIALTY_DB, REQ_SUMMARIES e os cartões de requisito) — a resposta certa
+  // vem do dado, não de conhecimento de fora, então não há gabarito inventado.
+  // As de conhecimento (Bíblia, doutrina, história) ficam em quiz_perguntas,
+  // escritas por quem responde pelo clube.
+  (function(){
+    function baralhar(lista){
+      const copia = lista.slice();
+      for(let i = copia.length - 1; i > 0; i--){
+        const j = Math.floor(Math.random() * (i + 1));
+        const t = copia[i]; copia[i] = copia[j]; copia[j] = t;
+      }
+      return copia;
+    }
+
+    // Monta a pergunta já com as alternativas embaralhadas, e diz qual índice
+    // ficou sendo o certo.
+    function montar(pergunta, certa, erradas, fonte){
+      const unicas = [];
+      erradas.forEach(e => { if(e !== certa && unicas.indexOf(e) === -1) unicas.push(e); });
+      if(unicas.length < 3) return null;
+      const alternativas = baralhar([certa].concat(unicas.slice(0, 3)));
+      return { pergunta: pergunta, alternativas: alternativas,
+               correta: alternativas.indexOf(certa), fonte: fonte };
+    }
+
+    function gerarPerguntasDoCatalogo(){
+      const perguntas = [];
+      const areas = Object.keys(SPECIALTY_DB || {});
+      if(!areas.length) return perguntas;
+
+      // 1) De qual área é esta especialidade?
+      areas.forEach(area => {
+        (SPECIALTY_DB[area] || []).forEach(esp => {
+          const outras = baralhar(areas.filter(a => a !== area)).slice(0, 3);
+          const q = montar('A especialidade \u201c' + esp + '\u201d é de qual área?', area, outras, 'especialidades');
+          if(q) perguntas.push(q);
+        });
+      });
+
+      // 2) Qual destas é uma especialidade desta área?
+      areas.forEach(area => {
+        const daArea = SPECIALTY_DB[area] || [];
+        const deFora = [];
+        areas.forEach(a => { if(a !== area) (SPECIALTY_DB[a] || []).forEach(e => deFora.push(e)); });
+        baralhar(daArea).slice(0, 6).forEach(esp => {
+          const q = montar('Qual destas é uma especialidade da área \u201c' + area + '\u201d?',
+                           esp, baralhar(deFora).slice(0, 3), 'especialidades');
+          if(q) perguntas.push(q);
+        });
+      });
+
+      // 3) Qual especialidade pede isto? (usa a descrição do catálogo)
+      const comDescricao = Object.keys(REQ_SUMMARIES || {});
+      const quantasComEsseTexto = {};
+      comDescricao.forEach(e => {
+        const t = REQ_SUMMARIES[e];
+        if(t) quantasComEsseTexto[t] = (quantasComEsseTexto[t] || 0) + 1;
+      });
+      comDescricao.forEach(esp => {
+        const texto = REQ_SUMMARIES[esp];
+        if(!texto || texto.length < 40) return;
+        // Descrição repetida em duas especialidades daria duas respostas certas.
+        if(quantasComEsseTexto[texto] > 1) return;
+        const trecho = texto.length > 150 ? texto.slice(0, 150).replace(/\s+\S*$/, '') + '…' : texto;
+        const q = montar('Qual especialidade pede: \u201c' + trecho + '\u201d?',
+                         esp, baralhar(comDescricao.filter(x => x !== esp)).slice(0, 3), 'especialidades');
+        if(q) perguntas.push(q);
+      });
+
+      // 4) De qual classe é este requisito?
+      // Só vale pra requisito cujo título existe numa classe só. "GE-1. Idade
+      // mínima" está em seis classes: a pergunta teria seis respostas certas e o
+      // jogo aceitaria uma, derrubando quem respondeu certo. 79 dos 315 títulos
+      // do catálogo se repetem assim.
+      const cards = Array.from(document.querySelectorAll('.cl-activity-card[data-class][data-title]'));
+      const classesPorTitulo = {};
+      cards.forEach(c => {
+        (classesPorTitulo[c.dataset.title] || (classesPorTitulo[c.dataset.title] = new Set())).add(c.dataset.class);
+      });
+      const classes = Array.from(new Set(cards.map(c => c.dataset.class)));
+      if(classes.length >= 4){
+        const jaUsado = {};
+        cards.forEach(card => {
+          const titulo = card.dataset.title;
+          if(classesPorTitulo[titulo].size !== 1) return;
+          if(jaUsado[titulo]) return;
+          jaUsado[titulo] = true;
+          const classe = card.dataset.class;
+          const q = montar('O requisito \u201c' + titulo + '\u201d é de qual classe?',
+                           classe, baralhar(classes.filter(c => c !== classe)).slice(0, 3), 'classes');
+          if(q) perguntas.push(q);
+        });
+      }
+
+      return perguntas;
+    }
+
+    window.__quizGerarDoCatalogo = gerarPerguntasDoCatalogo;
+
+    // ---- O jogo ----
+    const entradaBtn = document.getElementById('qzEntradaBtn');
+    const entradaSub = document.getElementById('qzEntradaSub');
+    const telaInicio = document.getElementById('qzInicio');
+    const telaJogo = document.getElementById('qzJogo');
+    const telaFim = document.getElementById('qzFim');
+    const elRecorde = document.getElementById('qzRecorde');
+    const elBanco = document.getElementById('qzBanco');
+    const elAcertos = document.getElementById('qzAcertos');
+    const elFonte = document.getElementById('qzFonte');
+    const elPergunta = document.getElementById('qzPergunta');
+    const elAlternativas = document.getElementById('qzAlternativas');
+    if(!telaInicio) return;
+
+    let baralho = [];      // perguntas da rodada, já embaralhadas
+    let posicao = 0;
+    let acertos = 0;
+    let recorde = 0;
+    let doClube = [];      // perguntas de quiz_perguntas
+    let respondendo = false;
+
+    // ---- Cronômetro ----
+    const SEGUNDOS_POR_PERGUNTA = 30;
+    const elTempo = document.querySelector('#view-quiz .qz-tempo');
+    const elTempoBarra = document.getElementById('qzTempoBarra');
+    const elTempoNum = document.getElementById('qzTempoNum');
+    let tempoRestante = 0;
+    let tempoTimer = null;
+
+    function pararRelogio(){
+      if(tempoTimer){ clearInterval(tempoTimer); tempoTimer = null; }
+    }
+
+    function pintarRelogio(){
+      if(elTempoBarra) elTempoBarra.style.width = (tempoRestante / SEGUNDOS_POR_PERGUNTA * 100) + '%';
+      if(elTempoNum) elTempoNum.textContent = tempoRestante;
+      if(elTempo){
+        elTempo.classList.toggle('apertado', tempoRestante <= 15 && tempoRestante > 7);
+        elTempo.classList.toggle('acabando', tempoRestante <= 7);
+      }
+    }
+
+    function comecarRelogio(){
+      pararRelogio();
+      tempoRestante = SEGUNDOS_POR_PERGUNTA;
+      pintarRelogio();
+      tempoTimer = setInterval(() => {
+        tempoRestante--;
+        pintarRelogio();
+        if(tempoRestante <= 0){
+          pararRelogio();
+          acabouOTempo();
+        }
+      }, 1000);
+    }
+
+    // Tempo esgotado conta como erro: mostra a certa e encerra a caminhada.
+    function acabouOTempo(){
+      if(!respondendo) return;
+      respondendo = false;
+      const q = baralho[posicao];
+      Array.from(elAlternativas.querySelectorAll('.qz-alt')).forEach((b, i) => {
+        b.disabled = true;
+        if(i === q.correta) b.classList.add('certa');
+      });
+      setTimeout(() => terminar(false, q, true), 1100);
+    }
+
+    function mostrar(qual){
+      telaInicio.style.display = qual === 'inicio' ? '' : 'none';
+      telaJogo.style.display = qual === 'jogo' ? '' : 'none';
+      telaFim.style.display = qual === 'fim' ? '' : 'none';
+    }
+
+    async function carregarDoClube(){
+      if(!supa) return [];
+      const { data, error } = await supa.from('quiz_perguntas').select('*').eq('ativa', true);
+      if(error){
+        // Tabela ainda não criada: o jogo roda só com as geradas, sem quebrar.
+        console.warn('quiz_perguntas indisponível; jogando só com as perguntas do catálogo.', error.message);
+        return [];
+      }
+      return (data || []).map(r => ({
+        pergunta: r.pergunta,
+        alternativas: Array.isArray(r.alternativas) ? r.alternativas : [],
+        correta: r.correta || 0,
+        fonte: 'clube'
+      })).filter(q => q.alternativas.length >= 2);
+    }
+
+    async function carregarRecorde(){
+      const user = window.__currentUsuario;
+      if(!supa || !user) return 0;
+      const { data, error } = await supa.from('quiz_partidas')
+        .select('acertos').eq('usuario_id', user.id)
+        .order('acertos', { ascending: false }).limit(1);
+      if(error) return 0;
+      return (data && data[0]) ? (data[0].acertos || 0) : 0;
+    }
+
+    async function abrirQuiz(){
+      mostrar('inicio');
+      showView('view-quiz');
+      doClube = await carregarDoClube();
+      const geradas = gerarPerguntasDoCatalogo();
+      if(elBanco) elBanco.textContent = geradas.length + doClube.length;
+      recorde = await carregarRecorde();
+      if(elRecorde) elRecorde.textContent = recorde;
+      if(entradaSub) entradaSub.textContent = recorde
+        ? ('Seu recorde: ' + recorde + ' acertos seguidos.')
+        : 'Responda sem errar e suba no ranking.';
+      const podeGerenciar = !!(window.__currentUsuario &&
+        ['Administrador','Diretoria','Diretoria Executiva'].indexOf(window.__currentUsuario.papel) !== -1);
+      const gerenciarBtn = document.getElementById('qzGerenciarBtn');
+      const adminHint = document.getElementById('qzAdminHint');
+      if(gerenciarBtn) gerenciarBtn.style.display = podeGerenciar ? '' : 'none';
+      if(adminHint) adminHint.style.display = podeGerenciar ? '' : 'none';
+    }
+
+    function comecar(){
+      // As do clube primeiro na fila de sorteio, pra elas aparecerem mesmo
+      // sendo poucas perto das 1500 geradas.
+      const geradas = baralhar(gerarPerguntasDoCatalogo()).slice(0, 60);
+      baralho = baralhar(doClube.concat(geradas));
+      posicao = 0;
+      acertos = 0;
+      if(!baralho.length){ alert('Ainda não há perguntas pra jogar.'); return; }
+      pararRelogio();
+      mostrar('jogo');
+      proxima();
+    }
+
+    function proxima(){
+      if(posicao >= baralho.length){ terminar(true); return; }
+      const q = baralho[posicao];
+      respondendo = true;
+      elAcertos.textContent = acertos + (acertos === 1 ? ' passo' : ' passos');
+      elFonte.textContent = q.fonte === 'clube' ? 'pergunta do clube' : q.fonte;
+      elPergunta.textContent = q.pergunta;
+      elAlternativas.innerHTML = '';
+      q.alternativas.forEach((alt, i) => {
+        const botao = document.createElement('button');
+        botao.type = 'button';
+        botao.className = 'qz-alt';
+        botao.textContent = alt;
+        botao.addEventListener('click', () => responder(i, botao));
+        elAlternativas.appendChild(botao);
+      });
+      comecarRelogio();
+    }
+
+    function responder(escolhida, botao){
+      if(!respondendo) return;
+      respondendo = false;
+      pararRelogio();
+      const q = baralho[posicao];
+      const certa = escolhida === q.correta;
+      const botoes = Array.from(elAlternativas.querySelectorAll('.qz-alt'));
+      botoes.forEach((b, i) => {
+        b.disabled = true;
+        if(i === q.correta) b.classList.add('certa');
+      });
+      if(!certa) botao.classList.add('errada');
+      // Um instante pra ver a resposta certa antes de seguir ou encerrar.
+      setTimeout(() => {
+        if(certa){ acertos++; posicao++; proxima(); }
+        else terminar(false, q);
+      }, certa ? 450 : 1100);
+    }
+
+    async function terminar(acabouOBaralho, perguntaErrada, porTempo){
+      pararRelogio();
+      mostrar('fim');
+      document.getElementById('qzFimAcertos').textContent = acertos;
+      const bateuRecorde = acertos > recorde;
+      if(bateuRecorde) recorde = acertos;
+      document.getElementById('qzFimRecorde').textContent = recorde;
+      document.getElementById('qzFimIcone').textContent = bateuRecorde ? '\u{1F3C6}' : (acertos ? '\u{1F4AA}' : '\u{1F643}');
+      document.getElementById('qzFimTitulo').textContent = acabouOBaralho
+        ? 'Você percorreu a trilha inteira!'
+        : (porTempo ? 'O tempo acabou' : (bateuRecorde ? 'Trilha mais longa!' : 'Fim da caminhada'));
+      document.getElementById('qzFimTexto').textContent = acertos
+        ? (acertos + (acertos === 1 ? ' passo na trilha.' : ' passos na trilha.'))
+        : 'Nenhum passo desta vez. Tente de novo.';
+      const respostaEl = document.getElementById('qzRespostaCerta');
+      if(perguntaErrada){
+        respostaEl.style.display = '';
+        respostaEl.innerHTML = 'A resposta certa era <b></b>.';
+        respostaEl.querySelector('b').textContent = perguntaErrada.alternativas[perguntaErrada.correta];
+      } else respostaEl.style.display = 'none';
+
+      // Grava a rodada. O ranking usa só a melhor de cada um.
+      const user = window.__currentUsuario;
+      if(supa && user && acertos > 0){
+        const { error } = await supa.from('quiz_partidas')
+          .insert({ usuario_id: user.id, acertos: acertos, pontos: acertos });
+        if(error) console.warn('Não consegui gravar a rodada:', error.message);
+        else if(window.__msRefresh) window.__msRefresh();
+      }
+    }
+
+    // ---- Perguntas escritas pelo clube ----
+    // As de conhecimento (Bíblia, doutrina, história) não dá pra deduzir do
+    // catálogo sem inventar gabarito, então quem responde pelo clube escreve.
+    const adminOverlay = document.getElementById('qzAdminOverlay');
+    const adminLista = document.getElementById('qzAdminLista');
+    const campoPergunta = document.getElementById('qzFieldPergunta');
+    const altEdit = document.getElementById('qzAltEdit');
+
+    function montarCamposDeAlternativa(){
+      if(!altEdit) return;
+      altEdit.innerHTML = '';
+      for(let i = 0; i < 4; i++){
+        const linha = document.createElement('div');
+        linha.className = 'qz-alt-edit-linha';
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'qzCorreta';
+        radio.value = String(i);
+        radio.title = 'Marcar como a certa';
+        if(i === 0) radio.checked = true;
+        const texto = document.createElement('input');
+        texto.type = 'text';
+        texto.className = 'pl-input qz-alt-edit-texto';
+        texto.maxLength = 90;
+        texto.placeholder = 'Alternativa ' + (i + 1) + (i === 0 ? ' (marque a certa →)' : '');
+        linha.appendChild(radio);
+        linha.appendChild(texto);
+        altEdit.appendChild(linha);
+      }
+    }
+
+    async function renderAdminLista(){
+      if(!adminLista || !supa) return;
+      const { data, error } = await supa.from('quiz_perguntas').select('*').order('created_at', { ascending: false });
+      adminLista.innerHTML = '';
+      if(error){
+        adminLista.innerHTML = '<p class="un-empty-hint">A tabela quiz_perguntas ainda não existe. Rode a migration de supabase/schema.sql.</p>';
+        return;
+      }
+      if(!(data || []).length){
+        adminLista.innerHTML = '<p class="un-empty-hint">Nenhuma pergunta do clube ainda. As geradas do catálogo já estão no jogo.</p>';
+        return;
+      }
+      data.forEach(row => {
+        const item = document.createElement('div');
+        item.className = 'un-mini-row';
+        const alts = Array.isArray(row.alternativas) ? row.alternativas : [];
+        item.innerHTML = '<div style="flex:1; min-width:0;"><b style="display:block; font-size:12.5px;"></b>' +
+          '<span style="font-size:11px; color:rgba(245,239,225,0.5);"></span></div>' +
+          '<button type="button" class="pl-list-remove-btn" aria-label="Excluir">×</button>';
+        item.querySelector('b').textContent = row.pergunta;
+        item.querySelector('span').textContent = 'Certa: ' + (alts[row.correta] || '—');
+        item.querySelector('button').addEventListener('click', async () => {
+          if(!confirm('Excluir esta pergunta?')) return;
+          await supa.from('quiz_perguntas').delete().eq('id', row.id);
+          renderAdminLista();
+        });
+        adminLista.appendChild(item);
+      });
+    }
+
+    const gerenciarBtn2 = document.getElementById('qzGerenciarBtn');
+    if(gerenciarBtn2) gerenciarBtn2.addEventListener('click', () => {
+      campoPergunta.value = '';
+      montarCamposDeAlternativa();
+      renderAdminLista();
+      mostrarNaViewAtivaQz(adminOverlay);
+    });
+    // Mesma armadilha dos outros modais: sendo absoluto dentro de uma .view,
+    // ele precisa estar na view ativa pra não abrir invisível.
+    function mostrarNaViewAtivaQz(overlay){
+      if(!overlay) return;
+      const ativa = document.querySelector('.view.active');
+      if(ativa) ativa.appendChild(overlay);
+      overlay.classList.add('show');
+    }
+    const adminClose = document.getElementById('qzAdminClose');
+    if(adminClose) adminClose.addEventListener('click', () => adminOverlay.classList.remove('show'));
+
+    const adminSalvar = document.getElementById('qzAdminSalvar');
+    if(adminSalvar) adminSalvar.addEventListener('click', async () => {
+      const pergunta = campoPergunta.value.trim();
+      const textos = Array.from(altEdit.querySelectorAll('.qz-alt-edit-texto')).map(i => i.value.trim());
+      const marcada = altEdit.querySelector('input[name="qzCorreta"]:checked');
+      const correta = marcada ? parseInt(marcada.value, 10) : 0;
+      const preenchidas = textos.filter(Boolean);
+      if(!pergunta){ campoPergunta.style.borderColor = '#FF6B5C'; return; }
+      campoPergunta.style.borderColor = '';
+      if(preenchidas.length < 2){ alert('Escreva pelo menos duas alternativas.'); return; }
+      if(new Set(preenchidas).size !== preenchidas.length){ alert('Há duas alternativas iguais.'); return; }
+      if(!textos[correta]){ alert('A alternativa marcada como certa está vazia.'); return; }
+      // Guarda só as preenchidas, corrigindo o índice da certa.
+      const certaTexto = textos[correta];
+      const { error } = await supa.from('quiz_perguntas').insert({
+        pergunta: pergunta,
+        alternativas: preenchidas,
+        correta: preenchidas.indexOf(certaTexto),
+        // Explícito de propósito: a leitura filtra por ativa = true, e contar
+        // com o default do banco faria a pergunta sumir do jogo em silêncio se
+        // ele mudasse.
+        ativa: true,
+        criado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
+      });
+      if(error){ alert('Não consegui salvar: ' + error.message); return; }
+      campoPergunta.value = '';
+      montarCamposDeAlternativa();
+      renderAdminLista();
+      doClube = await carregarDoClube();
+      const geradas = gerarPerguntasDoCatalogo();
+      if(elBanco) elBanco.textContent = geradas.length + doClube.length;
+    });
+
+    // Voltar no meio da rodada precisa parar o relógio: senão ele dispara
+    // noutra tela e encerra uma caminhada que nem começou.
+    const voltarDoQuiz = document.querySelector('#view-quiz .pl-back');
+    if(voltarDoQuiz) voltarDoQuiz.addEventListener('click', () => { pararRelogio(); respondendo = false; });
+
+    if(entradaBtn) entradaBtn.addEventListener('click', abrirQuiz);
+    const comecarBtn = document.getElementById('qzComecarBtn');
+    if(comecarBtn) comecarBtn.addEventListener('click', comecar);
+    const deNovoBtn = document.getElementById('qzDeNovoBtn');
+    if(deNovoBtn) deNovoBtn.addEventListener('click', comecar);
+    window.__quizAbrir = abrirQuiz;
   })();
 
   // Organização de Eventos: tarefas, responsáveis e prazos por evento
