@@ -987,6 +987,22 @@
     background:var(--accent); color:#08130A; display:flex; align-items:center; justify-content:center;
     border:2px solid var(--bg, #0B120C);
   }
+  .sp-lote-escolher{ width:100%; margin-bottom:10px; }
+  .sp-lote-resumo{ margin:2px 0 10px; font-size:12px; font-weight:800; color:var(--gold); }
+  .sp-lote-lista{ max-height:44vh; overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
+  .sp-lote-item{ display:flex; align-items:center; gap:10px; padding:7px 9px; border-radius:11px; background:rgba(255,255,255,0.045); }
+  .sp-lote-item.duvida{ background:rgba(255,193,90,0.1); }
+  .sp-lote-thumb{ width:38px; height:38px; flex:0 0 38px; border-radius:9px; overflow:hidden; background:rgba(0,0,0,0.25); display:flex; align-items:center; justify-content:center; }
+  .sp-lote-thumb img{ width:100%; height:100%; object-fit:contain; }
+  .sp-lote-corpo{ flex:1; min-width:0; }
+  .sp-lote-arquivo{ display:block; font-size:10.5px; color:rgba(245,239,225,0.45); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sp-lote-nome{ display:block; font-size:12.5px; font-weight:800; color:var(--cream); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sp-lote-corpo .pl-input{ margin:3px 0 0; padding:6px 9px; font-size:12px; }
+  .sp-lote-estado{ font-size:10.5px; font-weight:800; letter-spacing:0.02em; text-transform:uppercase; }
+  .sp-lote-estado.ok{ color:#6FCF97; }
+  .sp-lote-estado.erro{ color:#FF6B5C; }
+  .sp-lote-remover{ background:none; border:0; color:rgba(245,239,225,0.4); font-size:17px; line-height:1; padding:2px 4px; cursor:pointer; }
+
   .sp-card-edit-btn{
     flex-shrink:0; width:30px; height:30px; border-radius:50%; border:none; cursor:pointer;
     background:rgba(255,255,255,0.06); color:rgba(245,239,225,0.55);
@@ -2041,6 +2057,36 @@
     background:rgba(63,203,107,0.1); border:1px solid rgba(63,203,107,0.25); color:rgba(245,239,225,0.8);
   }
   .qz-resposta-certa b{ color:var(--accent); }
+  .qz-modos{ display:flex; gap:7px; margin-bottom:14px; }
+  .qz-modo{
+    flex:1; padding:9px 6px; border-radius:11px; cursor:pointer; font-family:inherit;
+    font-size:12px; font-weight:800; color:rgba(245,239,225,0.6);
+    border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04);
+  }
+  .qz-modo.active{ color:var(--deep); background:var(--gold); border-color:var(--gold); }
+  .qz-modo:disabled{ opacity:0.4; cursor:default; }
+  .qz-vidas{ display:flex; align-items:center; gap:14px; margin-bottom:10px; }
+  .qz-vidas > span{ font-size:10px; font-weight:800; letter-spacing:0.03em; text-transform:uppercase; color:rgba(245,239,225,0.45); }
+  .qz-vidas b{ margin-left:5px; font-size:14px; font-weight:900; color:var(--cream); }
+  .qz-vidas .qz-vidas-cor b{ color:#FFC75A; }
+  .qz-vidas .qz-certas b{ color:var(--accent); }
+  .qz-vidas .qz-erradas b{ color:#FF6B5C; }
+  .qz-insignia{
+    display:flex; align-items:center; justify-content:center; margin-bottom:14px;
+    padding:14px; border-radius:16px; background:rgba(255,255,255,0.05);
+  }
+  .qz-insignia img{ width:min(58vw, 210px); height:min(58vw, 210px); object-fit:contain; }
+  .qz-alternativas.grade{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .qz-img-alt{
+    padding:10px; border-radius:14px; cursor:pointer;
+    border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .qz-img-alt img{ width:100%; aspect-ratio:1/1; object-fit:contain; }
+  .qz-img-alt:active{ transform:scale(0.98); }
+  .qz-img-alt.certa{ border-color:var(--accent); background:rgba(63,203,107,0.16); }
+  .qz-img-alt.errada{ border-color:#FF6B5C; background:rgba(255,107,92,0.14); }
+  .qz-img-alt:disabled{ cursor:default; }
   .qz-alt-edit{ display:flex; flex-direction:column; gap:7px; margin-top:10px; }
   .qz-alt-edit-linha{ display:flex; align-items:center; gap:8px; }
   .qz-alt-edit-linha input[type="radio"]{ flex-shrink:0; width:18px; height:18px; accent-color:var(--accent); }
@@ -10965,6 +11011,12 @@
           </div>
           <p class="sp-disclaimer">534 especialidades (518 especialidades + 16 mestrados) da edição 2025 do Manual de Especialidades da DSA, organizadas em 11 áreas, incluindo a nova área "Ensinos Bíblicos". Base local (sem conexão ao site oficial).</p>
 
+          <!-- Só Diretoria/Administrador: envia as insígnias de uma vez, casando
+               cada arquivo com a especialidade pelo nome do arquivo. Sem isso a
+               única forma de cadastrar imagem era abrir uma especialidade de cada
+               vez — 534 vezes. -->
+          <button type="button" class="pl-list-add-btn" id="spLoteBtn" style="display:none; margin:0 16px 12px;">Enviar insígnias em lote</button>
+
           <!-- Só Diretor(a)/Dir. Associado(a) veem esse card — lança ou encerra o
                desafio de especialidades que controla o banner "Ranking de
                Especialidades" do Início. Ver refreshChallengeCard() mais abaixo
@@ -11065,6 +11117,23 @@
 
           <div class="pl-modal-actions">
             <button type="button" class="pl-btn pl-btn-primary" id="spAchSaveBtn">Salvar</button>
+          </div>
+        </div>
+      </div>
+      <div class="pl-modal-overlay" id="spLoteOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Insígnias em lote</h4>
+            <button type="button" class="pl-modal-close" id="spLoteClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <p class="pl-reminder-hint">Escolha as imagens das insígnias. O nome do arquivo diz de qual especialidade ela é — <b>Caiaque.png</b>, <b>Nos e Amarras.jpg</b>. Acento, maiúscula e traço não atrapalham. O que não for reconhecido fica separado pra você escolher na mão.</p>
+          <button type="button" class="pl-btn pl-btn-primary sp-lote-escolher" id="spLoteEscolherBtn">Escolher imagens</button>
+          <p class="sp-lote-resumo" id="spLoteResumo" style="display:none;"></p>
+          <div class="sp-lote-lista" id="spLoteLista"></div>
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-primary" id="spLoteEnviarBtn" style="display:none;">Enviar</button>
           </div>
         </div>
       </div>
@@ -11185,12 +11254,17 @@
             <div class="qz-capa">
               <span class="qz-capa-icone">🧭</span>
               <h4>Trilha do Saber</h4>
-              <p>Cada resposta certa é um passo na trilha. Errou ou deixou o tempo acabar, a caminhada termina — e quanto mais longe você for, mais pontos leva.</p>
+              <p>Cada resposta certa é um passo na trilha. Você tem <b>3 vidas</b>: errar ou deixar o tempo acabar custa uma, e na terceira a caminhada termina — quanto mais longe você for, mais pontos leva.</p>
+            </div>
+            <div class="qz-modos">
+              <button type="button" class="qz-modo active" id="qzModoConhecimento" data-modo="conhecimento">Perguntas</button>
+              <button type="button" class="qz-modo" id="qzModoInsignias" data-modo="insignias">Insígnias</button>
             </div>
             <div class="qz-placar">
               <div><span>Sua maior trilha</span><b id="qzRecorde">0</b></div>
-              <div><span>Perguntas no banco</span><b id="qzBanco">—</b></div>
+              <div><span id="qzBancoLabel">Perguntas no banco</span><b id="qzBanco">—</b></div>
             </div>
+            <p class="pl-reminder-hint" id="qzModoHint" style="display:none;"></p>
             <button type="button" class="pl-btn pl-btn-primary qz-btn-largo" id="qzComecarBtn">Começar rodada</button>
             <p class="pl-reminder-hint" id="qzAdminHint" style="display:none;">Você também pode cadastrar perguntas próprias no botão abaixo — as que dependem de conhecimento bíblico ou de doutrina precisam ser escritas por você.</p>
             <button type="button" class="pl-list-add-btn" id="qzGerenciarBtn" style="display:none;">Perguntas cadastradas pelo clube</button>
@@ -11198,6 +11272,11 @@
 
           <!-- 2. Jogando -->
           <div id="qzJogo" style="display:none;">
+            <div class="qz-vidas">
+              <span class="qz-vidas-cor">♥ Vidas<b id="qzVidas">3</b></span>
+              <span class="qz-certas">Certas<b id="qzCertas">0</b></span>
+              <span class="qz-erradas">Erradas<b id="qzErradas">0</b></span>
+            </div>
             <div class="qz-barra">
               <span class="qz-barra-acertos" id="qzAcertos">0 passos</span>
               <span class="qz-barra-fonte" id="qzFonte"></span>
@@ -11207,6 +11286,7 @@
               <span class="qz-tempo-num" id="qzTempoNum">30</span>
             </div>
             <p class="qz-pergunta" id="qzPergunta"></p>
+            <div class="qz-insignia" id="qzInsignia" style="display:none;"><img alt="Insígnia da especialidade"></div>
             <div class="qz-alternativas" id="qzAlternativas"></div>
           </div>
 
@@ -12785,19 +12865,22 @@
   // onFail (opcional) avisa quem chamou que a leitura não foi adiante — sem
   // isso, quem espera essa foto numa Promise ficaria parado pra sempre quando o
   // arquivo é um HEIC ou uma imagem corrompida.
-  function readPhotoAsJPEG(file, onDone, onFail){
+  // opcoes: { maxDim, qualidade } — a insígnia de especialidade usa 320px em vez
+  // dos 1600 padrão: são centenas de imagens guardadas em base64 dentro do
+  // banco, e a 1600 cada uma passa de 200 kB pra mostrar um botão de 38 px.
+  function readPhotoAsJPEG(file, onDone, onFail, opcoes){
     if(!file){ if(onFail) onFail(); return; }
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        const maxDim = 1600;
+        const maxDim = (opcoes && opcoes.maxDim) || 1600;
         const scale = Math.min(1, maxDim / Math.max(img.naturalWidth, img.naturalHeight));
         const canvas = document.createElement('canvas');
         canvas.width = Math.round(img.naturalWidth * scale);
         canvas.height = Math.round(img.naturalHeight * scale);
         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-        onDone(canvas.toDataURL('image/jpeg', 0.85));
+        onDone(canvas.toDataURL('image/jpeg', (opcoes && opcoes.qualidade) || 0.85));
       };
       img.onerror = () => {
         alert('Não foi possível abrir essa foto (formato não suportado, como HEIC do iPhone). Tente uma imagem .jpg ou .png.');
@@ -22717,7 +22800,8 @@ const REQ_SUMMARIES = {
   spThumbFileInput.id = 'spThumbFileInput';
   document.body.appendChild(spThumbFileInput);
   let spThumbEditingTarget = null; // { name, onDone(dataUrl) } — ver window.__spTriggerPhotoUpload
-  let spPhotoMap = {}; // nome da especialidade -> foto (base64), preenchido pela consulta abaixo
+  const spPhotoMap = {};     // nome -> imagem já baixada (cache; '' = não tem insígnia)
+  let spNomesComFoto = null; // Set com os nomes que têm insígnia; null = a consulta ainda não voltou
 
   function spThumbHTML(foto){
     return (foto
@@ -22740,7 +22824,7 @@ const REQ_SUMMARIES = {
     if(!file || !spThumbEditingTarget) return;
     const target = spThumbEditingTarget;
     readPhotoAsJPEG(file, async (dataUrl) => {
-      spPhotoMap[target.name] = dataUrl;
+      window.__spGuardarFoto(target.name, dataUrl);
       if(target.onDone) target.onDone(dataUrl);
       if(supa){
         const { error } = await supa.from('especialidade_fotos').upsert({ nome: target.name, foto: dataUrl }, { onConflict: 'nome' });
@@ -22752,20 +22836,342 @@ const REQ_SUMMARIES = {
     });
   });
 
-  if(supa){
-    supa.from('especialidade_fotos').select('nome, foto').then(({ data }) => {
-      (data || []).forEach(row => { spPhotoMap[row.nome] = row.foto; });
-      // Backfill pros cards que já tinham sido criados antes dessa consulta voltar
-      // (o catálogo local renderiza na hora, sem esperar o Supabase).
-      document.querySelectorAll('.sp-card').forEach(card => {
-        const foto = spPhotoMap[card.dataset.name];
-        if(foto && !card.dataset.foto){
-          card.dataset.foto = foto;
-          card.querySelector('.am-thumb').innerHTML = spThumbHTML(foto);
-        }
+  // Antes daqui saía uma consulta só, no fim do carregamento do app, trazendo
+  // nome E imagem de todas as insígnias cadastradas. Com o envio em lote isso
+  // vira dezenas de megabytes de base64 baixados por todo mundo a cada
+  // abertura, pra mostrar miniatura que quase ninguém rola até ver. Agora a
+  // consulta inicial traz só os nomes (barata, serve também pro jogo saber
+  // quais especialidades têm insígnia) e a imagem é buscada quando o card
+  // entra na tela ou quando a Trilha do Saber pede — pedidos feitos no mesmo
+  // instante viram uma consulta só.
+  const spFotoEsperando = new Map(); // nome -> [resolve, ...]
+  let spFotoTimer = null;
+
+  async function spBuscarLoteDeFotos(nomes){
+    if(!supa || !nomes.length) return;
+    const { data, error } = await supa.from('especialidade_fotos').select('nome, foto').in('nome', nomes);
+    if(error) console.warn('Não consegui buscar insígnias:', error.message);
+    (data || []).forEach(row => { spPhotoMap[row.nome] = row.foto || ''; });
+    // Nome sem linha também fica no cache, como '': senão cada rolagem
+    // repetiria a consulta de quem não tem insígnia nenhuma.
+    nomes.forEach(n => { if(spPhotoMap[n] === undefined) spPhotoMap[n] = ''; });
+  }
+
+  function spDespacharFotos(){
+    spFotoTimer = null;
+    const nomes = Array.from(spFotoEsperando.keys()).slice(0, 40);
+    if(!nomes.length) return;
+    spBuscarLoteDeFotos(nomes).then(() => {
+      nomes.forEach(n => {
+        const fila = spFotoEsperando.get(n) || [];
+        spFotoEsperando.delete(n);
+        fila.forEach(fn => fn(spPhotoMap[n] || ''));
       });
+      if(spFotoEsperando.size && !spFotoTimer) spFotoTimer = setTimeout(spDespacharFotos, 0);
     });
   }
+
+  // Promessa com a imagem da especialidade, ou '' se ela não tiver insígnia.
+  window.__spFotoDe = function(nome){
+    if(spPhotoMap[nome] !== undefined) return Promise.resolve(spPhotoMap[nome]);
+    if(!supa) return Promise.resolve('');
+    if(spNomesComFoto && !spNomesComFoto.has(nome)) return Promise.resolve('');
+    return new Promise(resolve => {
+      const fila = spFotoEsperando.get(nome) || [];
+      fila.push(resolve);
+      spFotoEsperando.set(nome, fila);
+      if(!spFotoTimer) spFotoTimer = setTimeout(spDespacharFotos, 80);
+    });
+  };
+
+  window.__spNomesComFoto = async function(recarregar){
+    if(spNomesComFoto && !recarregar) return Array.from(spNomesComFoto);
+    if(!supa) return [];
+    const { data, error } = await supa.from('especialidade_fotos').select('nome');
+    if(error){
+      console.warn('Não consegui listar as insígnias:', error.message);
+      return spNomesComFoto ? Array.from(spNomesComFoto) : [];
+    }
+    spNomesComFoto = new Set((data || []).map(r => r.nome));
+    return Array.from(spNomesComFoto);
+  };
+
+  // Chamado por quem acabou de gravar uma insígnia (card ou envio em lote),
+  // pra imagem nova já valer sem nova consulta.
+  window.__spGuardarFoto = function(nome, foto){
+    spPhotoMap[nome] = foto || '';
+    if(spNomesComFoto){
+      if(foto) spNomesComFoto.add(nome); else spNomesComFoto.delete(nome);
+    }
+  };
+
+  function spPintarThumb(card){
+    const nome = card.dataset.name;
+    if(!nome || card.dataset.foto) return;
+    window.__spFotoDe(nome).then(foto => {
+      if(!foto) return;
+      card.dataset.foto = foto;
+      const thumb = card.querySelector('.am-thumb');
+      if(thumb) thumb.innerHTML = spThumbHTML(foto);
+    });
+  }
+
+  const spObservadorThumb = ('IntersectionObserver' in window) ? new IntersectionObserver((entradas) => {
+    entradas.forEach(e => {
+      if(!e.isIntersecting) return;
+      spObservadorThumb.unobserve(e.target);
+      spPintarThumb(e.target);
+    });
+  }, { rootMargin: '300px' }) : null;
+
+  window.__spObservarCard = function(card){
+    if(spObservadorThumb) spObservadorThumb.observe(card);
+    else spPintarThumb(card); // navegador sem IntersectionObserver: busca logo
+  };
+
+  if(supa) window.__spNomesComFoto();
+
+  // ---- Envio de insígnias em lote ----
+  // Casar arquivo com especialidade pelo nome do arquivo. Só o nome idêntico
+  // (ignorando acento, caixa, traço e extensão) entra sozinho; qualquer
+  // aproximação fica pra pessoa escolher na mão, porque insígnia trocada em
+  // silêncio vira pergunta errada na Trilha do Saber — a criança responde
+  // certo e perde a rodada.
+  (function(){
+    const btnAbrir = document.getElementById('spLoteBtn');
+    const overlay = document.getElementById('spLoteOverlay');
+    const btnEscolher = document.getElementById('spLoteEscolherBtn');
+    const btnEnviar = document.getElementById('spLoteEnviarBtn');
+    const resumo = document.getElementById('spLoteResumo');
+    const lista = document.getElementById('spLoteLista');
+    const fechar = document.getElementById('spLoteClose');
+    if(!btnAbrir || !overlay) return;
+
+    const PAPEIS = ['Administrador', 'Diretoria', 'Diretoria Executiva'];
+    function podeEnviar(){
+      const u = window.__currentUsuario;
+      return !!u && PAPEIS.indexOf(u.papel) !== -1;
+    }
+    function atualizarBotao(){ btnAbrir.style.display = podeEnviar() ? '' : 'none'; }
+    document.addEventListener('cedros:loggedin', atualizarBotao);
+    atualizarBotao();
+
+    const entrada = document.createElement('input');
+    entrada.type = 'file';
+    entrada.accept = 'image/*';
+    entrada.multiple = true;
+    entrada.hidden = true;
+    entrada.id = 'spLoteFileInput';
+    document.body.appendChild(entrada);
+
+    const datalist = document.createElement('datalist');
+    datalist.id = 'spLoteNomes';
+    document.body.appendChild(datalist);
+
+    function chave(texto){
+      return (texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+    function chaveDoArquivo(nomeArquivo){
+      let base = (nomeArquivo || '').replace(/\.[a-z0-9]{2,5}$/i, ''); // extensão
+      base = base.replace(/\s*\(\d+\)\s*$/, '');                      // "Caiaque (1)"
+      base = base.replace(/^[\d\s._-]{1,6}[-_. ]+/, '');                // "012 - Caiaque"
+      return chave(base);
+    }
+
+    // Índice nome -> oficial, montado do que está na tela (catálogo local +
+    // especialidades criadas pelo clube). Chave repetida em duas
+    // especialidades não casa com nenhuma: seria chute.
+    function indiceDeNomes(){
+      const nomes = Array.from(document.querySelectorAll('.sp-card'))
+        .map(c => c.dataset.name).filter(Boolean);
+      if(!nomes.length){
+        Object.keys(SPECIALTY_DB).forEach(a => SPECIALTY_DB[a].forEach(n => nomes.push(n)));
+      }
+      const unicos = Array.from(new Set(nomes)).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      const porChave = {};
+      unicos.forEach(n => {
+        const k = chave(n);
+        porChave[k] = (porChave[k] === undefined) ? n : null; // null = ambíguo
+      });
+      return { nomes: unicos, porChave: porChave };
+    }
+
+    let itens = [];      // { arquivo, dataUrl, nome, estado }
+    let enviando = false;
+
+    function pintarResumo(){
+      const casados = itens.filter(i => i.nome).length;
+      const faltando = itens.length - casados;
+      resumo.style.display = itens.length ? '' : 'none';
+      resumo.textContent = itens.length
+        ? (casados + ' de ' + itens.length + ' reconhecidas' + (faltando ? ' — ' + faltando + ' pra escolher na mão' : ''))
+        : '';
+      btnEnviar.style.display = casados ? '' : 'none';
+      btnEnviar.textContent = 'Enviar ' + casados + (casados === 1 ? ' insígnia' : ' insígnias');
+    }
+
+    function pintarLista(){
+      lista.innerHTML = '';
+      itens.forEach((item, indice) => {
+        const linha = document.createElement('div');
+        linha.className = 'sp-lote-item' + (item.nome ? '' : ' duvida');
+        linha.innerHTML =
+          '<span class="sp-lote-thumb"><img alt=""></span>' +
+          '<span class="sp-lote-corpo">' +
+            '<b class="sp-lote-nome"></b>' +
+            '<span class="sp-lote-arquivo"></span>' +
+          '</span>' +
+          '<span class="sp-lote-estado"></span>' +
+          '<button type="button" class="sp-lote-remover" aria-label="Tirar da lista">×</button>';
+        linha.querySelector('img').src = item.dataUrl;
+        linha.querySelector('.sp-lote-arquivo').textContent = item.arquivo;
+        const corpo = linha.querySelector('.sp-lote-corpo');
+        const estado = linha.querySelector('.sp-lote-estado');
+
+        if(item.nome){
+          linha.querySelector('.sp-lote-nome').textContent = item.nome;
+        } else {
+          linha.querySelector('.sp-lote-nome').remove();
+          const campo = document.createElement('input');
+          campo.type = 'text';
+          campo.className = 'pl-input';
+          campo.setAttribute('list', 'spLoteNomes');
+          campo.placeholder = item.sugestao ? ('Talvez: ' + item.sugestao) : 'Escolha a especialidade';
+          campo.addEventListener('change', () => {
+            const escolhido = indice0.porChave[chave(campo.value)];
+            if(escolhido){ itens[indice].nome = escolhido; pintarLista(); pintarResumo(); }
+          });
+          corpo.insertBefore(campo, corpo.firstChild);
+        }
+
+        if(item.estado){
+          estado.textContent = item.estado;
+          estado.className = 'sp-lote-estado ' + (item.estado === 'enviada' ? 'ok' : 'erro');
+        }
+        linha.querySelector('.sp-lote-remover').addEventListener('click', () => {
+          itens.splice(indice, 1);
+          pintarLista();
+          pintarResumo();
+        });
+        lista.appendChild(linha);
+      });
+    }
+
+    let indice0 = { nomes: [], porChave: {} };
+
+    btnAbrir.addEventListener('click', () => {
+      itens = [];
+      indice0 = indiceDeNomes();
+      datalist.innerHTML = '';
+      indice0.nomes.forEach(n => {
+        const opt = document.createElement('option');
+        opt.value = n;
+        datalist.appendChild(opt);
+      });
+      pintarLista();
+      pintarResumo();
+      const ativa = document.querySelector('.view.active');
+      if(ativa) ativa.appendChild(overlay);
+      overlay.classList.add('show');
+    });
+    if(fechar) fechar.addEventListener('click', () => {
+      if(enviando){ alert('Espere o envio terminar.'); return; }
+      overlay.classList.remove('show');
+    });
+
+    btnEscolher.addEventListener('click', () => entrada.click());
+
+    entrada.addEventListener('change', () => {
+      const arquivos = Array.from(entrada.files || []);
+      entrada.value = '';
+      if(!arquivos.length) return;
+      btnEscolher.disabled = true;
+      btnEscolher.textContent = 'Lendo imagens…';
+      let restantes = arquivos.length;
+      const pronto = () => {
+        restantes--;
+        btnEscolher.textContent = restantes
+          ? ('Lendo imagens… faltam ' + restantes)
+          : 'Escolher mais imagens';
+        if(!restantes){
+          btnEscolher.disabled = false;
+          pintarLista();
+          pintarResumo();
+        }
+      };
+      arquivos.forEach(arquivo => {
+        readPhotoAsJPEG(arquivo, (dataUrl) => {
+          const k = chaveDoArquivo(arquivo.name);
+          const exato = indice0.porChave[k] || null;
+          let sugestao = null;
+          if(!exato && k.length >= 4){
+            const parecidos = indice0.nomes.filter(n => {
+              const kn = chave(n);
+              return kn.indexOf(k) === 0 || k.indexOf(kn) === 0;
+            });
+            if(parecidos.length === 1) sugestao = parecidos[0];
+          }
+          itens.push({ arquivo: arquivo.name, dataUrl: dataUrl, nome: exato, sugestao: sugestao, estado: '' });
+          pronto();
+        }, () => { pronto(); }, { maxDim: 320, qualidade: 0.82 });
+      });
+    });
+
+    btnEnviar.addEventListener('click', async () => {
+      if(enviando) return;
+      const paraEnviar = itens.filter(i => i.nome && i.estado !== 'enviada');
+      if(!paraEnviar.length) return;
+      // Duas imagens pra mesma especialidade: a segunda apagaria a primeira sem
+      // ninguém ver qual ficou.
+      const vistos = {};
+      const repetidos = [];
+      paraEnviar.forEach(i => {
+        if(vistos[i.nome]) repetidos.push(i.nome); else vistos[i.nome] = true;
+      });
+      if(repetidos.length){
+        alert('Há duas imagens para a mesma especialidade:\n\n' +
+              Array.from(new Set(repetidos)).join('\n') +
+              '\n\nTire uma da lista antes de enviar.');
+        return;
+      }
+      if(!supa){ alert('Sem conexão com o banco.'); return; }
+      enviando = true;
+      btnEnviar.disabled = true;
+      let enviadas = 0;
+      // De 8 em 8: uma única consulta com 200 imagens estoura o limite do
+      // servidor e não dá pra saber quais entraram.
+      for(let i = 0; i < paraEnviar.length; i += 8){
+        const lote = paraEnviar.slice(i, i + 8);
+        btnEnviar.textContent = 'Enviando ' + (enviadas + 1) + ' de ' + paraEnviar.length + '…';
+        const { error } = await supa.from('especialidade_fotos')
+          .upsert(lote.map(x => ({ nome: x.nome, foto: x.dataUrl })), { onConflict: 'nome' });
+        lote.forEach(x => {
+          x.estado = error ? 'erro' : 'enviada';
+          if(!error){
+            enviadas++;
+            window.__spGuardarFoto(x.nome, x.dataUrl);
+            const card = Array.from(document.querySelectorAll('.sp-card'))
+              .find(c => c.dataset.name === x.nome);
+            if(card){
+              card.dataset.foto = x.dataUrl;
+              const thumb = card.querySelector('.am-thumb');
+              if(thumb) thumb.innerHTML = spThumbHTML(x.dataUrl);
+            }
+          }
+        });
+        if(error) console.warn('Erro ao enviar lote de insígnias:', error.message);
+        pintarLista();
+      }
+      enviando = false;
+      btnEnviar.disabled = false;
+      const falhas = paraEnviar.length - enviadas;
+      btnEnviar.textContent = falhas ? 'Tentar de novo' : 'Enviado';
+      resumo.textContent = enviadas + (enviadas === 1 ? ' insígnia enviada' : ' insígnias enviadas') +
+        (falhas ? (' — ' + falhas + ' não entraram, veja as marcadas em vermelho') : '');
+      if(!falhas) setTimeout(() => { if(!enviando) overlay.classList.remove('show'); }, 900);
+    });
+  })();
 
   function spBuildCardEl(data){
     const areaOpt = document.querySelector('#spFieldArea option[value="' + data.Area + '"]');
@@ -22784,6 +23190,7 @@ const REQ_SUMMARIES = {
     card.querySelector('.pl-event-meta').textContent = data.Area;
     card.querySelector('.pl-event-tag').textContent = data.Area;
     card.dataset.name = data.Name; card.dataset.area = data.Area; card.dataset.req = data.Req || ''; card.dataset.foto = foto;
+    if(!foto) window.__spObservarCard(card);
     card.querySelector('.sp-card-edit-btn').addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -23546,6 +23953,35 @@ const REQ_SUMMARIES = {
     let doClube = [];      // perguntas de quiz_perguntas
     let respondendo = false;
 
+    // Três vidas, como no jogo que serviu de modelo: o primeiro erro não
+    // encerra mais a rodada. Errar de dedo na alternativa custava a caminhada
+    // inteira, e desbravador para de jogar quando isso acontece duas vezes.
+    const VIDAS_POR_RODADA = 3;
+    let vidas = VIDAS_POR_RODADA;
+    let certas = 0;
+    let erradas = 0;
+    let modo = 'conhecimento';  // 'conhecimento' | 'insignias'
+    let insigniasNoBanco = 0;
+
+    const elVidas = document.getElementById('qzVidas');
+    const elCertas = document.getElementById('qzCertas');
+    const elErradas = document.getElementById('qzErradas');
+    const elInsignia = document.getElementById('qzInsignia');
+    const elBancoLabel = document.getElementById('qzBancoLabel');
+    const elModoHint = document.getElementById('qzModoHint');
+    const botoesDeModo = Array.from(document.querySelectorAll('.qz-modo'));
+
+    function pintarPlacarDaRodada(){
+      if(elVidas) elVidas.textContent = vidas;
+      if(elCertas) elCertas.textContent = certas;
+      if(elErradas) elErradas.textContent = erradas;
+    }
+
+    // Todos os botões de resposta da pergunta atual — texto ou imagem.
+    function botoesDeResposta(){
+      return Array.from(elAlternativas.querySelectorAll('.qz-alt, .qz-img-alt'));
+    }
+
     // ---- Cronômetro ----
     const SEGUNDOS_POR_PERGUNTA = 30;
     const elTempo = document.querySelector('#view-quiz .qz-tempo');
@@ -23581,16 +24017,24 @@ const REQ_SUMMARIES = {
       }, 1000);
     }
 
-    // Tempo esgotado conta como erro: mostra a certa e encerra a caminhada.
+    // Tempo esgotado conta como erro: tira uma vida, mostra a certa e segue —
+    // só encerra quando a última vida vai embora.
     function acabouOTempo(){
       if(!respondendo) return;
       respondendo = false;
       const q = baralho[posicao];
-      Array.from(elAlternativas.querySelectorAll('.qz-alt')).forEach((b, i) => {
+      botoesDeResposta().forEach((b, i) => {
         b.disabled = true;
         if(i === q.correta) b.classList.add('certa');
       });
-      setTimeout(() => terminar(false, q, true), 1100);
+      erradas++;
+      vidas--;
+      pintarPlacarDaRodada();
+      const acabou = vidas <= 0;
+      setTimeout(() => {
+        if(acabou) terminar(false, q, true);
+        else { posicao++; proxima(); }
+      }, 1100);
     }
 
     function mostrar(qual){
@@ -23625,17 +24069,51 @@ const REQ_SUMMARIES = {
       return (data && data[0]) ? (data[0].acertos || 0) : 0;
     }
 
+    // Quantas insígnias o clube já cadastrou. Menos de 4 não dá nem pra montar
+    // uma pergunta (uma certa + três erradas), então o modo fica desligado com
+    // o recado de onde enviar.
+    async function contarInsignias(){
+      if(!window.__spNomesComFoto) return 0;
+      try{ return (await window.__spNomesComFoto(true)).length; }
+      catch(e){ console.warn('Não consegui contar as insígnias:', e); return 0; }
+    }
+
+    function pintarEscolhaDeModo(){
+      botoesDeModo.forEach(b => b.classList.toggle('active', b.dataset.modo === modo));
+      const botaoInsignias = document.getElementById('qzModoInsignias');
+      const poucas = insigniasNoBanco < 4;
+      if(botaoInsignias) botaoInsignias.disabled = poucas;
+      if(elBancoLabel) elBancoLabel.textContent = modo === 'insignias' ? 'Insígnias no banco' : 'Perguntas no banco';
+      if(elBanco) elBanco.textContent = modo === 'insignias' ? insigniasNoBanco : perguntasNoBanco;
+      if(elModoHint){
+        if(poucas){
+          elModoHint.style.display = '';
+          elModoHint.textContent = insigniasNoBanco
+            ? ('Só ' + insigniasNoBanco + ' insígnia(s) cadastrada(s). O modo Insígnias precisa de pelo menos 4 — envie as imagens no Manual de Especialidades.')
+            : 'O modo Insígnias aparece quando o clube enviar as imagens das insígnias, no Manual de Especialidades.';
+        } else if(modo === 'insignias'){
+          elModoHint.style.display = '';
+          elModoHint.textContent = 'Você vai ver a insígnia e dizer de qual especialidade ela é — e o contrário também.';
+        } else elModoHint.style.display = 'none';
+      }
+    }
+
+    let perguntasNoBanco = 0;
+
     async function abrirQuiz(){
       mostrar('inicio');
       showView('view-quiz');
       doClube = await carregarDoClube();
       const geradas = gerarPerguntasDoCatalogo();
-      if(elBanco) elBanco.textContent = geradas.length + doClube.length;
+      perguntasNoBanco = geradas.length + doClube.length;
+      insigniasNoBanco = await contarInsignias();
+      if(insigniasNoBanco < 4 && modo === 'insignias') modo = 'conhecimento';
+      pintarEscolhaDeModo();
       recorde = await carregarRecorde();
       if(elRecorde) elRecorde.textContent = recorde;
       if(entradaSub) entradaSub.textContent = recorde
-        ? ('Seu recorde: ' + recorde + ' acertos seguidos.')
-        : 'Responda sem errar e suba no ranking.';
+        ? ('Sua maior trilha: ' + recorde + (recorde === 1 ? ' passo.' : ' passos.'))
+        : 'Três vidas, 30 segundos por pergunta.';
       const podeGerenciar = !!(window.__currentUsuario &&
         ['Administrador','Diretoria','Diretoria Executiva'].indexOf(window.__currentUsuario.papel) !== -1);
       const gerenciarBtn = document.getElementById('qzGerenciarBtn');
@@ -23644,14 +24122,80 @@ const REQ_SUMMARIES = {
       if(adminHint) adminHint.style.display = podeGerenciar ? '' : 'none';
     }
 
-    function comecar(){
-      // As do clube primeiro na fila de sorteio, pra elas aparecerem mesmo
-      // sendo poucas perto das 1500 geradas.
-      const geradas = baralhar(gerarPerguntasDoCatalogo()).slice(0, 60);
-      baralho = baralhar(doClube.concat(geradas));
+    // Perguntas com insígnia. As imagens vêm do que o clube cadastrou
+    // (especialidade_fotos) — nunca de gabarito inventado: se a imagem estiver
+    // trocada, o erro está no catálogo, à vista e corrigível.
+    async function montarBaralhoDeInsignias(){
+      const nomes = await window.__spNomesComFoto(true);
+      if(nomes.length < 4) return [];
+      // 24 especialidades por rodada seguram o tráfego: cada pergunta reaproveita
+      // as mesmas imagens como alternativa errada, em vez de baixar 4 novas.
+      const sorteadas = baralhar(nomes).slice(0, 24);
+      const fotos = {};
+      await Promise.all(sorteadas.map(nome =>
+        window.__spFotoDe(nome).then(foto => { if(foto) fotos[nome] = foto; })
+      ));
+      // Imagem repetida em dois nomes (o mesmo arquivo enviado duas vezes) daria
+      // duas alternativas idênticas, uma delas marcada como errada.
+      const vistas = {};
+      const comFoto = Object.keys(fotos).filter(nome => {
+        if(vistas[fotos[nome]]) return false;
+        vistas[fotos[nome]] = true;
+        return true;
+      });
+      if(comFoto.length < 4) return [];
+
+      const perguntas = [];
+      comFoto.forEach(nome => {
+        const outras = baralhar(comFoto.filter(n => n !== nome)).slice(0, 3);
+        if(outras.length < 3) return;
+
+        const nomesEmbaralhados = baralhar([nome].concat(outras));
+        perguntas.push({
+          pergunta: 'De qual especialidade é esta insígnia?',
+          imagem: fotos[nome],
+          alternativas: nomesEmbaralhados,
+          correta: nomesEmbaralhados.indexOf(nome),
+          respostaTexto: nome,
+          fonte: 'insígnias'
+        });
+
+        const gradeEmbaralhada = baralhar([nome].concat(baralhar(comFoto.filter(n => n !== nome)).slice(0, 3)));
+        perguntas.push({
+          pergunta: 'Qual é a insígnia de “' + nome + '”?',
+          imagens: gradeEmbaralhada.map(n => fotos[n]),
+          alternativas: [],
+          correta: gradeEmbaralhada.indexOf(nome),
+          respostaTexto: nome,
+          fonte: 'insígnias'
+        });
+      });
+      return baralhar(perguntas);
+    }
+
+    async function comecar(){
+      const comecarBtn2 = document.getElementById('qzComecarBtn');
+      if(modo === 'insignias'){
+        if(comecarBtn2) { comecarBtn2.disabled = true; comecarBtn2.textContent = 'Carregando insígnias…'; }
+        baralho = await montarBaralhoDeInsignias();
+        if(comecarBtn2) { comecarBtn2.disabled = false; comecarBtn2.textContent = 'Começar rodada'; }
+        if(!baralho.length){
+          alert('Ainda não há insígnias suficientes pra jogar. Envie as imagens no Manual de Especialidades.');
+          return;
+        }
+      } else {
+        // As do clube primeiro na fila de sorteio, pra elas aparecerem mesmo
+        // sendo poucas perto das 1500 geradas.
+        const geradas = baralhar(gerarPerguntasDoCatalogo()).slice(0, 60);
+        baralho = baralhar(doClube.concat(geradas));
+        if(!baralho.length){ alert('Ainda não há perguntas pra jogar.'); return; }
+      }
       posicao = 0;
       acertos = 0;
-      if(!baralho.length){ alert('Ainda não há perguntas pra jogar.'); return; }
+      certas = 0;
+      erradas = 0;
+      vidas = VIDAS_POR_RODADA;
+      pintarPlacarDaRodada();
       pararRelogio();
       mostrar('jogo');
       proxima();
@@ -23664,15 +24208,35 @@ const REQ_SUMMARIES = {
       elAcertos.textContent = acertos + (acertos === 1 ? ' passo' : ' passos');
       elFonte.textContent = q.fonte === 'clube' ? 'pergunta do clube' : q.fonte;
       elPergunta.textContent = q.pergunta;
+      if(elInsignia){
+        elInsignia.style.display = q.imagem ? '' : 'none';
+        if(q.imagem) elInsignia.querySelector('img').src = q.imagem;
+      }
       elAlternativas.innerHTML = '';
-      q.alternativas.forEach((alt, i) => {
-        const botao = document.createElement('button');
-        botao.type = 'button';
-        botao.className = 'qz-alt';
-        botao.textContent = alt;
-        botao.addEventListener('click', () => responder(i, botao));
-        elAlternativas.appendChild(botao);
-      });
+      elAlternativas.classList.toggle('grade', !!q.imagens);
+      if(q.imagens){
+        q.imagens.forEach((src, i) => {
+          const botao = document.createElement('button');
+          botao.type = 'button';
+          botao.className = 'qz-img-alt';
+          const img = document.createElement('img');
+          img.src = src;
+          img.alt = 'Insígnia ' + (i + 1);
+          botao.appendChild(img);
+          botao.addEventListener('click', () => responder(i, botao));
+          elAlternativas.appendChild(botao);
+        });
+      } else {
+        q.alternativas.forEach((alt, i) => {
+          const botao = document.createElement('button');
+          botao.type = 'button';
+          botao.className = 'qz-alt';
+          botao.textContent = alt;
+          botao.addEventListener('click', () => responder(i, botao));
+          elAlternativas.appendChild(botao);
+        });
+      }
+      pintarPlacarDaRodada();
       comecarRelogio();
     }
 
@@ -23682,16 +24246,19 @@ const REQ_SUMMARIES = {
       pararRelogio();
       const q = baralho[posicao];
       const certa = escolhida === q.correta;
-      const botoes = Array.from(elAlternativas.querySelectorAll('.qz-alt'));
-      botoes.forEach((b, i) => {
+      botoesDeResposta().forEach((b, i) => {
         b.disabled = true;
         if(i === q.correta) b.classList.add('certa');
       });
       if(!certa) botao.classList.add('errada');
+      if(certa){ acertos++; certas++; }
+      else { erradas++; vidas--; }
+      pintarPlacarDaRodada();
+      const acabou = !certa && vidas <= 0;
       // Um instante pra ver a resposta certa antes de seguir ou encerrar.
       setTimeout(() => {
-        if(certa){ acertos++; posicao++; proxima(); }
-        else terminar(false, q);
+        if(acabou) terminar(false, q);
+        else { posicao++; proxima(); }
       }, certa ? 450 : 1100);
     }
 
@@ -23705,7 +24272,7 @@ const REQ_SUMMARIES = {
       document.getElementById('qzFimIcone').textContent = bateuRecorde ? '\u{1F3C6}' : (acertos ? '\u{1F4AA}' : '\u{1F643}');
       document.getElementById('qzFimTitulo').textContent = acabouOBaralho
         ? 'Você percorreu a trilha inteira!'
-        : (porTempo ? 'O tempo acabou' : (bateuRecorde ? 'Trilha mais longa!' : 'Fim da caminhada'));
+        : (porTempo ? 'O tempo acabou' : (bateuRecorde ? 'Trilha mais longa!' : 'Acabaram as vidas'));
       document.getElementById('qzFimTexto').textContent = acertos
         ? (acertos + (acertos === 1 ? ' passo na trilha.' : ' passos na trilha.'))
         : 'Nenhum passo desta vez. Tente de novo.';
@@ -23713,7 +24280,10 @@ const REQ_SUMMARIES = {
       if(perguntaErrada){
         respostaEl.style.display = '';
         respostaEl.innerHTML = 'A resposta certa era <b></b>.';
-        respostaEl.querySelector('b').textContent = perguntaErrada.alternativas[perguntaErrada.correta];
+        // Pergunta de insígnia não tem alternativa em texto: a certa é o nome
+        // da especialidade, guardado em respostaTexto.
+        respostaEl.querySelector('b').textContent = perguntaErrada.respostaTexto ||
+          perguntaErrada.alternativas[perguntaErrada.correta];
       } else respostaEl.style.display = 'none';
 
       // Grava a rodada. O ranking usa só a melhor de cada um.
@@ -23835,13 +24405,20 @@ const REQ_SUMMARIES = {
       renderAdminLista();
       doClube = await carregarDoClube();
       const geradas = gerarPerguntasDoCatalogo();
-      if(elBanco) elBanco.textContent = geradas.length + doClube.length;
+      perguntasNoBanco = geradas.length + doClube.length;
+      pintarEscolhaDeModo();
     });
 
     // Voltar no meio da rodada precisa parar o relógio: senão ele dispara
     // noutra tela e encerra uma caminhada que nem começou.
     const voltarDoQuiz = document.querySelector('#view-quiz .pl-back');
     if(voltarDoQuiz) voltarDoQuiz.addEventListener('click', () => { pararRelogio(); respondendo = false; });
+
+    botoesDeModo.forEach(b => b.addEventListener('click', () => {
+      if(b.disabled) return;
+      modo = b.dataset.modo;
+      pintarEscolhaDeModo();
+    }));
 
     if(entradaBtn) entradaBtn.addEventListener('click', abrirQuiz);
     const comecarBtn = document.getElementById('qzComecarBtn');
