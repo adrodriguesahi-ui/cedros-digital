@@ -1058,6 +1058,14 @@ create table if not exists classe_instrutores (
 -- O app mantém no máximo um responsável por cartão.
 alter table classe_instrutores add column if not exists responsavel boolean not null default false;
 
+-- Substitui o booleano acima por 3 funções (Instrutor/Líder/Associado): quem
+-- era `responsavel=true` vira 'lider' (mesmo poder de montar o cronograma,
+-- ver canPlan() no index.html — só muda o nome), e os demais viram
+-- 'instrutor'. A coluna `responsavel` fica no banco por segurança, mas o app
+-- não lê mais dela a partir daqui.
+alter table classe_instrutores add column if not exists funcao text not null default 'instrutor';
+update classe_instrutores set funcao = 'lider' where responsavel = true and funcao = 'instrutor';
+
 alter table classe_instrutores enable row level security;
 
 drop policy if exists "classe_instrutores: acesso publico" on classe_instrutores;

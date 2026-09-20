@@ -2332,13 +2332,14 @@
   .cp-row-title{ display:block; font-size:13.5px; font-weight:800; color:var(--cream); line-height:1.3; }
   .cp-row-meta{ display:block; margin-top:3px; font-size:11.5px; font-weight:700; color:rgba(245,239,225,0.5); }
   .cp-row-meta .cp-sem-instrutor{ color:var(--gold); }
-  /* No modal de instrutores, marca qual deles é o responsável pelo cartão. */
-  .cp-resp-btn{
+  /* No modal de instrutores, define a função de cada um no cartão (Instrutor,
+     Líder ou Associado) — só um Líder por cartão, destacado em dourado. */
+  .cp-funcao-select{
     flex-shrink:0; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14);
-    color:rgba(245,239,225,0.55); border-radius:16px; padding:5px 10px;
+    color:rgba(245,239,225,0.75); border-radius:16px; padding:5px 10px;
     font-size:10.5px; font-weight:800; cursor:pointer; white-space:nowrap;
   }
-  .cp-resp-btn.ativo{ background:rgba(216,168,62,0.18); border-color:var(--gold); color:var(--gold); }
+  .cp-funcao-select.lider{ background:rgba(216,168,62,0.18); border-color:var(--gold); color:var(--gold); }
 
   /* Requisitos agrupados numa mesma aula, como chips removíveis */
   .cl-req-add-row{ display:flex; gap:8px; align-items:stretch; }
@@ -10940,7 +10941,7 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
-        <p class="pl-reminder-hint" style="margin-top:0;">Marque quem atende esta classe. São essas pessoas que aparecem pra escalar como instrutor responsável de cada aula.</p>
+        <p class="pl-reminder-hint" style="margin-top:0;">Marque quem atende esta classe e defina a função de cada um. Só o Líder também monta o cronograma; Instrutor e Associado ficam disponíveis pra escalar em cada aula.</p>
         <div class="ad-visibility-list" id="cpInstrutoresList"></div>
       </div>
     </div>
@@ -11748,7 +11749,17 @@
             <option value="Líder Master">Líder Master</option>
             <option value="Líder Master Avançado">Líder Master Avançado</option>
           </select>
-          <p class="pl-reminder-hint">Ao definir, essa pessoa já aparece pronta em Classes Regulares → esse cartão, pra marcar requisitos — sem precisar cadastrar de novo lá.</p>
+          <p class="pl-reminder-hint" id="adFieldClasseHint">Ao definir, essa pessoa já aparece pronta em Classes Regulares → esse cartão, pra marcar requisitos — sem precisar cadastrar de novo lá.</p>
+
+          <div id="adFieldClasseFuncaoWrap" style="display:none;">
+            <label class="pl-field-label">Função na Classe</label>
+            <select class="pl-input" id="adFieldClasseFuncao">
+              <option value="instrutor">Instrutor</option>
+              <option value="lider">Líder</option>
+              <option value="associado">Associado</option>
+            </select>
+            <p class="pl-reminder-hint">Como Líder, essa pessoa também monta o cronograma de aulas do cartão em Planejamento de Classes — Instrutor e Associado só ficam disponíveis pra escalar em cada aula.</p>
+          </div>
 
           <div id="adFieldClasseCoordWrap" style="display:none;">
             <label class="pl-field-label">Classe que coordena</label>
@@ -16080,6 +16091,22 @@
     }
     window.__syncDesbravadorFromUsuario = syncDesbravadorFromUsuario;
 
+    // Espelha syncDesbravadorFromUsuario, mas pra quem NÃO é Desbravador (ver
+    // adFieldClasseFuncao em Administração): em vez de virar aluno rastreado,
+    // entra na equipe do cartão em `classe_instrutores` (mesma tabela por trás
+    // de "Instrutores do cartão", em Planejamento de Classes). `funcao` é
+    // 'instrutor', 'lider' ou 'associado' — só 'lider' dá o poder extra de
+    // montar o cronograma (ver canPlan() mais abaixo no arquivo).
+    async function syncInstrutorFromUsuario(usuario, funcao){
+      if(!supa || !usuario || !usuario.classe) return;
+      const { error } = await supa.from('classe_instrutores').upsert({
+        classe: usuario.classe, usuario_id: usuario.id, funcao: funcao || 'instrutor'
+      }, { onConflict: 'classe,usuario_id' });
+      if(error) console.error('Erro ao adicionar à equipe da classe:', error.message);
+      if(window.__cpReloadInstrutores) await window.__cpReloadInstrutores();
+    }
+    window.__syncInstrutorFromUsuario = syncInstrutorFromUsuario;
+
     function renderStudentBar(className){
       ensureClassData(className);
       studentChips.innerHTML = '';
@@ -18488,6 +18515,7 @@
     const coordToggle = document.getElementById('clPlanField_coordAcompanha');
 
     const instrutorHint = document.getElementById('clPlanInstrutorHint');
+    const FUNCAO_LABELS = { instrutor: 'Instrutor', lider: 'Líder', associado: 'Associado' };
     function populateInstrutorOptions(classe, plan){
       const campo = fields.instrutor;
       if(!campo) return;
@@ -18498,7 +18526,7 @@
       lista.forEach(pessoa => {
         const opt = document.createElement('option');
         opt.value = pessoa.id;
-        opt.textContent = pessoa.nome + (pessoa.responsavel ? ' · responsável do cartão' : '');
+        opt.textContent = pessoa.nome + ' · ' + (FUNCAO_LABELS[pessoa.funcao] || FUNCAO_LABELS.instrutor);
         campo.appendChild(opt);
       });
       const convidadoOpt = document.createElement('option');
@@ -18863,6 +18891,7 @@
 
     // Definir a lista de instrutores do cartão é do Coordenador daquele cartão
     // (ou do Administrador).
+    const FUNCAO_LABELS = { instrutor: 'Instrutor', lider: 'Líder', associado: 'Associado' };
     function canManageRoster(qualClasse){
       const u = window.__currentUsuario;
       if(!u || !qualClasse) return false;
@@ -18870,17 +18899,19 @@
       return u.papel === 'Coordenador de Classes' && u.classeCoordenada === qualClasse;
     }
 
-    // Montar o cronograma e escalar quem dá cada aula é do instrutor
-    // responsável pelo cartão — além de quem define a lista.
+    // Montar o cronograma e escalar quem dá cada aula é do Líder do cartão —
+    // além de quem define a lista. Instrutor e Associado só ficam disponíveis
+    // pra escalar em cada aula (ver populateInstrutorOptions acima).
     function canPlan(qualClasse){
       if(canManageRoster(qualClasse)) return true;
       const u = window.__currentUsuario;
       if(!u || !u.id) return false;
-      return (instrutoresPorClasse[qualClasse] || []).some(p => p.id === u.id && p.responsavel);
+      return (instrutoresPorClasse[qualClasse] || []).some(p => p.id === u.id && p.funcao === 'lider');
     }
     window.__cpCanPlan = canPlan;
     window.__cpCanManageRoster = canManageRoster;
     window.__cpGetInstrutores = function(qualClasse){ return instrutoresPorClasse[qualClasse] || []; };
+    window.__cpReloadInstrutores = loadInstrutores;
 
     function requisitosDaClasse(qualClasse){
       const group = document.querySelector('#view-classes .pl-month-group[data-class="' + (qualClasse || '').replace(/"/g, '\\"') + '"]');
@@ -18910,7 +18941,7 @@
     async function loadInstrutores(){
       if(!supa) return;
       const [{ data: vinculos }, { data: pessoas }] = await Promise.all([
-        supa.from('classe_instrutores').select('classe, usuario_id, responsavel'),
+        supa.from('classe_instrutores').select('classe, usuario_id, funcao'),
         supa.from('usuarios').select('id, nome, papel, ativo').order('nome')
       ]);
       usuarios = (pessoas || []).filter(p => p.ativo !== false);
@@ -18921,11 +18952,11 @@
         const pessoa = porId[v.usuario_id];
         if(!pessoa) return;
         if(!instrutoresPorClasse[v.classe]) instrutoresPorClasse[v.classe] = [];
-        instrutoresPorClasse[v.classe].push({ id: pessoa.id, nome: pessoa.nome, responsavel: !!v.responsavel });
+        instrutoresPorClasse[v.classe].push({ id: pessoa.id, nome: pessoa.nome, funcao: v.funcao || 'instrutor' });
       });
-      // O responsável aparece primeiro na hora de escalar a aula.
+      // O Líder aparece primeiro na hora de escalar a aula.
       Object.keys(instrutoresPorClasse).forEach(k => {
-        instrutoresPorClasse[k].sort((a, b) => (b.responsavel ? 1 : 0) - (a.responsavel ? 1 : 0));
+        instrutoresPorClasse[k].sort((a, b) => (b.funcao === 'lider' ? 1 : 0) - (a.funcao === 'lider' ? 1 : 0));
       });
     }
 
@@ -19466,13 +19497,18 @@
         row.className = 'ad-vis-row';
         row.innerHTML =
           '<span class="ad-vis-title"></span>' +
-          '<button type="button" class="cp-resp-btn">Responsável</button>' +
+          '<select class="cp-funcao-select">' +
+            '<option value="instrutor">Instrutor</option>' +
+            '<option value="lider">Líder</option>' +
+            '<option value="associado">Associado</option>' +
+          '</select>' +
           '<span class="pl-switch"><input type="checkbox"><span class="pl-switch-track"><span class="pl-switch-thumb"></span></span></span>';
         row.querySelector('.ad-vis-title').textContent = pessoa.nome + (pessoa.papel ? ' · ' + pessoa.papel : '');
 
-        const respBtn = row.querySelector('.cp-resp-btn');
-        respBtn.classList.toggle('ativo', !!(vinculo && vinculo.responsavel));
-        respBtn.style.display = atuais.has(pessoa.id) ? '' : 'none';
+        const funcaoSelect = row.querySelector('.cp-funcao-select');
+        funcaoSelect.value = (vinculo && vinculo.funcao) || 'instrutor';
+        funcaoSelect.classList.toggle('lider', funcaoSelect.value === 'lider');
+        funcaoSelect.style.display = atuais.has(pessoa.id) ? '' : 'none';
 
         const input = row.querySelector('input');
         input.checked = atuais.has(pessoa.id);
@@ -19481,17 +19517,18 @@
           const alvo = classe;
           if(!instrutoresPorClasse[alvo]) instrutoresPorClasse[alvo] = [];
           if(input.checked){
-            instrutoresPorClasse[alvo].push({ id: pessoa.id, nome: pessoa.nome, responsavel: false });
+            funcaoSelect.value = 'instrutor';
+            funcaoSelect.classList.remove('lider');
+            instrutoresPorClasse[alvo].push({ id: pessoa.id, nome: pessoa.nome, funcao: 'instrutor' });
           } else {
             instrutoresPorClasse[alvo] = instrutoresPorClasse[alvo].filter(p => p.id !== pessoa.id);
           }
-          respBtn.style.display = input.checked ? '' : 'none';
-          respBtn.classList.remove('ativo');
+          funcaoSelect.style.display = input.checked ? '' : 'none';
           render();
           if(supa){
             const { error } = input.checked
               ? await supa.from('classe_instrutores').upsert({
-                  classe: alvo, usuario_id: pessoa.id, responsavel: false,
+                  classe: alvo, usuario_id: pessoa.id, funcao: 'instrutor',
                   criado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
                 })
               : await supa.from('classe_instrutores').delete().eq('classe', alvo).eq('usuario_id', pessoa.id);
@@ -19499,26 +19536,30 @@
           }
         });
 
-        // Responsável é um só por cartão: marcar alguém tira de quem estava.
-        respBtn.addEventListener('click', async () => {
+        // Líder é um só por cartão: escolher alguém tira de quem estava.
+        funcaoSelect.addEventListener('change', async () => {
           const alvo = classe;
-          if(!input.checked) return;
-          const virandoResponsavel = !respBtn.classList.contains('ativo');
-          const anteriores = (instrutoresPorClasse[alvo] || []).filter(p => p.responsavel && p.id !== pessoa.id);
+          const novaFuncao = funcaoSelect.value;
+          const virandoLider = novaFuncao === 'lider';
+          const anteriores = virandoLider
+            ? (instrutoresPorClasse[alvo] || []).filter(p => p.funcao === 'lider' && p.id !== pessoa.id)
+            : [];
           (instrutoresPorClasse[alvo] || []).forEach(p => {
-            p.responsavel = virandoResponsavel && p.id === pessoa.id;
+            if(p.id === pessoa.id) p.funcao = novaFuncao;
+            else if(virandoLider && p.funcao === 'lider') p.funcao = 'instrutor';
           });
+          funcaoSelect.classList.toggle('lider', virandoLider);
           renderInstrutoresList();
           render();
           if(supa){
             for(const antigo of anteriores){
-              await supa.from('classe_instrutores').update({ responsavel: false })
+              await supa.from('classe_instrutores').update({ funcao: 'instrutor' })
                 .eq('classe', alvo).eq('usuario_id', antigo.id);
             }
             const { error } = await supa.from('classe_instrutores')
-              .update({ responsavel: virandoResponsavel })
+              .update({ funcao: novaFuncao })
               .eq('classe', alvo).eq('usuario_id', pessoa.id);
-            if(error) console.error('Erro ao definir instrutor responsável:', error.message);
+            if(error) console.error('Erro ao definir função na classe:', error.message);
           }
         });
 
@@ -24900,6 +24941,9 @@ const REQ_SUMMARIES = {
     const fieldBirthdate = document.getElementById('adFieldBirthdate');
     const fieldAtivo = document.getElementById('adFieldAtivo');
     const fieldClasse = document.getElementById('adFieldClasse');
+    const fieldClasseHint = document.getElementById('adFieldClasseHint');
+    const fieldClasseFuncao = document.getElementById('adFieldClasseFuncao');
+    const fieldClasseFuncaoWrap = document.getElementById('adFieldClasseFuncaoWrap');
     const fieldClasseCoord = document.getElementById('adFieldClasseCoord');
     const fieldClasseCoordWrap = document.getElementById('adFieldClasseCoordWrap');
     const userAccessBtn = document.getElementById('adUserAccessBtn');
@@ -24907,6 +24951,7 @@ const REQ_SUMMARIES = {
 
     const ROLE_VISIBILITY = {}; // nome do papel -> permissoes_padrao (carregado da tabela `papeis`)
     const ROLE_COLORS = {};     // nome do papel -> cor da etiqueta
+    let FUNCAO_POR_USUARIO = {}; // usuario_id -> funcao em classe_instrutores (carregado em loadUsers)
     window.__ROLE_VISIBILITY = ROLE_VISIBILITY;
 
     let editingCard = null;
@@ -24976,6 +25021,7 @@ const REQ_SUMMARIES = {
       card.dataset.birthdate = row.data_nascimento || '';
       card.dataset.ativo = row.ativo === false ? '0' : '1';
       card.dataset.classe = row.classe || '';
+      card.dataset.classeFuncao = FUNCAO_POR_USUARIO[row.id] || 'instrutor';
       card.dataset.classeCoord = row.classe_coordenada || '';
       if(row.acesso) card.dataset.access = JSON.stringify(row.acesso);
       card.addEventListener('click', (e) => { e.preventDefault(); openModal('edit', card); });
@@ -25006,8 +25052,13 @@ const REQ_SUMMARIES = {
 
     async function loadUsers(){
       if(!supa){ showMessage('Configure SUPABASE_URL e SUPABASE_ANON_KEY no início do script para carregar os usuários (ver supabase/schema.sql).'); return; }
-      const { data, error } = await supa.from('usuarios').select('*').eq('aprovado', true).order('nome');
+      const [{ data, error }, { data: instrutores }] = await Promise.all([
+        supa.from('usuarios').select('*').eq('aprovado', true).order('nome'),
+        supa.from('classe_instrutores').select('usuario_id, funcao')
+      ]);
       if(error){ showMessage('Não foi possível carregar os usuários: ' + error.message); return; }
+      FUNCAO_POR_USUARIO = {};
+      (instrutores || []).forEach(v => { FUNCAO_POR_USUARIO[v.usuario_id] = v.funcao || 'instrutor'; });
       content.innerHTML = '';
       if(!data.length){ showMessage('Nenhum usuário cadastrado ainda.'); return; }
       data.forEach(row => content.appendChild(buildCard(row)));
@@ -25068,8 +25119,18 @@ const REQ_SUMMARIES = {
     // Campo "Classe que coordena" só faz sentido pro papel Coordenador de
     // Classes — escondido pros demais pra não confundir (ver canManageStudents
     // em Classes Regulares, que usa esse valor pra restringir o cadastro).
+    // Desbravador vira aluno rastreado (desbravadores/progresso_requisitos);
+    // qualquer outro papel com Classe definida vira equipe do cartão
+    // (classe_instrutores) em vez disso — ver save() logo abaixo.
     function updateClasseCoordVisibility(){
       if(fieldClasseCoordWrap) fieldClasseCoordWrap.style.display = (fieldRole.value === 'Coordenador de Classes') ? '' : 'none';
+      const ehEquipe = fieldRole.value && fieldRole.value !== 'Desbravador';
+      if(fieldClasseFuncaoWrap) fieldClasseFuncaoWrap.style.display = ehEquipe ? '' : 'none';
+      if(fieldClasseHint){
+        fieldClasseHint.textContent = ehEquipe
+          ? 'Ao definir, essa pessoa passa a fazer parte da equipe desse cartão (Instrutores do cartão, em Planejamento de Classes) — não vira aluno rastreado.'
+          : 'Ao definir, essa pessoa já aparece pronta em Classes Regulares → esse cartão, pra marcar requisitos — sem precisar cadastrar de novo lá.';
+      }
     }
     fieldRole.addEventListener('change', updateClasseCoordVisibility);
 
@@ -25087,6 +25148,7 @@ const REQ_SUMMARIES = {
       fieldBirthdate.style.borderColor = '';
       fieldAtivo.checked = card ? card.dataset.ativo !== '0' : true;
       fieldClasse.value = card ? (card.dataset.classe || '') : '';
+      if(fieldClasseFuncao) fieldClasseFuncao.value = card ? (card.dataset.classeFuncao || 'instrutor') : 'instrutor';
       if(fieldClasseCoord) fieldClasseCoord.value = card ? (card.dataset.classeCoord || '') : '';
       updateClasseCoordVisibility();
       userAccessBtn.style.display = (mode === 'edit') ? '' : 'none';
@@ -25119,7 +25181,18 @@ const REQ_SUMMARIES = {
       if(editingCard) payload.id = editingCard.dataset.id;
       const { data, error } = await supa.from('usuarios').upsert(payload).select().single();
       if(error){ alert('Não foi possível salvar: ' + error.message); return; }
-      if(data.classe && window.__syncDesbravadorFromUsuario) await window.__syncDesbravadorFromUsuario(data);
+      // Desbravador vira aluno rastreado (desbravadores); qualquer outro papel
+      // com Classe definida vira equipe do cartão (classe_instrutores) — nunca
+      // os dois ao mesmo tempo, ver updateClasseCoordVisibility() acima.
+      if(fieldRole.value === 'Desbravador'){
+        if(data.classe && window.__syncDesbravadorFromUsuario) await window.__syncDesbravadorFromUsuario(data);
+        await supa.from('classe_instrutores').delete().eq('usuario_id', data.id);
+        delete FUNCAO_POR_USUARIO[data.id];
+      } else if(data.classe && window.__syncInstrutorFromUsuario){
+        const funcao = fieldClasseFuncao ? fieldClasseFuncao.value : 'instrutor';
+        await window.__syncInstrutorFromUsuario(data, funcao);
+        FUNCAO_POR_USUARIO[data.id] = funcao;
+      }
       const card = buildCard(data);
       if(editingCard){ editingCard.replaceWith(card); } else { content.insertBefore(card, content.firstChild); }
       applyFilter();
