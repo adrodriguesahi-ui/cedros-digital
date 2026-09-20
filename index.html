@@ -11723,6 +11723,10 @@
           </div>
           <p class="pl-reminder-hint" id="adRoleHint">Selecione a função do usuário.</p>
 
+          <label class="pl-field-label">Papéis adicionais (opcional)</label>
+          <div class="ad-visibility-list" id="adFieldPapeisAdicionais"></div>
+          <p class="pl-reminder-hint">Alguém pode ser Conselheiros (papel principal, decide a etiqueta e cor do cartão) e também Instrutores — cada papel marcado aqui soma os módulos que ele libera por padrão ao acesso desta pessoa.</p>
+
           <div class="ad-field-row">
             <div>
               <label class="pl-field-label">Cargo (opcional)</label>
@@ -24936,6 +24940,8 @@ const REQ_SUMMARIES = {
     const fieldEmail = document.getElementById('adFieldEmail');
     const fieldUnit = document.getElementById('adFieldUnit');
     const fieldRole = document.getElementById('adFieldRole');
+    const fieldPapeisAdicionais = document.getElementById('adFieldPapeisAdicionais');
+    let ALL_PAPEIS = []; // nomes de todos os papéis, carregado em loadRoles()
     const fieldCargo = document.getElementById('adFieldCargo');
     const fieldCanScore = document.getElementById('adFieldCanScore');
     const fieldBirthdate = document.getElementById('adFieldBirthdate');
@@ -25007,7 +25013,8 @@ const REQ_SUMMARIES = {
         '<span class="ad-card-access-btn" title="Gerenciar acesso"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="m10.5 12.5 8-8M16 5l2 2M13 8l2 2"/></svg></span>';
       card.querySelector('.pl-event-title').textContent = row.nome;
       card.querySelector('.ad-col-email').textContent = row.email;
-      card.querySelector('.ad-col-unit').textContent = (row.unidade === 'Diretoria do Clube' ? '' : 'Unidade ') + row.unidade + (row.ativo === false ? ' · Inativo' : '');
+      const extras = row.papeis_adicionais || [];
+      card.querySelector('.ad-col-unit').textContent = (row.unidade === 'Diretoria do Clube' ? '' : 'Unidade ') + row.unidade + (extras.length ? ' · +' + extras.join(', +') : '') + (row.ativo === false ? ' · Inativo' : '');
       card.querySelector('.pl-event-tag').textContent = row.papel;
       if(row.ativo === false) card.style.opacity = '0.55';
       card.dataset.id = row.id;
@@ -25023,6 +25030,7 @@ const REQ_SUMMARIES = {
       card.dataset.classe = row.classe || '';
       card.dataset.classeFuncao = FUNCAO_POR_USUARIO[row.id] || 'instrutor';
       card.dataset.classeCoord = row.classe_coordenada || '';
+      card.dataset.papeisAdicionais = JSON.stringify(extras);
       if(row.acesso) card.dataset.access = JSON.stringify(row.acesso);
       card.addEventListener('click', (e) => { e.preventDefault(); openModal('edit', card); });
       return card;
@@ -25041,12 +25049,40 @@ const REQ_SUMMARIES = {
       const { data, error } = await supa.from('papeis').select('nome, cor, permissoes_padrao').order('nome');
       if(error || !data) return;
       fieldRole.innerHTML = '';
+      ALL_PAPEIS = data.map(r => r.nome);
       data.forEach(r => {
         ROLE_VISIBILITY[r.nome] = r.permissoes_padrao || {};
         ROLE_COLORS[r.nome] = r.cor;
         const opt = document.createElement('option');
         opt.value = r.nome; opt.textContent = r.nome; opt.setAttribute('data-color', r.cor);
         fieldRole.appendChild(opt);
+      });
+    }
+
+    // Papéis adicionais: qualquer papel menos Desbravador (não faz sentido
+    // como "extra") e menos o que já está selecionado como principal. Só
+    // afetam o acesso por área (ver mergePapeisAccess mais abaixo no
+    // arquivo) — etiqueta do cartão, Coordenador de Classes etc. continuam
+    // decididos só pelo papel principal.
+    function getPapeisAdicionaisMarcados(){
+      if(!fieldPapeisAdicionais) return [];
+      return Array.from(fieldPapeisAdicionais.querySelectorAll('input:checked')).map(i => i.value);
+    }
+    function renderPapeisAdicionaisList(marcadosIniciais){
+      if(!fieldPapeisAdicionais) return;
+      const marcados = new Set(marcadosIniciais || getPapeisAdicionaisMarcados());
+      fieldPapeisAdicionais.innerHTML = '';
+      ALL_PAPEIS.filter(nome => nome !== 'Desbravador' && nome !== fieldRole.value).forEach(nome => {
+        const row = document.createElement('div');
+        row.className = 'ad-vis-row';
+        row.innerHTML =
+          '<span class="ad-vis-title"></span>' +
+          '<span class="pl-switch"><input type="checkbox"><span class="pl-switch-track"><span class="pl-switch-thumb"></span></span></span>';
+        row.querySelector('.ad-vis-title').textContent = nome;
+        const input = row.querySelector('input');
+        input.checked = marcados.has(nome);
+        input.value = nome;
+        fieldPapeisAdicionais.appendChild(row);
       });
     }
 
@@ -25131,6 +25167,7 @@ const REQ_SUMMARIES = {
           ? 'Ao definir, essa pessoa passa a fazer parte da equipe desse cartão (Instrutores do cartão, em Planejamento de Classes) — não vira aluno rastreado.'
           : 'Ao definir, essa pessoa já aparece pronta em Classes Regulares → esse cartão, pra marcar requisitos — sem precisar cadastrar de novo lá.';
       }
+      renderPapeisAdicionaisList();
     }
     fieldRole.addEventListener('change', updateClasseCoordVisibility);
 
@@ -25151,6 +25188,7 @@ const REQ_SUMMARIES = {
       if(fieldClasseFuncao) fieldClasseFuncao.value = card ? (card.dataset.classeFuncao || 'instrutor') : 'instrutor';
       if(fieldClasseCoord) fieldClasseCoord.value = card ? (card.dataset.classeCoord || '') : '';
       updateClasseCoordVisibility();
+      renderPapeisAdicionaisList(card && card.dataset.papeisAdicionais ? JSON.parse(card.dataset.papeisAdicionais) : []);
       userAccessBtn.style.display = (mode === 'edit') ? '' : 'none';
       window.__currentEditingUserCard = card || null;
       overlay.classList.add('show');
@@ -25176,7 +25214,8 @@ const REQ_SUMMARIES = {
         data_nascimento: birthdateIso,
         ativo: fieldAtivo.checked,
         classe: fieldClasse.value || null,
-        classe_coordenada: (fieldRole.value === 'Coordenador de Classes' && fieldClasseCoord) ? (fieldClasseCoord.value || null) : null
+        classe_coordenada: (fieldRole.value === 'Coordenador de Classes' && fieldClasseCoord) ? (fieldClasseCoord.value || null) : null,
+        papeis_adicionais: getPapeisAdicionaisMarcados()
       };
       if(editingCard) payload.id = editingCard.dataset.id;
       const { data, error } = await supa.from('usuarios').upsert(payload).select().single();
@@ -25287,12 +25326,10 @@ const REQ_SUMMARIES = {
     accessResetBtn.addEventListener('click', async () => {
       const card = window.__currentEditingUserCard;
       if(!card) return;
-      if(supa){
-        const { data } = await supa.rpc('permissoes_padrao_papel', { papel_nome: card.dataset.role });
-        workingAccess = Object.assign({}, data || ROLE_VISIBILITY[card.dataset.role] || {});
-      } else {
-        workingAccess = Object.assign({}, ROLE_VISIBILITY[card.dataset.role] || {});
-      }
+      const extras = card.dataset.papeisAdicionais ? JSON.parse(card.dataset.papeisAdicionais) : [];
+      workingAccess = window.__mergePapeisAccess
+        ? await window.__mergePapeisAccess(card.dataset.role, extras)
+        : Object.assign({}, ROLE_VISIBILITY[card.dataset.role] || {});
       renderAccessList();
     });
 
@@ -25457,18 +25494,36 @@ const REQ_SUMMARIES = {
   // usada pela simulação "testar como este usuário" no painel de Administração.
   // Devolve { found:false } se o e-mail não estiver cadastrado em `usuarios`
   // (ou seja, ainda não foi liberado por um admin) — usado pra barrar o acesso.
+  // Soma o acesso padrão de vários papéis (papel principal + papeis_adicionais,
+  // ver Administração → Papéis adicionais): cada área liberada por QUALQUER um
+  // deles entra no resultado. Reaproveitado pelo login (abaixo) e pelo botão
+  // "Restaurar padrão da função" em Gerenciar Acesso.
+  async function mergePapeisAccess(papelPrincipal, papeisAdicionais){
+    const papeis = [papelPrincipal].concat(papeisAdicionais || []).filter(Boolean);
+    const acessos = await Promise.all(papeis.map(async p => {
+      if(supa){
+        const { data } = await supa.rpc('permissoes_padrao_papel', { papel_nome: p });
+        if(data) return data;
+      }
+      return (window.__ROLE_VISIBILITY && window.__ROLE_VISIBILITY[p]) || {};
+    }));
+    const chaves = new Set();
+    acessos.forEach(a => Object.keys(a).forEach(k => chaves.add(k)));
+    const merged = {};
+    chaves.forEach(k => { merged[k] = acessos.some(a => a[k] === true); });
+    return merged;
+  }
+  window.__mergePapeisAccess = mergePapeisAccess;
+
   async function applyLoggedInUser(authUser){
     if(!supa || !authUser || !authUser.email) return { found: false };
-    const { data: row } = await supa.from('usuarios').select('id, nome, papel, acesso, aprovado, ativo, unidade, cargo, pode_pontuar_unidades, data_nascimento, classe_coordenada').eq('email', authUser.email).maybeSingle();
+    const { data: row } = await supa.from('usuarios').select('id, nome, papel, papeis_adicionais, acesso, aprovado, ativo, unidade, cargo, pode_pontuar_unidades, data_nascimento, classe_coordenada').eq('email', authUser.email).maybeSingle();
     if(!row || row.aprovado === false){ window.__currentUsuario = null; return { found: false, reason: 'aprovado' }; }
     if(row.ativo === false){ window.__currentUsuario = null; return { found: false, reason: 'ativo' }; }
     let access = row.acesso;
-    if(!access){
-      const { data: def } = await supa.rpc('permissoes_padrao_papel', { papel_nome: row.papel });
-      access = def || (window.__ROLE_VISIBILITY && window.__ROLE_VISIBILITY[row.papel]) || {};
-    }
+    if(!access) access = await mergePapeisAccess(row.papel, row.papeis_adicionais);
     if(window.__applyAccessToDashboard) window.__applyAccessToDashboard(access, row.nome);
-    window.__currentUsuario = { id: row.id, nome: row.nome, email: authUser.email, papel: row.papel, unidade: row.unidade, cargo: row.cargo, podePontuarUnidades: !!row.pode_pontuar_unidades, data_nascimento: row.data_nascimento, classeCoordenada: row.classe_coordenada || null };
+    window.__currentUsuario = { id: row.id, nome: row.nome, email: authUser.email, papel: row.papel, papeisAdicionais: row.papeis_adicionais || [], unidade: row.unidade, cargo: row.cargo, podePontuarUnidades: !!row.pode_pontuar_unidades, data_nascimento: row.data_nascimento, classeCoordenada: row.classe_coordenada || null };
     window.__currentAuthUserId = authUser.id;
     document.dispatchEvent(new CustomEvent('cedros:loggedin', { detail: window.__currentUsuario }));
     if(window.__applyGreetingUnit) window.__applyGreetingUnit(window.__currentUsuario);

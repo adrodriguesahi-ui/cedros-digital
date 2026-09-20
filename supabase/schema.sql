@@ -103,6 +103,15 @@ alter table usuarios add column if not exists classe text;
 -- (o coordenador não gerencia nenhuma, até o Administrador definir aqui).
 alter table usuarios add column if not exists classe_coordenada text;
 
+-- Papéis extras, além do papel principal (usuarios.papel) — alguém pode ser
+-- Conselheiros (principal, decide a etiqueta/cor do cartão e as telas
+-- especiais como Coordenador de Classes) e também Instrutores, por exemplo.
+-- Só entram na conta do acesso por área: cada papel aqui soma os módulos que
+-- ele libera por padrão (ver mergePapeisAccess no index.html) — quem já tem
+-- acesso individual salvo (usuarios.acesso) usa "Restaurar padrão da função"
+-- pra recalcular com os adicionais inclusos.
+alter table usuarios add column if not exists papeis_adicionais text[] not null default '{}';
+
 insert into usuarios (nome, email, unidade, papel) values
   ('Adrodrigues Santos', 'adrodrigues@cedrosdigital.org', 'Ype', 'Administrador'),
   ('Camila Ferreira', 'camila.ferreira@cedrosdigital.org', 'Cedros', 'Diretoria'),
