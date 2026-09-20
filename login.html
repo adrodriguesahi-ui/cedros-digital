@@ -981,7 +981,7 @@
      indicando que dá pra tocar. Escopado a .sp-card pra não afetar o mesmo
      .am-thumb usado em Administração → Usuários (que não é editável). */
   .sp-card .am-thumb{ position:relative; overflow:visible; cursor:pointer; }
-  .sp-card .am-thumb img{ width:100%; height:100%; object-fit:cover; border-radius:11px; }
+  .sp-card .am-thumb img{ width:100%; height:100%; object-fit:cover; border-radius:50%; transform:scale(1.08); }
   .sp-card .am-thumb-badge{
     position:absolute; bottom:-4px; right:-4px; width:18px; height:18px; border-radius:50%;
     background:var(--accent); color:#08130A; display:flex; align-items:center; justify-content:center;
@@ -993,7 +993,7 @@
   .sp-lote-item{ display:flex; align-items:center; gap:10px; padding:7px 9px; border-radius:11px; background:rgba(255,255,255,0.045); }
   .sp-lote-item.duvida{ background:rgba(255,193,90,0.1); }
   .sp-lote-thumb{ width:38px; height:38px; flex:0 0 38px; border-radius:9px; overflow:hidden; background:rgba(0,0,0,0.25); display:flex; align-items:center; justify-content:center; }
-  .sp-lote-thumb img{ width:100%; height:100%; object-fit:contain; }
+  .sp-lote-thumb img{ width:100%; height:100%; object-fit:cover; border-radius:50%; transform:scale(1.08); }
   .sp-lote-corpo{ flex:1; min-width:0; }
   .sp-lote-arquivo{ display:block; font-size:10.5px; color:rgba(245,239,225,0.45); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .sp-lote-nome{ display:block; font-size:12.5px; font-weight:800; color:var(--cream); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -1393,12 +1393,17 @@
 
   /* ---- Detalhe de especialidade (view-specialty-detail) ---- */
   .sd-header{ display:flex; flex-direction:column; align-items:center; gap:12px; margin:6px 0 20px; text-align:center; }
+  /* Redondo de propósito: a insígnia é um círculo, e a imagem que o clube envia
+     quase sempre vem num quadrado de fundo branco. O recorte redondo tira esse
+     fundo sem mexer num pixel — e preserva o anel branco da própria insígnia,
+     que um apagador de branco comeria junto. O leve zoom dá conta da margem
+     branca que sobra quando a insígnia não encosta na borda do arquivo. */
   .sd-badge{
-    width:88px; height:88px; border-radius:20px; flex-shrink:0; cursor:pointer;
+    width:88px; height:88px; border-radius:50%; flex-shrink:0; cursor:pointer;
     background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
     display:flex; align-items:center; justify-content:center; color:rgba(245,239,225,0.4); overflow:hidden;
   }
-  .sd-badge img{ width:100%; height:100%; object-fit:cover; }
+  .sd-badge img{ width:100%; height:100%; object-fit:cover; transform:scale(1.08); }
   .sd-name{ margin:0; font-size:19px; font-weight:900; color:var(--cream); }
   .sd-table{
     border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.1);
@@ -2075,14 +2080,17 @@
     display:flex; align-items:center; justify-content:center; margin-bottom:14px;
     padding:14px; border-radius:16px; background:rgba(255,255,255,0.05);
   }
-  .qz-insignia img{ width:min(58vw, 210px); height:min(58vw, 210px); object-fit:contain; }
+  .qz-insignia img{
+    width:min(58vw, 210px); height:min(58vw, 210px); object-fit:cover;
+    border-radius:50%; transform:scale(1.06);
+  }
   .qz-alternativas.grade{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .qz-img-alt{
     padding:10px; border-radius:14px; cursor:pointer;
     border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04);
     display:flex; align-items:center; justify-content:center;
   }
-  .qz-img-alt img{ width:100%; aspect-ratio:1/1; object-fit:contain; }
+  .qz-img-alt img{ width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:50%; transform:scale(1.06); }
   .qz-img-alt:active{ transform:scale(0.98); }
   .qz-img-alt.certa{ border-color:var(--accent); background:rgba(63,203,107,0.16); }
   .qz-img-alt.errada{ border-color:#FF6B5C; background:rgba(255,107,92,0.14); }
@@ -12865,7 +12873,19 @@
   // onFail (opcional) avisa quem chamou que a leitura não foi adiante — sem
   // isso, quem espera essa foto numa Promise ficaria parado pra sempre quando o
   // arquivo é um HEIC ou uma imagem corrompida.
-  // opcoes: { maxDim, qualidade } — a insígnia de especialidade usa 320px em vez
+  // Varre 1 pixel a cada 4 procurando alfa: basta um semitransparente pra saber
+  // que achatar em JPEG estragaria a imagem.
+  function temTransparencia(ctx, canvas){
+    try{
+      const dados = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      for(let i = 3; i < dados.length; i += 16){ if(dados[i] < 250) return true; }
+      return false;
+    } catch(e){
+      return false; // canvas "sujo" (imagem de outra origem): segue como antes
+    }
+  }
+
+  // opcoes: { maxDim, qualidade, preservarTransparencia } — a insígnia de especialidade usa 320px em vez
   // dos 1600 padrão: são centenas de imagens guardadas em base64 dentro do
   // banco, e a 1600 cada uma passa de 200 kB pra mostrar um botão de 38 px.
   function readPhotoAsJPEG(file, onDone, onFail, opcoes){
@@ -12879,7 +12899,18 @@
         const canvas = document.createElement('canvas');
         canvas.width = Math.round(img.naturalWidth * scale);
         canvas.height = Math.round(img.naturalHeight * scale);
-        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        // Insígnia com fundo transparente virava um quadrado PRETO: JPEG não tem
+        // canal alfa, e o Chrome achata o transparente em preto. Quando a imagem
+        // tem transparência de verdade, sai em WebP (que tem alfa e ainda fica
+        // menor que o JPEG); navegador sem WebP no canvas devolve PNG sozinho, e
+        // o data URL já diz o que é, então nada mais precisa saber disso.
+        if(opcoes && opcoes.preservarTransparencia && temTransparencia(ctx, canvas)){
+          const comAlfa = canvas.toDataURL('image/webp', 0.92);
+          onDone(comAlfa.indexOf('data:image/webp') === 0 ? comAlfa : canvas.toDataURL('image/png'));
+          return;
+        }
         onDone(canvas.toDataURL('image/jpeg', (opcoes && opcoes.qualidade) || 0.85));
       };
       img.onerror = () => {
@@ -22833,7 +22864,7 @@ const REQ_SUMMARIES = {
           alert('Não foi possível salvar a imagem.\n\nDetalhe: ' + (error.message || error.hint || error.code || 'erro desconhecido'));
         }
       }
-    });
+    }, null, { maxDim: 320, qualidade: 0.82, preservarTransparencia: true });
   });
 
   // Antes daqui saía uma consulta só, no fim do carregamento do app, trazendo
@@ -23114,7 +23145,7 @@ const REQ_SUMMARIES = {
           }
           itens.push({ arquivo: arquivo.name, dataUrl: dataUrl, nome: exato, sugestao: sugestao, estado: '' });
           pronto();
-        }, () => { pronto(); }, { maxDim: 320, qualidade: 0.82 });
+        }, () => { pronto(); }, { maxDim: 320, qualidade: 0.82, preservarTransparencia: true });
       });
     });
 
