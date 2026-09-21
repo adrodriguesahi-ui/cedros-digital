@@ -965,6 +965,10 @@
      ocupa a linha inteira. Volta ao escolher um aluno na barra de cima. */
   #clContent .cl-activity-card .cl-thumb{ display:none; }
   #clContent.cl-modo-aluno .cl-activity-card .cl-thumb{ display:flex; }
+  /* Requisito que não pede comprovação não tem o que anexar: a miniatura ficava
+     um quadrado vazio repetido em toda linha da lista. A classe só é posta
+     quando também não há nada anexado — ver applyStudentProgressToCards. */
+  #clContent.cl-modo-aluno .cl-activity-card.cl-sem-comprovacao .cl-thumb{ display:none; }
   .cl-thumb-badge{
     position:absolute; bottom:-4px; right:-4px; min-width:18px; height:18px; padding:0 3px;
     border-radius:9px; background:var(--accent); color:#08130A; font-size:10px; font-weight:900;
@@ -16243,6 +16247,13 @@
         const thumbEl = card.querySelector('.cl-thumb[data-role="thumb"]');
         if(thumbEl){
           const comprovantes = progressForStudent ? ((CLASS_COMPROVANTES[currentClass][selectedStudent] || {})[card.dataset.title] || []) : [];
+          // Miniatura só faz sentido onde há comprovação. Mas se já existe anexo
+          // ela fica, mesmo sem a exigência: desligar a exigência depois não pode
+          // sumir com o comprovante que o desbravador mandou — ele ficaria
+          // invisível na lista, parecendo perdido.
+          card.classList.toggle('cl-sem-comprovacao',
+            !comprovantes.length && !card.dataset.photo &&
+            !exigeComprovacao(currentClass, card.dataset.title));
           if(comprovantes.length){
             const primeiro = comprovantes[0];
             // foto vazia = ainda não chegou (carregarAnexosDoAluno); até lá vale
