@@ -953,6 +953,46 @@
   }
   #view-planning .pl-event-card.pl-event-flash{ animation:pl-event-flash-pulse 1.4s ease; }
 
+  /* ---- Curso de Leitura: livros com PDF e áudio ---- */
+  .lv-capa{
+    flex-shrink:0; width:44px; height:58px; border-radius:7px; overflow:hidden;
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+    display:flex; align-items:center; justify-content:center; color:rgba(245,239,225,0.35);
+  }
+  .lv-capa img{ width:100%; height:100%; object-fit:cover; }
+  .lv-card{ align-items:center; }
+  .lv-marcas{ display:flex; gap:5px; margin-top:4px; }
+  .lv-marca{
+    display:inline-flex; align-items:center; gap:3px; padding:2px 7px; border-radius:7px;
+    font-size:10px; font-weight:800; letter-spacing:0.02em;
+    background:rgba(255,255,255,0.07); color:rgba(245,239,225,0.62);
+  }
+  .lv-marca.pdf{ background:rgba(255,107,92,0.14); color:#FF9E93; }
+  .lv-marca.audio{ background:rgba(90,150,255,0.14); color:#9EC0FF; }
+  .lv-marca.lido{ background:rgba(63,203,107,0.16); color:var(--accent); }
+  .lv-det-topo{ display:flex; gap:13px; margin-bottom:14px; }
+  .lv-det-capa{
+    flex-shrink:0; width:92px; height:124px; border-radius:10px; overflow:hidden;
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+    display:flex; align-items:center; justify-content:center; color:rgba(245,239,225,0.35);
+  }
+  .lv-det-capa img{ width:100%; height:100%; object-fit:cover; }
+  .lv-det-info{ flex:1; min-width:0; }
+  .lv-det-titulo{ margin:0 0 3px; font-size:16px; font-weight:900; color:var(--cream); line-height:1.25; }
+  .lv-det-autor{ margin:0 0 8px; font-size:12.5px; color:rgba(245,239,225,0.6); }
+  .lv-det-desc{ margin:0 0 14px; font-size:12.5px; line-height:1.6; color:rgba(245,239,225,0.78); white-space:pre-wrap; }
+  .lv-botoes{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .lv-player{
+    position:relative; width:100%; aspect-ratio:16/9; margin-bottom:14px;
+    border-radius:12px; overflow:hidden; background:#000;
+  }
+  .lv-player iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
+  .lv-arquivo-nome{ font-size:11.5px; color:rgba(245,239,225,0.55); margin:5px 0 0; word-break:break-all; }
+  .lv-aviso{
+    margin:0 0 12px; padding:10px 12px; border-radius:11px; font-size:11.5px; line-height:1.5;
+    background:rgba(255,193,90,0.1); border:1px solid rgba(255,193,90,0.22); color:rgba(245,239,225,0.8);
+  }
+
   /* ---- Classes Regulares: thumbnail, camera/upload buttons, photo preview ---- */
   .cl-thumb{
     position:relative; flex-shrink:0; width:46px; height:46px; border-radius:12px;
@@ -9229,6 +9269,13 @@
             <p class="pl-reminder-hint" id="clSubStatusHint">O status abaixo acompanha os sub-itens marcados.</p>
           </div>
 
+          <!-- Só nos requisitos do Curso de Leitura: o que este desbravador já
+               marcou como lido na área Curso de Leitura. Ver window.__lvLidosDe. -->
+          <div id="clLivrosLidos" style="display:none; margin:4px 0 14px;">
+            <label class="pl-field-label" style="margin-top:0;">Livros marcados como lidos</label>
+            <div class="un-mini-list" id="clLivrosLidosLista"></div>
+          </div>
+
           <div class="cl-status-pick-options">
             <button type="button" class="cl-status-pick-btn" data-status="todo" data-color="gray" data-label="Não iniciada">Não iniciada</button>
             <button type="button" class="cl-status-pick-btn" data-status="progress" data-color="gold" data-label="Em andamento">Em andamento</button>
@@ -10842,6 +10889,119 @@
       </div>
     </section>
 
+    <!-- ===== VIEW: CURSO DE LEITURA =====
+         Os livros do Curso de Leitura com o PDF e o áudio pra ouvir. O PDF vai
+         pro bucket PRIVADO "livros": o app pede um link temporário a cada
+         abertura, em vez de deixar um endereço fixo do livro circulando fora do
+         clube. O áudio não é arquivo — é o vídeo/playlist do YouTube tocando no
+         player oficial dentro do app. Ver livros_leitura em supabase/schema.sql. -->
+    <section class="view view-planning" id="view-curso-leitura">
+      <div class="pl-scroll">
+        <div class="pl-topbar">
+          <button type="button" class="pl-back" data-back="view-dashboard" aria-label="Voltar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h3 class="pl-title">Curso de Leitura</h3>
+          <span class="pl-topbar-spacer" aria-hidden="true"></span>
+        </div>
+        <div class="pl-content">
+          <p class="sp-disclaimer">Os livros do Curso de Leitura, pra ler no PDF ou ouvir. Marcar que leu aparece no requisito do Curso de Leitura do seu cartão.</p>
+          <div id="lvContent"></div>
+          <p class="un-empty-hint" id="lvVazio" style="display:none;">Nenhum livro cadastrado ainda.</p>
+          <button type="button" class="pl-list-add-btn" id="lvSemearBtn" style="display:none;">Começar com os livros que já estão nos Manuais</button>
+        </div>
+      </div>
+
+      <button type="button" class="pl-fab" id="lvAddBtn" aria-label="Adicionar livro" style="display:none;">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+
+      <!-- Cadastro do livro -->
+      <div class="pl-modal-overlay" id="lvModalOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title" id="lvModalTitulo">Novo Livro</h4>
+            <button type="button" class="pl-modal-close" id="lvModalClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <label class="pl-field-label">Título</label>
+          <input type="text" class="pl-input" id="lvFieldTitulo" list="lvTitulosConhecidos" placeholder="Ex.: Vaso de Barro" maxlength="120">
+          <datalist id="lvTitulosConhecidos"></datalist>
+          <label class="pl-field-label">Autor</label>
+          <input type="text" class="pl-input" id="lvFieldAutor" placeholder="Opcional" maxlength="120">
+          <div class="pl-field-row">
+            <div>
+              <label class="pl-field-label">Ano</label>
+              <input type="text" class="pl-input" id="lvFieldAno" placeholder="Ex.: 2026" maxlength="9">
+            </div>
+            <div>
+              <label class="pl-field-label">Classe</label>
+              <input type="text" class="pl-input" id="lvFieldClasses" placeholder="Ex.: Amigo" maxlength="60">
+            </div>
+          </div>
+          <label class="pl-field-label">Sobre o livro</label>
+          <textarea class="pl-input pl-textarea" id="lvFieldDesc" rows="3" maxlength="600" placeholder="Opcional"></textarea>
+
+          <label class="pl-field-label">Capa</label>
+          <div class="lv-det-topo">
+            <span class="lv-det-capa" id="lvFieldCapaPreview">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+            </span>
+            <span class="lv-det-info">
+              <button type="button" class="pl-list-add-btn" id="lvCapaBtn" style="margin:0;">Escolher imagem</button>
+              <button type="button" class="pl-list-add-btn" id="lvCapaLimpar" style="margin:8px 0 0; display:none;">Tirar a capa</button>
+            </span>
+          </div>
+
+          <label class="pl-field-label">PDF do livro</label>
+          <button type="button" class="pl-list-add-btn" id="lvPdfBtn" style="margin:0;">Enviar arquivo PDF</button>
+          <p class="lv-arquivo-nome" id="lvPdfNome"></p>
+          <p class="pl-reminder-hint">O arquivo fica guardado só para quem está logado no Cedros — cada abertura gera um endereço temporário, que não serve pra passar adiante.</p>
+          <label class="pl-field-label">Ou o endereço de um PDF de fora</label>
+          <input type="url" class="pl-input" id="lvFieldPdfUrl" placeholder="https://..." maxlength="500">
+
+          <label class="pl-field-label">Áudio no YouTube</label>
+          <input type="url" class="pl-input" id="lvFieldAudio" placeholder="https://www.youtube.com/watch?v=..." maxlength="500">
+          <p class="pl-reminder-hint" id="lvAudioHint">Vale o endereço de um vídeo ou de uma playlist inteira, quando o livro vem em capítulos.</p>
+
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-danger" id="lvExcluirBtn" style="display:none;">Excluir</button>
+            <button type="button" class="pl-btn pl-btn-primary" id="lvSalvarBtn">Salvar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- O livro aberto -->
+      <div class="pl-modal-overlay" id="lvDetalheOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Livro</h4>
+            <button type="button" class="pl-modal-close" id="lvDetalheClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="lv-det-topo">
+            <span class="lv-det-capa" id="lvDetCapa"></span>
+            <span class="lv-det-info">
+              <h4 class="lv-det-titulo" id="lvDetTitulo"></h4>
+              <p class="lv-det-autor" id="lvDetAutor"></p>
+              <span class="lv-marcas" id="lvDetMarcas"></span>
+            </span>
+          </div>
+          <p class="lv-det-desc" id="lvDetDesc"></p>
+          <div class="lv-player" id="lvDetPlayer" style="display:none;"></div>
+          <div class="lv-botoes">
+            <button type="button" class="pl-btn pl-btn-primary" id="lvLerBtn" style="display:none;">Ler o PDF</button>
+            <button type="button" class="pl-btn pl-btn-neutral" id="lvOuvirBtn" style="display:none;">Abrir o áudio no YouTube</button>
+            <button type="button" class="pl-btn" id="lvLiBtn">Já li este livro</button>
+            <button type="button" class="pl-list-add-btn" id="lvEditarBtn" style="display:none; margin:0;">Editar este livro</button>
+          </div>
+          <p class="pl-reminder-hint" id="lvDetHint"></p>
+        </div>
+      </div>
+    </section>
+
     <!-- ===== VIEW: ANIVERSÁRIO ===== -->
     <section class="view view-planning" id="view-birthdays">
       <div class="pl-scroll">
@@ -12001,6 +12161,10 @@
             <span class="bd-qn-icon bd-qn-icon-img"><img src="icons/nav-manuals.png?v=2" alt=""></span>
             <span>Manuais</span>
           </a>
+          <a href="#" class="bd-qn-item" data-goto="view-curso-leitura">
+            <span class="bd-qn-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5A2.5 2.5 0 0 1 4.5 3H10a2 2 0 0 1 2 2v14a1.5 1.5 0 0 0-1.5-1.5H4.5A2.5 2.5 0 0 1 2 15Z"/><path d="M22 5.5A2.5 2.5 0 0 0 19.5 3H14a2 2 0 0 0-2 2v14a1.5 1.5 0 0 1 1.5-1.5h6A2.5 2.5 0 0 0 22 15Z"/></svg></span>
+            <span>Curso de Leitura</span>
+          </a>
           <a href="#" class="bd-qn-item" data-goto="view-specialties">
             <span class="bd-qn-icon bd-qn-icon-img"><img src="icons/nav-specialties.png?v=2" alt=""></span>
             <span>Manual de Especialidades</span>
@@ -12413,6 +12577,10 @@
           <a href="#" class="bd-qn-item" data-goto="view-manuals">
             <span class="bd-qn-icon bd-qn-icon-img"><img src="icons/nav-manuals.png?v=2" alt=""></span>
             <span>Manuais</span>
+          </a>
+          <a href="#" class="bd-qn-item" data-goto="view-curso-leitura">
+            <span class="bd-qn-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5A2.5 2.5 0 0 1 4.5 3H10a2 2 0 0 1 2 2v14a1.5 1.5 0 0 0-1.5-1.5H4.5A2.5 2.5 0 0 1 2 15Z"/><path d="M22 5.5A2.5 2.5 0 0 0 19.5 3H14a2 2 0 0 0-2 2v14a1.5 1.5 0 0 1 1.5-1.5h6A2.5 2.5 0 0 0 22 15Z"/></svg></span>
+            <span>Curso de Leitura</span>
           </a>
           <a href="#" class="bd-qn-item" data-goto="view-event-org">
             <span class="bd-qn-icon bd-qn-icon-img"><img src="icons/nav-event-org.png?v=2" alt=""></span>
@@ -15824,6 +15992,10 @@
     const CLASS_STUDENTS = {};
     const CLASS_PROGRESS = {}; // CLASS_PROGRESS[className][studentName][activityTitle] = status
     const STUDENT_IDS = {}; // STUDENT_IDS[className][studentName] = id na tabela "desbravadores" (Supabase)
+    // STUDENT_USUARIOS[className][studentName] = id do login (usuarios). Os
+    // livros lidos são gravados por usuário, não por desbravador, então o
+    // requisito do Curso de Leitura precisa deste caminho pra achar a leitura.
+    const STUDENT_USUARIOS = {};
     // CLASS_COMPROVANTES[className][studentName][activityTitle] = [{ id, foto, nome }, ...]
     // (um requisito pode ter vários comprovantes) — cache separado do CLASS_PROGRESS
     // acima (que só guarda status) pra não arriscar mexer no que já tá testado;
@@ -15988,7 +16160,7 @@
 
     async function loadClassDataFromSupabase(){
       if(!supa) return;
-      const { data: alunos, error: alunosErr } = await supa.from('desbravadores').select('id, nome, classe');
+      const { data: alunos, error: alunosErr } = await supa.from('desbravadores').select('id, nome, classe, usuario_id');
       if(alunosErr){ console.error('Erro ao carregar desbravadores:', alunosErr.message); return; }
       if(!alunos || !alunos.length) return;
 
@@ -16039,6 +16211,8 @@
         ensureClassData(aluno.classe);
         if(CLASS_STUDENTS[aluno.classe].indexOf(aluno.nome) === -1) CLASS_STUDENTS[aluno.classe].push(aluno.nome);
         STUDENT_IDS[aluno.classe][aluno.nome] = aluno.id;
+        if(!STUDENT_USUARIOS[aluno.classe]) STUDENT_USUARIOS[aluno.classe] = {};
+        STUDENT_USUARIOS[aluno.classe][aluno.nome] = aluno.usuario_id || null;
         CLASS_PROGRESS[aluno.classe][aluno.nome] = progressoByAluno[aluno.id] || {};
         CLASS_COMPROVANTES[aluno.classe][aluno.nome] = comprovanteByAluno[aluno.id] || {};
         CLASS_RESUMOS[aluno.classe][aluno.nome] = resumoByAluno[aluno.id] || {};
@@ -17205,6 +17379,44 @@
       }
     }
 
+    // Requisito do Curso de Leitura: mostra o que o desbravador já marcou como
+    // lido na área Curso de Leitura, pra quem confere não precisar perguntar.
+    // A marcação é gravada por login (usuarios), não por desbravador — quem
+    // ainda não tem login aparece dizendo isso, em vez de uma lista vazia que
+    // pareceria "não leu nada".
+    async function pintarLivrosDoRequisito(card){
+      const bloco = document.getElementById('clLivrosLidos');
+      const lista = document.getElementById('clLivrosLidosLista');
+      if(!bloco || !lista) return;
+      bloco.style.display = 'none';
+      if(!/curso de leitura/i.test(card.dataset.title || '')) return;
+      if(!selectedStudent || !window.__lvLidosDe) return;
+      bloco.style.display = '';
+      lista.innerHTML = '<p class="un-empty-hint" style="margin:0;">Buscando…</p>';
+      const usuarioId = (STUDENT_USUARIOS[currentClass] || {})[selectedStudent];
+      if(!usuarioId){
+        lista.innerHTML = '<p class="un-empty-hint" style="margin:0;">Este desbravador ainda não tem login próprio no app, então não dá pra saber o que ele marcou como lido.</p>';
+        return;
+      }
+      const livros = await window.__lvLidosDe(usuarioId);
+      // Enquanto a busca ia e voltava o requisito pode ter mudado.
+      if(statusPickCard !== card) return;
+      lista.innerHTML = '';
+      if(!livros.length){
+        lista.innerHTML = '<p class="un-empty-hint" style="margin:0;">Nenhum livro marcado ainda. Quem marca é o próprio desbravador, na área Curso de Leitura.</p>';
+        return;
+      }
+      livros.forEach(livro => {
+        const linha = document.createElement('div');
+        linha.className = 'un-mini-row';
+        linha.innerHTML = '<div style="flex:1; min-width:0;"><b style="display:block; font-size:12.5px;"></b>' +
+          '<span style="font-size:11px; color:rgba(245,239,225,0.5);"></span></div>';
+        linha.querySelector('b').textContent = livro.titulo;
+        linha.querySelector('span').textContent = [livro.autor, livro.ano].filter(Boolean).join(' · ');
+        lista.appendChild(linha);
+      });
+    }
+
     function openStatusPick(card){
       statusPickCard = card;
       const texto = textoDoRequisito(currentClass, card.dataset.title);
@@ -17243,6 +17455,7 @@
         fieldResumo.value = (CLASS_RESUMOS[currentClass][selectedStudent] || {})[card.dataset.title] || '';
         fieldResumo.style.borderColor = '';
       }
+      pintarLivrosDoRequisito(card);
       // Só quem gerencia a classe define o que exige comprovação.
       if(reqExigirRow) reqExigirRow.style.display = canManageStudents(currentClass) ? '' : 'none';
       if(reqExigirToggle) reqExigirToggle.checked = exigeComprovacao(currentClass, card.dataset.title);
@@ -24515,6 +24728,513 @@ const REQ_SUMMARIES = {
     window.__quizAbrir = abrirQuiz;
   })();
 
+  // ---------------------------------------------------------------------
+  // Curso de Leitura: os livros do ano, com PDF e áudio.
+  //
+  // O PDF vai pro bucket PRIVADO "livros" e é aberto por link temporário
+  // (createSignedUrl), não por endereço público: assim o arquivo do livro não
+  // fica com um endereço fixo circulando fora do clube. O áudio não é arquivo
+  // — é o vídeo ou a playlist do YouTube, tocando no player oficial dentro do
+  // app. Baixar o áudio de lá fere as regras deles, e um livro inteiro em áudio
+  // comeria sozinho o plano de Storage.
+  //
+  // Ver livros_leitura e livros_lidos em supabase/schema.sql.
+  // ---------------------------------------------------------------------
+  (function(){
+    const content = document.getElementById('lvContent');
+    const vazioMsg = document.getElementById('lvVazio');
+    const semearBtn = document.getElementById('lvSemearBtn');
+    const addBtn = document.getElementById('lvAddBtn');
+    if(!content) return;
+
+    const BUCKET_LIVROS = 'livros';
+    const PAPEIS_GERENCIA = ['Administrador', 'Diretoria', 'Diretoria Executiva', 'Instrutores'];
+    function podeGerenciar(){
+      const u = window.__currentUsuario;
+      return !!u && PAPEIS_GERENCIA.indexOf(u.papel) !== -1;
+    }
+
+    const modal = document.getElementById('lvModalOverlay');
+    const detalhe = document.getElementById('lvDetalheOverlay');
+    const campoTitulo = document.getElementById('lvFieldTitulo');
+    const campoAutor = document.getElementById('lvFieldAutor');
+    const campoAno = document.getElementById('lvFieldAno');
+    const campoClasses = document.getElementById('lvFieldClasses');
+    const campoDesc = document.getElementById('lvFieldDesc');
+    const campoPdfUrl = document.getElementById('lvFieldPdfUrl');
+    const campoAudio = document.getElementById('lvFieldAudio');
+    const capaPreview = document.getElementById('lvFieldCapaPreview');
+    const pdfNomeEl = document.getElementById('lvPdfNome');
+
+    let LIVROS = [];
+    let LIDOS = new Set();      // ids dos livros que o usuário logado marcou
+    let editando = null;        // livro sendo editado (null = novo)
+    let capaAtual = '';
+    let pdfEscolhido = null;    // File ainda não enviado
+    let pdfPathAtual = '';      // caminho já gravado no bucket
+    let livroAberto = null;
+
+    // Modal é absoluto dentro da .view; fora da view ativa ele abre invisível.
+    function mostrarNaViewAtiva(overlay){
+      if(!overlay) return;
+      const ativa = document.querySelector('.view.active');
+      if(ativa) ativa.appendChild(overlay);
+      overlay.classList.add('show');
+    }
+
+    // ---- YouTube ----
+    // Só o identificador é aproveitado do endereço colado, nunca o endereço
+    // inteiro: o iframe é montado a partir dele, então nada que a pessoa digite
+    // vira src de verdade.
+    function dadosDoYoutube(url){
+      const u = String(url || '').trim();
+      if(!u) return null;
+      const lista = (u.match(/[?&]list=([A-Za-z0-9_-]+)/) || [])[1] || '';
+      const video = (u.match(/youtu\.be\/([A-Za-z0-9_-]{6,})/) || [])[1]
+        || (u.match(/[?&]v=([A-Za-z0-9_-]{6,})/) || [])[1]
+        || (u.match(/\/(?:embed|live|shorts)\/([A-Za-z0-9_-]{6,})/) || [])[1]
+        || '';
+      if(!video && !lista) return null;
+      return { video: video, lista: lista };
+    }
+    function enderecoDeEmbed(d){
+      if(d.video) return 'https://www.youtube.com/embed/' + d.video + (d.lista ? ('?list=' + d.lista) : '');
+      return 'https://www.youtube.com/embed/videoseries?list=' + d.lista;
+    }
+
+    // ---- Carga ----
+    async function carregar(){
+      if(!supa){ LIVROS = []; pintar(); return; }
+      const { data, error } = await supa.from('livros_leitura').select('*');
+      if(error){
+        console.warn('livros_leitura indisponível:', error.message);
+        content.innerHTML = '';
+        if(vazioMsg){
+          vazioMsg.style.display = '';
+          vazioMsg.textContent = 'A tabela livros_leitura ainda não existe. Rode a migration de supabase/schema.sql.';
+        }
+        if(semearBtn) semearBtn.style.display = 'none';
+        return;
+      }
+      LIVROS = (data || []).sort((a, b) => {
+        const anoA = String(a.ano || ''), anoB = String(b.ano || '');
+        if(anoA !== anoB) return anoB.localeCompare(anoA, 'pt-BR');
+        return String(a.titulo || '').localeCompare(String(b.titulo || ''), 'pt-BR');
+      });
+      await carregarLidos();
+      pintar();
+    }
+
+    async function carregarLidos(){
+      LIDOS = new Set();
+      const u = window.__currentUsuario;
+      if(!supa || !u) return;
+      const { data, error } = await supa.from('livros_lidos').select('livro_id').eq('usuario_id', u.id);
+      if(error){ console.warn('livros_lidos indisponível:', error.message); return; }
+      (data || []).forEach(r => LIDOS.add(r.livro_id));
+    }
+    // A tela do requisito no cartão de classe precisa saber o que cada
+    // desbravador leu — por isso a consulta é por usuário, não só pelo logado.
+    window.__lvLidosDe = async function(usuarioId){
+      if(!supa || !usuarioId) return [];
+      const { data, error } = await supa.from('livros_lidos').select('livro_id').eq('usuario_id', usuarioId);
+      if(error) return [];
+      const ids = new Set((data || []).map(r => r.livro_id));
+      if(!LIVROS.length) await carregar();
+      return LIVROS.filter(l => ids.has(l.id));
+    };
+
+    function marcasDoLivro(livro){
+      const marcas = [];
+      if(livro.pdf_path || livro.pdf_url) marcas.push({ classe: 'pdf', texto: 'PDF' });
+      if(livro.audio_url) marcas.push({ classe: 'audio', texto: 'Áudio' });
+      if(LIDOS.has(livro.id)) marcas.push({ classe: 'lido', texto: 'Li' });
+      return marcas;
+    }
+
+    const ICONE_LIVRO = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>';
+
+    function pintar(){
+      content.innerHTML = '';
+      const gerencia = podeGerenciar();
+      if(addBtn) addBtn.style.display = gerencia ? '' : 'none';
+      if(vazioMsg) vazioMsg.style.display = LIVROS.length ? 'none' : '';
+      if(semearBtn) semearBtn.style.display = (!LIVROS.length && gerencia) ? '' : 'none';
+      if(!LIVROS.length) return;
+
+      // A ordem dos anos vai num array à parte de propósito: "2026" é chave que
+      // parece número, e Object.keys devolve essas em ordem numérica crescente,
+      // não na de inserção — o ano mais velho apareceria primeiro.
+      const porAno = {};
+      const ordemDosAnos = [];
+      LIVROS.forEach(l => {
+        const ano = String(l.ano || '').trim() || 'Sem ano';
+        if(!porAno[ano]){ porAno[ano] = []; ordemDosAnos.push(ano); }
+        porAno[ano].push(l);
+      });
+      ordemDosAnos.forEach(ano => {
+        const head = document.createElement('div');
+        head.className = 'sp-area-heading';
+        head.textContent = ano;
+        content.appendChild(head);
+        porAno[ano].forEach(livro => {
+          const card = document.createElement('a');
+          card.href = '#';
+          card.className = 'pl-event-card lv-card';
+          card.dataset.id = livro.id;
+          card.innerHTML =
+            '<span class="lv-capa"></span>' +
+            '<div class="pl-event-body">' +
+              '<h4 class="pl-event-title"></h4>' +
+              '<p class="pl-event-meta"></p>' +
+              '<span class="lv-marcas"></span>' +
+            '</div>';
+          const capa = card.querySelector('.lv-capa');
+          if(livro.capa){
+            const img = document.createElement('img');
+            img.src = livro.capa;
+            img.alt = '';
+            capa.appendChild(img);
+          } else capa.innerHTML = ICONE_LIVRO;
+          card.querySelector('.pl-event-title').textContent = livro.titulo;
+          card.querySelector('.pl-event-meta').textContent =
+            [livro.autor, livro.classes].filter(Boolean).join(' · ') || ' ';
+          const marcas = card.querySelector('.lv-marcas');
+          marcasDoLivro(livro).forEach(m => {
+            const el = document.createElement('span');
+            el.className = 'lv-marca ' + m.classe;
+            el.textContent = m.texto;
+            marcas.appendChild(el);
+          });
+          card.addEventListener('click', (e) => { e.preventDefault(); abrirDetalhe(livro); });
+          content.appendChild(card);
+        });
+      });
+    }
+
+    // ---- O livro aberto ----
+    function abrirDetalhe(livro){
+      livroAberto = livro;
+      document.getElementById('lvDetTitulo').textContent = livro.titulo;
+      document.getElementById('lvDetAutor').textContent =
+        [livro.autor, livro.classes, livro.ano].filter(Boolean).join(' · ');
+      const descEl = document.getElementById('lvDetDesc');
+      descEl.textContent = livro.descricao || '';
+      descEl.style.display = livro.descricao ? '' : 'none';
+
+      const capa = document.getElementById('lvDetCapa');
+      capa.innerHTML = '';
+      if(livro.capa){
+        const img = document.createElement('img');
+        img.src = livro.capa;
+        img.alt = 'Capa de ' + livro.titulo;
+        capa.appendChild(img);
+      } else capa.innerHTML = ICONE_LIVRO;
+
+      const marcas = document.getElementById('lvDetMarcas');
+      marcas.innerHTML = '';
+      marcasDoLivro(livro).forEach(m => {
+        const el = document.createElement('span');
+        el.className = 'lv-marca ' + m.classe;
+        el.textContent = m.texto;
+        marcas.appendChild(el);
+      });
+
+      // Player do YouTube. O iframe só é montado na hora de abrir e é apagado
+      // ao fechar — senão o áudio continua tocando com o livro fechado.
+      const player = document.getElementById('lvDetPlayer');
+      const ouvirBtn = document.getElementById('lvOuvirBtn');
+      player.innerHTML = '';
+      const yt = dadosDoYoutube(livro.audio_url);
+      if(yt){
+        const iframe = document.createElement('iframe');
+        iframe.src = enderecoDeEmbed(yt);
+        iframe.title = 'Áudio de ' + livro.titulo;
+        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+        iframe.setAttribute('allowfullscreen', '');
+        player.appendChild(iframe);
+        player.style.display = '';
+        ouvirBtn.style.display = '';
+      } else {
+        player.style.display = 'none';
+        // Endereço de áudio que não é do YouTube: não dá pra embutir, mas abrir dá.
+        ouvirBtn.style.display = livro.audio_url ? '' : 'none';
+      }
+
+      const lerBtn = document.getElementById('lvLerBtn');
+      lerBtn.style.display = (livro.pdf_path || livro.pdf_url) ? '' : 'none';
+      lerBtn.textContent = 'Ler o PDF';
+      lerBtn.disabled = false;
+
+      const liBtn = document.getElementById('lvLiBtn');
+      pintarBotaoLi(liBtn, LIDOS.has(livro.id));
+      liBtn.style.display = window.__currentUsuario ? '' : 'none';
+
+      const editarBtn = document.getElementById('lvEditarBtn');
+      editarBtn.style.display = podeGerenciar() ? '' : 'none';
+
+      const hint = document.getElementById('lvDetHint');
+      hint.textContent = (livro.pdf_path && !livro.pdf_url)
+        ? 'O PDF abre por um endereço temporário, que vale uma hora e só funciona pra quem está logado.'
+        : '';
+      hint.style.display = hint.textContent ? '' : 'none';
+
+      mostrarNaViewAtiva(detalhe);
+    }
+
+    function pintarBotaoLi(btn, lido){
+      btn.textContent = lido ? 'Já li — desmarcar' : 'Já li este livro';
+      btn.className = lido ? 'pl-btn pl-btn-neutral' : 'pl-btn pl-btn-primary';
+    }
+
+    function fecharDetalhe(){
+      // Apaga o iframe: sem isso o áudio segue tocando com o livro fechado.
+      const player = document.getElementById('lvDetPlayer');
+      if(player) player.innerHTML = '';
+      detalhe.classList.remove('show');
+      livroAberto = null;
+    }
+    document.getElementById('lvDetalheClose').addEventListener('click', fecharDetalhe);
+    detalhe.addEventListener('click', (e) => { if(e.target === detalhe) fecharDetalhe(); });
+
+    // ---- Abrir o PDF ----
+    document.getElementById('lvLerBtn').addEventListener('click', async () => {
+      const livro = livroAberto;
+      if(!livro) return;
+      if(livro.pdf_url){ window.open(livro.pdf_url, '_blank'); return; }
+      if(!livro.pdf_path || !supa) return;
+      const btn = document.getElementById('lvLerBtn');
+      btn.disabled = true;
+      btn.textContent = 'Abrindo…';
+      const { data, error } = await supa.storage.from(BUCKET_LIVROS).createSignedUrl(livro.pdf_path, 3600);
+      btn.disabled = false;
+      btn.textContent = 'Ler o PDF';
+      if(error || !data || !data.signedUrl){
+        alert('Não consegui abrir o PDF.\n\nDetalhe: ' + ((error && error.message) || 'sem resposta do servidor'));
+        return;
+      }
+      window.open(data.signedUrl, '_blank');
+    });
+
+    document.getElementById('lvOuvirBtn').addEventListener('click', () => {
+      if(livroAberto && livroAberto.audio_url) window.open(livroAberto.audio_url, '_blank');
+    });
+
+    // ---- Marcar que leu ----
+    document.getElementById('lvLiBtn').addEventListener('click', async () => {
+      const livro = livroAberto;
+      const u = window.__currentUsuario;
+      if(!livro || !u || !supa) return;
+      const btn = document.getElementById('lvLiBtn');
+      const jaLido = LIDOS.has(livro.id);
+      btn.disabled = true;
+      if(jaLido){
+        const { error } = await supa.from('livros_lidos').delete()
+          .eq('livro_id', livro.id).eq('usuario_id', u.id);
+        if(error){ alert('Não consegui desmarcar: ' + error.message); btn.disabled = false; return; }
+        LIDOS.delete(livro.id);
+      } else {
+        const { error } = await supa.from('livros_lidos').insert({ livro_id: livro.id, usuario_id: u.id });
+        if(error){ alert('Não consegui marcar: ' + error.message); btn.disabled = false; return; }
+        LIDOS.add(livro.id);
+      }
+      btn.disabled = false;
+      pintarBotaoLi(btn, LIDOS.has(livro.id));
+      const marcas = document.getElementById('lvDetMarcas');
+      marcas.innerHTML = '';
+      marcasDoLivro(livro).forEach(m => {
+        const el = document.createElement('span');
+        el.className = 'lv-marca ' + m.classe;
+        el.textContent = m.texto;
+        marcas.appendChild(el);
+      });
+      pintar();
+    });
+
+    // ---- Cadastro ----
+    const entradaCapa = document.createElement('input');
+    entradaCapa.type = 'file';
+    entradaCapa.accept = 'image/*';
+    entradaCapa.hidden = true;
+    entradaCapa.id = 'lvCapaInput';
+    document.body.appendChild(entradaCapa);
+
+    const entradaPdf = document.createElement('input');
+    entradaPdf.type = 'file';
+    entradaPdf.accept = 'application/pdf,.pdf';
+    entradaPdf.hidden = true;
+    entradaPdf.id = 'lvPdfInput';
+    document.body.appendChild(entradaPdf);
+
+    function pintarCapaDoFormulario(){
+      capaPreview.innerHTML = '';
+      if(capaAtual){
+        const img = document.createElement('img');
+        img.src = capaAtual;
+        img.alt = '';
+        capaPreview.appendChild(img);
+      } else capaPreview.innerHTML = ICONE_LIVRO;
+      document.getElementById('lvCapaLimpar').style.display = capaAtual ? '' : 'none';
+    }
+
+    document.getElementById('lvCapaBtn').addEventListener('click', () => entradaCapa.click());
+    document.getElementById('lvCapaLimpar').addEventListener('click', () => { capaAtual = ''; pintarCapaDoFormulario(); });
+    entradaCapa.addEventListener('change', () => {
+      const file = entradaCapa.files[0];
+      entradaCapa.value = '';
+      if(!file) return;
+      readPhotoAsJPEG(file, (dataUrl) => { capaAtual = dataUrl; pintarCapaDoFormulario(); },
+        null, { maxDim: 420, qualidade: 0.8 });
+    });
+
+    document.getElementById('lvPdfBtn').addEventListener('click', () => entradaPdf.click());
+    entradaPdf.addEventListener('change', () => {
+      const file = entradaPdf.files[0];
+      entradaPdf.value = '';
+      if(!file) return;
+      const mb = file.size / (1024 * 1024);
+      if(mb > 45){
+        alert('Esse PDF tem ' + mb.toFixed(0) + ' MB, grande demais pra enviar pelo celular.\n\nUse um arquivo menor ou cole o endereço dele no campo abaixo.');
+        return;
+      }
+      pdfEscolhido = file;
+      pdfNomeEl.textContent = file.name + ' · ' + mb.toFixed(1) + ' MB';
+    });
+
+    function abrirCadastro(livro){
+      editando = livro || null;
+      document.getElementById('lvModalTitulo').textContent = livro ? 'Editar Livro' : 'Novo Livro';
+      campoTitulo.value = livro ? (livro.titulo || '') : '';
+      campoAutor.value = livro ? (livro.autor || '') : '';
+      campoAno.value = livro ? (livro.ano || '') : String(new Date().getFullYear());
+      campoClasses.value = livro ? (livro.classes || '') : '';
+      campoDesc.value = livro ? (livro.descricao || '') : '';
+      campoPdfUrl.value = livro ? (livro.pdf_url || '') : '';
+      campoAudio.value = livro ? (livro.audio_url || '') : '';
+      capaAtual = livro ? (livro.capa || '') : '';
+      pdfPathAtual = livro ? (livro.pdf_path || '') : '';
+      pdfEscolhido = null;
+      pdfNomeEl.textContent = pdfPathAtual ? 'PDF já enviado — escolher outro substitui.' : '';
+      pintarCapaDoFormulario();
+      document.getElementById('lvExcluirBtn').style.display = livro ? '' : 'none';
+      campoTitulo.style.borderColor = '';
+      // Os seis livros que já estão nos Manuais viram sugestão de digitação.
+      const datalist = document.getElementById('lvTitulosConhecidos');
+      if(datalist && !datalist.children.length){
+        document.querySelectorAll('.mn-card[data-category="Livro de Leitura"]').forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.dataset.title;
+          datalist.appendChild(opt);
+        });
+      }
+      mostrarNaViewAtiva(modal);
+    }
+
+    if(addBtn) addBtn.addEventListener('click', () => abrirCadastro(null));
+    document.getElementById('lvEditarBtn').addEventListener('click', () => {
+      const livro = livroAberto;
+      fecharDetalhe();
+      abrirCadastro(livro);
+    });
+    document.getElementById('lvModalClose').addEventListener('click', () => modal.classList.remove('show'));
+    modal.addEventListener('click', (e) => { if(e.target === modal) modal.classList.remove('show'); });
+
+    document.getElementById('lvSalvarBtn').addEventListener('click', async () => {
+      const titulo = campoTitulo.value.trim();
+      if(!titulo){ campoTitulo.style.borderColor = '#FF6B5C'; campoTitulo.focus(); return; }
+      campoTitulo.style.borderColor = '';
+      const audio = campoAudio.value.trim();
+      if(audio && !dadosDoYoutube(audio) && !/^https?:\/\//i.test(audio)){
+        alert('O endereço do áudio não parece um link. Cole o endereço inteiro, começando com https://');
+        return;
+      }
+      if(!supa){ alert('Sem conexão com o banco.'); return; }
+      const btn = document.getElementById('lvSalvarBtn');
+      btn.disabled = true;
+
+      let caminhoPdf = pdfPathAtual;
+      if(pdfEscolhido){
+        btn.textContent = 'Enviando o PDF…';
+        const limpo = titulo.normalize('NFD').replace(/[̀-ͯ]/g, '')
+          .replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase().slice(0, 48);
+        const caminho = Date.now() + '-' + (limpo || 'livro') + '.pdf';
+        const { error } = await supa.storage.from(BUCKET_LIVROS)
+          .upload(caminho, pdfEscolhido, { contentType: 'application/pdf', upsert: false });
+        if(error){
+          btn.disabled = false;
+          btn.textContent = 'Salvar';
+          alert('Não consegui enviar o PDF.\n\nDetalhe: ' + error.message +
+                '\n\nSe disser que o bucket não existe, crie um bucket chamado "livros" no Storage do Supabase, sem marcar Public.');
+          return;
+        }
+        // O arquivo velho só sai depois que o novo entrou.
+        if(pdfPathAtual) await supa.storage.from(BUCKET_LIVROS).remove([pdfPathAtual]);
+        caminhoPdf = caminho;
+      }
+
+      btn.textContent = 'Salvando…';
+      const linha = {
+        titulo: titulo,
+        autor: campoAutor.value.trim() || null,
+        ano: campoAno.value.trim() || null,
+        classes: campoClasses.value.trim() || null,
+        descricao: campoDesc.value.trim() || null,
+        pdf_path: caminhoPdf || null,
+        pdf_url: campoPdfUrl.value.trim() || null,
+        audio_url: audio || null,
+        capa: capaAtual || null
+      };
+      let erro = null;
+      if(editando){
+        ({ error: erro } = await supa.from('livros_leitura').update(linha).eq('id', editando.id));
+      } else {
+        linha.criado_por = (window.__currentUsuario && window.__currentUsuario.nome) || null;
+        ({ error: erro } = await supa.from('livros_leitura').insert(linha));
+      }
+      btn.disabled = false;
+      btn.textContent = 'Salvar';
+      if(erro){ alert('Não consegui salvar: ' + erro.message); return; }
+      modal.classList.remove('show');
+      await carregar();
+    });
+
+    document.getElementById('lvExcluirBtn').addEventListener('click', async () => {
+      if(!editando || !supa) return;
+      if(!confirm('Excluir "' + editando.titulo + '"? O PDF enviado também é apagado.')) return;
+      if(editando.pdf_path) await supa.storage.from(BUCKET_LIVROS).remove([editando.pdf_path]);
+      const { error } = await supa.from('livros_leitura').delete().eq('id', editando.id);
+      if(error){ alert('Não consegui excluir: ' + error.message); return; }
+      modal.classList.remove('show');
+      await carregar();
+    });
+
+    // Primeiro acesso: em vez de uma tela vazia, aproveita os livros que já
+    // estão listados nos Manuais (título, classe e descrição) pra criar as
+    // linhas. Arquivo nenhum vem junto — isso é com o clube.
+    if(semearBtn) semearBtn.addEventListener('click', async () => {
+      if(!supa) return;
+      const cards = Array.from(document.querySelectorAll('.mn-card[data-category="Livro de Leitura"]'));
+      if(!cards.length){ alert('Não achei os livros nos Manuais.'); return; }
+      semearBtn.disabled = true;
+      const ano = String(new Date().getFullYear());
+      const linhas = cards.map(c => ({
+        titulo: c.dataset.title,
+        classes: (c.querySelector('.pl-event-tag') || {}).textContent || null,
+        descricao: c.dataset.desc || null,
+        ano: ano,
+        criado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
+      }));
+      const { error } = await supa.from('livros_leitura').insert(linhas);
+      semearBtn.disabled = false;
+      if(error){ alert('Não consegui criar os livros: ' + error.message); return; }
+      await carregar();
+    });
+
+    document.addEventListener('cedros:loggedin', () => { carregar(); });
+    carregar();
+    window.__lvRecarregar = carregar;
+  })();
+
   // Organização de Eventos: tarefas, responsáveis e prazos por evento
   (function(){
     const hub = document.getElementById('eoHub');
@@ -25355,6 +26075,16 @@ const REQ_SUMMARIES = {
         if(item) item.style.display = allowed ? '' : 'none';
         if(!allowed){ anyRestricted = true; restrictedViews.push(gotoId); }
       });
+      // Curso de Leitura anda junto com Manuais: é a mesma prateleira de
+      // material do clube, e assim não precisa de chave nova em
+      // papeis.permissoes_padrao — que pediria migration em todo papel já
+      // cadastrado. querySelectorAll de propósito: o atalho existe no menu do
+      // Início e no menu "Mais".
+      const leituraLiberada = access.manuals !== false;
+      document.querySelectorAll('.bd-qn-item[data-goto="view-curso-leitura"]').forEach(item => {
+        item.style.display = leituraLiberada ? '' : 'none';
+      });
+      if(!leituraLiberada) restrictedViews.push('view-curso-leitura');
       window.__restrictedGotoViews = restrictedViews;
       if(simBanner){
         if(anyRestricted){
