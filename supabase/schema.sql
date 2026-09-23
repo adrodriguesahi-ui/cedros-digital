@@ -1245,3 +1245,63 @@ alter table quiz_partidas enable row level security;
 
 drop policy if exists p_quiz_partidas on quiz_partidas;
 create policy p_quiz_partidas on quiz_partidas for all using(true) with check(true);
+
+-- ---------------------------------------------------------------------
+-- Curso de Leitura: os livros do ano, com PDF e/ou áudio.
+-- O PDF fica num bucket PRIVADO ("livros"), criado pelo painel
+-- (Storage > New bucket, nome livros, SEM marcar Public) — o mesmo motivo
+-- do bucket de comprovantes, o insert em storage.buckets pelo SQL do
+-- celular costuma quebrar. Privado de propósito: o app pede um link
+-- temporário a cada abertura, em vez de deixar um endereço fixo do livro
+-- circulando fora do clube.
+-- O áudio não é arquivo: é o endereço do vídeo/playlist do YouTube, que
+-- toca dentro do app pelo player oficial. Baixar o áudio de lá fere as
+-- regras deles, e um livro em áudio comeria o plano inteiro de Storage.
+-- ---------------------------------------------------------------------
+create table if not exists livros_leitura (
+  id uuid primary key default gen_random_uuid(),
+  titulo text not null,
+  autor text,
+  ano text,
+  classes text,
+  descricao text,
+  -- Um dos dois, ou os dois: arquivo no bucket privado ou link de fora.
+  pdf_path text,
+  pdf_url text,
+  audio_url text,
+  capa text,
+  criado_por text,
+  created_at timestamptz not null default now()
+);
+alter table livros_leitura enable row level security;
+drop policy if exists p_livros_leitura on livros_leitura;
+create policy p_livros_leitura on livros_leitura for all using(true) with check(true);
+
+-- Quem já leu/ouviu cada livro. Uma linha por pessoa por livro — marcar
+-- duas vezes não duplica, e desmarcar apaga.
+create table if not exists livros_lidos (
+  id uuid primary key default gen_random_uuid(),
+  livro_id uuid not null references livros_leitura(id) on delete cascade,
+  usuario_id uuid not null,
+  lido_em timestamptz not null default now()
+);
+create unique index if not exists livros_lidos_unico on livros_lidos (livro_id, usuario_id);
+alter table livros_lidos enable row level security;
+drop policy if exists p_livros_lidos on livros_lidos;
+create policy p_livros_lidos on livros_lidos for all using(true) with check(true);
+
+-- Bucket privado: só quem está logado lê, envia ou apaga. "to authenticated"
+-- em vez de auth.role() de propósito — é papel do Postgres, não depende de
+-- função auxiliar, e sem sessão o pedido nem chega na regra.
+-- Rodar no Supabase; num Postgres comum o schema storage não existe.
+do $$
+begin
+  if exists (select 1 from information_schema.schemata where schema_name = 'storage') then
+    execute 'drop policy if exists p_livros_ler on storage.objects';
+    execute 'create policy p_livros_ler on storage.objects for select to authenticated using (bucket_id = ''livros'')';
+    execute 'drop policy if exists p_livros_enviar on storage.objects';
+    execute 'create policy p_livros_enviar on storage.objects for insert to authenticated with check (bucket_id = ''livros'')';
+    execute 'drop policy if exists p_livros_remover on storage.objects';
+    execute 'create policy p_livros_remover on storage.objects for delete to authenticated using (bucket_id = ''livros'')';
+  end if;
+end $$;
