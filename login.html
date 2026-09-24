@@ -953,6 +953,30 @@
   }
   #view-planning .pl-event-card.pl-event-flash{ animation:pl-event-flash-pulse 1.4s ease; }
 
+  /* ---- Administração: distribuir unidades em lote ---- */
+  .ad-un-btn{ width:100%; margin-bottom:12px; }
+  .ad-un-chips{ display:flex; gap:7px; margin-bottom:10px; }
+  .ad-un-chip{
+    flex:1; padding:9px 6px; border-radius:11px; cursor:pointer; font-family:inherit;
+    font-size:12px; font-weight:800; color:rgba(245,239,225,0.6);
+    border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04);
+  }
+  .ad-un-chip.active{ color:var(--deep); background:var(--gold); border-color:var(--gold); }
+  .ad-un-lista{ max-height:46vh; overflow-y:auto; margin:4px -4px 10px; padding:0 4px; }
+  .ad-un-row{
+    display:flex; align-items:center; gap:10px; padding:9px 10px; margin-bottom:6px;
+    border-radius:11px; background:rgba(255,255,255,0.04);
+    border:1px solid transparent;
+  }
+  .ad-un-row.mudou{ border-color:var(--gold); background:rgba(212,175,55,0.10); }
+  .ad-un-info{ flex:1; min-width:0; }
+  .ad-un-info b{ display:block; font-size:12.5px; color:var(--cream); }
+  .ad-un-info span{ font-size:11px; color:rgba(245,239,225,0.5); }
+  .ad-un-row select{ width:132px; flex:none; padding:7px 8px; font-size:12px; }
+  .ad-un-vazio{ padding:14px 0; text-align:center; }
+  /* Sem nada escolhido o botão não faz nada — precisa parecer que não faz. */
+  #adUnidadesSalvarBtn:disabled{ opacity:0.35; cursor:default; }
+
   /* ---- Agenda: gerar o planejamento do período em PDF ---- */
   .pl-plano-btn{ width:calc(100% - 32px); margin:2px 16px 18px; }
   .pl-plano-chips{ display:flex; gap:7px; margin-bottom:12px; }
@@ -11912,6 +11936,10 @@
 
           <div class="sp-area-heading">Usuários e Permissões</div>
 
+          <!-- Distribuir unidades de várias pessoas de uma vez, sem abrir o
+               cadastro de cada uma. Ver window.__adAbrirUnidades. -->
+          <button type="button" class="pl-list-add-btn ad-un-btn" id="adUnidadesBtn">Distribuir unidades</button>
+
           <div class="sp-search-wrap" style="padding:0; margin-bottom:12px;">
             <svg class="sp-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="text" class="pl-input sp-search-input" id="adUserSearchInput" placeholder="Buscar usuário por nome ou e-mail...">
@@ -11931,6 +11959,32 @@
       <button type="button" class="pl-fab" id="adAddBtn" aria-label="Adicionar usuário">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
+
+      <div class="pl-modal-overlay" id="adUnidadesOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Distribuir Unidades</h4>
+            <button type="button" class="pl-modal-close" id="adUnidadesClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          <div class="ad-un-chips">
+            <button type="button" class="ad-un-chip active" data-un-filtro="sem">Sem unidade</button>
+            <button type="button" class="ad-un-chip" data-un-filtro="todos">Todos</button>
+          </div>
+
+          <input type="text" class="pl-input" id="adUnidadesBusca" placeholder="Buscar por nome..." style="margin-bottom:8px;">
+
+          <div class="ad-un-lista" id="adUnidadesLista"></div>
+
+          <p class="pl-reminder-hint" id="adUnidadesResumo" style="margin-top:0;"></p>
+
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-primary" id="adUnidadesSalvarBtn" disabled>Salvar</button>
+          </div>
+        </div>
+      </div>
 
       <div class="pl-modal-overlay" id="adModalOverlay">
         <div class="pl-modal">
@@ -26343,6 +26397,23 @@ const REQ_SUMMARIES = {
       });
     }
 
+    // Garante que o valor guardado exista como opção antes de selecionar. A
+    // opção avulsa é removida na abertura seguinte — senão o seletor ia
+    // juntando o "A definir" de cada pessoa aberta.
+    function mostrarUnidadeGuardada(valor){
+      const avulsa = fieldUnit.querySelector('option[data-avulsa]');
+      if(avulsa) avulsa.remove();
+      const existe = [...fieldUnit.options].some(o => o.value === valor);
+      if(!existe){
+        const op = document.createElement('option');
+        op.value = valor || '';
+        op.textContent = valor ? valor + ' (fora da lista)' : 'Sem unidade';
+        op.dataset.avulsa = '1';
+        fieldUnit.insertBefore(op, fieldUnit.firstChild);
+      }
+      fieldUnit.value = valor || '';
+    }
+
     function applyFilter(){
       if(!searchInput) return;
       const term = normalize(searchInput.value.trim());
@@ -26452,6 +26523,169 @@ const REQ_SUMMARIES = {
       applyFilter();
     }
 
+
+    // ---------------------------------------------------------------------
+    // Distribuir unidades em lote
+    //
+    // Abrir o cadastro de cada pessoa pra mexer num campo só não escala: a
+    // importação da Secretaria deixou dezenas em "A definir". Aqui é uma
+    // lista com um seletor por pessoa e um salvar só.
+    //
+    // Grava apenas as linhas que mudaram de verdade. Quem ficou como estava
+    // não vira UPDATE — assim um toque errado no filtro não reescreve o
+    // cadastro inteiro nem enche o histórico do banco.
+    // ---------------------------------------------------------------------
+    const unOverlay = document.getElementById('adUnidadesOverlay');
+    const unLista = document.getElementById('adUnidadesLista');
+    const unResumo = document.getElementById('adUnidadesResumo');
+    const unSalvarBtn = document.getElementById('adUnidadesSalvarBtn');
+    const unBusca = document.getElementById('adUnidadesBusca');
+    const unBtn = document.getElementById('adUnidadesBtn');
+
+    // Mesmas opções do cadastro individual, pra não existir unidade válida
+    // num lugar e não no outro.
+    const UN_OPCOES = ['Ype', 'Ype Roxo', 'Pinheiro', 'Cedros', 'Cedros Rosa', 'Flanboyan', 'Jacarandá'];
+    let unFiltro = 'sem';
+    let unEscolhas = {};   // id -> unidade escolhida agora
+
+    // Sem unidade de verdade: vazio, nulo, ou qualquer coisa que não seja uma
+    // das unidades reais nem a Diretoria ("A definir" cai aqui).
+    function semUnidade(valor){
+      return !valor || (UN_OPCOES.indexOf(valor) === -1 && valor !== 'Diretoria do Clube');
+    }
+
+    function unPessoas(){
+      return [...content.querySelectorAll('.ad-card')].map(card => ({
+        id: card.dataset.id,
+        nome: card.dataset.name,
+        unidade: card.dataset.unit || '',
+        papel: card.dataset.role,
+        inativo: card.dataset.ativo === '0'
+      }));
+    }
+
+    function unPintarResumo(){
+      const mudaram = Object.keys(unEscolhas).length;
+      const faltam = unPessoas().filter(p => semUnidade(unEscolhas[p.id] || p.unidade)).length;
+      const partes = [];
+      partes.push(mudaram === 1 ? '1 alteração pendente.' : mudaram + ' alterações pendentes.');
+      partes.push(faltam === 0 ? 'Todo mundo está numa unidade.'
+        : (faltam === 1 ? '1 pessoa ainda sem unidade.' : faltam + ' pessoas ainda sem unidade.'));
+      unResumo.textContent = partes.join(' ');
+      unSalvarBtn.disabled = mudaram === 0;
+      unSalvarBtn.textContent = mudaram ? 'Salvar ' + mudaram + (mudaram === 1 ? ' alteração' : ' alterações') : 'Salvar';
+    }
+
+    function unPintarLista(){
+      if(!unLista) return;
+      const termo = normalize((unBusca && unBusca.value || '').trim());
+      const pessoas = unPessoas().filter(p => {
+        if(termo && !normalize(p.nome).includes(termo)) return false;
+        // No filtro "sem unidade" quem já foi resolvido agora continua à
+        // vista — sumir da lista no instante da escolha assusta e tira a
+        // chance de corrigir.
+        if(unFiltro === 'sem' && !semUnidade(p.unidade)) return false;
+        return true;
+      });
+      unLista.innerHTML = '';
+      if(!pessoas.length){
+        const vazio = document.createElement('p');
+        vazio.className = 'pl-reminder-hint ad-un-vazio';
+        vazio.textContent = termo ? 'Ninguém com esse nome.'
+          : (unFiltro === 'sem' ? 'Todo mundo já está numa unidade.' : 'Nenhum usuário cadastrado.');
+        unLista.appendChild(vazio);
+        unPintarResumo();
+        return;
+      }
+      pessoas.forEach(p => {
+        const escolhida = unEscolhas[p.id] !== undefined ? unEscolhas[p.id] : p.unidade;
+        const row = document.createElement('div');
+        row.className = 'ad-un-row' + (unEscolhas[p.id] !== undefined ? ' mudou' : '');
+        row.innerHTML = '<div class="ad-un-info"><b></b><span></span></div>';
+        row.querySelector('b').textContent = p.nome;
+        row.querySelector('span').textContent = [p.papel, p.inativo ? 'Inativo' : ''].filter(Boolean).join(' · ');
+
+        const sel = document.createElement('select');
+        sel.className = 'pl-input';
+        // A opção do valor atual carrega o próprio valor atual: deixar como
+        // está não conta como mudança, mesmo sendo "A definir".
+        if(semUnidade(p.unidade)){
+          const nenhuma = document.createElement('option');
+          nenhuma.value = p.unidade;
+          nenhuma.textContent = p.unidade ? p.unidade : '— sem unidade —';
+          sel.appendChild(nenhuma);
+        }
+        UN_OPCOES.forEach(nome => {
+          const op = document.createElement('option');
+          op.value = nome; op.textContent = nome;
+          sel.appendChild(op);
+        });
+        const dir = document.createElement('option');
+        dir.value = 'Diretoria do Clube'; dir.textContent = 'Nenhuma — só Diretoria';
+        sel.appendChild(dir);
+        sel.value = escolhida;
+
+        sel.addEventListener('change', () => {
+          if(sel.value === p.unidade) delete unEscolhas[p.id];
+          else unEscolhas[p.id] = sel.value;
+          row.classList.toggle('mudou', unEscolhas[p.id] !== undefined);
+          unPintarResumo();
+        });
+        row.appendChild(sel);
+        unLista.appendChild(row);
+      });
+      unPintarResumo();
+    }
+
+    if(unBusca) unBusca.addEventListener('input', unPintarLista);
+    unOverlay && unOverlay.querySelectorAll('.ad-un-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        unOverlay.querySelectorAll('.ad-un-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        unFiltro = chip.getAttribute('data-un-filtro');
+        unPintarLista();
+      });
+    });
+
+    window.__adAbrirUnidades = function(){
+      unEscolhas = {};
+      if(unBusca) unBusca.value = '';
+      unPintarLista();
+      unOverlay.classList.add('show');
+    };
+    if(unBtn) unBtn.addEventListener('click', () => window.__adAbrirUnidades());
+    const unClose = document.getElementById('adUnidadesClose');
+    if(unClose) unClose.addEventListener('click', () => unOverlay.classList.remove('show'));
+    if(unOverlay) unOverlay.addEventListener('click', (e) => { if(e.target === unOverlay) unOverlay.classList.remove('show'); });
+
+    if(unSalvarBtn) unSalvarBtn.addEventListener('click', async () => {
+      const ids = Object.keys(unEscolhas);
+      if(!supa || !ids.length) return;
+      unSalvarBtn.disabled = true;
+      unSalvarBtn.textContent = 'Salvando…';
+      // Uma pessoa por vez, em blocos: se uma linha falhar, as outras já
+      // gravadas continuam valendo e o aviso diz exatamente quantas foram.
+      const falhas = [];
+      for(let i = 0; i < ids.length; i += 5){
+        const bloco = ids.slice(i, i + 5);
+        await Promise.all(bloco.map(async id => {
+          const { error } = await supa.from('usuarios').update({ unidade: unEscolhas[id] }).eq('id', id);
+          if(error) falhas.push(id);
+        }));
+      }
+      const gravadas = ids.length - falhas.length;
+      // A média das unidades é calculada a partir de usuarios.unidade, então
+      // mudar alguém de unidade invalida o que estava somado.
+      if(window.__ptInvalidar) window.__ptInvalidar();
+      unEscolhas = {};
+      await loadUsers();
+      if(falhas.length){
+        alert('Gravei ' + gravadas + ' de ' + ids.length + '. ' + falhas.length + ' não foram salvas — tente de novo.');
+      }
+      unPintarLista();
+      if(!falhas.length) unOverlay.classList.remove('show');
+    });
+
     const pendingHeading = document.getElementById('adPendingHeading');
     const pendingContent = document.getElementById('adPendingContent');
 
@@ -26528,7 +26762,12 @@ const REQ_SUMMARIES = {
       deleteBtn.style.display = (mode === 'edit') ? '' : 'none';
       fieldName.value = card ? card.dataset.name : '';
       fieldEmail.value = card ? card.dataset.email : '';
-      fieldUnit.value = card ? card.dataset.unit : 'Ype';
+      // A lista de unidades é fixa no HTML, mas o banco pode ter valor fora
+      // dela — "A definir" veio assim na importação da Secretaria, e unidade
+      // renomeada deixa o valor antigo pra trás. Sem uma opção correspondente
+      // o <select> fica sem seleção, aparece em branco, e salvar gravaria
+      // unidade vazia por cima do que estava lá.
+      mostrarUnidadeGuardada(card ? card.dataset.unit : 'Ype');
       fieldRole.value = card ? card.dataset.role : (fieldRole.options[0] ? fieldRole.options[0].value : '');
       fieldCargo.value = card ? (card.dataset.cargo || '') : '';
       fieldCanScore.checked = !!(card && card.dataset.canScore === '1');
