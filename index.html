@@ -953,6 +953,22 @@
   }
   #view-planning .pl-event-card.pl-event-flash{ animation:pl-event-flash-pulse 1.4s ease; }
 
+  /* ---- Agenda: gerar o planejamento do período em PDF ---- */
+  .pl-plano-btn{ width:calc(100% - 32px); margin:2px 16px 18px; }
+  .pl-plano-chips{ display:flex; gap:7px; margin-bottom:12px; }
+  .pl-plano-chip{
+    flex:1; padding:9px 6px; border-radius:11px; cursor:pointer; font-family:inherit;
+    font-size:12px; font-weight:800; color:rgba(245,239,225,0.6);
+    border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04);
+  }
+  .pl-plano-chip.active{ color:var(--deep); background:var(--gold); border-color:var(--gold); }
+  .pl-plano-inclui{ display:flex; flex-direction:column; gap:2px; margin:4px 0 6px; }
+  .pl-plano-resumo{
+    margin:0 0 12px; padding:10px 12px; border-radius:11px; font-size:12px; line-height:1.5;
+    background:rgba(255,255,255,0.05); color:rgba(245,239,225,0.75);
+  }
+  .pl-plano-resumo b{ color:var(--cream); }
+
   /* ---- Curso de Leitura: livros com PDF e áudio ---- */
   .lv-capa{
     flex-shrink:0; width:44px; height:58px; border-radius:7px; overflow:hidden;
@@ -4283,12 +4299,81 @@
 
           <div class="pl-cat-stats" id="plCatStats"></div>
 
+          <!-- Junta o que já está na agenda num documento do período escolhido.
+               Não cadastra nada: só organiza o que foi lançado. -->
+          <button type="button" class="pl-list-add-btn pl-plano-btn" id="plPlanoBtn">Gerar planejamento em PDF</button>
+
         </div>
       </div>
 
       <button type="button" class="pl-fab" id="plAddBtn" aria-label="Adicionar evento">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
+
+      <div class="pl-modal-overlay" id="plPlanoOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Planejamento do Clube</h4>
+            <button type="button" class="pl-modal-close" id="plPlanoClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          <label class="pl-field-label" style="margin-top:0;">Período</label>
+          <div class="pl-plano-chips">
+            <button type="button" class="pl-plano-chip active" data-periodo="ano">Ano</button>
+            <button type="button" class="pl-plano-chip" data-periodo="trimestre">Trimestre</button>
+            <button type="button" class="pl-plano-chip" data-periodo="mes">Mês</button>
+          </div>
+
+          <div id="plPlanoTrimestreWrap" style="display:none;">
+            <label class="pl-field-label">Qual trimestre</label>
+            <select class="pl-input" id="plPlanoTrimestre">
+              <option value="1">1º trimestre — janeiro a março</option>
+              <option value="2">2º trimestre — abril a junho</option>
+              <option value="3">3º trimestre — julho a setembro</option>
+              <option value="4">4º trimestre — outubro a dezembro</option>
+            </select>
+          </div>
+
+          <div id="plPlanoMesWrap" style="display:none;">
+            <label class="pl-field-label">Qual mês</label>
+            <select class="pl-input" id="plPlanoMes"></select>
+          </div>
+
+          <label class="pl-field-label">O que entra no documento</label>
+          <div class="pl-plano-inclui">
+            <label class="pl-reminder-toggle-row" for="plPlanoCalendario">
+              <span class="pl-reminder-toggle-text">Calendário desenhado do mês</span>
+              <span class="pl-switch">
+                <input type="checkbox" id="plPlanoCalendario" checked>
+                <span class="pl-switch-track"><span class="pl-switch-thumb"></span></span>
+              </span>
+            </label>
+            <label class="pl-reminder-toggle-row" for="plPlanoResponsaveis">
+              <span class="pl-reminder-toggle-text">Responsável e Oficiais de Dia</span>
+              <span class="pl-switch">
+                <input type="checkbox" id="plPlanoResponsaveis" checked>
+                <span class="pl-switch-track"><span class="pl-switch-thumb"></span></span>
+              </span>
+            </label>
+            <label class="pl-reminder-toggle-row" for="plPlanoProgramacao">
+              <span class="pl-reminder-toggle-text">Programação de cada evento</span>
+              <span class="pl-switch">
+                <input type="checkbox" id="plPlanoProgramacao" checked>
+                <span class="pl-switch-track"><span class="pl-switch-thumb"></span></span>
+              </span>
+            </label>
+          </div>
+
+          <p class="pl-plano-resumo" id="plPlanoResumo"></p>
+          <p class="pl-reminder-hint">A observação interna de cada evento não entra — o documento é feito pra circular.</p>
+
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-primary" id="plPlanoGerarBtn">Gerar PDF</button>
+          </div>
+        </div>
+      </div>
 
       <div class="pl-modal-overlay" id="plModalOverlay">
         <div class="pl-modal">
@@ -13230,6 +13315,22 @@
     }
   }
 
+  // Irmão do de cima pra dado que é OBJETO, não lista. parseJSONSafe devolve []
+  // pra qualquer coisa que não seja array — de propósito, porque quase todo
+  // dataset do app é lista. O oficiais_por_dia do evento de período é a
+  // exceção: lido por lá ele voltava sempre vazio, então a ficha de um dia
+  // nunca mostrava os oficiais daquele dia, e reabrir o evento no editor
+  // começava com o mapa zerado — salvar de novo apagava o que estava gravado.
+  function parseObjetoSafe(str){
+    if(!str) return {};
+    try {
+      const parsed = JSON.parse(str);
+      return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+    } catch(e){
+      return {};
+    }
+  }
+
   // Modelos de aula prontos por classe/mês/semana pra "Planejamento de Classes"
   // (Classes Regulares) — currículo anual real do clube, extraído da planilha de
   // planejamento. Cada item: texto em bullets ("• ") com os códigos de seção
@@ -13830,7 +13931,7 @@
     }
 
     function oficiaisDoDia(card, mes, dia){
-      const porDia = parseJSONSafe(card.dataset.oficiaisPorDia) || {};
+      const porDia = parseObjetoSafe(card.dataset.oficiaisPorDia);
       const doDia = (mes && dia) ? porDia[mes + '-' + dia] : null;
       if(doDia && doDia.nomes && doDia.nomes.length) return doDia.nomes;
       // Sem nada pra esse dia, cai nos oficiais do evento.
@@ -14055,7 +14156,7 @@
         // Reparte a programação pelos dias. Item sem "dia" é de antes desta
         // mudança e vale pro evento inteiro: cai no primeiro dia.
         progPorDia = {};
-        oficiaisPorDia = parseJSONSafe(card.dataset.oficiaisPorDia) || {};
+        oficiaisPorDia = parseObjetoSafe(card.dataset.oficiaisPorDia);
         diaEmEdicao = null;
         const chavePrimeiro = chaveDoDia(parseInt(card.dataset.monIndex, 10), parseInt(card.dataset.day, 10));
         parseJSONSafe(card.dataset.schedule).forEach(item => {
@@ -14479,6 +14580,383 @@
       };
     }
 
+    // ---- Planejamento do clube em PDF ----
+    // Junta num documento o que JÁ está na agenda, no período escolhido: ano,
+    // trimestre ou mês. Não cadastra nem muda nada.
+    //
+    // Duas decisões que valem registro:
+    //  - Usa todos os eventos do período, ignorando a busca e o filtro de mês
+    //    que estiverem ligados na tela. Senão bastaria um filtro esquecido pra
+    //    sair um planejamento pela metade sem ninguém perceber.
+    //  - A observação interna do evento nunca entra: o documento é feito pra
+    //    circular. E evento com escala oculta não mostra os Oficiais de Dia,
+    //    pelo mesmo motivo que a tela não mostra.
+    (function(){
+      const btnAbrir = document.getElementById('plPlanoBtn');
+      const overlay = document.getElementById('plPlanoOverlay');
+      if(!btnAbrir || !overlay) return;
+
+      const chips = Array.from(overlay.querySelectorAll('.pl-plano-chip'));
+      const selTrimestre = document.getElementById('plPlanoTrimestre');
+      const selMes = document.getElementById('plPlanoMes');
+      const wrapTrimestre = document.getElementById('plPlanoTrimestreWrap');
+      const wrapMes = document.getElementById('plPlanoMesWrap');
+      const optCalendario = document.getElementById('plPlanoCalendario');
+      const optResponsaveis = document.getElementById('plPlanoResponsaveis');
+      const optProgramacao = document.getElementById('plPlanoProgramacao');
+      const elResumo = document.getElementById('plPlanoResumo');
+
+      const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                     'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      const INICIAIS_SEMANA = ['D','S','T','Q','Q','S','S'];
+      // Mesmas cores das etiquetas da agenda, na versão cheia (no papel branco
+      // a versão translúcida da tela sumiria).
+      const COR_TAG = {
+        green:  [63, 203, 107],
+        gold:   [216, 168, 62],
+        blue:   [91, 155, 255],
+        red:    [255, 107, 92],
+        purple: [185, 139, 255],
+        gray:   [150, 150, 150]
+      };
+
+      let periodo = 'ano';
+
+      MESES.forEach((nome, i) => {
+        const opt = document.createElement('option');
+        opt.value = String(i + 1);
+        opt.textContent = nome;
+        selMes.appendChild(opt);
+      });
+      selMes.value = String(new Date().getMonth() + 1);
+
+      function anoDoPlano(){ return new Date().getFullYear(); }
+
+      function mesesDoPeriodo(){
+        if(periodo === 'mes') return [parseInt(selMes.value, 10)];
+        if(periodo === 'trimestre'){
+          const t = parseInt(selTrimestre.value, 10);
+          return [(t - 1) * 3 + 1, (t - 1) * 3 + 2, (t - 1) * 3 + 3];
+        }
+        const todos = [];
+        for(let m = 1; m <= 12; m++) todos.push(m);
+        return todos;
+      }
+
+      function tituloDoPeriodo(){
+        const ano = anoDoPlano();
+        if(periodo === 'mes') return MESES[parseInt(selMes.value, 10) - 1] + ' de ' + ano;
+        if(periodo === 'trimestre'){
+          const t = parseInt(selTrimestre.value, 10);
+          return t + 'º Trimestre de ' + ano;
+        }
+        return 'Planejamento Anual ' + ano;
+      }
+
+      // Todos os cards da agenda, inclusive os escondidos por filtro.
+      function eventosDoMes(mes){
+        const ano = anoDoPlano();
+        const lista = [];
+        document.querySelectorAll('#view-planning .pl-content .pl-event-card').forEach(card => {
+          const trecho = trechoNoMes(card, mes, ano);
+          if(!trecho) return;
+          lista.push({ card: card, de: trecho.de, ate: trecho.ate });
+        });
+        lista.sort((a, b) => (a.de - b.de) ||
+          String(a.card.dataset.title || '').localeCompare(String(b.card.dataset.title || ''), 'pt-BR'));
+        return lista;
+      }
+
+      // Num evento de período os oficiais podem variar por dia; o documento
+      // lista os nomes sem repetir, em vez de uma linha por dia.
+      function oficiaisDoEvento(card){
+        if(card.dataset.escalaOculta === '1') return [];
+        const nomes = parseJSONSafe(card.dataset.officerNames) || [];
+        const porDia = parseObjetoSafe(card.dataset.oficiaisPorDia);
+        const todos = nomes.slice();
+        Object.keys(porDia).forEach(chave => {
+          ((porDia[chave] || {}).nomes || []).forEach(n => { if(todos.indexOf(n) === -1) todos.push(n); });
+        });
+        return todos;
+      }
+
+      function rotuloDoDia(ev){
+        const de = String(ev.de).padStart(2, '0');
+        return ev.de === ev.ate ? de : (de + ' a ' + String(ev.ate).padStart(2, '0'));
+      }
+
+      function pintarResumo(){
+        const meses = mesesDoPeriodo();
+        let total = 0;
+        const porCategoria = {};
+        const jaContados = [];
+        meses.forEach(mes => {
+          eventosDoMes(mes).forEach(ev => {
+            // Evento de período aparece em mais de um mês: conta uma vez só.
+            if(jaContados.indexOf(ev.card) !== -1) return;
+            jaContados.push(ev.card);
+            total++;
+            const cat = ev.card.dataset.tagLabel || 'Outro';
+            porCategoria[cat] = (porCategoria[cat] || 0) + 1;
+          });
+        });
+        const partes = Object.keys(porCategoria)
+          .sort((a, b) => porCategoria[b] - porCategoria[a])
+          .map(c => porCategoria[c] + ' de ' + c);
+        elResumo.innerHTML = total
+          ? ('<b>' + total + (total === 1 ? ' atividade</b> em ' : ' atividades</b> em ') + tituloDoPeriodo() + '.<br>' + partes.join(' · '))
+          : ('Nenhuma atividade lançada em ' + tituloDoPeriodo() + '. O documento sai com os meses vazios.');
+      }
+
+      chips.forEach(chip => chip.addEventListener('click', () => {
+        periodo = chip.dataset.periodo;
+        chips.forEach(c => c.classList.toggle('active', c === chip));
+        wrapTrimestre.style.display = periodo === 'trimestre' ? '' : 'none';
+        wrapMes.style.display = periodo === 'mes' ? '' : 'none';
+        pintarResumo();
+      }));
+      selTrimestre.addEventListener('change', pintarResumo);
+      selMes.addEventListener('change', pintarResumo);
+
+      btnAbrir.addEventListener('click', () => {
+        pintarResumo();
+        const ativa = document.querySelector('.view.active');
+        if(ativa) ativa.appendChild(overlay);
+        overlay.classList.add('show');
+      });
+      document.getElementById('plPlanoClose').addEventListener('click', () => overlay.classList.remove('show'));
+      overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.classList.remove('show'); });
+
+      document.getElementById('plPlanoGerarBtn').addEventListener('click', gerarPlanoPDF);
+
+      function gerarPlanoPDF(){
+        const jsPDFLib = window.jspdf && window.jspdf.jsPDF;
+        if(!jsPDFLib){
+          alert('Não foi possível carregar a biblioteca de PDF. Verifique sua conexão com a internet e tente novamente.');
+          return;
+        }
+        const ano = anoDoPlano();
+        const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
+        const larguraPag = doc.internal.pageSize.getWidth();
+        const alturaPag = doc.internal.pageSize.getHeight();
+        const margem = 16;
+        const util = larguraPag - margem * 2;
+        let y = 0;
+        let pagina = 1;
+
+        function rodape(){
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(150, 150, 150);
+          doc.text('Gerado pelo Cedros Digital', margem, alturaPag - 8);
+          doc.text(String(pagina), larguraPag - margem, alturaPag - 8, { align: 'right' });
+        }
+        function novaPagina(){
+          rodape();
+          doc.addPage();
+          pagina++;
+          y = 22;
+        }
+        // Garante que cabe o bloco inteiro; se não couber, começa na página nova.
+        function cabe(altura){
+          if(y + altura > alturaPag - 18) novaPagina();
+        }
+
+        // ---- desenhos ----
+        function desenharCalendario(mes, eventos){
+          const primeiroDia = new Date(ano, mes - 1, 1).getDay();
+          const diasNoMes = new Date(ano, mes, 0).getDate();
+          const linhas = Math.ceil((primeiroDia + diasNoMes) / 7);
+          const larguraCel = util / 7;
+          const alturaCel = 7.5;
+          const alturaGrade = 6 + linhas * alturaCel;
+          cabe(alturaGrade + 6);
+
+          const comEvento = {};
+          eventos.forEach(ev => { for(let d = ev.de; d <= ev.ate; d++) comEvento[d] = true; });
+
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8);
+          doc.setTextColor(140, 140, 140);
+          INICIAIS_SEMANA.forEach((letra, i) => {
+            doc.text(letra, margem + larguraCel * i + larguraCel / 2, y + 4, { align: 'center' });
+          });
+
+          let topo = y + 6;
+          for(let linha = 0; linha < linhas; linha++){
+            for(let col = 0; col < 7; col++){
+              const dia = linha * 7 + col - primeiroDia + 1;
+              if(dia < 1 || dia > diasNoMes) continue;
+              const x = margem + larguraCel * col;
+              const yCel = topo + linha * alturaCel;
+              if(comEvento[dia]){
+                doc.setFillColor(226, 246, 232);
+                doc.roundedRect(x + 0.6, yCel + 0.6, larguraCel - 1.2, alturaCel - 1.2, 1.5, 1.5, 'F');
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(20, 110, 55);
+              } else {
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(170, 170, 170);
+              }
+              doc.setFontSize(8.5);
+              doc.text(String(dia), x + larguraCel / 2, yCel + alturaCel / 2 + 1.4, { align: 'center' });
+            }
+          }
+          y = topo + linhas * alturaCel + 6;
+        }
+
+        function desenharEvento(ev, mes){
+          const card = ev.card;
+          const cor = COR_TAG[card.dataset.tag] || COR_TAG.gray;
+          const titulo = card.dataset.title || 'Atividade';
+          const linhasTitulo = doc.splitTextToSize(titulo, util - 30);
+
+          const oficiais = optResponsaveis.checked ? oficiaisDoEvento(card) : [];
+          const responsavel = optResponsaveis.checked ? (card.dataset.responsible || '') : '';
+          const temLinhaGente = !!(responsavel || oficiais.length);
+
+          const programacao = optProgramacao.checked ? programacaoDoMes(card, mes) : [];
+
+          const altura = linhasTitulo.length * 5 + 5 + (temLinhaGente ? 5 : 0) + programacao.length * 4.6 + 4;
+          cabe(altura + 4);
+
+          // Faixa da cor da categoria à esquerda
+          doc.setFillColor(cor[0], cor[1], cor[2]);
+          doc.roundedRect(margem, y - 3.5, 1.6, altura - 1, 0.8, 0.8, 'F');
+
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10.5);
+          doc.setTextColor(60, 60, 60);
+          doc.text(rotuloDoDia(ev), margem + 5, y);
+
+          doc.setFontSize(11);
+          doc.setTextColor(20, 24, 20);
+          doc.text(linhasTitulo, margem + 24, y);
+          let yLinha = y + (linhasTitulo.length - 1) * 5;
+
+          const detalhes = [];
+          if(card.dataset.time) detalhes.push(card.dataset.time + (card.dataset.timeEnd ? ('–' + card.dataset.timeEnd) : ''));
+          if(card.dataset.local) detalhes.push(card.dataset.local);
+          if(card.dataset.tagLabel) detalhes.push(card.dataset.tagLabel);
+          yLinha += 5;
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          doc.setTextColor(120, 120, 120);
+          doc.text(detalhes.join(' · '), margem + 24, yLinha);
+
+          if(temLinhaGente){
+            yLinha += 5;
+            const gente = [];
+            if(responsavel) gente.push('Responsável: ' + responsavel);
+            if(oficiais.length) gente.push('Oficiais de Dia: ' + oficiais.join(' e '));
+            doc.setTextColor(90, 90, 90);
+            doc.text(doc.splitTextToSize(gente.join('   ·   '), util - 26), margem + 24, yLinha);
+          }
+
+          programacao.forEach(item => {
+            yLinha += 4.6;
+            if(yLinha > alturaPag - 20){ novaPagina(); yLinha = y = 24; }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8.5);
+            doc.setTextColor(20, 130, 70);
+            doc.text(item.horario || '--:--', margem + 26, yLinha);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(90, 90, 90);
+            doc.text(String(item.atividade || '').slice(0, 90), margem + 40, yLinha);
+          });
+
+          y = yLinha + 7;
+        }
+
+        // Item de programação pode ser do evento inteiro (sem dia) ou de um dia
+        // específico do período; no mês do documento entram os dois.
+        function programacaoDoMes(card, mes){
+          const todos = parseJSONSafe(card.dataset.schedule) || [];
+          return todos.filter(x => !x.dia || !x.mes || x.mes === mes)
+                      .map(x => ({ horario: x.horario, atividade: (x.dia ? ('dia ' + x.dia + ' · ') : '') + (x.atividade || '') }));
+        }
+
+
+        // Cabeçalho, no mesmo desenho do PDF da programação
+        doc.setFillColor(13, 19, 12);
+        doc.rect(0, 0, larguraPag, 36, 'F');
+        doc.setFillColor(63, 203, 107);
+        doc.rect(0, 36, larguraPag, 1.5, 'F');
+        const logo = document.querySelector('.bd-brand img');
+        let xTexto = margem;
+        if(logo && logo.src){
+          try { doc.addImage(logo.src, 'PNG', margem, 8, 20, 20); xTexto = margem + 26; } catch(e){}
+        }
+        doc.setTextColor(245, 239, 225);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12.5);
+        doc.text('CLUBE DE DESBRAVADORES', xTexto, 15);
+        doc.text('CEDROS DO LÍBANO', xTexto, 21.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9.5);
+        doc.setTextColor(120, 220, 150);
+        doc.text('PLANEJAMENTO DO CLUBE', xTexto, 28);
+
+        y = 50;
+        doc.setTextColor(20, 24, 20);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(17);
+        doc.text(tituloDoPeriodo(), larguraPag / 2, y, { align: 'center' });
+        y += 8;
+
+        const meses = mesesDoPeriodo();
+        const contados = [];
+        meses.forEach(m => eventosDoMes(m).forEach(ev => {
+          if(contados.indexOf(ev.card) === -1) contados.push(ev.card);
+        }));
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10.5);
+        doc.setTextColor(110, 110, 110);
+        doc.text(contados.length + (contados.length === 1 ? ' atividade prevista' : ' atividades previstas'),
+                 larguraPag / 2, y, { align: 'center' });
+        y += 12;
+
+        meses.forEach(mes => {
+          const eventos = eventosDoMes(mes);
+
+          cabe(18);
+          doc.setFillColor(13, 19, 12);
+          doc.roundedRect(margem, y, util, 9, 2, 2, 'F');
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(11);
+          doc.setTextColor(245, 239, 225);
+          doc.text(MESES[mes - 1].toUpperCase(), margem + 4, y + 6.2);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          doc.setTextColor(120, 220, 150);
+          doc.text(eventos.length ? (eventos.length + (eventos.length === 1 ? ' atividade' : ' atividades')) : 'sem atividades',
+                   margem + util - 4, y + 6.2, { align: 'right' });
+          y += 14;
+
+          if(!eventos.length){
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(10);
+            doc.setTextColor(150, 150, 150);
+            doc.text('Nenhuma atividade lançada neste mês.', margem + 2, y);
+            y += 10;
+            return;
+          }
+
+          if(optCalendario.checked) desenharCalendario(mes, eventos);
+          eventos.forEach(ev => desenharEvento(ev, mes));
+          y += 4;
+        });
+
+        rodape();
+
+        const nome = tituloDoPeriodo().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+          .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        doc.save('planejamento-' + nome + '.pdf');
+        overlay.classList.remove('show');
+
+      }
+    })();
+
     function dayHasEventOn(monIdx, day){
       // Precisa olhar o período inteiro, e ele pode ter começado noutro mês —
       // por isso a busca não filtra mais por data-mon-index.
@@ -14684,7 +15162,10 @@
         oficiaisPorDiaPayload = {};
         diasDoPeriodo.forEach(d => {
           const of = oficiaisPorDia[d.chave];
-          if(of && of.ids && of.ids.length) oficiaisPorDiaPayload[d.chave] = of;
+          // Guarda o dia que tenha ids OU nomes. Filtrar só por ids descartaria
+          // em silêncio um dia cujo id se perdeu, e o nome é o que aparece na
+          // ficha e no planejamento.
+          if(of && ((of.ids && of.ids.length) || (of.nomes && of.nomes.length))) oficiaisPorDiaPayload[d.chave] = of;
         });
         // O card continua guardando os oficiais do primeiro dia: o PDF e a
         // permissão de editar a programação leem oficiais_dia_ids.
