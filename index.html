@@ -10119,6 +10119,8 @@
           <button type="button" class="us-period-btn" data-period="mes">Este Mês</button>
         </div>
 
+        <p class="pl-reminder-hint" id="usAutoHint" style="margin-top:-4px;"></p>
+
         <div class="us-unit-list" id="usUnitList"></div>
 
         <!-- "Atividades Extras": geram lançamento real em unidade_pontos ao
@@ -17759,6 +17761,7 @@
       if(supa && alunoId){
         const { error } = await supa.from('progresso_subitens')
           .upsert({ desbravador_id: alunoId, subitem_id: sub.id, feito: !!feito, resumo: resumo || null });
+        if(window.__ptInvalidar) window.__ptInvalidar();
         if(error){
           console.error('Erro ao salvar sub-item:', error.message);
           alert('Não consegui salvar este item: ' + error.message);
@@ -18039,6 +18042,7 @@
       if(supa && desbravadorId){
         const { error } = await supa.from('progresso_requisitos')
           .upsert({ desbravador_id: desbravadorId, requisito_titulo: requisitoTitulo, status, resumo: resumo || null }, { onConflict: 'desbravador_id,requisito_titulo' });
+        if(window.__ptInvalidar) window.__ptInvalidar();
         if(error) console.error('Erro ao salvar progresso:', error.message);
 
         if(status === 'done' && previousStatus !== 'done'){
@@ -24405,6 +24409,128 @@ const REQ_SUMMARIES = {
   })();
 
   // ---------------------------------------------------------------------
+  // ---------------------------------------------------------------------
+  // Pontuação automática das classes e da leitura
+  //
+  // Requisito concluído vale 0,5, livro do Curso de Leitura vale 2 e cada
+  // trecho marcado no plano de leitura bíblica vale 0,2.
+  //
+  // Nada disso vira lançamento no banco: é somado na hora, a partir de
+  // progresso_requisitos, livros_lidos e progresso_subitens. Assim desmarcar
+  // um requisito devolve o ponto sozinho, em vez de deixar um lançamento
+  // errado pra alguém caçar depois.
+  //
+  // A unidade de cada pessoa vem do cadastro de usuário, não da tabela de
+  // desbravadores — então desbravador sem login não entra na média da
+  // unidade. A tela diz quantos estão nessa situação, pra ninguém achar que
+  // o ponto sumiu.
+  // ---------------------------------------------------------------------
+  (function(){
+    const PONTOS = { requisito: 0.5, livro: 2, trechoBiblico: 0.2 };
+    const EH_LEITURA_BIBLICA = /leitura b[íi]blica/i;
+
+    let cache = null;
+
+    // Tabela que ainda não existe não pode derrubar a pontuação inteira.
+    function tolerante(consulta, rotulo){
+      return consulta.then(
+        r => (r && r.error) ? (console.warn(rotulo + ' indisponível:', r.error.message), { data: [] }) : r,
+        e => (console.warn(rotulo + ' indisponível:', e), { data: [] })
+      );
+    }
+
+    window.__ptPontuacao = async function(recarregar){
+      if(cache && !recarregar) return cache;
+      const vazio = { porUsuario: {}, detalhe: {}, semLogin: 0 };
+      if(!supa){ cache = vazio; return cache; }
+
+      const [
+        { data: desbravadores }, { data: progresso }, { data: lidos },
+        { data: subitens }, { data: subFeitos }
+      ] = await Promise.all([
+        tolerante(supa.from('desbravadores').select('id, usuario_id'), 'desbravadores'),
+        tolerante(supa.from('progresso_requisitos').select('desbravador_id, status'), 'progresso_requisitos'),
+        tolerante(supa.from('livros_lidos').select('usuario_id'), 'livros_lidos'),
+        tolerante(supa.from('requisito_subitens').select('id, requisito_titulo'), 'requisito_subitens'),
+        tolerante(supa.from('progresso_subitens').select('desbravador_id, subitem_id, feito'), 'progresso_subitens')
+      ]);
+
+      const usuarioDoDesbravador = {};
+      let semLogin = 0;
+      (desbravadores || []).forEach(d => {
+        if(d.usuario_id) usuarioDoDesbravador[d.id] = d.usuario_id;
+        else semLogin++;
+      });
+
+      const porUsuario = {};
+      const detalhe = {};
+      function somar(usuarioId, quanto, campo){
+        if(!usuarioId) return;
+        porUsuario[usuarioId] = (porUsuario[usuarioId] || 0) + quanto;
+        const d = detalhe[usuarioId] || (detalhe[usuarioId] = { requisitos: 0, livros: 0, trechos: 0 });
+        d[campo]++;
+      }
+
+      (progresso || []).forEach(row => {
+        if(row.status !== 'done') return;
+        somar(usuarioDoDesbravador[row.desbravador_id], PONTOS.requisito, 'requisitos');
+      });
+
+      (lidos || []).forEach(row => somar(row.usuario_id, PONTOS.livro, 'livros'));
+
+      // Só os sub-itens dos requisitos de leitura bíblica valem os 0,2 — os
+      // outros já entram no 0,5 do requisito inteiro.
+      const subitemBiblico = {};
+      (subitens || []).forEach(s => {
+        if(EH_LEITURA_BIBLICA.test(s.requisito_titulo || '')) subitemBiblico[s.id] = true;
+      });
+      (subFeitos || []).forEach(row => {
+        if(!row.feito || !subitemBiblico[row.subitem_id]) return;
+        somar(usuarioDoDesbravador[row.desbravador_id], PONTOS.trechoBiblico, 'trechos');
+      });
+
+      cache = { porUsuario: porUsuario, detalhe: detalhe, semLogin: semLogin };
+      return cache;
+    };
+
+    // Média por desbravador de cada unidade. Média, não soma: unidade de 4
+    // pessoas disputa de igual pra igual com uma de 10.
+    window.__ptPorUnidade = async function(recarregar){
+      const { porUsuario, semLogin } = await window.__ptPontuacao(recarregar);
+      const fora = { porUnidade: {}, semLogin: semLogin };
+      if(!supa) return fora;
+      const { data: usuarios } = await tolerante(
+        supa.from('usuarios').select('id, unidade, papel, ativo'), 'usuarios');
+      const porUnidade = {};
+      (usuarios || []).forEach(u => {
+        // "pontuação individual de cada desbravador": conselheiro e diretoria
+        // da unidade não entram na conta, senão a média cai por gente que não
+        // cumpre requisito de classe.
+        if(u.papel !== 'Desbravador' || u.ativo === false || !u.unidade) return;
+        const bloco = porUnidade[u.unidade] || (porUnidade[u.unidade] = { soma: 0, membros: 0, media: 0 });
+        bloco.soma += (porUsuario[u.id] || 0);
+        bloco.membros++;
+      });
+      Object.keys(porUnidade).forEach(nome => {
+        const b = porUnidade[nome];
+        b.media = b.membros ? (b.soma / b.membros) : 0;
+      });
+      return { porUnidade: porUnidade, semLogin: semLogin };
+    };
+
+    // 12.5 -> "12,5" e 12 -> "12": vírgula porque é o separador daqui, e sem
+    // o ",0" pendurado em número redondo.
+    window.__ptFormatar = function(n){
+      const arredondado = Math.round((n || 0) * 10) / 10;
+      const texto = arredondado.toFixed(1);
+      return (texto.endsWith('.0') ? texto.slice(0, -2) : texto).replace('.', ',');
+    };
+
+    // Quem marca requisito, livro ou trecho avisa aqui pra próxima leitura
+    // recalcular em vez de servir o cache velho.
+    window.__ptInvalidar = function(){ cache = null; };
+  })();
+
   // Missões ("Desafio Só Desbravador"): tarefas que a Diretoria cadastra
   // manualmente (título, descrição, pontos definidos caso a caso — sem
   // contagem automática de classes/especialidades/presença). Cada
@@ -24460,6 +24586,16 @@ const REQ_SUMMARIES = {
       Object.keys(melhorPartida).forEach(id => {
         totals[id] = (totals[id] || 0) + melhorPartida[id];
       });
+
+      // Classes e leitura: 0,5 por requisito concluído, 2 por livro do Curso
+      // de Leitura e 0,2 por trecho marcado no plano bíblico. Somados por
+      // usuário em __ptPontuacao, sem virar lançamento no banco.
+      if(window.__ptPontuacao){
+        const { porUsuario } = await window.__ptPontuacao();
+        Object.keys(porUsuario).forEach(id => {
+          totals[id] = (totals[id] || 0) + porUsuario[id];
+        });
+      }
       return Object.keys(totals)
         .map(id => ({ nome: nameById[id] || 'Desconhecido', total: totals[id] }))
         .filter(item => item.total > 0)
@@ -24587,7 +24723,7 @@ const REQ_SUMMARIES = {
       const ranking = await window.__msComputeRanking();
       rankingList.innerHTML = '';
       if(!ranking.length){
-        rankingList.innerHTML = '<p class="un-empty-hint">Ninguém concluiu missões ainda.</p>';
+        rankingList.innerHTML = '<p class="un-empty-hint">Ninguém pontuou ainda — o ranking soma missões, Trilha do Saber, requisitos de classe e leitura.</p>';
         return;
       }
       ranking.forEach((item, i) => {
@@ -24600,7 +24736,9 @@ const REQ_SUMMARIES = {
           '<span class="un-mini-time"></span>';
         row.querySelector('.us-rank-badge').textContent = rank;
         row.querySelector('.un-mini-title').textContent = item.nome;
-        row.querySelector('.un-mini-time').textContent = item.total + (item.total === 1 ? ' ponto' : ' pontos');
+        // O total agora pode ter décimos (0,5 de requisito, 0,2 de leitura).
+        const texto = window.__ptFormatar ? window.__ptFormatar(item.total) : String(item.total);
+        row.querySelector('.un-mini-time').textContent = texto + (item.total === 1 ? ' ponto' : ' pontos');
         rankingList.appendChild(row);
       });
     }
@@ -25520,6 +25658,7 @@ const REQ_SUMMARIES = {
         LIDOS.add(livro.id);
       }
       btn.disabled = false;
+      if(window.__ptInvalidar) window.__ptInvalidar();
       pintarBotaoLi(btn, LIDOS.has(livro.id));
       const marcas = document.getElementById('lvDetMarcas');
       marcas.innerHTML = '';
@@ -27877,6 +28016,11 @@ const REQ_SUMMARIES = {
     let loaded = false;
     let cameFrom = 'view-units'; // pra onde o "Voltar" leva — depende de por onde entrou
     let periodFilter = 'geral'; // 'geral' | 'ano' | 'mes' — só afeta esta tela
+    // Média por desbravador de classes e leitura, por unidade. Vem de
+    // __ptPorUnidade e não é lançamento: é recalculada a cada carga.
+    let mediaAutomatica = {};
+    let detalheAutomatico = {};
+    let desbravadoresSemLogin = 0;
 
     function isInPeriod(dateStr){
       if(periodFilter === 'geral') return true;
@@ -27894,7 +28038,18 @@ const REQ_SUMMARIES = {
       const totals = {};
       units.forEach(u => { totals[u.nome] = 0; });
       const rows = usePeriod ? pontosRows.filter(r => isInPeriod(r.created_at)) : pontosRows;
-      rows.forEach(r => { totals[r.unidade] = (totals[r.unidade] || 0) + r.pontos; });
+      // Number() de propósito: depois que a coluna virou numeric, o valor pode
+      // chegar como texto, e "7" + "3" viraria "73".
+      rows.forEach(r => { totals[r.unidade] = (totals[r.unidade] || 0) + Number(r.pontos || 0); });
+      // A média de classes e leitura não tem data — requisito concluído e livro
+      // lido não guardam quando foram. Por isso ela entra no total geral e fica
+      // de fora quando a tela está filtrada por ano ou mês: senão o número
+      // diria "neste mês" mostrando o acumulado de sempre.
+      if(!usePeriod || periodFilter === 'geral'){
+        Object.keys(mediaAutomatica).forEach(nome => {
+          totals[nome] = (totals[nome] || 0) + mediaAutomatica[nome];
+        });
+      }
       return totals;
     }
 
@@ -27906,6 +28061,15 @@ const REQ_SUMMARIES = {
       ]);
       units = unidadesData || [];
       pontosRows = pontosData || [];
+      if(window.__ptPorUnidade){
+        const { porUnidade, semLogin } = await window.__ptPorUnidade(true);
+        detalheAutomatico = porUnidade || {};
+        desbravadoresSemLogin = semLogin || 0;
+        mediaAutomatica = {};
+        Object.keys(detalheAutomatico).forEach(nome => {
+          mediaAutomatica[nome] = detalheAutomatico[nome].media || 0;
+        });
+      }
       loaded = true;
     }
 
@@ -27926,8 +28090,28 @@ const REQ_SUMMARIES = {
     };
     window.UNIT_EMBLEMS = UNIT_EMBLEMS;
 
+    // Explica de onde vem o número, pra ninguém achar que a diretoria lançou
+    // pontos que não lançou — e avisa quem ficou de fora da média.
+    function pintarAutoHint(){
+      const hint = document.getElementById('usAutoHint');
+      if(!hint) return;
+      const partes = [];
+      if(periodFilter === 'geral'){
+        partes.push('O total soma os ajustes lançados aqui com a média por desbravador da unidade em classes e leitura: 0,5 por requisito concluído, 2 por livro do Curso de Leitura e 0,2 por trecho do plano de leitura bíblica.');
+        if(desbravadoresSemLogin){
+          partes.push(desbravadoresSemLogin + (desbravadoresSemLogin === 1
+            ? ' desbravador ainda não tem login e fica fora da média — a unidade dele vem do cadastro de usuário.'
+            : ' desbravadores ainda não têm login e ficam fora da média — a unidade deles vem do cadastro de usuário.'));
+        }
+      } else {
+        partes.push('Filtrado por período: aqui entram só os ajustes lançados nesta tela. A média de classes e leitura fica de fora porque requisito e livro não guardam a data em que foram concluídos.');
+      }
+      hint.textContent = partes.join(' ');
+    }
+
     function renderUnitList(){
       if(!unitList) return;
+      pintarAutoHint();
       const totals = totalsByUnit(true);
       const sorted = units.slice().sort((a, b) => (totals[b.nome] || 0) - (totals[a.nome] || 0));
       unitList.innerHTML = '';
@@ -27949,7 +28133,8 @@ const REQ_SUMMARIES = {
         row.querySelector('.us-rank-badge').textContent = rank;
         row.querySelector('.cl-hub-row-name').textContent = u.nome;
         const total = totals[u.nome] || 0;
-        row.querySelector('.cl-hub-row-count').textContent = total + (total === 1 ? ' ponto' : ' pontos');
+        const fmt = window.__ptFormatar || (n => String(n));
+        row.querySelector('.cl-hub-row-count').textContent = fmt(total) + (total === 1 ? ' ponto' : ' pontos');
         row.addEventListener('click', (e) => { e.preventDefault(); openAdjust(u.nome); });
         unitList.appendChild(row);
       });
@@ -27961,6 +28146,7 @@ const REQ_SUMMARIES = {
       const sorted = units.slice().sort((a, b) => (totals[b.nome] || 0) - (totals[a.nome] || 0));
       const max = Math.max(1, ...sorted.map(u => totals[u.nome] || 0));
       rankEl.innerHTML = '';
+      const fmtRank = window.__ptFormatar || (n => String(n));
       sorted.forEach((u, i) => {
         const total = totals[u.nome] || 0;
         const rank = i + 1;
@@ -27984,7 +28170,7 @@ const REQ_SUMMARIES = {
         const fill = row.querySelector('.bento-bar-fill');
         fill.style.setProperty('--bar-color', color);
         fill.style.width = Math.round((total / max) * 100) + '%';
-        row.querySelector('.bento-bar-val').textContent = total + ' pts';
+        row.querySelector('.bento-bar-val').textContent = fmtRank(total) + ' pts';
         rankEl.appendChild(row);
       });
     }
