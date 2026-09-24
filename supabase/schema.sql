@@ -1305,3 +1305,17 @@ begin
     execute 'create policy p_livros_remover on storage.objects for delete to authenticated using (bucket_id = ''livros'')';
   end if;
 end $$;
+
+-- ---------------------------------------------------------------------
+-- Pontuação automática das classes e da leitura.
+-- Requisito concluído vale 0,5 pro desbravador, livro do Curso de Leitura
+-- vale 2 e cada trecho marcado no plano de leitura bíblica vale 0,2. Esses
+-- pontos NÃO viram linha aqui: são somados na hora, a partir de
+-- progresso_requisitos, livros_lidos e progresso_subitens. Assim desmarcar
+-- um requisito devolve o ponto sozinho, sem lançamento pra acertar depois.
+--
+-- O que muda no banco é só o tipo da coluna: os lançamentos manuais eram
+-- inteiros, e agora a tela mostra décimos. Um "+0,5" digitado à mão virava
+-- 0 em silêncio.
+-- ---------------------------------------------------------------------
+alter table unidade_pontos alter column pontos type numeric(8,2);
