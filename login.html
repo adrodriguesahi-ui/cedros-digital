@@ -13216,6 +13216,25 @@
   // opcoes: { maxDim, qualidade, preservarTransparencia } — a insígnia de especialidade usa 320px em vez
   // dos 1600 padrão: são centenas de imagens guardadas em base64 dentro do
   // banco, e a 1600 cada uma passa de 200 kB pra mostrar um botão de 38 px.
+  // Grava a linha do comprovante tolerando um banco que ainda não rodou a
+  // migration. Quando o arquivo vai pro Storage, arquivo_data fica vazio — e a
+  // tabela nasceu com "not null" nessa coluna, então nesses bancos o insert é
+  // recusado com 23502. Em vez de perder o comprovante na frente do aluno,
+  // repete a gravação com o base64 junto: ocupa mais espaço, mas o caminho no
+  // Storage continua sendo o que o app lê.
+  async function inserirComprovante(linha, dataUrl){
+    let r = await supa.from('comprovante_arquivos').insert(linha).select('id').single();
+    const faltaColuna = r.error && (r.error.code === '23502' ||
+      /arquivo_data/.test(r.error.message || ''));
+    if(faltaColuna && linha.arquivo_path && dataUrl){
+      console.warn('Banco ainda exige arquivo_data; gravando o base64 junto. ' +
+        'Rode: alter table comprovante_arquivos alter column arquivo_data drop not null;');
+      r = await supa.from('comprovante_arquivos')
+        .insert(Object.assign({}, linha, { arquivo_data: dataUrl })).select('id').single();
+    }
+    return r;
+  }
+
   function readPhotoAsJPEG(file, onDone, onFail, opcoes){
     if(!file){ if(onFail) onFail(); return; }
     const reader = new FileReader();
@@ -17887,7 +17906,7 @@
         const linha = { desbravador_id: alunoId, requisito_titulo: card.dataset.title,
                         arquivo_nome: arquivo.name || null, subitem_id: sub.id };
         if(caminho) linha.arquivo_path = caminho; else linha.arquivo_data = dataUrl;
-        const { data, error } = await supa.from('comprovante_arquivos').insert(linha).select('id').single();
+        const { data, error } = await inserirComprovante(linha, dataUrl);
         if(error){
           if(caminho) await apagarComprovanteDoStorage(caminho);
           alert('Não consegui anexar: ' + error.message);
@@ -18303,7 +18322,7 @@
         caminho = await enviarComprovante(dataUrl, desbravadorId, filename);
         const linha = { desbravador_id: desbravadorId, requisito_titulo: requisitoTitulo, arquivo_nome: filename || null };
         if(caminho) linha.arquivo_path = caminho; else linha.arquivo_data = dataUrl;
-        const { data, error } = await supa.from('comprovante_arquivos').insert(linha).select('id').single();
+        const { data, error } = await inserirComprovante(linha, dataUrl);
         if(error){
           console.error('Erro ao salvar comprovante:', error);
           if(caminho) await apagarComprovanteDoStorage(caminho);
