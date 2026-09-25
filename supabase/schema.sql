@@ -199,7 +199,10 @@ create table if not exists comprovante_arquivos (
   id uuid primary key default gen_random_uuid(),
   desbravador_id uuid not null references desbravadores(id) on delete cascade,
   requisito_titulo text not null,
-  arquivo_data text not null,
+  -- Opcional de propósito: comprovante enviado pro Storage guarda só o
+  -- caminho em arquivo_path (mais abaixo) e deixa isto vazio. Só as linhas
+  -- antigas, e o plano B de quando o Storage falha, têm base64 aqui.
+  arquivo_data text,
   arquivo_nome text,
   created_at timestamptz not null default now()
 );
@@ -1180,6 +1183,13 @@ alter table areas_personalizadas add column if not exists criada boolean not nul
 -- vez pra voltar a funcionar.
 -- ---------------------------------------------------------------------
 alter table comprovante_arquivos add column if not exists arquivo_path text;
+
+-- O comprovante que vai pro Storage não preenche arquivo_data, então a
+-- exigência de "not null" que a tabela nasceu tendo derrubava justamente o
+-- caminho bom: enquanto o bucket não existia o app caía no base64 e a coluna
+-- ficava preenchida, escondendo o problema; com o bucket funcionando, o
+-- insert passou a ser recusado.
+alter table comprovante_arquivos alter column arquivo_data drop not null;
 
 drop policy if exists p_comprovantes_enviar on storage.objects;
 create policy p_comprovantes_enviar on storage.objects for insert with check (bucket_id = 'comprovantes');
