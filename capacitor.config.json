@@ -4,6 +4,7 @@
   "webDir": "www",
   "backgroundColor": "#0A130C",
   "server": {
+    "url": "https://cedros-digital.adrodrigues-ahi.workers.dev/login.html",
     "androidScheme": "https"
   }
 }
