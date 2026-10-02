@@ -1,16 +1,19 @@
-const CACHE_NAME = 'cedros-digital-v7';
+const CACHE_NAME = 'cedros-digital-v8';
 const ASSETS = [
   './login.html',
   './manifest.json',
-  './icon-192.png',
-  './icon-512.png',
-  './icon-512-maskable.png',
-  './apple-touch-icon.png'
+  './icon-192.png?v=3',
+  './icon-512.png?v=3',
+  './icon-512-maskable.png?v=3',
+  './apple-touch-icon.png?v=3',
+  './logo.png?v=3'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    // cache:'reload' busca direto do servidor — sem ele, a versão nova do cache
+    // podia ser montada com arquivos velhos do cache HTTP do navegador.
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' }))))
   );
   self.skipWaiting();
 });
@@ -37,7 +40,7 @@ self.addEventListener('fetch', (event) => {
   // real network round-trip instead of letting fetch() silently resolve from
   // the browser's own HTTP cache — without it, "network-first" here was only
   // nominal, and a visitor could stay on stale HTML indefinitely.
-  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+  if (event.request.mode === 'navigate' || event.request.destination === 'document' || new URL(event.request.url).pathname.endsWith('/clube.js')) {
     event.respondWith(
       fetch(event.request, { cache: 'reload' })
         .then((response) => {

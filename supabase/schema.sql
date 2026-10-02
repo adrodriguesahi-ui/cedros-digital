@@ -1,4 +1,5 @@
--- Cedros Digital — schema do painel de Administração (Supabase / Postgres)
+-- Schema do app do clube (Supabase / Postgres) — baseado no Cedros Digital.
+-- Rode este arquivo inteiro no SQL Editor de um projeto Supabase NOVO (um projeto por clube).
 -- Rode este script inteiro uma vez no SQL Editor do seu projeto Supabase.
 
 create extension if not exists pgcrypto;
@@ -112,11 +113,8 @@ alter table usuarios add column if not exists classe_coordenada text;
 -- pra recalcular com os adicionais inclusos.
 alter table usuarios add column if not exists papeis_adicionais text[] not null default '{}';
 
-insert into usuarios (nome, email, unidade, papel) values
-  ('Adrodrigues Santos', 'adrodrigues@cedrosdigital.org', 'Ype', 'Administrador'),
-  ('Camila Ferreira', 'camila.ferreira@cedrosdigital.org', 'Cedros', 'Diretoria'),
-  ('Lucas Andrade', 'lucas.andrade@cedrosdigital.org', 'Pinheiro', 'Instrutores')
-on conflict (email) do nothing;
+-- (Sem usuários de exemplo: o primeiro Administrador se cadastra pelo app e é
+-- liberado com supabase/primeiro-admin.sql.)
 
 create or replace function set_updated_at()
 returns trigger language plpgsql as $$
@@ -178,6 +176,9 @@ create table if not exists desbravadores (
 -- Administração → editar usuário (ver usuarios.classe abaixo); índice
 -- parcial porque a maioria das linhas antigas não tem esse vínculo.
 alter table desbravadores add column if not exists usuario_id uuid references usuarios(id) on delete set null;
+-- Data de nascimento do aluno SEM conta no app (cadastrado direto em Classes
+-- Regulares → "+ Aluno"). Quem tem conta usa usuarios.data_nascimento.
+alter table desbravadores add column if not exists data_nascimento date;
 create unique index if not exists desbravadores_usuario_id_key on desbravadores(usuario_id) where usuario_id is not null;
 
 create table if not exists progresso_requisitos (
@@ -320,15 +321,10 @@ create table if not exists unidades (
   status text not null default 'ativa'
 );
 
-insert into unidades (nome, cor, status) values
-  ('Ype', 'green', 'ativa'),
-  ('Ype Roxo', 'purple', 'ativa'),
-  ('Pinheiro', 'blue', 'ativa'),
-  ('Cedros', 'gold', 'ativa'),
-  ('Cedros Rosa', 'red', 'ativa'),
-  ('Flanboyan', 'orange', 'ativa'),
-  ('Jacarandá', 'gray', 'ativa')
-on conflict (nome) do nothing;
+-- As unidades de cada clube são cadastradas pelo app (Unidades → "+ Nova unidade").
+-- ordem: posição na lista; emblema: imagem opcional (URL ou data URL) no lugar da bolinha de cor.
+alter table unidades add column if not exists ordem int not null default 0;
+alter table unidades add column if not exists emblema text;
 
 create table if not exists unit_funcoes (
   id uuid primary key default gen_random_uuid(),
@@ -494,7 +490,7 @@ create policy "usuario_matricula_oficial: acesso publico" on usuario_matricula_o
 -- viviam só como HTML estático em index.html/login.html — qualquer
 -- evento cadastrado ou editado pelo app se perdia ao recarregar a
 -- página, porque nada era salvo aqui. A carga abaixo recria os 69
--- eventos da agenda oficial "AGENDA CEDROS DO LÍBANO 2026" que já
+-- eventos da agenda oficial "AGENDA CEDROS DO LÍBANO 2026" (removidos nesta versão multi-clube) que já
 -- estavam fixos no HTML (mesmos dados do commit "Import the real 2026
 -- club agenda...").
 -- ---------------------------------------------------------------------
@@ -613,81 +609,7 @@ drop policy if exists "eventos_agenda: acesso publico" on eventos_agenda;
 create policy "eventos_agenda: acesso publico" on eventos_agenda
   for all using (true) with check (true);
 
--- Só roda se a tabela ainda estiver vazia, pra não duplicar em execuções futuras
--- deste arquivo (ex.: depois que a diretoria já tiver editado/adicionado eventos).
-insert into eventos_agenda (dia, mes_indice, titulo, horario, local, tag, tag_label)
-select * from (values
-  (13, 1, 'Reunião Administrativa', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (17, 1, 'Reunião Diretoria', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (8, 2, 'Limpeza da Sala do Clube', '09:00', 'Só diretoria.', 'gray', 'Evento'),
-  (14, 2, 'Feriado - Carnaval', '09:00', '14 a 17 de fevereiro (sábado a terça).', 'gray', 'Feriado'),
-  (22, 2, 'Início do Clube + Abertura', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
-  (1, 3, 'Reunião Regular + CTAD', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (8, 3, 'Reunião Regular + Reunião de Diretoria', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (14, 3, 'Encontro de Inclusão', '09:00', 'Sede do Clube', 'gray', 'Evento'),
-  (15, 3, 'Reunião Regular + Início da Classe Bíblica', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (22, 3, 'Reunião Regular + Curso de Brigadista', '09:00', 'Sede do Clube', 'blue', 'Curso'),
-  (28, 3, 'Impacto Esperança', '09:00', 'Sede do Clube', 'gray', 'Evento'),
-  (29, 3, 'Semana Santa + Reunião Regular + Desbravador por 1 Dia', '09:00', 'Início da Semana Santa.', 'purple', 'Cerimônia'),
-  (30, 3, 'Semana Santa (Recepção Companheiro)', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
-  (31, 3, 'Semana Santa (Recepção Guia)', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
-  (1, 4, 'Semana Santa (Recepção Excursionista)', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
-  (2, 4, 'Semana Santa (Recepção Pesquisador)', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
-  (3, 4, 'Semana Santa (Recepção Amigo)', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
-  (4, 4, 'Semana Santa (Recepção Pioneiro)', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
-  (5, 4, 'Folga - Páscoa', '09:00', 'Sede do Clube', 'gray', 'Folga'),
-  (11, 4, 'Evento - Pastel', '09:00', 'Sede do Clube', 'gray', 'Evento'),
-  (12, 4, 'Reunião Regular + Curso de Capitães e Conselheiros', '09:00', 'Sede do Clube', 'blue', 'Curso'),
-  (19, 4, 'Reunião Regular', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (26, 4, 'Reunião Regular + Prova de Líder', '09:00', 'Sede do Clube', 'red', 'Prova'),
-  (2, 5, 'Olimpori + 24H', '09:00', '2 a 3 de maio (sábado e domingo).', 'gold', 'Acampamento'),
-  (10, 5, 'Folga - Dia das Mães', '09:00', 'Sede do Clube', 'gray', 'Folga'),
-  (17, 5, 'Reunião Regular + Festa Dia das Mães + Evento Feijoada', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (24, 5, 'Reunião Regular', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (31, 5, 'Reunião Regular + Preparativos para o Acampamento + Concursos BB e Música', '09:00', 'Sede do Clube', 'red', 'Concurso'),
-  (4, 6, 'Acampamento de Instrução + Cedroflash', '09:00', '4 a 7 de junho (quinta a domingo).', 'gold', 'Acampamento'),
-  (13, 6, 'Evento - Festa do Milho', '09:00', 'Sede do Clube', 'gray', 'Evento'),
-  (14, 6, 'Reunião Regular + Prova de Líder', '09:00', 'Sede do Clube', 'red', 'Prova'),
-  (21, 6, 'Fase Regional Concurso de Ordem Unida e Fanfarra', '09:00', 'Sede do Clube', 'red', 'Concurso'),
-  (28, 6, 'Reunião Regular', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (1, 7, 'Calebe + Escola Cristã de Férias', '09:00', 'Durante todo o mês de julho.', 'gold', 'Acampamento'),
-  (9, 7, 'Maranata SP', '09:00', '9 a 12 de julho (quinta a domingo).', 'gold', 'Acampamento'),
-  (19, 7, 'Paulista Laranja', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
-  (26, 7, 'Reunião Regular', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (31, 7, 'Mega Líder', '09:00', '31/07 a 02/08 (sexta a domingo).', 'gold', 'Acampamento'),
-  (2, 8, 'Reunião Regular + Ensaio Dia Mundial', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (8, 8, 'Evento - Pizza', '09:00', 'Sede do Clube', 'gray', 'Evento'),
-  (9, 8, 'Folga - Dia dos Pais', '09:00', 'Sede do Clube', 'gray', 'Folga'),
-  (15, 8, 'Adolescer', '09:00', 'Sede do Clube', 'gray', 'Evento'),
-  (16, 8, 'Reunião Regular + Festa do Dia dos Pais + Ensaio Dia Mundial', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (22, 8, 'Quebrando o Silêncio + Passeata na Paulista', '09:00', 'Sede do Clube', 'gray', 'Evento'),
-  (23, 8, 'Reunião Regular + Ensaio Dia Mundial', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (30, 8, 'Reunião Regular + Ensaio Dia Mundial + CTAD', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (6, 9, 'Reunião Regular + Ensaio Dia Mundial + Prova de Líder', '09:00', 'Sede do Clube', 'red', 'Prova'),
-  (7, 9, 'Desfile Cívico', '09:00', '7 de setembro (segunda-feira).', 'purple', 'Cerimônia'),
-  (13, 9, 'Reunião Regular + Ensaio Dia Mundial', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (13, 9, 'Semana do Lenço', '09:00', '13 a 18 de setembro (domingo a sexta).', 'purple', 'Cerimônia'),
-  (19, 9, 'Dia Mundial DBV', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
-  (20, 9, 'Reunião Regular', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (27, 9, 'Concursos AP', '09:00', 'Sede do Clube', 'red', 'Concurso'),
-  (3, 10, 'Evento - Açaí', '09:00', 'Sede do Clube', 'gray', 'Evento'),
-  (4, 10, 'Reunião Regular', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (11, 10, 'Uniflash', '09:00', 'Sede do Clube', 'gold', 'Acampamento'),
-  (18, 10, 'Reunião Regular - Finalização e Entrega do Cartão', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (25, 10, 'Reunião Regular + Prova de Líder', '09:00', 'Sede do Clube', 'red', 'Prova'),
-  (1, 11, 'Folga', '09:00', 'Sede do Clube', 'gray', 'Folga'),
-  (7, 11, 'Evento - Esportes', '09:00', 'Sede do Clube', 'gray', 'Evento'),
-  (8, 11, 'Reunião Regular + Entrega de Apostilas', '09:00', 'Sede do Clube', 'green', 'Reunião'),
-  (14, 11, 'Investidura', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
-  (15, 11, 'Folga', '09:00', 'Sede do Clube', 'gray', 'Folga'),
-  (21, 11, 'CEDRORI (Acampamento de Recreação + Oscar)', '09:00', '21 e 22 de novembro (sábado e domingo).', 'gold', 'Acampamento'),
-  (29, 11, 'Preparativos para o Campori DSA', '09:00', 'Sede do Clube', 'gold', 'Acampamento'),
-  (5, 12, 'Culto de Ações de Graças', '09:00', 'Sede do Clube', 'purple', 'Cerimônia'),
-  (6, 12, 'Preparativos para o Campori DSA', '09:00', 'Sede do Clube', 'gold', 'Acampamento'),
-  (13, 12, 'Preparativos para o Campori DSA', '09:00', 'Sede do Clube', 'gold', 'Acampamento'),
-  (20, 12, 'Férias', '09:00', '20/12 a 03/01 (previsão).', 'gray', 'Folga')
-) as seed(dia, mes_indice, titulo, horario, local, tag, tag_label)
-where not exists (select 1 from eventos_agenda);
+-- (A agenda de exemplo do Cedros do Líbano foi removida: cada clube cadastra a sua pelo app.)
 
 -- ---------------------------------------------------------------------
 -- event_confirmations: "Confirmar presença" no evento em destaque do
@@ -1159,6 +1081,16 @@ alter table requisitos_personalizados add column if not exists subitens_modo tex
 -- catálogo. Não mexe na chave do requisito, então o progresso segue intacto.
 alter table requisitos_personalizados add column if not exists area text;
 
+-- criado: requisito que o Coordenador criou no cartão (botão "+"), sem par no
+-- catálogo — a chave é gerada no app. oculto: requisito do catálogo que o
+-- Coordenador excluiu do cartão; a linha fica pra poder restaurar depois.
+alter table requisitos_personalizados add column if not exists criado boolean default false;
+alter table requisitos_personalizados add column if not exists oculto boolean default false;
+
+-- Posição do requisito dentro da área, definida pelo Coordenador no modo
+-- "Ordenar". Nulo segue a ordem do catálogo, depois dos que têm número.
+alter table requisitos_personalizados add column if not exists ordem int;
+
 -- Nome que a área recebe naquele cartão ("Vida Espiritual" virar outro título).
 -- A coluna area é sempre o nome do catálogo, que é o que agrupa a lista; titulo
 -- é só o que aparece no cabeçalho.
@@ -1329,3 +1261,107 @@ end $$;
 -- 0 em silêncio.
 -- ---------------------------------------------------------------------
 alter table unidade_pontos alter column pontos type numeric(8,2);
+
+-- ---------------------------------------------------------------------
+-- Tesouraria: caixa do clube de verdade (antes a tela era só de exemplo,
+-- nada era gravado). Saldo único: o saldo do clube soma todos os
+-- lançamentos, do caixa geral (evento_id nulo) e dos eventos. Cada evento
+-- tem orçamento por itens (previsto) e os lançamentos dele (realizado);
+-- o lançamento pode apontar o item do orçamento a que pertence.
+-- Quem lança é o app que decide (Tesoureiro(a), Diretoria e Administrador).
+-- Evento com lançamentos não pode ser apagado (on delete restrict), pra
+-- dinheiro registrado não sumir junto.
+-- ---------------------------------------------------------------------
+create table if not exists tesouraria_eventos (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null,
+  data_inicio date,
+  data_fim date,
+  evento_agenda_id uuid references eventos_agenda(id) on delete set null,
+  status text not null default 'aberto' check (status in ('aberto', 'encerrado')),
+  observacao text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists tesouraria_orcamento (
+  id uuid primary key default gen_random_uuid(),
+  evento_id uuid not null references tesouraria_eventos(id) on delete cascade,
+  tipo text not null check (tipo in ('entrada', 'saida')),
+  descricao text not null,
+  categoria text,
+  valor numeric(12,2) not null default 0 check (valor >= 0),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists tesouraria_lancamentos (
+  id uuid primary key default gen_random_uuid(),
+  data date not null,
+  descricao text not null,
+  tipo text not null check (tipo in ('entrada', 'saida')),
+  valor numeric(12,2) not null check (valor >= 0),
+  categoria text,
+  forma_pagamento text,
+  evento_id uuid references tesouraria_eventos(id) on delete restrict,
+  orcamento_item_id uuid references tesouraria_orcamento(id) on delete set null,
+  observacao text,
+  registrado_por text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists tesouraria_lancamentos_data_idx on tesouraria_lancamentos(data);
+create index if not exists tesouraria_lancamentos_evento_idx on tesouraria_lancamentos(evento_id);
+
+alter table tesouraria_eventos enable row level security;
+alter table tesouraria_orcamento enable row level security;
+alter table tesouraria_lancamentos enable row level security;
+drop policy if exists p_tesouraria_eventos on tesouraria_eventos;
+create policy p_tesouraria_eventos on tesouraria_eventos for all using(true) with check(true);
+drop policy if exists p_tesouraria_orcamento on tesouraria_orcamento;
+create policy p_tesouraria_orcamento on tesouraria_orcamento for all using(true) with check(true);
+drop policy if exists p_tesouraria_lancamentos on tesouraria_lancamentos;
+create policy p_tesouraria_lancamentos on tesouraria_lancamentos for all using(true) with check(true);
+
+-- Cobranças da Tesouraria: mensalidades, taxas, parcelados e inscrições de
+-- evento. Cada cobrança gera uma parcela por pessoa (e por número de parcela);
+-- ao receber, o app cria a entrada em tesouraria_lancamentos e guarda o id
+-- aqui (lancamento_id), então o caixa e a cobrança andam juntos. "Isento"
+-- (bolsa) marca a parcela como resolvida sem entrada de dinheiro.
+create table if not exists tesouraria_cobrancas (
+  id uuid primary key default gen_random_uuid(),
+  descricao text not null,
+  tipo text not null check (tipo in ('mensalidade', 'taxa', 'parcelada', 'inscricao')),
+  valor numeric(12,2) not null check (valor >= 0),
+  parcelas int not null default 1 check (parcelas between 1 and 24),
+  primeiro_vencimento date not null,
+  categoria text,
+  evento_id uuid references tesouraria_eventos(id) on delete restrict,
+  orcamento_item_id uuid references tesouraria_orcamento(id) on delete set null,
+  status text not null default 'aberta' check (status in ('aberta', 'encerrada')),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists tesouraria_parcelas (
+  id uuid primary key default gen_random_uuid(),
+  cobranca_id uuid not null references tesouraria_cobrancas(id) on delete cascade,
+  desbravador_id uuid references desbravadores(id) on delete set null,
+  pessoa_nome text not null,
+  numero int not null default 1,
+  total_parcelas int not null default 1,
+  valor numeric(12,2) not null check (valor >= 0),
+  vencimento date not null,
+  pago_em date,
+  forma_pagamento text,
+  lancamento_id uuid references tesouraria_lancamentos(id) on delete set null,
+  observacao text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists tesouraria_parcelas_cobranca_idx on tesouraria_parcelas(cobranca_id);
+create index if not exists tesouraria_parcelas_vencimento_idx on tesouraria_parcelas(vencimento);
+
+alter table tesouraria_cobrancas enable row level security;
+alter table tesouraria_parcelas enable row level security;
+drop policy if exists p_tesouraria_cobrancas on tesouraria_cobrancas;
+create policy p_tesouraria_cobrancas on tesouraria_cobrancas for all using(true) with check(true);
+drop policy if exists p_tesouraria_parcelas on tesouraria_parcelas;
+create policy p_tesouraria_parcelas on tesouraria_parcelas for all using(true) with check(true);
