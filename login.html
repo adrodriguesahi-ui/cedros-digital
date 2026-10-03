@@ -24843,15 +24843,19 @@
     const lista = $('trList');
 
     const CATEGORIAS = {
-      entrada: ['Mensalidade', 'Inscrição', 'Venda / Cantina', 'Oferta / Patrocínio', 'Doação', 'Reembolso', 'Outro'],
+      entrada: ['Mensalidade', 'Inscrição', 'Venda / Campanhas', 'Oferta / Patrocínio', 'Doação', 'Reembolso', 'Outro'],
       saida: ['Transporte', 'Alimentação', 'Hospedagem / Taxas', 'Material', 'Uniforme', 'Premiação', 'Manutenção', 'Outro']
     };
     const ICONE_CAT = {
-      'Mensalidade': '🗓️', 'Inscrição': '📝', 'Venda / Cantina': '🍕', 'Oferta / Patrocínio': '⛪', 'Doação': '🤝', 'Reembolso': '↩️',
+      'Mensalidade': '🗓️', 'Inscrição': '📝', 'Venda / Campanhas': '🍕', 'Oferta / Patrocínio': '⛪', 'Doação': '🤝', 'Reembolso': '↩️',
+      // Nome antigo de "Venda / Campanhas". Fica aqui pra lançamento já gravado
+      // continuar com ícone em vez de cair no vazio — o texto da categoria é
+      // guardado no banco, então renomear no app não reescreve o que passou.
+      'Venda / Cantina': '🍕',
       'Transporte': '🚌', 'Alimentação': '🍽️', 'Hospedagem / Taxas': '🏕️', 'Material': '🧰', 'Uniforme': '👕', 'Premiação': '🏆', 'Manutenção': '🔧', 'Outro': '•'
     };
     const EXEMPLO_CAT = {
-      'Mensalidade': 'Mensalidades de outubro', 'Inscrição': 'Inscrições — 1º lote', 'Venda / Cantina': 'Venda de pizzas', 'Oferta / Patrocínio': 'Patrocínio da igreja',
+      'Mensalidade': 'Mensalidades de outubro', 'Inscrição': 'Inscrições — 1º lote', 'Venda / Campanhas': 'Venda de pizzas da campanha', 'Oferta / Patrocínio': 'Patrocínio da igreja',
       'Doação': 'Doação de ex-desbravador', 'Reembolso': 'Devolução da caução do sítio',
       'Transporte': 'Locação de ônibus + caminhão', 'Alimentação': 'Compra de mantimentos', 'Hospedagem / Taxas': 'Inscrição na Associação',
       'Material': 'Lonas, estacas e cordas', 'Uniforme': 'Camisetas e lenços', 'Premiação': 'Troféus e medalhas', 'Manutenção': 'Conserto das barracas', 'Outro': 'descreva o lançamento'
