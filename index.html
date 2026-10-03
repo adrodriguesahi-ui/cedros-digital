@@ -14625,6 +14625,53 @@
     return r;
   }
 
+  // ---------------------------------------------------------------------
+  // Salvar PDF
+  //
+  // No navegador, doc.save() baixa normalmente. Dentro do app instalado NÃO:
+  // o jsPDF monta um blob e simula um clique de download, e a WebView do
+  // Android ignora isso em silêncio — sem erro, sem arquivo, sem aviso. O
+  // botão parecia quebrado quando na verdade o PDF era gerado e jogado fora.
+  //
+  // No app, então, o arquivo é gravado no cache e entregue pra bandeja de
+  // compartilhar do Android: dá pra salvar nos Arquivos, mandar no WhatsApp
+  // ou imprimir. Pra recibo, que quase sempre vai pro responsável, isso é
+  // melhor que baixar.
+  //
+  // Nunca rejeita: quem chama não precisa tratar erro. E nunca fica em
+  // silêncio — se falhar de verdade, avisa.
+  // ---------------------------------------------------------------------
+  async function salvarPDF(doc, nomeArq){
+    const cap = window.Capacitor;
+    const nativo = !!(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform());
+    const plugins = (cap && cap.Plugins) || {};
+    if(!nativo || !plugins.Filesystem || !plugins.Share){
+      try { doc.save(nomeArq); }
+      catch(e){ console.error('Erro ao baixar o PDF:', e); alert('Não consegui salvar o PDF: ' + (e && e.message ? e.message : e)); }
+      return;
+    }
+    let uri = null;
+    try {
+      // datauristring vem como "data:application/pdf;filename=...;base64,XXXX";
+      // o plugin quer só o que vem depois da vírgula.
+      const base64 = String(doc.output('datauristring')).split(',')[1];
+      await plugins.Filesystem.writeFile({ path: nomeArq, data: base64, directory: 'CACHE' });
+      const r = await plugins.Filesystem.getUri({ path: nomeArq, directory: 'CACHE' });
+      uri = r && r.uri;
+    } catch(e){
+      console.error('Erro ao gravar o PDF no aparelho:', e);
+      alert('Não consegui gerar o arquivo no aparelho: ' + (e && e.message ? e.message : e));
+      return;
+    }
+    try {
+      await plugins.Share.share({ title: nomeArq, url: uri });
+    } catch(e){
+      // Fechar a bandeja sem escolher nada também cai aqui. Não é erro, e
+      // alertar nesse caso seria irritante — o arquivo já está gravado.
+      console.warn('Compartilhamento encerrado:', e);
+    }
+  }
+
   function readPhotoAsJPEG(file, onDone, onFail, opcoes){
     if(!file){ if(onFail) onFail(); return; }
     const reader = new FileReader();
@@ -15381,7 +15428,7 @@
     doc.text('Gerado pelo ' + window.CLUBE_CONFIG.appNome, pageWidth / 2, 290, { align: 'center' });
 
     const safeTitle = (data.title || 'reuniao').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    doc.save('programacao-' + safeTitle + '.pdf');
+    salvarPDF(doc, 'programacao-' + safeTitle + '.pdf');
   }
 
   // Planejamento Anual: criar / editar / excluir eventos + lembretes no sino
@@ -16711,7 +16758,7 @@
 
         const nome = tituloDoPeriodo().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
           .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-        doc.save('planejamento-' + nome + '.pdf');
+        salvarPDF(doc, 'planejamento-' + nome + '.pdf');
         overlay.classList.remove('show');
 
       }
@@ -25150,7 +25197,7 @@
       doc.text('recorte aqui', W / 2, yc - 1.5, { align: 'center' }); // helvetica do PDF não tem a tesoura
       via(yc + 8, '2ª via — Clube');
       const nomeArq = 'recibo-' + d.numero + '-' + String(d.desbravador || d.pagador).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '.pdf';
-      doc.save(nomeArq);
+      salvarPDF(doc, nomeArq);
     }
     window.__trPorExtenso = porExtenso; // conferência rápida pelo console
 
@@ -27074,7 +27121,7 @@
       doc.text('Data', pageWidth - marginX - 70, y + 5);
 
       const fileName = 'autorizacao-' + member.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '.pdf';
-      doc.save(fileName);
+      salvarPDF(doc, fileName);
     });
 
     [document.getElementById('scPdfMember'), document.getElementById('scPdfEvent'), document.getElementById('scPdfDate')].forEach(el => {
@@ -27814,7 +27861,7 @@
       });
 
       const fileName = 'chamada-' + rec.day + '-' + rec.mon.toLowerCase() + '-' + rec.event.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '.pdf';
-      doc.save(fileName);
+      salvarPDF(doc, fileName);
     }
 
     editPdfBtn.addEventListener('click', () => {
@@ -31909,7 +31956,7 @@ const REQ_SUMMARIES = {
       });
 
       const fileName = 'programacao-' + currentEvent.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '.pdf';
-      doc.save(fileName);
+      salvarPDF(doc, fileName);
     });
 
     const _origOpenEvent = openEvent;
@@ -35248,7 +35295,7 @@ const REQ_SUMMARIES = {
     pdfBtn.addEventListener('click', () => {
       const built = buildSpecialtyPdfDoc();
       if(!built) return;
-      built.doc.save('especialidade-' + built.safeName + '.pdf');
+      salvarPDF(built.doc, 'especialidade-' + built.safeName + '.pdf');
     });
   })();
 
