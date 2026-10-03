@@ -25142,12 +25142,25 @@
       const [a, m, d] = String(iso || hoje()).split('-').map(Number);
       return d + ' de ' + MESES_EXT[m - 1] + ' de ' + a;
     }
+    // Recibo é documento que circula e vale como prova de pagamento: quem
+    // assina precisa ser quem o clube definiu, não quem por acaso registrou a
+    // entrada no app. Antes, campo vazio caía em "quem registrou" sem avisar
+    // ninguém — e saía recibo assinado pela pessoa errada.
+    function assinanteConfigurado(){
+      if((config.tesoureiro_nome || '').trim()) return true;
+      alert('Antes de emitir recibo, defina quem assina.\n\n' +
+            'Tesouraria → ⚙ → "Quem assina os recibos" (e o Cargo ao lado).\n\n' +
+            'Sem isso o recibo sairia assinado por quem registrou o pagamento, que nem sempre é o tesoureiro.');
+      return false;
+    }
+
     function gerarReciboPdf(d){
       const jsPDFLib = window.jspdf && window.jspdf.jsPDF;
       if(!jsPDFLib){ alert('Não foi possível carregar a biblioteca de PDF. Verifique sua conexão com a internet e tente novamente.'); return; }
       const CFG = window.CLUBE_CONFIG || {};
       const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
       const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+      // assinanteConfigurado() já barrou o campo vazio; o || aqui é só rede.
       const assinante = (config.tesoureiro_nome || '').trim() || d.recebedor || '';
       const cargo = (config.tesoureiro_cargo || '').trim() || 'Tesouraria';
       const cidade = (config.cidade || '').trim();
@@ -25230,6 +25243,7 @@
     }
     // Recibo de uma parcela paga (cobrança).
     async function reciboDaParcela(p){
+      if(!assinanteConfigurado()) return;
       await carregarPessoas();
       const c = cobPorId(p.cobranca_id) || {};
       const pessoa = pessoaPorId(p.desbravador_id) || {};
@@ -25246,6 +25260,7 @@
     }
     // Recibo de uma entrada qualquer (doação, venda...). Ligada a uma parcela, usa os dados dela.
     async function reciboDoLancamento(x){
+      if(!assinanteConfigurado()) return;
       const parc = parcelas.find(p => p.lancamento_id === x.id);
       if(parc) return reciboDaParcela(parc);
       const pagador = prompt('Recebido de (nome de quem pagou):', '');
