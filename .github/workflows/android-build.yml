@@ -71,12 +71,32 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if gh release view apk-latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload apk-latest android/app/build/outputs/apk/debug/app-debug.apk \
-              --clobber --repo "$GITHUB_REPOSITORY"
-          else
-            gh release create apk-latest android/app/build/outputs/apk/debug/app-debug.apk \
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+
+          # Antes isto perguntava com "gh release view" se o release existia pra
+          # escolher entre criar e atualizar. Quando essa consulta falha — e ela
+          # já falhou, depois de cinco minutos pendurada — a resposta vira "não
+          # existe", o passo tenta CRIAR o release que já está lá e o build
+          # inteiro quebra no fim, com o APK pronto e sem publicar.
+          #
+          # Agora tenta atualizar primeiro, que é o caso de sempre, e só cria se
+          # o upload falhar. Sem pergunta, sem resposta errada.
+          enviar(){ gh release upload apk-latest "$APK" --clobber --repo "$GITHUB_REPOSITORY"; }
+
+          criar(){ gh release create apk-latest "$APK" \
               --title "Cedros Digital — APK mais recente" \
               --notes "Build automático a cada atualização do app. Este link nunca muda." \
-              --repo "$GITHUB_REPOSITORY"
-          fi
+              --repo "$GITHUB_REPOSITORY"; }
+
+          # Três tentativas: a API do GitHub oscila, e perder o APK por uma
+          # falha de rede passageira custa um build inteiro.
+          for tentativa in 1 2 3; do
+            if enviar; then exit 0; fi
+            echo "Upload falhou (tentativa $tentativa)."
+            # Release ainda não existe: cria. Se a criação funcionar, acabou;
+            # se disser que já existe, foi oscilação — o laço tenta o upload de novo.
+            if criar; then exit 0; fi
+            sleep $((tentativa * 10))
+          done
+          echo "Não consegui publicar o APK no release depois de 3 tentativas." >&2
+          exit 1

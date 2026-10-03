@@ -14645,9 +14645,21 @@
     const cap = window.Capacitor;
     const nativo = !!(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform());
     const plugins = (cap && cap.Plugins) || {};
-    if(!nativo || !plugins.Filesystem || !plugins.Share){
+    // Navegador: o download funciona, segue o de sempre.
+    if(!nativo){
       try { doc.save(nomeArq); }
       catch(e){ console.error('Erro ao baixar o PDF:', e); alert('Não consegui salvar o PDF: ' + (e && e.message ? e.message : e)); }
+      return;
+    }
+    // App nativo SEM os plugins. Aqui não dá pra cair no doc.save(): é
+    // justamente ele que a WebView engole sem avisar, e o botão voltaria a
+    // parecer quebrado. Melhor dizer o que está acontecendo e pra onde ir.
+    if(!plugins.Filesystem || !plugins.Share){
+      const temPlugins = Object.keys(plugins).join(', ') || 'nenhum';
+      console.error('Sem os plugins de arquivo. Disponíveis:', temPlugins);
+      alert('Este app está sem os componentes que salvam arquivo, então o PDF não pode ser gerado aqui.\n\n' +
+            'Instale a versão mais recente do aplicativo, ou gere o PDF pelo site no navegador.\n\n' +
+            '(componentes encontrados: ' + temPlugins + ')');
       return;
     }
     let uri = null;
