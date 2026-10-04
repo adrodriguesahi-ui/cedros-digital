@@ -16,10 +16,35 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Assinatura de release. A chave NUNCA fica no repositório: vem por
+    // variável de ambiente no GitHub Actions (ver .github/workflows). Sem as
+    // variáveis — compilando na mão, por exemplo — o bloco simplesmente não é
+    // criado, e o Gradle cai no debug de sempre em vez de falhar.
+    //
+    // A chave é a identidade do app: trocar de chave obriga todo mundo a
+    // desinstalar e instalar de novo, porque o Android recusa atualização
+    // assinada por outra. Guarde o arquivo e a senha fora do repositório.
+    def arquivoChave = System.getenv("ANDROID_KEYSTORE_FILE")
+    def temChave = arquivoChave != null && !arquivoChave.isEmpty() && file(arquivoChave).exists()
+
+    if (temChave) {
+        signingConfigs {
+            release {
+                storeFile file(arquivoChave)
+                storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (temChave) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

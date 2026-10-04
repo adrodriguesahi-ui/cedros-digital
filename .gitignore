@@ -10,3 +10,10 @@ ios/App/App.xcodeproj/xcuserdata/
 ios/App/App.xcodeproj/project.xcworkspace/xcuserdata/
 ios/DerivedData/
 ios/.build/
+
+# Chave de assinatura do app Android. NUNCA vai pro repositório: quem tem a
+# chave publica atualização em nome do app. Ela vive nos segredos do GitHub
+# (ver README, "Ligar a assinatura") e num gerenciador de senhas.
+*.keystore
+*.jks
+*.keystore.b64
