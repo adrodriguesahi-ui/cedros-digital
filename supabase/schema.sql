@@ -1418,3 +1418,66 @@ create table if not exists forca_partidas (
 alter table forca_partidas enable row level security;
 drop policy if exists p_forca_partidas on forca_partidas;
 create policy p_forca_partidas on forca_partidas for all using(true) with check(true);
+
+-- ---------------------------------------------------------------------
+-- Almoxarifado: o que o clube tem e com quem está.
+--
+-- A tela existia só como maquete (itens escritos no HTML, nada gravado).
+-- Agora o item é linha de verdade, e cada retirada vira uma linha própria
+-- em vez de alterar a quantidade do item: assim o histórico fica — quem
+-- pegou a barraca em março e devolveu em abril continua registrado — e o
+-- disponível é calculado, não guardado. Número guardado desencontra do
+-- real na primeira vez que alguém esquece de dar baixa.
+-- ---------------------------------------------------------------------
+create table if not exists almoxarifado_itens (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null,
+  categoria text,
+  quantidade int not null default 0 check (quantidade >= 0),
+  estado text,
+  -- Onde fica guardado: "Sala 2, prateleira de cima". Texto livre de
+  -- propósito, porque cada clube organiza o depósito do seu jeito.
+  local text,
+  observacao text,
+  criado_por text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists almoxarifado_emprestimos (
+  id uuid primary key default gen_random_uuid(),
+  item_id uuid not null references almoxarifado_itens(id) on delete cascade,
+  -- Quem pegou. usuario_id quando a pessoa tem login; nome sempre, porque
+  -- material também sai na mão de quem não é cadastrado (pai que levou a
+  -- barraca, igreja que pediu emprestado).
+  usuario_id uuid references usuarios(id) on delete set null,
+  pessoa_nome text not null,
+  quantidade int not null default 1 check (quantidade > 0),
+  motivo text,
+  retirado_em timestamptz not null default now(),
+  retirado_por text,
+  -- Nulo = ainda está fora. É o que faz o item aparecer como emprestado.
+  devolvido_em timestamptz,
+  devolvido_por text,
+  observacao text
+);
+
+create index if not exists almoxarifado_emprestimos_item_idx on almoxarifado_emprestimos(item_id);
+-- A consulta de sempre é "o que está fora agora"; índice parcial porque
+-- devolução antiga não interessa pra essa pergunta.
+create index if not exists almoxarifado_emprestimos_abertos_idx
+  on almoxarifado_emprestimos(item_id) where devolvido_em is null;
+
+alter table almoxarifado_itens enable row level security;
+alter table almoxarifado_emprestimos enable row level security;
+
+drop policy if exists p_almoxarifado_itens on almoxarifado_itens;
+create policy p_almoxarifado_itens on almoxarifado_itens for all using(true) with check(true);
+
+drop policy if exists p_almoxarifado_emprestimos on almoxarifado_emprestimos;
+create policy p_almoxarifado_emprestimos on almoxarifado_emprestimos for all using(true) with check(true);
+
+-- Quem cadastra e dá baixa no almoxarifado. Coluna própria, e não um valor
+-- de usuarios.cargo, pela mesma razão do pode_pontuar_unidades: uma pessoa
+-- acumula funções no clube, e cargo só guarda uma. Quem não tem isto ligado
+-- continua enxergando o almoxarifado, só não mexe.
+alter table usuarios add column if not exists gerencia_almoxarifado boolean not null default false;
