@@ -72,6 +72,17 @@ em silêncio.
 
 Salvar o usuário **nunca** mexe na senha — só o botão "Definir" faz isso.
 
+### Senha provisória
+
+A chave **"Pedir nova senha no primeiro acesso"** vem marcada. Com ela, a
+pessoa entra com a senha que você deu e o app leva direto pra tela de definir
+uma senha dela — o resto do app só abre depois disso. Trocar a senha, por ali
+ou em Minha Conta, desfaz a marca.
+
+Isso é porta de uso, não tranca: o desvio vive no navegador. O que protege de
+verdade são as regras do banco. O que se evita aqui é a senha escolhida por
+outra pessoa continuar valendo por esquecimento.
+
 ## Instalar no celular
 
 ### Pelo navegador (sem aviso nenhum)

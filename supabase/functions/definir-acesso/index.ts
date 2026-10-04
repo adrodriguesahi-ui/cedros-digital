@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
   }
 
   // ---- 3) o pedido ----
-  let corpo: { email?: string; senha?: string };
+  let corpo: { email?: string; senha?: string; provisoria?: boolean };
   try {
     corpo = await req.json();
   } catch {
@@ -86,6 +86,9 @@ Deno.serve(async (req) => {
 
   const email = (corpo.email || '').trim().toLowerCase();
   const senha = corpo.senha || '';
+  // Provisória por padrão: senha que outra pessoa escolheu não deveria ficar
+  // valendo pra sempre. Quem quiser o contrário manda false de propósito.
+  const provisoria = corpo.provisoria !== false;
 
   if (!email) return resposta({ erro: 'Informe o e-mail da pessoa.' }, 400);
   if (senha.length < SENHA_MINIMA) {
@@ -111,10 +114,21 @@ Deno.serve(async (req) => {
     (u) => (u.email || '').toLowerCase() === email,
   );
 
+  // Marca (ou desmarca) a provisoriedade junto com a senha. Se a coluna ainda
+  // não existir no banco, não derruba a operação: a senha é o que importa, e o
+  // pedido de troca é um extra.
+  async function marcarProvisoria() {
+    const { error } = await admin
+      .from('usuarios').update({ senha_provisoria: provisoria }).eq('id', fichaAlvo.id);
+    if (error) console.warn('senha_provisoria não gravou:', error.message);
+    return !error;
+  }
+
   if (existente) {
     const { error } = await admin.auth.admin.updateUserById(existente.id, { password: senha });
     if (error) return resposta({ erro: 'Não consegui trocar a senha: ' + error.message }, 500);
-    return resposta({ ok: true, acao: 'senha_trocada', nome: fichaAlvo.nome });
+    const marcou = await marcarProvisoria();
+    return resposta({ ok: true, acao: 'senha_trocada', nome: fichaAlvo.nome, provisoria: provisoria && marcou });
   }
 
   const { error } = await admin.auth.admin.createUser({
@@ -127,5 +141,6 @@ Deno.serve(async (req) => {
   });
   if (error) return resposta({ erro: 'Não consegui criar o acesso: ' + error.message }, 500);
 
-  return resposta({ ok: true, acao: 'acesso_criado', nome: fichaAlvo.nome });
+  const marcou = await marcarProvisoria();
+  return resposta({ ok: true, acao: 'acesso_criado', nome: fichaAlvo.nome, provisoria: provisoria && marcou });
 });
