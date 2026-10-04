@@ -97,8 +97,24 @@ Deno.serve(async (req) => {
 
   // A pessoa precisa ter ficha no clube. Sem isto, a função viraria uma porta
   // pra criar login de qualquer e-mail no projeto.
-  const { data: fichaAlvo } = await admin
-    .from('usuarios').select('id, nome').eq('email', email).maybeSingle();
+  // A ficha pode ter sido digitada com maiúscula ou espaço sobrando, e o = do
+  // banco não perdoa isso. Procura exato e depois ignorando caixa e espaço,
+  // conferindo no fim pra não trocar a senha da pessoa errada.
+  let fichaAlvo: { id: string; nome: string; email: string } | null = null;
+  const exata = await admin
+    .from('usuarios').select('id, nome, email').eq('email', email).maybeSingle();
+  if (exata.data) {
+    fichaAlvo = exata.data;
+  } else {
+    // No ilike o valor é padrão de busca: _ e % são curinga, e "_" é comum
+    // em e-mail. Escapa antes.
+    const padrao = email.replace(/([\\%_])/g, '\\$1');
+    const { data: perto } = await admin
+      .from('usuarios').select('id, nome, email').ilike('email', `%${padrao}%`);
+    fichaAlvo = (perto || []).find(
+      (l: { email: string }) => (l.email || '').trim().toLowerCase() === email,
+    ) || null;
+  }
   if (!fichaAlvo) {
     return resposta({ erro: 'Esse e-mail não está cadastrado no clube. Salve o usuário primeiro.' }, 404);
   }

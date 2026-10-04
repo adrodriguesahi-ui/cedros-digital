@@ -4196,7 +4196,15 @@
     margin-bottom:12px;
     text-decoration:none;
     color:inherit;
-    border:1px solid var(--lg-border);
+    /* A foto do evento entra como background deste próprio card, e background-image
+       pinta por baixo da borda por padrão (border-box). Com a borda quase
+       transparente, o que aparecia na beirada era a foto crua: um contorno
+       colorido com o amarelo e o azul dos uniformes em volta do card, diferente
+       a cada evento. padding-box faz a foto parar na borda. */
+    background-clip:padding-box;
+    /* Branco em vez de var(--lg-border) de propósito: a borda aqui não separa dois
+       tons de fundo, ela fecha uma foto escura — e sobre foto, 9% some. */
+    border:1px solid rgba(255,255,255,0.16);
     /* Repetido aqui (além de .bd-banner-row) porque é o elemento que o dedo realmente
        toca — depender só do pai pra isso é inconsistente entre navegadores/toolkits
        de toque, e sem isso o próprio navegador pode "roubar" o gesto horizontal antes
@@ -5013,6 +5021,13 @@
           Entrar com e-mail
         </button>
         <button class="btn btn-ghost" id="goSignup">Sou novo aqui</button>
+        <!-- Instalar na tela inicial: só aparece quando o navegador aceita
+             instalar (ou no iPhone, onde o caminho é manual). Ver o módulo
+             "Instalar na tela inicial" no final do arquivo. -->
+        <button class="btn btn-ghost" id="instalarAppBtn" style="display:none;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M4 18v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg>
+          Instalar na tela inicial
+        </button>
         <a href="#" class="help-link" id="helpLink">
           Precisa de ajuda?
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
@@ -10171,6 +10186,20 @@
       <!-- Configura quais papéis, além do Coordenador de Classes/Administrador/Diretoria
            (que já enxergam por padrão), também podem abrir a tela de Rendimento acima —
            gravado em classes_rendimento_papeis_extra (ver supabase/schema.sql). -->
+      <div class="pl-modal-overlay" id="instalarOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Instalar na tela inicial</h4>
+            <button type="button" class="pl-modal-close" id="instalarClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <p class="pl-reminder-hint" style="margin-top:0;" id="instalarPassos"></p>
+          <p class="pl-reminder-hint">Depois disso o Cedros fica com ícone próprio na tela do celular e abre em tela cheia, igual a um aplicativo.</p>
+          <button type="button" class="btn btn-fill" id="instalarEntendi">Entendi</button>
+        </div>
+      </div>
+
       <div class="pl-modal-overlay" id="clRankAccessOverlay">
         <div class="pl-modal">
           <div class="pl-modal-head">
@@ -13776,6 +13805,9 @@
             <button class="bd-icon-btn" id="bdBellBtn" aria-label="Notificações" style="position:relative;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
               <span class="bd-dot" id="bdBellDot" style="display:none;"></span>
+            </button>
+            <button class="bd-icon-btn" id="bdInstalarBtn" aria-label="Instalar na tela inicial" title="Instalar na tela inicial" style="display:none;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M4 18v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg>
             </button>
             <button class="bd-icon-btn" id="bdLogoutBtn" aria-label="Sair" title="Sair">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -18651,6 +18683,16 @@
     const statusPickClose = document.getElementById('clStatusPickClose');
 
     const CLASS_STUDENTS = {};
+    // Lista de aluno se lê procurando um nome, então vai em ordem alfabética —
+    // não na ordem em que o banco devolveu. localeCompare com pt-BR e
+    // sensitivity 'base' põe Ângela junto de Angela e ignora maiúscula.
+    function ordenarAlunos(className){
+      const lista = CLASS_STUDENTS[className];
+      if(Array.isArray(lista)){
+        lista.sort((a, b) => String(a).localeCompare(String(b), 'pt-BR', { sensitivity: 'base' }));
+      }
+      return lista;
+    }
     const CLASS_PROGRESS = {}; // CLASS_PROGRESS[className][studentName][activityTitle] = status
     const STUDENT_IDS = {}; // STUDENT_IDS[className][studentName] = id na tabela "desbravadores" (Supabase)
     // STUDENT_USUARIOS[className][studentName] = id do login (usuarios). Os
@@ -19238,6 +19280,7 @@
         CLASS_COMPROVANTES[aluno.classe][aluno.nome] = comprovanteByAluno[aluno.id] || {};
         CLASS_RESUMOS[aluno.classe][aluno.nome] = resumoByAluno[aluno.id] || {};
       });
+      Object.keys(CLASS_STUDENTS).forEach(ordenarAlunos);
       await carregarNascimentos(alunos);
 
       updateHubCounts();
@@ -19636,6 +19679,7 @@
         if(oldName !== name){
           const idx = CLASS_STUDENTS[currentClass].indexOf(oldName);
           if(idx !== -1) CLASS_STUDENTS[currentClass][idx] = name;
+          ordenarAlunos(currentClass);
           CLASS_PROGRESS[currentClass][name] = CLASS_PROGRESS[currentClass][oldName] || {};
           delete CLASS_PROGRESS[currentClass][oldName];
           STUDENT_IDS[currentClass][name] = STUDENT_IDS[currentClass][oldName];
@@ -19667,6 +19711,7 @@
       }
 
       if(CLASS_STUDENTS[currentClass].indexOf(name) === -1) CLASS_STUDENTS[currentClass].push(name);
+      ordenarAlunos(currentClass);
       studentModalOverlay.classList.remove('show');
       renderStudentBar(currentClass);
       updateHubCounts();
@@ -34110,19 +34155,41 @@ const REQ_SUMMARIES = {
     // ninguém entra no app — não só a área que usa a coluna. Então pede com
     // ela e, se o banco ainda não tiver, repete sem. Mesma ideia do
     // carregarPessoas da Tesouraria.
-    const COLUNAS_BASE = 'id, nome, papel, papeis_adicionais, acesso, aprovado, ativo, unidade, cargo, pode_pontuar_unidades, data_nascimento, classe_coordenada';
+    const COLUNAS_BASE = 'id, nome, email, papel, papeis_adicionais, acesso, aprovado, ativo, unidade, cargo, pode_pontuar_unidades, data_nascimento, classe_coordenada';
     const COLUNAS_EXTRAS = ', gerencia_almoxarifado, senha_provisoria';
-    let { data: row, error: erroPerfil } = await supa.from('usuarios')
-      .select(COLUNAS_BASE + COLUNAS_EXTRAS).eq('email', authUser.email).maybeSingle();
+
+    // O Supabase guarda o e-mail do login sempre em minúsculas. A ficha do
+    // clube é digitada à mão e pode ter maiúscula ou espaço sobrando — e aí
+    // o = do banco não acha, a pessoa entra na conta e o app diz que ela não
+    // existe. Procura exato primeiro e, se não achar, de novo ignorando caixa
+    // e espaço, conferindo no fim pra não pegar a ficha de outra pessoa.
+    const alvo = String(authUser.email).trim().toLowerCase();
+    async function buscarFicha(colunas){
+      const exata = await supa.from('usuarios').select(colunas).eq('email', authUser.email).maybeSingle();
+      if(exata.error || exata.data) return exata;
+      // No ilike do PostgREST o valor é padrão de busca: _ e % viram curinga,
+      // e "_" é comum em e-mail (joao_silva@...). Por isso escapa.
+      const padrao = alvo.replace(/([\\%_])/g, '\\$1');
+      const perto = await supa.from('usuarios').select(colunas).ilike('email', '%' + padrao + '%');
+      if(perto.error) return perto;
+      const certa = (perto.data || []).find(l => String(l.email || '').trim().toLowerCase() === alvo);
+      return { data: certa || null, error: null };
+    }
+
+    let { data: row, error: erroPerfil } = await buscarFicha(COLUNAS_BASE + COLUNAS_EXTRAS);
     if(erroPerfil){
       // Banco sem as colunas novas carrega sem elas. Falha pro lado seguro: as
       // funções extras ficam desligadas, inclusive a troca obrigatória — e
       // deixar alguém entrar é melhor que trancar o clube inteiro do lado de
       // fora por causa de uma migration pendente.
       console.warn('Perfil sem as colunas novas; carregando sem elas:', erroPerfil.message);
-      ({ data: row } = await supa.from('usuarios').select(COLUNAS_BASE).eq('email', authUser.email).maybeSingle());
+      ({ data: row, error: erroPerfil } = await buscarFicha(COLUNAS_BASE));
     }
-    if(!row || row.aprovado === false){ window.__currentUsuario = null; return { found: false, reason: 'aprovado' }; }
+    // Erro de banco não é "não aprovado". Dizer o motivo errado já custou horas:
+    // quem procurou aprovação pendente não ia achar nada.
+    if(erroPerfil){ window.__currentUsuario = null; return { found: false, reason: 'erro', detalhe: erroPerfil.message }; }
+    if(!row){ window.__currentUsuario = null; return { found: false, reason: 'sem-ficha' }; }
+    if(row.aprovado === false){ window.__currentUsuario = null; return { found: false, reason: 'aprovado' }; }
     if(row.ativo === false){ window.__currentUsuario = null; return { found: false, reason: 'ativo' }; }
     let access = row.acesso;
     if(!access) access = await mergePapeisAccess(row.papel, row.papeis_adicionais);
@@ -34141,12 +34208,16 @@ const REQ_SUMMARIES = {
     if(!supa) return { error: 'Login indisponível: Supabase não configurado.' };
     const { data, error } = await supa.auth.signInWithPassword({ email: values.email, password: values.password });
     if(error) return { error: 'E-mail ou senha incorretos.' };
-    const { found, reason } = await applyLoggedInUser(data.user);
+    const { found, reason, detalhe } = await applyLoggedInUser(data.user);
     if(!found){
       await supa.auth.signOut();
-      return { error: reason === 'ativo'
-        ? 'Seu acesso foi desativado. Fale com a diretoria do clube.'
-        : 'Seu cadastro ainda não foi aprovado pela diretoria. Aguarde a liberação de acesso.' };
+      // A senha estava certa — o Supabase aceitou. O que falhou foi achar a
+      // ficha no clube. Dizer qual das três coisas falhou poupa a pessoa de
+      // ficar trocando a senha achando que o problema é ela.
+      if(reason === 'ativo') return { error: 'Seu acesso foi desativado. Fale com a diretoria do clube.' };
+      if(reason === 'sem-ficha') return { error: 'A senha está certa, mas não achei nenhuma ficha com este e-mail no clube. Peça pra administração conferir o e-mail do seu cadastro.' };
+      if(reason === 'erro') return { error: 'A senha está certa, mas não consegui carregar seu cadastro: ' + (detalhe || 'erro no banco') + '. Tente de novo; se continuar, avise a administração.' };
+      return { error: 'Seu cadastro ainda não foi aprovado pela diretoria. Aguarde a liberação de acesso.' };
     }
     // "Lembrar-me": pede pro navegador salvar a credencial (prompt nativo "Salvar senha?"),
     // pra autopreencher e-mail/senha da próxima vez. A senha só passa direto do formulário
@@ -34615,7 +34686,9 @@ const REQ_SUMMARIES = {
           banner.style.backgroundSize = 'cover';
           banner.style.backgroundPosition = 'center';
         } else {
-          banner.style.background = TAG_GRADIENT[tag] || TAG_GRADIENT.gray;
+          // backgroundImage, e não o atalho background: o atalho zera o
+          // background-clip do CSS e o degêde volta a vazar na borda.
+          banner.style.backgroundImage = TAG_GRADIENT[tag] || TAG_GRADIENT.gray;
         }
         banner._sourceCard = card;
 
@@ -36268,6 +36341,120 @@ const REQ_SUMMARIES = {
       if(document.visibilityState === 'visible') conferir();
     });
     setInterval(conferir, 5 * 60 * 1000);
+  })();
+
+  // ===== Instalar na tela inicial =====
+  // Chrome e Edge avisam que o app pode ser instalado pelo evento
+  // beforeinstallprompt. O navegador só aceita abrir a janela de instalação a
+  // partir de um toque, então guardamos o evento e usamos no clique do botão.
+  // O Safari nunca dispara esse evento: no iPhone mostramos o caminho manual.
+  // Isso é a instalação sem APK — não passa pelo Play Protect, então não
+  // aparece nenhum aviso de "app não seguro".
+  (function(){
+    const CHAVE_INSTALADO = 'cedros_app_instalado';
+    let convite = null;
+    // O evento beforeinstallprompt só vale uma vez. Guardamos em separado que
+    // este navegador aceita instalar, senão quem recusa a janela perde o botão
+    // e não tem como voltar atrás.
+    let navegadorInstala = false;
+
+    const PASSOS_IOS = 'No <b>Safari</b>: toque em <b>Compartilhar</b> (o quadrado com a flecha para cima, embaixo da tela) e depois em <b>Adicionar à Tela de Início</b> → <b>Adicionar</b>.';
+    const PASSOS_ANDROID = 'No <b>Chrome</b>: toque nos <b>três pontinhos (⋮)</b> no canto de cima à direita e depois em <b>Instalar aplicativo</b> (em alguns aparelhos aparece como <b>Adicionar à tela inicial</b>).';
+
+    // Já está rodando como app? Então não há nada pra instalar.
+    function dentroDoApp(){
+      const cap = window.Capacitor;
+      if(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform()) return true;
+      if(navigator.standalone) return true;
+      try {
+        return ['standalone', 'fullscreen', 'minimal-ui']
+          .some(m => window.matchMedia('(display-mode: ' + m + ')').matches);
+      } catch(e){ return false; }
+    }
+
+    function ehIOS(){
+      const ua = navigator.userAgent || '';
+      if(/iPad|iPhone|iPod/.test(ua)) return true;
+      // iPad com iPadOS 13+ se anuncia como Mac; a tela de toque denuncia.
+      return /Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1;
+    }
+
+    function jaInstalou(){
+      try { return localStorage.getItem(CHAVE_INSTALADO) === '1'; } catch(e){ return false; }
+    }
+    function marcarInstalado(){
+      try { localStorage.setItem(CHAVE_INSTALADO, '1'); } catch(e){}
+    }
+
+    function botoes(){
+      return ['instalarAppBtn', 'bdInstalarBtn']
+        .map(id => document.getElementById(id))
+        .filter(Boolean);
+    }
+
+    function atualizar(){
+      const mostra = !dentroDoApp() && !jaInstalou() && (navegadorInstala || ehIOS());
+      botoes().forEach(b => { b.style.display = mostra ? '' : 'none'; });
+    }
+    window.__instalarAtualizar = atualizar;
+
+    // A .pl-modal-overlay é posicionada dentro da <section class="view">, então
+    // precisa estar na view visível, senão abre invisível.
+    function abrirCaminho(){
+      const ov = document.getElementById('instalarOverlay');
+      if(!ov) return;
+      const passos = document.getElementById('instalarPassos');
+      if(passos) passos.innerHTML = ehIOS() ? PASSOS_IOS : PASSOS_ANDROID;
+      const ativa = document.querySelector('.view.active');
+      if(ativa) ativa.appendChild(ov);
+      ov.classList.add('show');
+    }
+    function fecharCaminho(){
+      const ov = document.getElementById('instalarOverlay');
+      if(ov) ov.classList.remove('show');
+    }
+
+    async function instalar(){
+      if(!convite){ abrirCaminho(); return; }
+      const evento = convite;
+      convite = null; // o navegador só aceita um prompt por evento
+      try {
+        evento.prompt();
+        const escolha = await evento.userChoice;
+        if(!escolha || escolha.outcome !== 'accepted'){
+          // Recusou agora: o botão continua ali, e no próximo clique
+          // mostramos o caminho pelo menu do navegador.
+        }
+      } catch(e){
+        console.warn('Instalação não pôde ser oferecida:', e);
+        abrirCaminho();
+      }
+      atualizar();
+    }
+    window.__instalarApp = instalar;
+
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      convite = e;
+      navegadorInstala = true;
+      atualizar();
+    });
+    window.addEventListener('appinstalled', () => {
+      convite = null;
+      navegadorInstala = false;
+      marcarInstalado();
+      atualizar();
+    });
+
+    botoes().forEach(b => b.addEventListener('click', e => { e.preventDefault(); instalar(); }));
+    const fechar = document.getElementById('instalarClose');
+    if(fechar) fechar.addEventListener('click', fecharCaminho);
+    const entendi = document.getElementById('instalarEntendi');
+    if(entendi) entendi.addEventListener('click', fecharCaminho);
+    const ov = document.getElementById('instalarOverlay');
+    if(ov) ov.addEventListener('click', e => { if(e.target === ov) fecharCaminho(); });
+
+    atualizar();
   })();
 
   // Registers the service worker so the app can be installed and opened offline.

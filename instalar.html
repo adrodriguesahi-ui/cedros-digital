@@ -118,30 +118,40 @@
   </section>
 
   <!-- Android -->
+  <!-- A instalação pelo navegador vem primeiro de propósito: é um toque, não
+       baixa arquivo, não pede permissão de "fonte desconhecida" e não esbarra
+       no Play Protect. O APK fica recolhido, pra quem quiser os recursos do
+       aparelho e aceitar os avisos. -->
   <section class="card" id="sec-android" hidden>
     <h2>Instalar no Android</h2>
-    <p>Baixe o app e instale como qualquer outro aplicativo.</p>
-    <a class="btn btn-primary apk-link" href="#" download>
+    <p>Um toque, sem baixar arquivo e sem aviso de segurança.</p>
+    <button class="btn btn-primary" id="btn-instalar" type="button" hidden>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
-      Baixar o app (APK · 11 MB)
-    </a>
-    <ol class="steps">
-      <li>Toque em <b>Baixar o app</b>. Se o Chrome perguntar, toque em <b>Baixar mesmo assim</b>.</li>
-      <li>Quando terminar, toque em <b>Abrir</b> na notificação (ou abra o arquivo em <b>Downloads</b>).</li>
-      <li>Se aparecer <b>"Por segurança, seu telefone não permite instalar apps desta fonte"</b>, toque em <b>Configurações</b> e ative <b>Permitir desta fonte</b>. Depois volte.</li>
-      <li>Toque em <b>Instalar</b>. Se o Play Protect avisar, toque em <b>Mais detalhes → Instalar mesmo assim</b>.</li>
-    </ol>
+      Instalar agora
+    </button>
+    <div id="android-manual">
+      <ol class="steps">
+        <li>Abra esta página no <b>Chrome</b>.</li>
+        <li>Toque nos <b>três pontinhos ⋮</b> no canto superior direito.</li>
+        <li>Escolha <b>"Instalar app"</b> ou <b>"Adicionar à tela inicial"</b> e confirme.</li>
+      </ol>
+    </div>
     <details>
-      <summary>Não conseguiu? Instale pelo navegador</summary>
-      <p>Funciona igual e também se atualiza sozinho, sem baixar arquivo.</p>
-      <button class="btn btn-secondary" id="btn-instalar" type="button" hidden>Instalar pelo navegador</button>
-      <div id="android-manual">
-        <ol class="steps">
-          <li>Abra esta página no <b>Chrome</b>.</li>
-          <li>Toque nos <b>três pontinhos ⋮</b> no canto superior direito.</li>
-          <li>Escolha <b>"Instalar app"</b> ou <b>"Adicionar à tela inicial"</b> e confirme.</li>
-        </ol>
-      </div>
+      <summary>Prefere baixar o arquivo APK?</summary>
+      <p>É o mesmo app por dentro, mas o Android pede permissão pra instalar fora
+      da loja e o Play Protect avisa que nunca viu esse desenvolvedor — tem que
+      tocar em "Instalar mesmo assim". Em troca, o APK dá acesso a recursos do
+      aparelho, como a bandeja de compartilhar ao salvar um PDF.</p>
+      <a class="btn btn-secondary apk-link" href="#" download>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+        Baixar o APK (11 MB)
+      </a>
+      <ol class="steps">
+        <li>Toque em <b>Baixar o APK</b>. Se o Chrome perguntar, toque em <b>Baixar mesmo assim</b>.</li>
+        <li>Quando terminar, toque em <b>Abrir</b> na notificação (ou abra o arquivo em <b>Downloads</b>).</li>
+        <li>Se aparecer <b>"Por segurança, seu telefone não permite instalar apps desta fonte"</b>, toque em <b>Configurações</b> e ative <b>Permitir desta fonte</b>. Depois volte.</li>
+        <li>Toque em <b>Instalar</b>. Se o Play Protect avisar, toque em <b>Mais detalhes → Instalar mesmo assim</b>.</li>
+      </ol>
     </details>
   </section>
 
