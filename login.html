@@ -34134,19 +34134,41 @@ const REQ_SUMMARIES = {
     // ninguém entra no app — não só a área que usa a coluna. Então pede com
     // ela e, se o banco ainda não tiver, repete sem. Mesma ideia do
     // carregarPessoas da Tesouraria.
-    const COLUNAS_BASE = 'id, nome, papel, papeis_adicionais, acesso, aprovado, ativo, unidade, cargo, pode_pontuar_unidades, data_nascimento, classe_coordenada';
+    const COLUNAS_BASE = 'id, nome, email, papel, papeis_adicionais, acesso, aprovado, ativo, unidade, cargo, pode_pontuar_unidades, data_nascimento, classe_coordenada';
     const COLUNAS_EXTRAS = ', gerencia_almoxarifado, senha_provisoria';
-    let { data: row, error: erroPerfil } = await supa.from('usuarios')
-      .select(COLUNAS_BASE + COLUNAS_EXTRAS).eq('email', authUser.email).maybeSingle();
+
+    // O Supabase guarda o e-mail do login sempre em minúsculas. A ficha do
+    // clube é digitada à mão e pode ter maiúscula ou espaço sobrando — e aí
+    // o = do banco não acha, a pessoa entra na conta e o app diz que ela não
+    // existe. Procura exato primeiro e, se não achar, de novo ignorando caixa
+    // e espaço, conferindo no fim pra não pegar a ficha de outra pessoa.
+    const alvo = String(authUser.email).trim().toLowerCase();
+    async function buscarFicha(colunas){
+      const exata = await supa.from('usuarios').select(colunas).eq('email', authUser.email).maybeSingle();
+      if(exata.error || exata.data) return exata;
+      // No ilike do PostgREST o valor é padrão de busca: _ e % viram curinga,
+      // e "_" é comum em e-mail (joao_silva@...). Por isso escapa.
+      const padrao = alvo.replace(/([\\%_])/g, '\\$1');
+      const perto = await supa.from('usuarios').select(colunas).ilike('email', '%' + padrao + '%');
+      if(perto.error) return perto;
+      const certa = (perto.data || []).find(l => String(l.email || '').trim().toLowerCase() === alvo);
+      return { data: certa || null, error: null };
+    }
+
+    let { data: row, error: erroPerfil } = await buscarFicha(COLUNAS_BASE + COLUNAS_EXTRAS);
     if(erroPerfil){
       // Banco sem as colunas novas carrega sem elas. Falha pro lado seguro: as
       // funções extras ficam desligadas, inclusive a troca obrigatória — e
       // deixar alguém entrar é melhor que trancar o clube inteiro do lado de
       // fora por causa de uma migration pendente.
       console.warn('Perfil sem as colunas novas; carregando sem elas:', erroPerfil.message);
-      ({ data: row } = await supa.from('usuarios').select(COLUNAS_BASE).eq('email', authUser.email).maybeSingle());
+      ({ data: row, error: erroPerfil } = await buscarFicha(COLUNAS_BASE));
     }
-    if(!row || row.aprovado === false){ window.__currentUsuario = null; return { found: false, reason: 'aprovado' }; }
+    // Erro de banco não é "não aprovado". Dizer o motivo errado já custou horas:
+    // quem procurou aprovação pendente não ia achar nada.
+    if(erroPerfil){ window.__currentUsuario = null; return { found: false, reason: 'erro', detalhe: erroPerfil.message }; }
+    if(!row){ window.__currentUsuario = null; return { found: false, reason: 'sem-ficha' }; }
+    if(row.aprovado === false){ window.__currentUsuario = null; return { found: false, reason: 'aprovado' }; }
     if(row.ativo === false){ window.__currentUsuario = null; return { found: false, reason: 'ativo' }; }
     let access = row.acesso;
     if(!access) access = await mergePapeisAccess(row.papel, row.papeis_adicionais);
@@ -34165,12 +34187,16 @@ const REQ_SUMMARIES = {
     if(!supa) return { error: 'Login indisponível: Supabase não configurado.' };
     const { data, error } = await supa.auth.signInWithPassword({ email: values.email, password: values.password });
     if(error) return { error: 'E-mail ou senha incorretos.' };
-    const { found, reason } = await applyLoggedInUser(data.user);
+    const { found, reason, detalhe } = await applyLoggedInUser(data.user);
     if(!found){
       await supa.auth.signOut();
-      return { error: reason === 'ativo'
-        ? 'Seu acesso foi desativado. Fale com a diretoria do clube.'
-        : 'Seu cadastro ainda não foi aprovado pela diretoria. Aguarde a liberação de acesso.' };
+      // A senha estava certa — o Supabase aceitou. O que falhou foi achar a
+      // ficha no clube. Dizer qual das três coisas falhou poupa a pessoa de
+      // ficar trocando a senha achando que o problema é ela.
+      if(reason === 'ativo') return { error: 'Seu acesso foi desativado. Fale com a diretoria do clube.' };
+      if(reason === 'sem-ficha') return { error: 'A senha está certa, mas não achei nenhuma ficha com este e-mail no clube. Peça pra administração conferir o e-mail do seu cadastro.' };
+      if(reason === 'erro') return { error: 'A senha está certa, mas não consegui carregar seu cadastro: ' + (detalhe || 'erro no banco') + '. Tente de novo; se continuar, avise a administração.' };
+      return { error: 'Seu cadastro ainda não foi aprovado pela diretoria. Aguarde a liberação de acesso.' };
     }
     // "Lembrar-me": pede pro navegador salvar a credencial (prompt nativo "Salvar senha?"),
     // pra autopreencher e-mail/senha da próxima vez. A senha só passa direto do formulário
