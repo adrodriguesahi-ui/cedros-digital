@@ -18675,6 +18675,16 @@
     const statusPickClose = document.getElementById('clStatusPickClose');
 
     const CLASS_STUDENTS = {};
+    // Lista de aluno se lê procurando um nome, então vai em ordem alfabética —
+    // não na ordem em que o banco devolveu. localeCompare com pt-BR e
+    // sensitivity 'base' põe Ângela junto de Angela e ignora maiúscula.
+    function ordenarAlunos(className){
+      const lista = CLASS_STUDENTS[className];
+      if(Array.isArray(lista)){
+        lista.sort((a, b) => String(a).localeCompare(String(b), 'pt-BR', { sensitivity: 'base' }));
+      }
+      return lista;
+    }
     const CLASS_PROGRESS = {}; // CLASS_PROGRESS[className][studentName][activityTitle] = status
     const STUDENT_IDS = {}; // STUDENT_IDS[className][studentName] = id na tabela "desbravadores" (Supabase)
     // STUDENT_USUARIOS[className][studentName] = id do login (usuarios). Os
@@ -19262,6 +19272,7 @@
         CLASS_COMPROVANTES[aluno.classe][aluno.nome] = comprovanteByAluno[aluno.id] || {};
         CLASS_RESUMOS[aluno.classe][aluno.nome] = resumoByAluno[aluno.id] || {};
       });
+      Object.keys(CLASS_STUDENTS).forEach(ordenarAlunos);
       await carregarNascimentos(alunos);
 
       updateHubCounts();
@@ -19660,6 +19671,7 @@
         if(oldName !== name){
           const idx = CLASS_STUDENTS[currentClass].indexOf(oldName);
           if(idx !== -1) CLASS_STUDENTS[currentClass][idx] = name;
+          ordenarAlunos(currentClass);
           CLASS_PROGRESS[currentClass][name] = CLASS_PROGRESS[currentClass][oldName] || {};
           delete CLASS_PROGRESS[currentClass][oldName];
           STUDENT_IDS[currentClass][name] = STUDENT_IDS[currentClass][oldName];
@@ -19691,6 +19703,7 @@
       }
 
       if(CLASS_STUDENTS[currentClass].indexOf(name) === -1) CLASS_STUDENTS[currentClass].push(name);
+      ordenarAlunos(currentClass);
       studentModalOverlay.classList.remove('show');
       renderStudentBar(currentClass);
       updateHubCounts();
