@@ -57,21 +57,75 @@ jobs:
       - name: Gerar www/ e sincronizar o projeto Android
         run: npm run cap:sync
 
-      - name: Compilar APK de debug
+      # A chave de assinatura vem do segredo ANDROID_KEYSTORE_BASE64. Com ela,
+      # sai um APK de release assinado — sem a marca de "depurável" que faz o
+      # Play Protect gritar "app não seguro". Sem ela, o build segue em debug
+      # como antes, pra o repositório continuar funcionando pra quem clonar.
+      - name: Preparar a chave de assinatura (se houver)
+        id: chave
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "assinado=nao" >> "$GITHUB_OUTPUT"
+            echo "Sem ANDROID_KEYSTORE_BASE64 — compilando em debug."
+            exit 0
+          fi
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/cedros.keystore" 2>/dev/null || true
+          # base64 -d engole lixo sem reclamar, então checar só o tamanho não
+          # serve. keytool prova as duas coisas de uma vez: que o arquivo é um
+          # keystore de verdade e que a senha confere — que é onde essa
+          # configuração mais erra. Melhor falhar aqui, com recado claro, do
+          # que lá no Gradle com erro obscuro.
+          if ! keytool -list -keystore "$RUNNER_TEMP/cedros.keystore" -storepass "$STORE_PASS" > /dev/null 2>&1; then
+            echo "::error::A chave não abriu. Confira se ANDROID_KEYSTORE_BASE64 é o keystore inteiro em base64 e se ANDROID_KEYSTORE_PASSWORD está certa."
+            rm -f "$RUNNER_TEMP/cedros.keystore"
+            exit 1
+          fi
+          echo "assinado=sim" >> "$GITHUB_OUTPUT"
+          echo "Chave de assinatura carregada e conferida." 
+
+      - name: Compilar APK
         working-directory: android
-        run: ./gradlew assembleDebug --stacktrace
+        env:
+          ANDROID_KEYSTORE_FILE: ${{ steps.chave.outputs.assinado == 'sim' && format('{0}/cedros.keystore', runner.temp) || '' }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ "${{ steps.chave.outputs.assinado }}" = "sim" ]; then
+            ./gradlew assembleRelease --stacktrace
+          else
+            ./gradlew assembleDebug --stacktrace
+          fi
+
+      - name: Achar o APK gerado
+        id: apk
+        run: |
+          CAMINHO=$(find android/app/build/outputs/apk -name "*.apk" ! -name "*unsigned*" | head -1)
+          if [ -z "$CAMINHO" ]; then
+            echo "::error::Nenhum APK encontrado em android/app/build/outputs/apk."
+            exit 1
+          fi
+          echo "caminho=$CAMINHO" >> "$GITHUB_OUTPUT"
+          echo "APK: $CAMINHO"
+
+      - name: Apagar a chave do runner
+        if: always()
+        run: rm -f "$RUNNER_TEMP/cedros.keystore"
 
       - uses: actions/upload-artifact@v4
         with:
           name: cedros-digital-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: ${{ steps.apk.outputs.caminho }}
           if-no-files-found: error
 
       - name: Publicar/atualizar release com link fixo de download
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          APK="${{ steps.apk.outputs.caminho }}"
 
           # Antes isto perguntava com "gh release view" se o release existia pra
           # escolher entre criar e atualizar. Quando essa consulta falha — e ela

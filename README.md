@@ -21,6 +21,83 @@ Pra publicar do zero:
 
 Login, cadastro e o painel de Administração usam o Supabase (Postgres + Auth) — ver [supabase/schema.sql](supabase/schema.sql) para o schema (tabelas, função de permissões padrão e RLS).
 
+## Instalar no celular
+
+### Pelo navegador (sem aviso nenhum)
+
+É o caminho mais simples, e serve pra maioria das pessoas do clube. Abra o site
+publicado no Chrome do celular e use **⋮ → Adicionar à tela inicial**. Fica com
+ícone próprio, abre em tela cheia e atualiza sozinho — não precisa reinstalar
+nada, nunca.
+
+O app instalado (APK) carrega **esse mesmo site** (ver `server.url` em
+`capacitor.config.json`), então a diferença é pequena: o APK dá acesso a
+recursos nativos (bandeja de compartilhar do PDF, vibração, cor da barra de
+status) e o atalho do navegador não.
+
+### Pelo APK — e o aviso de "app não seguro"
+
+Todo APK instalado fora da Play Store faz o Android avisar que a fonte é
+desconhecida. Isso não dá pra evitar sem publicar na loja.
+
+O que **dá** pra evitar é o aviso mais feio, o de "app não seguro" do Play
+Protect: ele aparece principalmente em build de **depuração**, que o Android
+marca como depurável. Por isso o build pode ser assinado com uma chave própria
+e sair como **release**.
+
+#### Ligar a assinatura (uma vez só)
+
+O workflow compila release assinado **se** existir o segredo
+`ANDROID_KEYSTORE_BASE64`. Sem ele, continua compilando em debug, pra quem
+clonar o repositório não precisar de chave nenhuma.
+
+**1. Crie a chave** (num computador com Java; vale `keytool` do Android Studio):
+
+```bash
+keytool -genkeypair -v \
+  -keystore cedros.keystore \
+  -alias cedros \
+  -keyalg RSA -keysize 2048 -validity 10000 \
+  -storepass SUA_SENHA -keypass SUA_SENHA \
+  -dname "CN=Clube de Desbravadores Cedros do Líbano, O=Cedros Digital, C=BR"
+```
+
+**2. Converta pra base64**, que é como o segredo guarda arquivo:
+
+```bash
+base64 -w0 cedros.keystore > cedros.keystore.b64
+```
+
+**3. Em Settings → Secrets and variables → Actions**, crie quatro segredos:
+
+| Segredo | Valor |
+|---|---|
+| `ANDROID_KEYSTORE_BASE64` | o conteúdo de `cedros.keystore.b64` |
+| `ANDROID_KEYSTORE_PASSWORD` | a senha que você escolheu |
+| `ANDROID_KEY_ALIAS` | `cedros` |
+| `ANDROID_KEY_PASSWORD` | a mesma senha |
+
+**4. Guarde `cedros.keystore` e a senha fora do repositório** — num gerenciador
+de senhas, por exemplo. A chave é a identidade do app: **trocar de chave obriga
+todo mundo a desinstalar e instalar de novo**, porque o Android recusa
+atualização assinada por outra chave. Perder a chave tem o mesmo efeito.
+
+Nunca comite o `.keystore` nem o `.b64`.
+
+#### A primeira instalação depois de assinar
+
+Quem já tem o APK antigo (assinado com a chave de depuração) precisa
+**desinstalar antes** de instalar o novo — as assinaturas são diferentes, e o
+Android bloqueia a atualização. Depois disso, as próximas atualizações entram
+normalmente.
+
+### Sem aviso nenhum: Play Store
+
+Publicar em teste interno na Play Store acaba com o aviso e dá atualização
+automática. Custa US$ 25 uma vez pela conta de desenvolvedor, exige política de
+privacidade publicada (o app guarda dados de menores, então isso é necessário
+de qualquer forma) e passa por revisão.
+
 ## Gerar APK
 
 Duas formas, dependendo do que você precisa:
