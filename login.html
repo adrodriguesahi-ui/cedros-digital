@@ -33539,7 +33539,12 @@ const REQ_SUMMARIES = {
       renderAccessList();
     });
 
-    function applyAccessToDashboard(access, userName){
+    // simulando=true só quando um administrador está espiando o menu de OUTRA
+    // pessoa, lá no "Acesso por Área". No login de cada um, isto é o menu dele
+    // mesmo: esconder as áreas é o certo, mas anunciar "pré-visualizando o menu
+    // de Fulano" pro próprio Fulano não — e pior, o botão "Restaurar" do aviso
+    // reabre justamente as áreas que o papel dele não deveria ver.
+    function applyAccessToDashboard(access, userName, simulando){
       let anyRestricted = false;
       const restrictedViews = [];
       AREAS.forEach(area => {
@@ -33562,7 +33567,7 @@ const REQ_SUMMARIES = {
       if(!leituraLiberada) restrictedViews.push('view-curso-leitura');
       window.__restrictedGotoViews = restrictedViews;
       if(simBanner){
-        if(anyRestricted){
+        if(simulando && anyRestricted){
           simName.textContent = userName || '';
           simBanner.style.display = '';
         } else {
@@ -33578,7 +33583,7 @@ const REQ_SUMMARIES = {
       const { error } = await supa.from('usuarios').update({ acesso: workingAccess }).eq('id', card.dataset.id);
       if(error){ alert('Não foi possível salvar o acesso: ' + error.message); return; }
       card.dataset.access = JSON.stringify(workingAccess);
-      applyAccessToDashboard(workingAccess, card.dataset.name);
+      applyAccessToDashboard(workingAccess, card.dataset.name, true);
       accessOverlay.classList.remove('show');
     });
 
