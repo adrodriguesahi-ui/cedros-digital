@@ -988,6 +988,29 @@
   /* Barra fina, ponta arredondada, trilho discreto e o número em texto neutro
      — mesmo desenho do rank de unidades, pra não existirem dois estilos de
      gráfico no mesmo app. */
+  .am-rosca-wrap{ display:flex; align-items:center; gap:14px; }
+  .am-rosca{ flex:0 0 auto; position:relative; width:112px; height:112px; }
+  .am-rosca svg{ width:100%; height:100%; transform:rotate(-90deg); }
+  .am-rosca-centro{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; pointer-events:none;
+  }
+  .am-rosca-centro b{ font-size:21px; font-weight:900; color:var(--cream); line-height:1.1; }
+  .am-rosca-centro span{ font-size:9.5px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:rgba(245,239,225,0.45); }
+  .am-legenda{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px; }
+  /* O valor fica na legenda, não no ângulo: ninguém precisa julgar fatia pra
+     saber quanto é, que é onde pizza falha com valores próximos. */
+  .am-leg-item{
+    display:flex; align-items:center; gap:7px; padding:4px 5px; border-radius:8px;
+    cursor:pointer; border:1px solid transparent; background:none; width:100%;
+    font-family:inherit; text-align:left;
+  }
+  .am-leg-item.ativa{ border-color:rgba(245,239,225,0.22); background:rgba(255,255,255,0.05); }
+  .am-leg-cor{ width:9px; height:9px; border-radius:3px; flex:0 0 auto; }
+  .am-leg-nome{ flex:1; min-width:0; font-size:11.5px; font-weight:700; color:rgba(245,239,225,0.8); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .am-leg-val{ font-size:11.5px; font-weight:900; color:var(--cream); white-space:nowrap; }
+  .am-leg-pct{ font-size:10px; font-weight:700; color:rgba(245,239,225,0.42); white-space:nowrap; min-width:30px; text-align:right; }
+
   .am-barra{
     display:grid; grid-template-columns:96px 1fr 58px; align-items:center; gap:9px;
     padding:5px 4px; border-radius:10px; cursor:pointer; border:1px solid transparent;
@@ -28318,6 +28341,20 @@
       fLocal.value = selecionado || '';
     }
 
+    // Paleta validada pro fundo escuro do app (lightness, croma, separação pra
+    // daltonismo e contraste). A cor segue a CATEGORIA, não a posição no
+    // gráfico: filtrar ou mudar a ordem não pode repintar o resto, senão a
+    // pessoa acha que virou outra coisa.
+    const COR_CATEGORIA = {
+      'Acampamento': '#3987e5', 'Cozinha': '#d95926', 'Escritório': '#199e70',
+      'Limpeza': '#c98500', 'Segurança': '#d55181', 'Outro': '#008300'
+    };
+    function corDaCategoria(cat){
+      // Categoria fora da lista fica cinza de propósito: cinza lê como
+      // "indefinido", e não gasta um dos tons que têm significado.
+      return COR_CATEGORIA[cat] || '#8d9590';
+    }
+
     // Quanto o clube tem por categoria. Uma série só: uma cor, sem legenda (o
     // nome está em cada linha) e o número em texto neutro, não na cor da barra.
     function pintarGrafico(){
@@ -28336,31 +28373,58 @@
         porCat[c].itens++;
       });
       const ordem = Object.keys(porCat).sort((a, b) => porCat[b].unidades - porCat[a].unidades);
-      const maior = Math.max(1, ...ordem.map(c => porCat[c].unidades));
       const total = ordem.reduce((t, c) => t + porCat[c].unidades, 0);
       if(totalEl) totalEl.textContent = total + (total === 1 ? ' unidade' : ' unidades');
+      if(!total){ graf.style.display = 'none'; return; }
 
-      barras.innerHTML = '';
-      ordem.forEach(cat => {
-        const d = porCat[cat];
+      const R = 42, C = 2 * Math.PI * R;
+      let offset = 0;
+      const fatias = ordem.map(cat => {
+        const parte = porCat[cat].unidades / total;
+        // 2px de respiro entre fatias, pra duas cores vizinhas não encostarem.
+        // Fatia menor que o respiro vira um tracinho em vez de sumir.
+        const comp = Math.max(1.5, C * parte - 2);
+        const f = { cat: cat, cor: corDaCategoria(cat), comp: comp, offset: offset, pct: Math.round(parte * 100) };
+        offset += C * parte;
+        return f;
+      });
+
+      barras.innerHTML =
+        '<div class="am-rosca-wrap">' +
+          '<div class="am-rosca">' +
+            '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+              '<circle cx="50" cy="50" r="' + R + '" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="13"></circle>' +
+              fatias.map(f =>
+                '<circle cx="50" cy="50" r="' + R + '" fill="none" stroke="' + f.cor + '" stroke-width="13"' +
+                ' stroke-dasharray="' + f.comp.toFixed(2) + ' ' + (C - f.comp).toFixed(2) + '"' +
+                ' stroke-dashoffset="' + (-f.offset).toFixed(2) + '"></circle>').join('') +
+            '</svg>' +
+            '<div class="am-rosca-centro"><b></b><span>unidades</span></div>' +
+          '</div>' +
+          '<div class="am-legenda"></div>' +
+        '</div>';
+      barras.querySelector('.am-rosca-centro b').textContent = total;
+
+      // A legenda sempre existe e carrega o número: identidade e valor nunca
+      // dependem só da cor nem do tamanho da fatia.
+      const leg = barras.querySelector('.am-legenda');
+      fatias.forEach(f => {
+        const d = porCat[f.cat];
         const b = document.createElement('button');
         b.type = 'button';
-        b.className = 'am-barra' + (categoriaFiltro === cat ? ' ativa' : '');
-        b.innerHTML =
-          '<span class="am-barra-nome"></span>' +
-          '<span class="am-barra-trilho"><span class="am-barra-fill"></span></span>' +
-          '<span class="am-barra-val"></span>';
-        b.querySelector('.am-barra-nome').textContent = cat;
-        b.querySelector('.am-barra-fill').style.width = Math.round((d.unidades / maior) * 100) + '%';
-        b.querySelector('.am-barra-val').textContent = d.unidades;
-        b.title = cat + ': ' + d.unidades + ' unidades em ' + d.itens + (d.itens === 1 ? ' item' : ' itens');
-        // Tocar filtra a lista; tocar de novo desfaz. No celular isso vale mais
-        // que um balão de informação, que não se mantém aberto com o dedo.
+        b.className = 'am-leg-item' + (categoriaFiltro === f.cat ? ' ativa' : '');
+        b.innerHTML = '<span class="am-leg-cor"></span><span class="am-leg-nome"></span>' +
+                      '<span class="am-leg-val"></span><span class="am-leg-pct"></span>';
+        b.querySelector('.am-leg-cor').style.background = f.cor;
+        b.querySelector('.am-leg-nome').textContent = f.cat;
+        b.querySelector('.am-leg-val').textContent = d.unidades;
+        b.querySelector('.am-leg-pct').textContent = f.pct + '%';
+        b.title = f.cat + ': ' + d.unidades + ' unidades em ' + d.itens + (d.itens === 1 ? ' item' : ' itens');
         b.addEventListener('click', () => {
-          categoriaFiltro = (categoriaFiltro === cat) ? null : cat;
+          categoriaFiltro = (categoriaFiltro === f.cat) ? null : f.cat;
           pintar();
         });
-        barras.appendChild(b);
+        leg.appendChild(b);
       });
     }
 
