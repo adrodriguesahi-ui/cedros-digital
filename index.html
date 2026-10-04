@@ -1024,6 +1024,11 @@
 
   .am-vazio{ padding:12px 0; text-align:center; }
 
+  .ad-senha-bloco{
+    margin:4px 0 14px; padding:12px 13px; border-radius:13px;
+    background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
+  }
+
   /* ---- Administração: distribuir unidades em lote ---- */
   .ad-un-btn{ width:100%; margin-bottom:12px; }
   .ad-un-chips{ display:flex; gap:7px; margin-bottom:10px; }
@@ -5074,6 +5079,8 @@
           </button>
           <h2>Definir nova senha</h2>
         </div>
+
+        <p class="pl-reminder-hint" id="resetProvisoriaAviso" style="display:none; margin:-6px 0 14px;">A senha que você usou foi definida pela diretoria e serve só pra entrar desta vez. Escolha uma senha sua pra continuar.</p>
 
         <form id="resetPasswordForm" novalidate>
           <div class="field" id="newPassField">
@@ -13489,7 +13496,30 @@
               <input type="email" class="pl-input" id="adFieldEmail" placeholder="nome@exemplo.com" maxlength="80">
             </div>
           </div>
-          <p class="pl-reminder-hint">Esse e-mail identifica o usuário e será usado para login quando o sistema de contas for implementado.</p>
+          <p class="pl-reminder-hint">É com esse e-mail que a pessoa entra no app. Pode ser um endereço de fachada (ex.: a matrícula) pra quem não tem e-mail — nesse caso, defina a senha aqui embaixo, porque recuperar por e-mail não vai funcionar.</p>
+
+          <!-- Definir senha de outra pessoa exige a chave administrativa do
+               Supabase, que não pode viver num HTML público. Quem faz isso é a
+               função definir-acesso, no servidor (ver supabase/functions). -->
+          <div class="ad-senha-bloco" id="adSenhaBloco" style="display:none;">
+            <label class="pl-field-label" style="margin-top:0;">Senha de acesso</label>
+            <div class="pl-field-row">
+              <div class="pl-field-col pl-field-col-wide">
+                <input type="text" class="pl-input" id="adFieldSenha" placeholder="Pelo menos 8 caracteres" maxlength="60" autocomplete="off">
+              </div>
+              <div class="pl-field-col">
+                <button type="button" class="pl-btn pl-btn-primary" id="adSenhaBtn" style="width:100%;">Definir</button>
+              </div>
+            </div>
+            <label class="pl-reminder-toggle-row" for="adSenhaProvisoria" style="margin:8px 0 2px;">
+              <span class="pl-reminder-toggle-text">Pedir nova senha no primeiro acesso</span>
+              <span class="pl-switch">
+                <input type="checkbox" id="adSenhaProvisoria" checked>
+                <span class="pl-switch-track"><span class="pl-switch-thumb"></span></span>
+              </span>
+            </label>
+            <p class="pl-reminder-hint" id="adSenhaMsg" style="margin-top:6px;">Deixe em branco pra não mexer na senha. Salvar o usuário não altera senha nenhuma — isso só acontece ao tocar em "Definir".</p>
+          </div>
 
           <div class="ad-field-row">
             <div>
@@ -14654,6 +14684,12 @@
   let splashDone = false;
   let authState = null; // null = ainda não sabemos; {found:true/false} depois do getSession()
   function leaveSplashResolve(){
+    // Quem está logado mas com senha provisória não pode cair no Início por
+    // aqui: esta função roda depois da checagem de sessão e sobreporia o
+    // desvio pra tela de troca. window.__irParaOndeDeve existe mais abaixo no
+    // arquivo; na primeira passada pode ainda não existir, e aí o
+    // comportamento antigo vale.
+    if(authState && authState.found && window.__irParaOndeDeve){ window.__irParaOndeDeve(); return; }
     showView(authState && authState.found ? 'view-dashboard' : 'view-cover');
   }
   function leaveSplash(){
@@ -32755,6 +32791,12 @@ const REQ_SUMMARIES = {
     const fieldCargo = document.getElementById('adFieldCargo');
     const fieldCanScore = document.getElementById('adFieldCanScore');
     const fieldAlmox = document.getElementById('adFieldAlmox');
+    const senhaBloco = document.getElementById('adSenhaBloco');
+    const fieldSenha = document.getElementById('adFieldSenha');
+    const senhaBtn = document.getElementById('adSenhaBtn');
+    const senhaMsg = document.getElementById('adSenhaMsg');
+    const senhaProvisoria = document.getElementById('adSenhaProvisoria');
+    const SENHA_PADRAO_MSG = 'Deixe em branco pra não mexer na senha. Salvar o usuário não altera senha nenhuma — isso só acontece ao tocar em "Definir".';
     const fieldBirthdate = document.getElementById('adFieldBirthdate');
     const fieldAtivo = document.getElementById('adFieldAtivo');
     const fieldClasse = document.getElementById('adFieldClasse');
@@ -33093,6 +33135,58 @@ const REQ_SUMMARIES = {
       if(!falhas.length) unOverlay.classList.remove('show');
     });
 
+
+    // Define a senha de acesso da pessoa chamando a função definir-acesso.
+    // A senha nunca passa pelo banco do app nem fica guardada em lugar nenhum
+    // daqui: vai direto pro Supabase Auth, que guarda só o hash.
+    if(senhaBtn) senhaBtn.addEventListener('click', async () => {
+      if(!supa) return;
+      const email = (fieldEmail.value || '').trim();
+      const senha = (fieldSenha.value || '');
+      const dizer = (texto, erro) => {
+        senhaMsg.textContent = texto;
+        senhaMsg.style.color = erro ? '#FF6B5C' : 'var(--accent)';
+      };
+      if(!email){ dizer('Preencha o e-mail de acesso primeiro.', true); return; }
+      if(senha.length < 8){ dizer('A senha precisa ter pelo menos 8 caracteres.', true); return; }
+      // Usuário novo ainda não existe na tabela: a função recusaria. Melhor
+      // explicar a ordem do que deixar o erro do servidor aparecer cru.
+      if(!editingCard){ dizer('Salve o usuário primeiro — depois defina a senha.', true); return; }
+
+      senhaBtn.disabled = true;
+      const textoOriginal = senhaBtn.textContent;
+      senhaBtn.textContent = 'Definindo…';
+      try {
+        const { data, error } = await supa.functions.invoke('definir-acesso', {
+          body: { email: email, senha: senha, provisoria: !!(senhaProvisoria && senhaProvisoria.checked) }
+        });
+        // O erro de função vem com a mensagem dentro do corpo da resposta;
+        // sem isto o usuário veria só "Edge Function returned a non-2xx".
+        if(error){
+          let detalhe = error.message || 'erro desconhecido';
+          try { const corpo = await error.context.json(); if(corpo && corpo.erro) detalhe = corpo.erro; } catch(e){}
+          dizer('Não consegui: ' + detalhe, true);
+        } else if(data && data.ok){
+          const pedeTroca = data.provisoria
+            ? ' No primeiro acesso o app vai pedir uma senha nova.'
+            : '';
+          dizer((data.acao === 'acesso_criado'
+            ? 'Acesso criado. Já dá pra entrar com esse e-mail e senha.'
+            : 'Senha trocada. A senha anterior não vale mais.') + pedeTroca, false);
+          fieldSenha.value = '';
+        } else {
+          dizer('Não consegui: ' + ((data && data.erro) || 'resposta inesperada'), true);
+        }
+      } catch(e){
+        // Função não publicada ainda cai aqui. Dizer o que fazer vale mais que
+        // dizer o que houve.
+        console.error('definir-acesso:', e);
+        dizer('Não consegui falar com o servidor. A função "definir-acesso" já foi publicada no Supabase? (ver README)', true);
+      }
+      senhaBtn.disabled = false;
+      senhaBtn.textContent = textoOriginal;
+    });
+
     const pendingHeading = document.getElementById('adPendingHeading');
     const pendingContent = document.getElementById('adPendingContent');
 
@@ -33179,6 +33273,18 @@ const REQ_SUMMARIES = {
       fieldCargo.value = card ? (card.dataset.cargo || '') : '';
       fieldCanScore.checked = !!(card && card.dataset.canScore === '1');
       if(fieldAlmox) fieldAlmox.checked = !!(card && card.dataset.almox === '1');
+      // Só quem é admin de verdade define senha — e a função no servidor
+      // confere isso de novo pelo token, porque esconder botão não é
+      // segurança, é arrumação.
+      if(senhaBloco){
+        const souAdmin = !!(window.__currentUsuario && window.__currentUsuario.acesso && window.__currentUsuario.acesso.admin);
+        senhaBloco.style.display = souAdmin ? '' : 'none';
+        if(fieldSenha) fieldSenha.value = '';
+        // Volta marcado a cada abertura: senha que outra pessoa escolheu não
+        // deveria ficar valendo pra sempre por esquecimento.
+        if(senhaProvisoria) senhaProvisoria.checked = true;
+        if(senhaMsg){ senhaMsg.textContent = SENHA_PADRAO_MSG; senhaMsg.style.color = ''; }
+      }
       fieldBirthdate.value = card ? birthdateIsoToBr(card.dataset.birthdate) : '';
       fieldBirthdate.style.borderColor = '';
       fieldAtivo.checked = card ? card.dataset.ativo !== '0' : true;
@@ -33963,6 +34069,41 @@ const REQ_SUMMARIES = {
   }
   window.__mergePapeisAccess = mergePapeisAccess;
 
+  // Senha provisória: a pessoa entra, mas só vê a tela de definir nova senha.
+  // Isto é porta de uso, não tranca de segurança — o bloqueio vive no
+  // navegador. O que protege de verdade são as regras do banco; aqui o que se
+  // evita é a senha escolhida por terceiro continuar valendo por esquecimento.
+  function precisaTrocarSenha(){
+    return !!(window.__currentUsuario && window.__currentUsuario.senhaProvisoria);
+  }
+
+  window.__irParaOndeDeve = function(){ irParaOndeDeve(); };
+
+  function irParaOndeDeve(){
+    if(precisaTrocarSenha()){
+      const aviso = document.getElementById('resetProvisoriaAviso');
+      if(aviso) aviso.style.display = '';
+      showView('view-reset-password');
+      return;
+    }
+    showView('view-dashboard');
+  }
+
+  // Trocou a senha: a provisória deixou de existir, então o aviso some e a
+  // marca cai no banco. Se a coluna não existir, segue em frente — a senha
+  // nova já vale, que é o que importa.
+  async function limparSenhaProvisoria(){
+    if(!window.__currentUsuario || !window.__currentUsuario.senhaProvisoria) return;
+    window.__currentUsuario.senhaProvisoria = false;
+    const aviso = document.getElementById('resetProvisoriaAviso');
+    if(aviso) aviso.style.display = 'none';
+    if(!supa) return;
+    const { error } = await supa.from('usuarios')
+      .update({ senha_provisoria: false }).eq('id', window.__currentUsuario.id);
+    if(error) console.warn('Não consegui zerar senha_provisoria:', error.message);
+  }
+  window.__limparSenhaProvisoria = limparSenhaProvisoria;
+
   async function applyLoggedInUser(authUser){
     if(!supa || !authUser || !authUser.email) return { found: false };
     // Coluna nova no select do LOGIN é perigosa: banco sem ela devolve erro e
@@ -33970,10 +34111,15 @@ const REQ_SUMMARIES = {
     // ela e, se o banco ainda não tiver, repete sem. Mesma ideia do
     // carregarPessoas da Tesouraria.
     const COLUNAS_BASE = 'id, nome, papel, papeis_adicionais, acesso, aprovado, ativo, unidade, cargo, pode_pontuar_unidades, data_nascimento, classe_coordenada';
+    const COLUNAS_EXTRAS = ', gerencia_almoxarifado, senha_provisoria';
     let { data: row, error: erroPerfil } = await supa.from('usuarios')
-      .select(COLUNAS_BASE + ', gerencia_almoxarifado').eq('email', authUser.email).maybeSingle();
+      .select(COLUNAS_BASE + COLUNAS_EXTRAS).eq('email', authUser.email).maybeSingle();
     if(erroPerfil){
-      console.warn('Perfil sem a coluna gerencia_almoxarifado; carregando sem ela:', erroPerfil.message);
+      // Banco sem as colunas novas carrega sem elas. Falha pro lado seguro: as
+      // funções extras ficam desligadas, inclusive a troca obrigatória — e
+      // deixar alguém entrar é melhor que trancar o clube inteiro do lado de
+      // fora por causa de uma migration pendente.
+      console.warn('Perfil sem as colunas novas; carregando sem elas:', erroPerfil.message);
       ({ data: row } = await supa.from('usuarios').select(COLUNAS_BASE).eq('email', authUser.email).maybeSingle());
     }
     if(!row || row.aprovado === false){ window.__currentUsuario = null; return { found: false, reason: 'aprovado' }; }
@@ -33981,7 +34127,7 @@ const REQ_SUMMARIES = {
     let access = row.acesso;
     if(!access) access = await mergePapeisAccess(row.papel, row.papeis_adicionais);
     if(window.__applyAccessToDashboard) window.__applyAccessToDashboard(access, row.nome);
-    window.__currentUsuario = { id: row.id, nome: row.nome, email: authUser.email, papel: row.papel, papeisAdicionais: row.papeis_adicionais || [], unidade: row.unidade, cargo: row.cargo, podePontuarUnidades: !!row.pode_pontuar_unidades, gerenciaAlmoxarifado: !!row.gerencia_almoxarifado, data_nascimento: row.data_nascimento, classeCoordenada: row.classe_coordenada || null };
+    window.__currentUsuario = { id: row.id, nome: row.nome, email: authUser.email, papel: row.papel, papeisAdicionais: row.papeis_adicionais || [], unidade: row.unidade, cargo: row.cargo, podePontuarUnidades: !!row.pode_pontuar_unidades, gerenciaAlmoxarifado: !!row.gerencia_almoxarifado, senhaProvisoria: !!row.senha_provisoria, data_nascimento: row.data_nascimento, classeCoordenada: row.classe_coordenada || null };
     window.__currentAuthUserId = authUser.id;
     document.dispatchEvent(new CustomEvent('cedros:loggedin', { detail: window.__currentUsuario }));
     if(window.__applyGreetingUnit) window.__applyGreetingUnit(window.__currentUsuario);
@@ -34012,7 +34158,7 @@ const REQ_SUMMARIES = {
         await navigator.credentials.store(cred);
       }catch(e){}
     }
-    showView('view-dashboard');
+    irParaOndeDeve();
   }, 'loginAuthError');
 
   wireSubmit('signupForm', 'signupBtn', [
@@ -34198,12 +34344,14 @@ const REQ_SUMMARIES = {
     const { data, error } = await supa.auth.updateUser({ password: values.newPassword });
     if(error) return { error: 'Não foi possível salvar a nova senha: ' + error.message };
     const { found } = await applyLoggedInUser(data.user);
+    await limparSenhaProvisoria();
     showView(found ? 'view-dashboard' : 'view-cover');
   }, 'resetPasswordError');
 
-  // Minha Conta (dentro da Administração): o usuário logado altera o próprio e-mail/senha de login.
-  // Só troca as credenciais de quem está logado agora — não é possível (nem seguro) um admin
-  // definir a senha de outra pessoa direto pelo navegador, sem um backend próprio pra isso.
+  // Minha Conta (dentro da Administração): o usuário logado altera o próprio
+  // e-mail/senha de login. Definir a senha de OUTRA pessoa não passa por aqui —
+  // exige a chave service_role, que não pode viver num HTML público; quem faz
+  // isso é a função definir-acesso, no servidor (ver supabase/functions).
   (function(){
     const myEmailLabel = document.getElementById('adMyEmail');
     const newEmailInput = document.getElementById('adMyNewEmail');
@@ -34270,6 +34418,7 @@ const REQ_SUMMARIES = {
         passwordMsg.textContent = 'Não foi possível alterar: ' + error.message;
         return;
       }
+      await limparSenhaProvisoria();
       passwordMsg.style.color = 'var(--accent)';
       passwordMsg.textContent = 'Senha alterada com sucesso.';
       newPasswordInput.value = ''; newPasswordConfirmInput.value = '';
@@ -34298,7 +34447,7 @@ const REQ_SUMMARIES = {
       }
       const { found } = await applyLoggedInUser(user);
       authState = { found };
-      if(found){ showView('view-dashboard'); }
+      if(found){ irParaOndeDeve(); }
       else {
         await supa.auth.signOut();
         if(splashDone) showView('view-cover');

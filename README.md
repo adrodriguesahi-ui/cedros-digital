@@ -21,6 +21,68 @@ Pra publicar do zero:
 
 Login, cadastro e o painel de Administração usam o Supabase (Postgres + Auth) — ver [supabase/schema.sql](supabase/schema.sql) para o schema (tabelas, função de permissões padrão e RLS).
 
+## Dar acesso a quem não tem e-mail
+
+O login é o do Supabase Auth: a pessoa entra com e-mail e senha. Quem tem
+e-mail de verdade pode se cadastrar sozinha e usar "esqueci a senha".
+
+Boa parte do clube, porém, entrou pela planilha da Secretaria com e-mail de
+fachada (`292536@sememail.local`). Esses endereços não recebem nada — nem
+convite, nem link de recuperação. Pra essas pessoas, **o administrador define a
+senha** em Administração → editar o usuário → *Senha de acesso*.
+
+### Por que isso precisa de uma função no servidor
+
+Definir a senha de outra pessoa exige a chave `service_role` do Supabase, que
+ignora todas as regras de acesso do banco. O app é um HTML servido
+publicamente: qualquer um lê o código-fonte. Se a chave estivesse lá, estaria
+entregue — e com ela o banco inteiro, inclusive os dados dos menores.
+
+Por isso a chave vive numa Edge Function (`supabase/functions/definir-acesso`),
+onde o navegador nunca a vê. A função confere que **quem chamou é
+administrador** lendo o token da sessão, não acreditando no que o app diz.
+
+### Publicar a função (uma vez só)
+
+Pelo painel: **Edge Functions → Deploy a new function**, nome `definir-acesso`,
+e cole o conteúdo de `supabase/functions/definir-acesso/index.ts`.
+
+Ou pelo terminal, com a [CLI do Supabase](https://supabase.com/docs/guides/cli):
+
+```bash
+supabase login
+supabase link --project-ref SEU_PROJECT_REF
+supabase functions deploy definir-acesso
+```
+
+As variáveis `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY`
+já são preenchidas pelo próprio Supabase — **não precisa cadastrar nada**, e a
+`service_role` não deve ser copiada pra lugar nenhum.
+
+Enquanto a função não estiver publicada, o botão avisa isso em vez de falhar
+em silêncio.
+
+### Na prática
+
+1. Cadastre a pessoa normalmente (nome, e-mail, papel, unidade) e **salve**.
+2. Reabra o cadastro, digite uma senha de pelo menos 8 caracteres e toque em
+   **Definir**.
+3. Passe e-mail e senha pra ela. Peça que troque depois, em Administração →
+   Minha conta.
+
+Salvar o usuário **nunca** mexe na senha — só o botão "Definir" faz isso.
+
+### Senha provisória
+
+A chave **"Pedir nova senha no primeiro acesso"** vem marcada. Com ela, a
+pessoa entra com a senha que você deu e o app leva direto pra tela de definir
+uma senha dela — o resto do app só abre depois disso. Trocar a senha, por ali
+ou em Minha Conta, desfaz a marca.
+
+Isso é porta de uso, não tranca: o desvio vive no navegador. O que protege de
+verdade são as regras do banco. O que se evita aqui é a senha escolhida por
+outra pessoa continuar valendo por esquecimento.
+
 ## Instalar no celular
 
 ### Pelo navegador (sem aviso nenhum)

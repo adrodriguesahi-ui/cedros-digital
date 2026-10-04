@@ -1498,3 +1498,11 @@ create policy p_almoxarifado_emprestimos on almoxarifado_emprestimos for all usi
 -- acumula funções no clube, e cargo só guarda uma. Quem não tem isto ligado
 -- continua enxergando o almoxarifado, só não mexe.
 alter table usuarios add column if not exists gerencia_almoxarifado boolean not null default false;
+
+-- Senha definida pelo administrador é provisória: o app pede uma nova no
+-- primeiro acesso e só então libera o resto. Quem troca a senha — por aqui ou
+-- em Minha Conta — zera isto.
+--
+-- Vive em usuarios, e não no metadata do Auth, porque o app já lê esta tabela
+-- no login e porque assim o administrador enxerga quem ainda não trocou.
+alter table usuarios add column if not exists senha_provisoria boolean not null default false;
