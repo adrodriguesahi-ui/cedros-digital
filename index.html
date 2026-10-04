@@ -5013,6 +5013,13 @@
           Entrar com e-mail
         </button>
         <button class="btn btn-ghost" id="goSignup">Sou novo aqui</button>
+        <!-- Instalar na tela inicial: só aparece quando o navegador aceita
+             instalar (ou no iPhone, onde o caminho é manual). Ver o módulo
+             "Instalar na tela inicial" no final do arquivo. -->
+        <button class="btn btn-ghost" id="instalarAppBtn" style="display:none;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M4 18v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg>
+          Instalar na tela inicial
+        </button>
         <a href="#" class="help-link" id="helpLink">
           Precisa de ajuda?
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg>
@@ -10171,6 +10178,20 @@
       <!-- Configura quais papéis, além do Coordenador de Classes/Administrador/Diretoria
            (que já enxergam por padrão), também podem abrir a tela de Rendimento acima —
            gravado em classes_rendimento_papeis_extra (ver supabase/schema.sql). -->
+      <div class="pl-modal-overlay" id="instalarOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Instalar na tela inicial</h4>
+            <button type="button" class="pl-modal-close" id="instalarClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <p class="pl-reminder-hint" style="margin-top:0;" id="instalarPassos"></p>
+          <p class="pl-reminder-hint">Depois disso o Cedros fica com ícone próprio na tela do celular e abre em tela cheia, igual a um aplicativo.</p>
+          <button type="button" class="btn btn-fill" id="instalarEntendi">Entendi</button>
+        </div>
+      </div>
+
       <div class="pl-modal-overlay" id="clRankAccessOverlay">
         <div class="pl-modal">
           <div class="pl-modal-head">
@@ -13776,6 +13797,9 @@
             <button class="bd-icon-btn" id="bdBellBtn" aria-label="Notificações" style="position:relative;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
               <span class="bd-dot" id="bdBellDot" style="display:none;"></span>
+            </button>
+            <button class="bd-icon-btn" id="bdInstalarBtn" aria-label="Instalar na tela inicial" title="Instalar na tela inicial" style="display:none;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M4 18v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg>
             </button>
             <button class="bd-icon-btn" id="bdLogoutBtn" aria-label="Sair" title="Sair">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -36268,6 +36292,120 @@ const REQ_SUMMARIES = {
       if(document.visibilityState === 'visible') conferir();
     });
     setInterval(conferir, 5 * 60 * 1000);
+  })();
+
+  // ===== Instalar na tela inicial =====
+  // Chrome e Edge avisam que o app pode ser instalado pelo evento
+  // beforeinstallprompt. O navegador só aceita abrir a janela de instalação a
+  // partir de um toque, então guardamos o evento e usamos no clique do botão.
+  // O Safari nunca dispara esse evento: no iPhone mostramos o caminho manual.
+  // Isso é a instalação sem APK — não passa pelo Play Protect, então não
+  // aparece nenhum aviso de "app não seguro".
+  (function(){
+    const CHAVE_INSTALADO = 'cedros_app_instalado';
+    let convite = null;
+    // O evento beforeinstallprompt só vale uma vez. Guardamos em separado que
+    // este navegador aceita instalar, senão quem recusa a janela perde o botão
+    // e não tem como voltar atrás.
+    let navegadorInstala = false;
+
+    const PASSOS_IOS = 'No <b>Safari</b>: toque em <b>Compartilhar</b> (o quadrado com a flecha para cima, embaixo da tela) e depois em <b>Adicionar à Tela de Início</b> → <b>Adicionar</b>.';
+    const PASSOS_ANDROID = 'No <b>Chrome</b>: toque nos <b>três pontinhos (⋮)</b> no canto de cima à direita e depois em <b>Instalar aplicativo</b> (em alguns aparelhos aparece como <b>Adicionar à tela inicial</b>).';
+
+    // Já está rodando como app? Então não há nada pra instalar.
+    function dentroDoApp(){
+      const cap = window.Capacitor;
+      if(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform()) return true;
+      if(navigator.standalone) return true;
+      try {
+        return ['standalone', 'fullscreen', 'minimal-ui']
+          .some(m => window.matchMedia('(display-mode: ' + m + ')').matches);
+      } catch(e){ return false; }
+    }
+
+    function ehIOS(){
+      const ua = navigator.userAgent || '';
+      if(/iPad|iPhone|iPod/.test(ua)) return true;
+      // iPad com iPadOS 13+ se anuncia como Mac; a tela de toque denuncia.
+      return /Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1;
+    }
+
+    function jaInstalou(){
+      try { return localStorage.getItem(CHAVE_INSTALADO) === '1'; } catch(e){ return false; }
+    }
+    function marcarInstalado(){
+      try { localStorage.setItem(CHAVE_INSTALADO, '1'); } catch(e){}
+    }
+
+    function botoes(){
+      return ['instalarAppBtn', 'bdInstalarBtn']
+        .map(id => document.getElementById(id))
+        .filter(Boolean);
+    }
+
+    function atualizar(){
+      const mostra = !dentroDoApp() && !jaInstalou() && (navegadorInstala || ehIOS());
+      botoes().forEach(b => { b.style.display = mostra ? '' : 'none'; });
+    }
+    window.__instalarAtualizar = atualizar;
+
+    // A .pl-modal-overlay é posicionada dentro da <section class="view">, então
+    // precisa estar na view visível, senão abre invisível.
+    function abrirCaminho(){
+      const ov = document.getElementById('instalarOverlay');
+      if(!ov) return;
+      const passos = document.getElementById('instalarPassos');
+      if(passos) passos.innerHTML = ehIOS() ? PASSOS_IOS : PASSOS_ANDROID;
+      const ativa = document.querySelector('.view.active');
+      if(ativa) ativa.appendChild(ov);
+      ov.classList.add('show');
+    }
+    function fecharCaminho(){
+      const ov = document.getElementById('instalarOverlay');
+      if(ov) ov.classList.remove('show');
+    }
+
+    async function instalar(){
+      if(!convite){ abrirCaminho(); return; }
+      const evento = convite;
+      convite = null; // o navegador só aceita um prompt por evento
+      try {
+        evento.prompt();
+        const escolha = await evento.userChoice;
+        if(!escolha || escolha.outcome !== 'accepted'){
+          // Recusou agora: o botão continua ali, e no próximo clique
+          // mostramos o caminho pelo menu do navegador.
+        }
+      } catch(e){
+        console.warn('Instalação não pôde ser oferecida:', e);
+        abrirCaminho();
+      }
+      atualizar();
+    }
+    window.__instalarApp = instalar;
+
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      convite = e;
+      navegadorInstala = true;
+      atualizar();
+    });
+    window.addEventListener('appinstalled', () => {
+      convite = null;
+      navegadorInstala = false;
+      marcarInstalado();
+      atualizar();
+    });
+
+    botoes().forEach(b => b.addEventListener('click', e => { e.preventDefault(); instalar(); }));
+    const fechar = document.getElementById('instalarClose');
+    if(fechar) fechar.addEventListener('click', fecharCaminho);
+    const entendi = document.getElementById('instalarEntendi');
+    if(entendi) entendi.addEventListener('click', fecharCaminho);
+    const ov = document.getElementById('instalarOverlay');
+    if(ov) ov.addEventListener('click', e => { if(e.target === ov) fecharCaminho(); });
+
+    atualizar();
   })();
 
   // Registers the service worker so the app can be installed and opened offline.

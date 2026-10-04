@@ -88,9 +88,18 @@ outra pessoa continuar valendo por esquecimento.
 ### Pelo navegador (sem aviso nenhum)
 
 É o caminho mais simples, e serve pra maioria das pessoas do clube. Abra o site
-publicado no Chrome do celular e use **⋮ → Adicionar à tela inicial**. Fica com
-ícone próprio, abre em tela cheia e atualiza sozinho — não precisa reinstalar
-nada, nunca.
+publicado no celular: na tela de entrada aparece o botão **Instalar na tela
+inicial** (e, pra quem já está logado, o mesmo botão fica no cabeçalho do
+Início, ao lado do sino). Um toque e pronto. Fica com ícone próprio, abre em
+tela cheia e atualiza sozinho — não precisa reinstalar nada, nunca.
+
+O botão só aparece quando dá pra instalar: some dentro do app, some depois de
+instalado, e no iPhone — onde o Safari não deixa instalar por botão — ele abre
+uma janelinha com o caminho **Compartilhar → Adicionar à Tela de Início**.
+Se o navegador for antigo e não oferecer nada, o caminho manual continua sendo
+**⋮ → Instalar aplicativo**.
+
+Esse caminho não passa pelo Play Protect, então **não aparece aviso nenhum**.
 
 O app instalado (APK) carrega **esse mesmo site** (ver `server.url` em
 `capacitor.config.json`), então a diferença é pequena: o APK dá acesso a
@@ -102,10 +111,15 @@ status) e o atalho do navegador não.
 Todo APK instalado fora da Play Store faz o Android avisar que a fonte é
 desconhecida. Isso não dá pra evitar sem publicar na loja.
 
-O que **dá** pra evitar é o aviso mais feio, o de "app não seguro" do Play
-Protect: ele aparece principalmente em build de **depuração**, que o Android
-marca como depurável. Por isso o build pode ser assinado com uma chave própria
-e sair como **release**.
+O aviso do Play Protect — *"o Play Protect nunca viu um app desse
+desenvolvedor"* — **também não some com a assinatura**. Ele fala de reputação
+da chave: uma chave nova é, por definição, uma que o Google nunca viu. Só
+deixa de aparecer com o app publicado na Play Store (taxa única de US$ 25) ou
+instalando pelo navegador, acima.
+
+Assinar o build mesmo assim vale a pena: é obrigatório pra publicar na loja, e
+sem isso o APK sai como build de **depuração**, que o Android marca como
+depurável.
 
 #### Ligar a assinatura (uma vez só)
 
