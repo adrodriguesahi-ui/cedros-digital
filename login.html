@@ -33890,7 +33890,17 @@ const REQ_SUMMARIES = {
 
   async function applyLoggedInUser(authUser){
     if(!supa || !authUser || !authUser.email) return { found: false };
-    const { data: row } = await supa.from('usuarios').select('id, nome, papel, papeis_adicionais, acesso, aprovado, ativo, unidade, cargo, pode_pontuar_unidades, gerencia_almoxarifado, data_nascimento, classe_coordenada').eq('email', authUser.email).maybeSingle();
+    // Coluna nova no select do LOGIN é perigosa: banco sem ela devolve erro e
+    // ninguém entra no app — não só a área que usa a coluna. Então pede com
+    // ela e, se o banco ainda não tiver, repete sem. Mesma ideia do
+    // carregarPessoas da Tesouraria.
+    const COLUNAS_BASE = 'id, nome, papel, papeis_adicionais, acesso, aprovado, ativo, unidade, cargo, pode_pontuar_unidades, data_nascimento, classe_coordenada';
+    let { data: row, error: erroPerfil } = await supa.from('usuarios')
+      .select(COLUNAS_BASE + ', gerencia_almoxarifado').eq('email', authUser.email).maybeSingle();
+    if(erroPerfil){
+      console.warn('Perfil sem a coluna gerencia_almoxarifado; carregando sem ela:', erroPerfil.message);
+      ({ data: row } = await supa.from('usuarios').select(COLUNAS_BASE).eq('email', authUser.email).maybeSingle());
+    }
     if(!row || row.aprovado === false){ window.__currentUsuario = null; return { found: false, reason: 'aprovado' }; }
     if(row.ativo === false){ window.__currentUsuario = null; return { found: false, reason: 'ativo' }; }
     let access = row.acesso;
