@@ -4196,7 +4196,15 @@
     margin-bottom:12px;
     text-decoration:none;
     color:inherit;
-    border:1px solid var(--lg-border);
+    /* A foto do evento entra como background deste próprio card, e background-image
+       pinta por baixo da borda por padrão (border-box). Com a borda quase
+       transparente, o que aparecia na beirada era a foto crua: um contorno
+       colorido com o amarelo e o azul dos uniformes em volta do card, diferente
+       a cada evento. padding-box faz a foto parar na borda. */
+    background-clip:padding-box;
+    /* Branco em vez de var(--lg-border) de propósito: a borda aqui não separa dois
+       tons de fundo, ela fecha uma foto escura — e sobre foto, 9% some. */
+    border:1px solid rgba(255,255,255,0.16);
     /* Repetido aqui (além de .bd-banner-row) porque é o elemento que o dedo realmente
        toca — depender só do pai pra isso é inconsistente entre navegadores/toolkits
        de toque, e sem isso o próprio navegador pode "roubar" o gesto horizontal antes
@@ -34678,7 +34686,9 @@ const REQ_SUMMARIES = {
           banner.style.backgroundSize = 'cover';
           banner.style.backgroundPosition = 'center';
         } else {
-          banner.style.background = TAG_GRADIENT[tag] || TAG_GRADIENT.gray;
+          // backgroundImage, e não o atalho background: o atalho zera o
+          // background-clip do CSS e o degêde volta a vazar na borda.
+          banner.style.backgroundImage = TAG_GRADIENT[tag] || TAG_GRADIENT.gray;
         }
         banner._sourceCard = card;
 
