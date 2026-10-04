@@ -954,6 +954,53 @@
   }
   #view-planning .pl-event-card.pl-event-flash{ animation:pl-event-flash-pulse 1.4s ease; }
 
+  /* ---- Almoxarifado: itens e empréstimos ---- */
+  .am-chips{ display:flex; gap:7px; margin-bottom:12px; }
+  .am-chip{
+    flex:1; padding:9px 6px; border-radius:11px; cursor:pointer; font-family:inherit;
+    font-size:12px; font-weight:800; color:rgba(245,239,225,0.6);
+    border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04);
+  }
+  .am-chip.active{ color:var(--deep); background:var(--gold); border-color:var(--gold); }
+  .am-saldo{ display:flex; gap:8px; margin-bottom:10px; }
+  .am-saldo div{
+    flex:1; padding:10px 8px; border-radius:12px; text-align:center;
+    background:rgba(255,255,255,0.05);
+  }
+  .am-saldo b{ display:block; font-size:19px; color:var(--cream); line-height:1.2; }
+  .am-saldo span{ font-size:10.5px; font-weight:800; letter-spacing:0.04em; color:rgba(245,239,225,0.5); text-transform:uppercase; }
+  .am-saldo .am-fora b{ color:var(--gold); }
+  .am-saldo .am-zero b{ color:#FF6B5C; }
+  .am-devolver{
+    flex:none; padding:5px 11px; border-radius:9px; cursor:pointer; font-family:inherit;
+    font-size:11.5px; font-weight:800; color:var(--deep); background:var(--accent); border:none;
+  }
+  .am-linha-fora{ display:flex; align-items:center; gap:9px; padding:9px 10px; margin-bottom:6px;
+    border-radius:11px; background:rgba(212,175,55,0.10); border:1px solid rgba(212,175,55,0.25); }
+  .am-linha-fora .am-quem{ flex:1; min-width:0; }
+  .am-linha-fora b{ display:block; font-size:12.5px; color:var(--cream); }
+  .am-linha-fora span{ font-size:11px; color:rgba(245,239,225,0.55); }
+  .am-locais-btn{ width:100%; margin-bottom:12px; background:rgba(255,255,255,0.08); color:var(--cream); }
+  .am-grafico{ padding:13px 14px 9px; margin-bottom:12px; border-radius:16px; background:rgba(255,255,255,0.045); }
+  .am-graf-topo{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:10px; }
+  .am-graf-titulo{ font-size:11px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:rgba(245,239,225,0.55); }
+  .am-graf-total{ font-size:11.5px; font-weight:900; color:rgba(245,239,225,0.45); white-space:nowrap; }
+  /* Barra fina, ponta arredondada, trilho discreto e o número em texto neutro
+     — mesmo desenho do rank de unidades, pra não existirem dois estilos de
+     gráfico no mesmo app. */
+  .am-barra{
+    display:grid; grid-template-columns:96px 1fr 58px; align-items:center; gap:9px;
+    padding:5px 4px; border-radius:10px; cursor:pointer; border:1px solid transparent;
+    background:none; width:100%; font-family:inherit; text-align:left;
+  }
+  .am-barra.ativa{ border-color:rgba(212,175,55,0.45); background:rgba(212,175,55,0.08); }
+  .am-barra-nome{ font-size:12px; font-weight:800; color:var(--cream); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .am-barra-trilho{ height:10px; border-radius:6px; background:rgba(255,255,255,0.07); overflow:hidden; }
+  .am-barra-fill{ display:block; height:100%; border-radius:6px; background:var(--accent); }
+  .am-barra-val{ font-size:11.5px; font-weight:900; color:rgba(245,239,225,0.6); text-align:right; white-space:nowrap; }
+
+  .am-vazio{ padding:12px 0; text-align:center; }
+
   /* ---- Administração: distribuir unidades em lote ---- */
   .ad-un-btn{ width:100%; margin-bottom:12px; }
   .ad-un-chips{ display:flex; gap:7px; margin-bottom:10px; }
@@ -11952,36 +11999,35 @@
           <span class="pl-topbar-spacer" aria-hidden="true"></span>
         </div>
         <div class="pl-content" id="amContent">
-            <a href="#" class="pl-event-card am-card" data-name="Barracas de campanha" data-category="Acampamento" data-qty="6" data-status="Bom estado" data-status-color="green">
-              <div class="am-thumb">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
-              </div>
-              <div class="pl-event-body">
-                <h4 class="pl-event-title">Barracas de campanha</h4>
-                <p class="pl-event-meta">Acampamento · Qtd: 6</p>
-              </div>
-              <span class="pl-event-tag pl-tag-green">Bom estado</span>
-            </a>
-            <a href="#" class="pl-event-card am-card" data-name="Kit de primeiros socorros" data-category="Segurança" data-qty="3" data-status="Em falta" data-status-color="red">
-              <div class="am-thumb">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
-              </div>
-              <div class="pl-event-body">
-                <h4 class="pl-event-title">Kit de primeiros socorros</h4>
-                <p class="pl-event-meta">Segurança · Qtd: 3</p>
-              </div>
-              <span class="pl-event-tag pl-tag-red">Em falta</span>
-            </a>
-            <a href="#" class="pl-event-card am-card" data-name="Panelas grandes" data-category="Cozinha" data-qty="4" data-status="Regular" data-status-color="gold">
-              <div class="am-thumb">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
-              </div>
-              <div class="pl-event-body">
-                <h4 class="pl-event-title">Panelas grandes</h4>
-                <p class="pl-event-meta">Cozinha · Qtd: 4</p>
-              </div>
-              <span class="pl-event-tag pl-tag-gold">Regular</span>
-            </a>
+
+          <p class="pl-reminder-hint" id="amHint" style="margin-top:0;"></p>
+
+          <div class="sp-search-wrap" style="padding:0; margin-bottom:12px;">
+            <svg class="sp-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="pl-input sp-search-input" id="amBusca" placeholder="Buscar item...">
+          </div>
+
+          <!-- Quanto o clube tem por categoria. Uma série só, então uma cor
+               só e sem legenda: o nome está em cada linha. Tocar na barra
+               filtra a lista abaixo, que no celular vale mais que um balão de
+               informação que ninguém consegue manter aberto. -->
+          <div class="am-grafico" id="amGrafico" style="display:none;">
+            <div class="am-graf-topo">
+              <span class="am-graf-titulo">O que o clube tem, por categoria</span>
+              <span class="am-graf-total" id="amGrafTotal"></span>
+            </div>
+            <div id="amGrafBarras"></div>
+          </div>
+
+          <button type="button" class="pl-btn am-locais-btn" id="amLocaisBtn" style="display:none;">Lugares do clube</button>
+
+          <div class="am-chips" id="amFiltros">
+            <button type="button" class="am-chip active" data-am-filtro="todos">Todos</button>
+            <button type="button" class="am-chip" data-am-filtro="fora">Emprestados</button>
+            <button type="button" class="am-chip" data-am-filtro="atencao">Precisam atenção</button>
+          </div>
+
+          <div id="amLista"></div>
         </div>
       </div>
       <button type="button" class="pl-fab" id="amAddBtn" aria-label="Adicionar item">
@@ -12021,10 +12067,91 @@
             <option value="Danificado" data-color="red">Danificado</option>
             <option value="Em falta" data-color="red">Em falta</option>
           </select>
+
+          <label class="pl-field-label">Onde fica guardado</label>
+          <div class="pl-field-row">
+            <div class="pl-field-col pl-field-col-wide">
+              <select class="pl-input" id="amFieldLocal"></select>
+            </div>
+            <div class="pl-field-col">
+              <input type="text" class="pl-input" id="amFieldLocalDet" placeholder="Prateleira, caixa…" maxlength="60">
+            </div>
+          </div>
+          <p class="pl-reminder-hint" style="margin:-6px 0 10px;">O lugar vem da lista do clube; o detalhe é livre. Pra criar ou renomear lugares, use "Lugares do clube" na tela do almoxarifado.</p>
+
+          <label class="pl-field-label">Observação</label>
+          <input type="text" class="pl-input" id="amFieldObs" placeholder="Opcional (ex.: duas sem espeto)" maxlength="140">
+
           <div class="pl-modal-actions">
             <button type="button" class="pl-btn pl-btn-danger" id="amDeleteBtn" style="display:none;">Excluir</button>
             <button type="button" class="pl-btn pl-btn-primary" id="amSaveBtn">Salvar</button>
           </div>
+        </div>
+      </div>
+
+      <!-- Lugares do clube: cadastro curto, só nome. Fica fora do item pra
+           "sala 2" e "Sala II" não virarem dois lugares. -->
+      <div class="pl-modal-overlay" id="amLocaisOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Lugares do clube</h4>
+            <button type="button" class="pl-modal-close" id="amLocaisFechar" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <p class="pl-reminder-hint" style="margin-top:0;">Onde o material fica guardado: Sala 1, Armário de material, Depósito. Apagar um lugar não apaga os itens — eles só ficam sem lugar definido.</p>
+          <div class="pl-field-row">
+            <div class="pl-field-col pl-field-col-wide">
+              <input type="text" class="pl-input" id="amLocalNovo" placeholder="Nome do lugar" maxlength="60">
+            </div>
+            <div class="pl-field-col">
+              <button type="button" class="pl-btn pl-btn-primary" id="amLocalAddBtn" style="width:100%;">Adicionar</button>
+            </div>
+          </div>
+          <div class="un-mini-list" id="amLocaisLista"></div>
+        </div>
+      </div>
+
+      <!-- Detalhe do item: quem está com ele e o que fazer. Separado do
+           cadastro de propósito — retirar material é tarefa de quem usa, e
+           editar a ficha é de quem cuida do depósito. -->
+      <div class="pl-modal-overlay" id="amDetalheOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title" id="amDetTitulo">Item</h4>
+            <button type="button" class="pl-modal-close" id="amDetFechar" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          <div class="am-saldo" id="amDetSaldo"></div>
+          <p class="pl-reminder-hint" id="amDetInfo" style="margin-top:0;"></p>
+
+          <div class="sp-area-heading" style="margin-top:6px;">Está com</div>
+          <div class="un-mini-list" id="amDetFora"></div>
+
+          <div id="amRetiradaBloco">
+            <div class="sp-area-heading" style="margin-top:14px;">Registrar retirada</div>
+            <div class="pl-field-row">
+              <div class="pl-field-col pl-field-col-wide">
+                <label class="pl-field-label" style="margin-top:0;">Quem está levando</label>
+                <input type="text" class="pl-input" id="amRetPessoa" placeholder="Nome de quem leva" maxlength="80" list="amPessoasLista">
+                <datalist id="amPessoasLista"></datalist>
+              </div>
+              <div class="pl-field-col">
+                <label class="pl-field-label" style="margin-top:0;">Quantas</label>
+                <input type="number" class="pl-input" id="amRetQtd" min="1" value="1">
+              </div>
+            </div>
+            <label class="pl-field-label">Pra quê</label>
+            <input type="text" class="pl-input" id="amRetMotivo" placeholder="Ex.: Acampamento de Páscoa" maxlength="80">
+            <div class="pl-modal-actions">
+              <button type="button" class="pl-btn pl-btn-primary" id="amRetBtn">Registrar retirada</button>
+            </div>
+          </div>
+
+          <div class="sp-area-heading" style="margin-top:14px;">Histórico</div>
+          <div class="un-mini-list" id="amDetHistorico"></div>
         </div>
       </div>
     </section>
@@ -13427,6 +13554,18 @@
             </span>
           </label>
           <p class="pl-reminder-hint" style="margin:-10px 0 14px;">Libera o atalho "🏆 Pontuação" no hub de Unidades pra essa pessoa, independente do cargo ou papel dela.</p>
+
+          <label class="pl-reminder-toggle-row" for="adFieldAlmox" style="margin:14px 0;">
+            <span class="pl-reminder-toggle-text">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+              Cuida do Almoxarifado
+            </span>
+            <span class="pl-switch">
+              <input type="checkbox" id="adFieldAlmox">
+              <span class="pl-switch-track"><span class="pl-switch-thumb"></span></span>
+            </span>
+          </label>
+          <p class="pl-reminder-hint" style="margin:-10px 0 14px;">Pode cadastrar item, registrar retirada e dar baixa na devolução. Quem não tem isso continua consultando o almoxarifado normalmente.</p>
 
           <label class="pl-reminder-toggle-row" for="adFieldAtivo" style="margin:14px 0;">
             <span class="pl-reminder-toggle-text">
@@ -27992,30 +28131,521 @@
     }
   });
 
+  // ---------------------------------------------------------------------
   // Almoxarifado
-  setupSimpleListScreen({
-    prefix: 'am', cardClass: 'am-card', required: 'Name',
-    createTitle: 'Novo Item', editTitle: 'Editar Item',
-    fields: [
-      {key:'Name', dataKey:'name'}, {key:'Category', dataKey:'category', default:'Acampamento'},
-      {key:'Qty', dataKey:'qty', default:'0'}, {key:'Status', dataKey:'status', default:'Bom estado'}
-    ],
-    buildCard(data){
-      const statusOpt = document.querySelector('#amFieldStatus option[value="' + data.Status + '"]');
-      const color = statusOpt ? statusOpt.getAttribute('data-color') : 'gray';
-      const card = document.createElement('a');
-      card.href = '#'; card.className = 'pl-event-card am-card';
-      card.innerHTML =
-        '<div class="am-thumb"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>' +
-        '<div class="pl-event-body"><h4 class="pl-event-title"></h4><p class="pl-event-meta"></p></div>' +
-        '<span class="pl-event-tag pl-tag-' + color + '"></span>';
-      card.querySelector('.pl-event-title').textContent = data.Name;
-      card.querySelector('.pl-event-meta').textContent = data.Category + ' · Qtd: ' + (data.Qty || '0');
-      card.querySelector('.pl-event-tag').textContent = data.Status;
-      card.dataset.name = data.Name; card.dataset.category = data.Category; card.dataset.qty = data.Qty; card.dataset.status = data.Status;
-      return card;
+  //
+  // Era uma maquete: três itens escritos no HTML e um ajudante genérico que
+  // não gravava nada — cadastrar algo e recarregar perdia tudo. Agora item é
+  // linha no banco, e cada retirada é uma linha própria.
+  //
+  // O disponível NÃO é guardado: é a quantidade do item menos o que está
+  // fora. Guardar esse número dá errado na primeira vez que alguém esquece
+  // de dar baixa — aí o estoque mente e ninguém sabe desde quando.
+  // ---------------------------------------------------------------------
+  (function(){
+    const content = document.getElementById('amContent');
+    if(!content) return;
+
+    const lista = document.getElementById('amLista');
+    const hint = document.getElementById('amHint');
+    const busca = document.getElementById('amBusca');
+    const addBtn = document.getElementById('amAddBtn');
+
+    const overlay = document.getElementById('amModalOverlay');
+    const modalTitle = document.getElementById('amModalTitle');
+    const fName = document.getElementById('amFieldName');
+    const fCat = document.getElementById('amFieldCategory');
+    const fQtd = document.getElementById('amFieldQty');
+    const fEstado = document.getElementById('amFieldStatus');
+    const fLocal = document.getElementById('amFieldLocal');
+    const fLocalDet = document.getElementById('amFieldLocalDet');
+    const fObs = document.getElementById('amFieldObs');
+    const saveBtn = document.getElementById('amSaveBtn');
+    const deleteBtn = document.getElementById('amDeleteBtn');
+
+    const detOverlay = document.getElementById('amDetalheOverlay');
+    const detTitulo = document.getElementById('amDetTitulo');
+    const detSaldo = document.getElementById('amDetSaldo');
+    const detInfo = document.getElementById('amDetInfo');
+    const detFora = document.getElementById('amDetFora');
+    const detHist = document.getElementById('amDetHistorico');
+    const retBloco = document.getElementById('amRetiradaBloco');
+    const retPessoa = document.getElementById('amRetPessoa');
+    const retQtd = document.getElementById('amRetQtd');
+    const retMotivo = document.getElementById('amRetMotivo');
+    const retBtn = document.getElementById('amRetBtn');
+
+    let itens = [];
+    let emprestimos = [];
+    let locais = [];
+    let filtro = 'todos';
+    let categoriaFiltro = null;   // escolhida tocando numa barra do gráfico
+    let editando = null;   // item em edição no modal de cadastro
+    let aberto = null;     // item aberto no detalhe
+
+    const CORES = { 'Bom estado':'green', 'Regular':'gold', 'Danificado':'red', 'Em falta':'red' };
+
+    // O overlay precisa estar dentro da view que está na tela, senão herda o
+    // opacity:0 da view escondida e "abre" invisível. Mesma razão do
+    // mostrarNaViewAtiva usado nas outras áreas — que vive em IIFE vizinha e
+    // não chega até aqui.
+    function abrirNaViewAtiva(ov){
+      if(!ov) return;
+      const ativa = document.querySelector('.view.active');
+      if(ativa) ativa.appendChild(ov);
+      ov.classList.add('show');
     }
-  });
+
+    // Cada módulo deste arquivo tem o seu: os outros normalize() vivem dentro
+    // de IIFEs vizinhas e não chegam aqui.
+    function normalizar(t){
+      return (t || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function podeGerenciar(){
+      const u = window.__currentUsuario;
+      return !!(u && (u.gerenciaAlmoxarifado || (u.acesso && u.acesso.admin)));
+    }
+
+    function lugarDe(it){
+      const l = locais.find(x => x.id === it.local_id);
+      return [l && l.nome, it.local_detalhe].filter(Boolean).join(' · ');
+    }
+
+    const foraDe = id => emprestimos.filter(e => e.item_id === id && !e.devolvido_em);
+    const somaFora = id => foraDe(id).reduce((t, e) => t + (Number(e.quantidade) || 0), 0);
+    const disponivelDe = it => Math.max(0, (Number(it.quantidade) || 0) - somaFora(it.id));
+
+    function dataCurta(iso){
+      if(!iso) return '';
+      const d = new Date(iso);
+      return isNaN(d) ? '' : d.toLocaleDateString('pt-BR');
+    }
+
+    async function carregar(){
+      if(!supa){ lista.innerHTML = '<p class="pl-reminder-hint am-vazio">Sem conexão com o banco.</p>'; return; }
+      const [i, e, lo] = await Promise.all([
+        supa.from('almoxarifado_itens').select('*').order('nome'),
+        supa.from('almoxarifado_emprestimos').select('*').order('retirado_em', { ascending: false }),
+        supa.from('almoxarifado_locais').select('*').order('nome')
+      ]);
+      if(i.error){
+        const msg = i.error.message || '';
+        lista.innerHTML = '';
+        const p = document.createElement('p');
+        p.className = 'pl-reminder-hint am-vazio';
+        p.textContent = /does not exist|schema cache/i.test(msg)
+          ? 'O Almoxarifado ainda não foi criado no banco. Rode o SQL do almoxarifado (supabase/schema.sql) no Supabase.'
+          : 'Não consegui carregar o almoxarifado: ' + msg;
+        lista.appendChild(p);
+        return;
+      }
+      itens = i.data || [];
+      emprestimos = e.data || [];
+      locais = (lo && lo.data) || [];
+      pintar();
+    }
+
+    function pintar(){
+      if(!lista) return;
+      const termo = normalizar((busca && busca.value || '').trim());
+      const visiveis = itens.filter(it => {
+        if(categoriaFiltro && (it.categoria || '') !== categoriaFiltro) return false;
+        if(termo && !normalizar(it.nome + ' ' + (it.categoria || '') + ' ' + lugarDe(it)).includes(termo)) return false;
+        if(filtro === 'fora') return somaFora(it.id) > 0;
+        // "Precisam atenção": acabou o disponível, ou o estado pede conserto/compra.
+        if(filtro === 'atencao') return disponivelDe(it) === 0 || it.estado === 'Danificado' || it.estado === 'Em falta';
+        return true;
+      });
+
+      if(hint){
+        const totalFora = itens.reduce((t, it) => t + somaFora(it.id), 0);
+        hint.textContent = itens.length
+          ? (itens.length + (itens.length === 1 ? ' item cadastrado' : ' itens cadastrados') +
+             (totalFora ? ' · ' + totalFora + (totalFora === 1 ? ' unidade emprestada' : ' unidades emprestadas') : ' · nada emprestado') +
+             (podeGerenciar() ? '' : ' · você pode consultar, mas não alterar'))
+          : 'Nenhum item cadastrado ainda.';
+      }
+
+      pintarGrafico();
+
+      lista.innerHTML = '';
+      if(!visiveis.length){
+        const p = document.createElement('p');
+        p.className = 'pl-reminder-hint am-vazio';
+        p.textContent = categoriaFiltro ? 'Nenhum item em ' + categoriaFiltro + ' com esse filtro.'
+          : termo ? 'Nenhum item com esse nome.'
+          : (filtro === 'fora' ? 'Nada emprestado no momento.'
+            : filtro === 'atencao' ? 'Nenhum item pedindo atenção.'
+            : (podeGerenciar() ? 'Toque no + pra cadastrar o primeiro item.' : 'Nenhum item cadastrado ainda.'));
+        lista.appendChild(p);
+        return;
+      }
+
+      visiveis.forEach(it => {
+        const fora = somaFora(it.id);
+        const disp = disponivelDe(it);
+        const cor = CORES[it.estado] || 'gray';
+        const card = document.createElement('a');
+        card.href = '#'; card.className = 'pl-event-card am-card';
+        card.innerHTML =
+          '<div class="am-thumb"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>' +
+          '<div class="pl-event-body"><h4 class="pl-event-title"></h4><p class="pl-event-meta"></p></div>' +
+          '<span class="pl-event-tag pl-tag-' + cor + '"></span>';
+        card.querySelector('.pl-event-title').textContent = it.nome;
+        const partes = [it.categoria || 'Sem categoria', disp + ' de ' + (it.quantidade || 0) + ' disponíveis'];
+        if(fora) partes.push(fora + ' emprestad' + (fora === 1 ? 'a' : 'as'));
+        const onde = lugarDe(it);
+        if(onde) partes.push(onde);
+        card.querySelector('.pl-event-meta').textContent = partes.join(' · ');
+        card.querySelector('.pl-event-tag').textContent = it.estado || '—';
+        card.addEventListener('click', (ev) => { ev.preventDefault(); abrirDetalhe(it); });
+        lista.appendChild(card);
+      });
+    }
+
+    function pintarSelectLocais(selecionado){
+      if(!fLocal) return;
+      fLocal.innerHTML = '';
+      const nenhum = document.createElement('option');
+      nenhum.value = ''; nenhum.textContent = locais.length ? 'Sem lugar definido' : 'Nenhum lugar cadastrado';
+      fLocal.appendChild(nenhum);
+      locais.forEach(l => {
+        const o = document.createElement('option');
+        o.value = l.id; o.textContent = l.nome;
+        fLocal.appendChild(o);
+      });
+      fLocal.value = selecionado || '';
+    }
+
+    // Quanto o clube tem por categoria. Uma série só: uma cor, sem legenda (o
+    // nome está em cada linha) e o número em texto neutro, não na cor da barra.
+    function pintarGrafico(){
+      const graf = document.getElementById('amGrafico');
+      const barras = document.getElementById('amGrafBarras');
+      const totalEl = document.getElementById('amGrafTotal');
+      if(!graf || !barras) return;
+      if(!itens.length){ graf.style.display = 'none'; return; }
+      graf.style.display = '';
+
+      const porCat = {};
+      itens.forEach(it => {
+        const c = it.categoria || 'Sem categoria';
+        if(!porCat[c]) porCat[c] = { unidades: 0, itens: 0 };
+        porCat[c].unidades += Number(it.quantidade) || 0;
+        porCat[c].itens++;
+      });
+      const ordem = Object.keys(porCat).sort((a, b) => porCat[b].unidades - porCat[a].unidades);
+      const maior = Math.max(1, ...ordem.map(c => porCat[c].unidades));
+      const total = ordem.reduce((t, c) => t + porCat[c].unidades, 0);
+      if(totalEl) totalEl.textContent = total + (total === 1 ? ' unidade' : ' unidades');
+
+      barras.innerHTML = '';
+      ordem.forEach(cat => {
+        const d = porCat[cat];
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'am-barra' + (categoriaFiltro === cat ? ' ativa' : '');
+        b.innerHTML =
+          '<span class="am-barra-nome"></span>' +
+          '<span class="am-barra-trilho"><span class="am-barra-fill"></span></span>' +
+          '<span class="am-barra-val"></span>';
+        b.querySelector('.am-barra-nome').textContent = cat;
+        b.querySelector('.am-barra-fill').style.width = Math.round((d.unidades / maior) * 100) + '%';
+        b.querySelector('.am-barra-val').textContent = d.unidades;
+        b.title = cat + ': ' + d.unidades + ' unidades em ' + d.itens + (d.itens === 1 ? ' item' : ' itens');
+        // Tocar filtra a lista; tocar de novo desfaz. No celular isso vale mais
+        // que um balão de informação, que não se mantém aberto com o dedo.
+        b.addEventListener('click', () => {
+          categoriaFiltro = (categoriaFiltro === cat) ? null : cat;
+          pintar();
+        });
+        barras.appendChild(b);
+      });
+    }
+
+    // ---- lugares do clube ----
+    const locaisOverlay = document.getElementById('amLocaisOverlay');
+    const locaisLista = document.getElementById('amLocaisLista');
+    const locaisBtn = document.getElementById('amLocaisBtn');
+    const localNovo = document.getElementById('amLocalNovo');
+    const localAddBtn = document.getElementById('amLocalAddBtn');
+
+    function pintarLocais(){
+      if(!locaisLista) return;
+      locaisLista.innerHTML = '';
+      if(!locais.length){
+        const p = document.createElement('p');
+        p.className = 'un-empty-hint'; p.style.margin = '0';
+        p.textContent = 'Nenhum lugar cadastrado ainda.';
+        locaisLista.appendChild(p);
+        return;
+      }
+      locais.forEach(l => {
+        const quantos = itens.filter(it => it.local_id === l.id).length;
+        const linha = document.createElement('div');
+        linha.className = 'un-mini-row';
+        linha.innerHTML = '<div style="flex:1; min-width:0;"><b style="display:block; font-size:12.5px;"></b>' +
+          '<span style="font-size:11px; color:rgba(245,239,225,0.5);"></span></div>';
+        linha.querySelector('b').textContent = l.nome;
+        linha.querySelector('span').textContent = quantos
+          ? quantos + (quantos === 1 ? ' item guardado aqui' : ' itens guardados aqui')
+          : 'nenhum item aqui';
+        const x = document.createElement('button');
+        x.type = 'button'; x.className = 'am-devolver';
+        x.style.background = 'rgba(255,107,92,0.9)'; x.textContent = 'Excluir';
+        x.addEventListener('click', () => excluirLocal(l, quantos));
+        linha.appendChild(x);
+        locaisLista.appendChild(linha);
+      });
+    }
+
+    async function excluirLocal(l, quantos){
+      if(!supa) return;
+      const aviso = quantos
+        ? 'Excluir "' + l.nome + '"? ' + quantos + ' item(ns) ficam sem lugar definido — nenhum item é apagado.'
+        : 'Excluir o lugar "' + l.nome + '"?';
+      if(!confirm(aviso)) return;
+      const { error } = await supa.from('almoxarifado_locais').delete().eq('id', l.id);
+      if(error){ alert('Não consegui excluir o lugar: ' + error.message); return; }
+      await carregar();
+      pintarLocais();
+    }
+
+    if(localAddBtn) localAddBtn.addEventListener('click', async () => {
+      const nome = (localNovo.value || '').trim();
+      if(!nome){ localNovo.style.borderColor = '#FF6B5C'; return; }
+      localNovo.style.borderColor = '';
+      if(locais.some(l => normalizar(l.nome) === normalizar(nome))){
+        alert('Já existe um lugar com esse nome.');
+        return;
+      }
+      if(!supa) return;
+      localAddBtn.disabled = true;
+      const { error } = await supa.from('almoxarifado_locais').insert({ nome: nome });
+      localAddBtn.disabled = false;
+      if(error){ alert('Não consegui salvar o lugar: ' + error.message); return; }
+      localNovo.value = '';
+      await carregar();
+      pintarLocais();
+    });
+
+    if(locaisBtn) locaisBtn.addEventListener('click', () => { pintarLocais(); abrirNaViewAtiva(locaisOverlay); });
+    const locaisFechar = document.getElementById('amLocaisFechar');
+    if(locaisFechar) locaisFechar.addEventListener('click', () => locaisOverlay.classList.remove('show'));
+    if(locaisOverlay) locaisOverlay.addEventListener('click', (e) => { if(e.target === locaisOverlay) locaisOverlay.classList.remove('show'); });
+
+    // ---- cadastro do item ----
+    function abrirCadastro(item){
+      editando = item || null;
+      modalTitle.textContent = item ? 'Editar Item' : 'Novo Item';
+      deleteBtn.style.display = item ? '' : 'none';
+      fName.value = item ? item.nome : '';
+      fCat.value = (item && item.categoria) || 'Acampamento';
+      fQtd.value = item ? (item.quantidade != null ? item.quantidade : 0) : 0;
+      fEstado.value = (item && item.estado) || 'Bom estado';
+      pintarSelectLocais(item ? item.local_id : null);
+      fLocalDet.value = (item && item.local_detalhe) || '';
+      fObs.value = (item && item.observacao) || '';
+      overlay.classList.add('show');
+      setTimeout(() => fName.focus(), 150);
+    }
+    if(addBtn) addBtn.addEventListener('click', () => { if(podeGerenciar()) abrirCadastro(null); });
+    const closeBtn = document.getElementById('amModalClose');
+    if(closeBtn) closeBtn.addEventListener('click', () => overlay.classList.remove('show'));
+    overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.classList.remove('show'); });
+
+    if(saveBtn) saveBtn.addEventListener('click', async () => {
+      const nome = fName.value.trim();
+      if(!nome){ fName.style.borderColor = '#FF6B5C'; return; }
+      fName.style.borderColor = '';
+      if(!supa) return;
+      const linha = {
+        nome: nome, categoria: fCat.value, quantidade: Math.max(0, parseInt(fQtd.value, 10) || 0),
+        estado: fEstado.value, local_id: fLocal.value || null,
+        local_detalhe: fLocalDet.value.trim() || null, observacao: fObs.value.trim() || null
+      };
+      saveBtn.disabled = true;
+      let erro = null;
+      if(editando){
+        const r = await supa.from('almoxarifado_itens').update(linha).eq('id', editando.id);
+        erro = r.error;
+      } else {
+        linha.criado_por = (window.__currentUsuario && window.__currentUsuario.nome) || '';
+        const r = await supa.from('almoxarifado_itens').insert(linha);
+        erro = r.error;
+      }
+      saveBtn.disabled = false;
+      if(erro){ alert('Não consegui salvar o item: ' + erro.message); return; }
+      overlay.classList.remove('show');
+      await carregar();
+    });
+
+    if(deleteBtn) deleteBtn.addEventListener('click', async () => {
+      if(!editando || !supa) return;
+      const fora = somaFora(editando.id);
+      const aviso = fora
+        ? 'Este item tem ' + fora + ' unidade(s) emprestada(s). Excluir apaga o item e todo o histórico de empréstimos dele. Continuar?'
+        : 'Excluir "' + editando.nome + '" e o histórico dele?';
+      if(!confirm(aviso)) return;
+      const { error } = await supa.from('almoxarifado_itens').delete().eq('id', editando.id);
+      if(error){ alert('Não consegui excluir: ' + error.message); return; }
+      overlay.classList.remove('show');
+      await carregar();
+    });
+
+    // ---- detalhe e empréstimos ----
+    async function abrirDetalhe(item){
+      aberto = item;
+      detTitulo.textContent = item.nome;
+      pintarDetalhe();
+      abrirNaViewAtiva(detOverlay);
+      preencherPessoas();
+    }
+
+    function pintarDetalhe(){
+      if(!aberto) return;
+      const it = itens.find(x => x.id === aberto.id) || aberto;
+      aberto = it;
+      const fora = somaFora(it.id);
+      const disp = disponivelDe(it);
+      detSaldo.innerHTML =
+        '<div class="' + (disp === 0 ? 'am-zero' : '') + '"><b></b><span>Disponíveis</span></div>' +
+        '<div class="am-fora"><b></b><span>Emprestados</span></div>' +
+        '<div><b></b><span>Total</span></div>';
+      const bs = detSaldo.querySelectorAll('b');
+      bs[0].textContent = disp; bs[1].textContent = fora; bs[2].textContent = it.quantidade || 0;
+      const onde = lugarDe(it);
+      detInfo.textContent = [it.categoria, it.estado, onde ? 'Guardado em ' + onde : '', it.observacao]
+        .filter(Boolean).join(' · ');
+
+      // quem está com o material agora
+      const abertos = foraDe(it.id);
+      detFora.innerHTML = '';
+      if(!abertos.length){
+        const p = document.createElement('p');
+        p.className = 'un-empty-hint'; p.style.margin = '0';
+        p.textContent = 'Está tudo no depósito.';
+        detFora.appendChild(p);
+      } else {
+        abertos.forEach(e => {
+          const linha = document.createElement('div');
+          linha.className = 'am-linha-fora';
+          linha.innerHTML = '<div class="am-quem"><b></b><span></span></div>';
+          linha.querySelector('b').textContent = e.pessoa_nome + ' · ' + e.quantidade;
+          linha.querySelector('span').textContent =
+            [e.motivo, 'desde ' + dataCurta(e.retirado_em)].filter(Boolean).join(' · ');
+          if(podeGerenciar()){
+            const b = document.createElement('button');
+            b.type = 'button'; b.className = 'am-devolver'; b.textContent = 'Devolver';
+            b.addEventListener('click', () => devolver(e));
+            linha.appendChild(b);
+          }
+          detFora.appendChild(linha);
+        });
+      }
+
+      // histórico: o que já voltou
+      const fechados = emprestimos.filter(e => e.item_id === it.id && e.devolvido_em);
+      detHist.innerHTML = '';
+      if(!fechados.length){
+        const p = document.createElement('p');
+        p.className = 'un-empty-hint'; p.style.margin = '0';
+        p.textContent = 'Nenhuma devolução registrada ainda.';
+        detHist.appendChild(p);
+      } else {
+        fechados.slice(0, 15).forEach(e => {
+          const linha = document.createElement('div');
+          linha.className = 'un-mini-row';
+          linha.innerHTML = '<div style="flex:1; min-width:0;"><b style="display:block; font-size:12.5px;"></b>' +
+            '<span style="font-size:11px; color:rgba(245,239,225,0.5);"></span></div>';
+          linha.querySelector('b').textContent = e.pessoa_nome + ' · ' + e.quantidade;
+          linha.querySelector('span').textContent =
+            [e.motivo, dataCurta(e.retirado_em) + ' a ' + dataCurta(e.devolvido_em)].filter(Boolean).join(' · ');
+          detHist.appendChild(linha);
+        });
+      }
+
+      // Sem material disponível não dá pra retirar — e dizer o motivo evita a
+      // pessoa achar que o botão quebrou.
+      if(retBloco){
+        const pode = podeGerenciar();
+        retBloco.style.display = pode ? '' : 'none';
+        if(pode){
+          retBtn.disabled = disp <= 0;
+          retBtn.textContent = disp > 0 ? 'Registrar retirada' : 'Nada disponível pra retirar';
+          retQtd.max = disp;
+        }
+      }
+    }
+
+    async function preencherPessoas(){
+      const dl = document.getElementById('amPessoasLista');
+      if(!dl || dl.children.length || !supa) return;
+      const { data } = await supa.from('usuarios').select('nome').order('nome');
+      (data || []).forEach(u => {
+        const o = document.createElement('option');
+        o.value = u.nome;
+        dl.appendChild(o);
+      });
+    }
+
+    if(retBtn) retBtn.addEventListener('click', async () => {
+      if(!aberto || !supa) return;
+      const pessoa = retPessoa.value.trim();
+      if(!pessoa){ retPessoa.style.borderColor = '#FF6B5C'; return; }
+      retPessoa.style.borderColor = '';
+      const qtd = Math.max(1, parseInt(retQtd.value, 10) || 1);
+      const disp = disponivelDe(aberto);
+      if(qtd > disp){ alert('Só há ' + disp + ' disponível(is) pra retirar.'); return; }
+      retBtn.disabled = true;
+      const { error } = await supa.from('almoxarifado_emprestimos').insert({
+        item_id: aberto.id, pessoa_nome: pessoa, quantidade: qtd,
+        motivo: retMotivo.value.trim() || null,
+        retirado_por: (window.__currentUsuario && window.__currentUsuario.nome) || ''
+      });
+      retBtn.disabled = false;
+      if(error){ alert('Não consegui registrar a retirada: ' + error.message); return; }
+      retPessoa.value = ''; retMotivo.value = ''; retQtd.value = 1;
+      await carregar();
+      pintarDetalhe();
+    });
+
+    async function devolver(emp){
+      if(!supa) return;
+      if(!confirm('Registrar a devolução de ' + emp.quantidade + ' · ' + emp.pessoa_nome + '?')) return;
+      const { error } = await supa.from('almoxarifado_emprestimos').update({
+        devolvido_em: new Date().toISOString(),
+        devolvido_por: (window.__currentUsuario && window.__currentUsuario.nome) || ''
+      }).eq('id', emp.id);
+      if(error){ alert('Não consegui registrar a devolução: ' + error.message); return; }
+      await carregar();
+      pintarDetalhe();
+    }
+
+    const detFechar = document.getElementById('amDetFechar');
+    if(detFechar) detFechar.addEventListener('click', () => detOverlay.classList.remove('show'));
+    detOverlay.addEventListener('click', (e) => { if(e.target === detOverlay) detOverlay.classList.remove('show'); });
+
+    if(busca) busca.addEventListener('input', pintar);
+    document.querySelectorAll('#amFiltros .am-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#amFiltros .am-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        filtro = chip.getAttribute('data-am-filtro');
+        pintar();
+      });
+    });
+
+    // Quem não gerencia continua vendo tudo — só não ganha o botão de criar.
+    window.__amAplicarAcesso = function(){
+      if(addBtn) addBtn.style.display = podeGerenciar() ? '' : 'none';
+      if(locaisBtn) locaisBtn.style.display = podeGerenciar() ? '' : 'none';
+      pintar();
+    };
+    window.__amAbrir = function(){ window.__amAplicarAcesso(); carregar(); };
+    document.addEventListener('cedros:loggedin', () => { if(document.getElementById('view-storage')) carregar(); });
+  })();
 
   // Manuais
   setupSimpleListScreen({
@@ -32049,6 +32679,7 @@ const REQ_SUMMARIES = {
     let ALL_PAPEIS = []; // nomes de todos os papéis, carregado em loadRoles()
     const fieldCargo = document.getElementById('adFieldCargo');
     const fieldCanScore = document.getElementById('adFieldCanScore');
+    const fieldAlmox = document.getElementById('adFieldAlmox');
     const fieldBirthdate = document.getElementById('adFieldBirthdate');
     const fieldAtivo = document.getElementById('adFieldAtivo');
     const fieldClasse = document.getElementById('adFieldClasse');
@@ -32147,6 +32778,7 @@ const REQ_SUMMARIES = {
       card.dataset.roleLabel = row.papel;
       card.dataset.cargo = row.cargo || '';
       card.dataset.canScore = row.pode_pontuar_unidades ? '1' : '';
+      card.dataset.almox = row.gerencia_almoxarifado ? '1' : '';
       card.dataset.birthdate = row.data_nascimento || '';
       card.dataset.ativo = row.ativo === false ? '0' : '1';
       card.dataset.classe = row.classe || '';
@@ -32471,6 +33103,7 @@ const REQ_SUMMARIES = {
       fieldRole.value = card ? card.dataset.role : (fieldRole.options[0] ? fieldRole.options[0].value : '');
       fieldCargo.value = card ? (card.dataset.cargo || '') : '';
       fieldCanScore.checked = !!(card && card.dataset.canScore === '1');
+      if(fieldAlmox) fieldAlmox.checked = !!(card && card.dataset.almox === '1');
       fieldBirthdate.value = card ? birthdateIsoToBr(card.dataset.birthdate) : '';
       fieldBirthdate.style.borderColor = '';
       fieldAtivo.checked = card ? card.dataset.ativo !== '0' : true;
@@ -32501,6 +33134,7 @@ const REQ_SUMMARIES = {
         papel: fieldRole.value,
         cargo: fieldCargo.value.trim() || null,
         pode_pontuar_unidades: fieldCanScore.checked,
+        gerencia_almoxarifado: !!(fieldAlmox && fieldAlmox.checked),
         data_nascimento: birthdateIso,
         ativo: fieldAtivo.checked,
         classe: fieldClasse.value || null,
@@ -33136,6 +33770,7 @@ const REQ_SUMMARIES = {
       if(target === 'view-units' && typeof window.__unShowHub === 'function') window.__unShowHub();
       if(target === 'view-event-org' && typeof window.__eoShowHub === 'function') window.__eoShowHub();
       if(target === 'view-missions' && typeof window.__msRefresh === 'function') window.__msRefresh();
+      if(target === 'view-storage' && typeof window.__amAbrir === 'function') window.__amAbrir();
       showView(target);
     });
   });
@@ -33255,13 +33890,23 @@ const REQ_SUMMARIES = {
 
   async function applyLoggedInUser(authUser){
     if(!supa || !authUser || !authUser.email) return { found: false };
-    const { data: row } = await supa.from('usuarios').select('id, nome, papel, papeis_adicionais, acesso, aprovado, ativo, unidade, cargo, pode_pontuar_unidades, data_nascimento, classe_coordenada').eq('email', authUser.email).maybeSingle();
+    // Coluna nova no select do LOGIN é perigosa: banco sem ela devolve erro e
+    // ninguém entra no app — não só a área que usa a coluna. Então pede com
+    // ela e, se o banco ainda não tiver, repete sem. Mesma ideia do
+    // carregarPessoas da Tesouraria.
+    const COLUNAS_BASE = 'id, nome, papel, papeis_adicionais, acesso, aprovado, ativo, unidade, cargo, pode_pontuar_unidades, data_nascimento, classe_coordenada';
+    let { data: row, error: erroPerfil } = await supa.from('usuarios')
+      .select(COLUNAS_BASE + ', gerencia_almoxarifado').eq('email', authUser.email).maybeSingle();
+    if(erroPerfil){
+      console.warn('Perfil sem a coluna gerencia_almoxarifado; carregando sem ela:', erroPerfil.message);
+      ({ data: row } = await supa.from('usuarios').select(COLUNAS_BASE).eq('email', authUser.email).maybeSingle());
+    }
     if(!row || row.aprovado === false){ window.__currentUsuario = null; return { found: false, reason: 'aprovado' }; }
     if(row.ativo === false){ window.__currentUsuario = null; return { found: false, reason: 'ativo' }; }
     let access = row.acesso;
     if(!access) access = await mergePapeisAccess(row.papel, row.papeis_adicionais);
     if(window.__applyAccessToDashboard) window.__applyAccessToDashboard(access, row.nome);
-    window.__currentUsuario = { id: row.id, nome: row.nome, email: authUser.email, papel: row.papel, papeisAdicionais: row.papeis_adicionais || [], unidade: row.unidade, cargo: row.cargo, podePontuarUnidades: !!row.pode_pontuar_unidades, data_nascimento: row.data_nascimento, classeCoordenada: row.classe_coordenada || null };
+    window.__currentUsuario = { id: row.id, nome: row.nome, email: authUser.email, papel: row.papel, papeisAdicionais: row.papeis_adicionais || [], unidade: row.unidade, cargo: row.cargo, podePontuarUnidades: !!row.pode_pontuar_unidades, gerenciaAlmoxarifado: !!row.gerencia_almoxarifado, data_nascimento: row.data_nascimento, classeCoordenada: row.classe_coordenada || null };
     window.__currentAuthUserId = authUser.id;
     document.dispatchEvent(new CustomEvent('cedros:loggedin', { detail: window.__currentUsuario }));
     if(window.__applyGreetingUnit) window.__applyGreetingUnit(window.__currentUsuario);
@@ -33410,7 +34055,8 @@ const REQ_SUMMARIES = {
       window.__currentUsuario = Object.assign({}, usuarioReal, {
         papel: papel,
         classeCoordenada: papel === 'Coordenador de Classes' ? (classeSelect.value || null) : null,
-        podePontuarUnidades: false
+        podePontuarUnidades: false,
+        gerenciaAlmoxarifado: false
       });
 
       overlay.classList.remove('show');
