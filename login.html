@@ -980,6 +980,25 @@
   .am-linha-fora .am-quem{ flex:1; min-width:0; }
   .am-linha-fora b{ display:block; font-size:12.5px; color:var(--cream); }
   .am-linha-fora span{ font-size:11px; color:rgba(245,239,225,0.55); }
+  .am-locais-btn{ width:100%; margin-bottom:12px; background:rgba(255,255,255,0.08); color:var(--cream); }
+  .am-grafico{ padding:13px 14px 9px; margin-bottom:12px; border-radius:16px; background:rgba(255,255,255,0.045); }
+  .am-graf-topo{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:10px; }
+  .am-graf-titulo{ font-size:11px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:rgba(245,239,225,0.55); }
+  .am-graf-total{ font-size:11.5px; font-weight:900; color:rgba(245,239,225,0.45); white-space:nowrap; }
+  /* Barra fina, ponta arredondada, trilho discreto e o número em texto neutro
+     — mesmo desenho do rank de unidades, pra não existirem dois estilos de
+     gráfico no mesmo app. */
+  .am-barra{
+    display:grid; grid-template-columns:96px 1fr 58px; align-items:center; gap:9px;
+    padding:5px 4px; border-radius:10px; cursor:pointer; border:1px solid transparent;
+    background:none; width:100%; font-family:inherit; text-align:left;
+  }
+  .am-barra.ativa{ border-color:rgba(212,175,55,0.45); background:rgba(212,175,55,0.08); }
+  .am-barra-nome{ font-size:12px; font-weight:800; color:var(--cream); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .am-barra-trilho{ height:10px; border-radius:6px; background:rgba(255,255,255,0.07); overflow:hidden; }
+  .am-barra-fill{ display:block; height:100%; border-radius:6px; background:var(--accent); }
+  .am-barra-val{ font-size:11.5px; font-weight:900; color:rgba(245,239,225,0.6); text-align:right; white-space:nowrap; }
+
   .am-vazio{ padding:12px 0; text-align:center; }
 
   /* ---- Administração: distribuir unidades em lote ---- */
@@ -11988,6 +12007,20 @@
             <input type="text" class="pl-input sp-search-input" id="amBusca" placeholder="Buscar item...">
           </div>
 
+          <!-- Quanto o clube tem por categoria. Uma série só, então uma cor
+               só e sem legenda: o nome está em cada linha. Tocar na barra
+               filtra a lista abaixo, que no celular vale mais que um balão de
+               informação que ninguém consegue manter aberto. -->
+          <div class="am-grafico" id="amGrafico" style="display:none;">
+            <div class="am-graf-topo">
+              <span class="am-graf-titulo">O que o clube tem, por categoria</span>
+              <span class="am-graf-total" id="amGrafTotal"></span>
+            </div>
+            <div id="amGrafBarras"></div>
+          </div>
+
+          <button type="button" class="pl-btn am-locais-btn" id="amLocaisBtn" style="display:none;">Lugares do clube</button>
+
           <div class="am-chips" id="amFiltros">
             <button type="button" class="am-chip active" data-am-filtro="todos">Todos</button>
             <button type="button" class="am-chip" data-am-filtro="fora">Emprestados</button>
@@ -12036,7 +12069,15 @@
           </select>
 
           <label class="pl-field-label">Onde fica guardado</label>
-          <input type="text" class="pl-input" id="amFieldLocal" placeholder="Ex.: Sala 2, prateleira de cima" maxlength="80">
+          <div class="pl-field-row">
+            <div class="pl-field-col pl-field-col-wide">
+              <select class="pl-input" id="amFieldLocal"></select>
+            </div>
+            <div class="pl-field-col">
+              <input type="text" class="pl-input" id="amFieldLocalDet" placeholder="Prateleira, caixa…" maxlength="60">
+            </div>
+          </div>
+          <p class="pl-reminder-hint" style="margin:-6px 0 10px;">O lugar vem da lista do clube; o detalhe é livre. Pra criar ou renomear lugares, use "Lugares do clube" na tela do almoxarifado.</p>
 
           <label class="pl-field-label">Observação</label>
           <input type="text" class="pl-input" id="amFieldObs" placeholder="Opcional (ex.: duas sem espeto)" maxlength="140">
@@ -12045,6 +12086,29 @@
             <button type="button" class="pl-btn pl-btn-danger" id="amDeleteBtn" style="display:none;">Excluir</button>
             <button type="button" class="pl-btn pl-btn-primary" id="amSaveBtn">Salvar</button>
           </div>
+        </div>
+      </div>
+
+      <!-- Lugares do clube: cadastro curto, só nome. Fica fora do item pra
+           "sala 2" e "Sala II" não virarem dois lugares. -->
+      <div class="pl-modal-overlay" id="amLocaisOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Lugares do clube</h4>
+            <button type="button" class="pl-modal-close" id="amLocaisFechar" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <p class="pl-reminder-hint" style="margin-top:0;">Onde o material fica guardado: Sala 1, Armário de material, Depósito. Apagar um lugar não apaga os itens — eles só ficam sem lugar definido.</p>
+          <div class="pl-field-row">
+            <div class="pl-field-col pl-field-col-wide">
+              <input type="text" class="pl-input" id="amLocalNovo" placeholder="Nome do lugar" maxlength="60">
+            </div>
+            <div class="pl-field-col">
+              <button type="button" class="pl-btn pl-btn-primary" id="amLocalAddBtn" style="width:100%;">Adicionar</button>
+            </div>
+          </div>
+          <div class="un-mini-list" id="amLocaisLista"></div>
         </div>
       </div>
 
@@ -28094,6 +28158,7 @@
     const fQtd = document.getElementById('amFieldQty');
     const fEstado = document.getElementById('amFieldStatus');
     const fLocal = document.getElementById('amFieldLocal');
+    const fLocalDet = document.getElementById('amFieldLocalDet');
     const fObs = document.getElementById('amFieldObs');
     const saveBtn = document.getElementById('amSaveBtn');
     const deleteBtn = document.getElementById('amDeleteBtn');
@@ -28112,7 +28177,9 @@
 
     let itens = [];
     let emprestimos = [];
+    let locais = [];
     let filtro = 'todos';
+    let categoriaFiltro = null;   // escolhida tocando numa barra do gráfico
     let editando = null;   // item em edição no modal de cadastro
     let aberto = null;     // item aberto no detalhe
 
@@ -28140,6 +28207,11 @@
       return !!(u && (u.gerenciaAlmoxarifado || (u.acesso && u.acesso.admin)));
     }
 
+    function lugarDe(it){
+      const l = locais.find(x => x.id === it.local_id);
+      return [l && l.nome, it.local_detalhe].filter(Boolean).join(' · ');
+    }
+
     const foraDe = id => emprestimos.filter(e => e.item_id === id && !e.devolvido_em);
     const somaFora = id => foraDe(id).reduce((t, e) => t + (Number(e.quantidade) || 0), 0);
     const disponivelDe = it => Math.max(0, (Number(it.quantidade) || 0) - somaFora(it.id));
@@ -28152,9 +28224,10 @@
 
     async function carregar(){
       if(!supa){ lista.innerHTML = '<p class="pl-reminder-hint am-vazio">Sem conexão com o banco.</p>'; return; }
-      const [i, e] = await Promise.all([
+      const [i, e, lo] = await Promise.all([
         supa.from('almoxarifado_itens').select('*').order('nome'),
-        supa.from('almoxarifado_emprestimos').select('*').order('retirado_em', { ascending: false })
+        supa.from('almoxarifado_emprestimos').select('*').order('retirado_em', { ascending: false }),
+        supa.from('almoxarifado_locais').select('*').order('nome')
       ]);
       if(i.error){
         const msg = i.error.message || '';
@@ -28169,6 +28242,7 @@
       }
       itens = i.data || [];
       emprestimos = e.data || [];
+      locais = (lo && lo.data) || [];
       pintar();
     }
 
@@ -28176,7 +28250,8 @@
       if(!lista) return;
       const termo = normalizar((busca && busca.value || '').trim());
       const visiveis = itens.filter(it => {
-        if(termo && !normalizar(it.nome + ' ' + (it.categoria || '') + ' ' + (it.local || '')).includes(termo)) return false;
+        if(categoriaFiltro && (it.categoria || '') !== categoriaFiltro) return false;
+        if(termo && !normalizar(it.nome + ' ' + (it.categoria || '') + ' ' + lugarDe(it)).includes(termo)) return false;
         if(filtro === 'fora') return somaFora(it.id) > 0;
         // "Precisam atenção": acabou o disponível, ou o estado pede conserto/compra.
         if(filtro === 'atencao') return disponivelDe(it) === 0 || it.estado === 'Danificado' || it.estado === 'Em falta';
@@ -28192,11 +28267,14 @@
           : 'Nenhum item cadastrado ainda.';
       }
 
+      pintarGrafico();
+
       lista.innerHTML = '';
       if(!visiveis.length){
         const p = document.createElement('p');
         p.className = 'pl-reminder-hint am-vazio';
-        p.textContent = termo ? 'Nenhum item com esse nome.'
+        p.textContent = categoriaFiltro ? 'Nenhum item em ' + categoriaFiltro + ' com esse filtro.'
+          : termo ? 'Nenhum item com esse nome.'
           : (filtro === 'fora' ? 'Nada emprestado no momento.'
             : filtro === 'atencao' ? 'Nenhum item pedindo atenção.'
             : (podeGerenciar() ? 'Toque no + pra cadastrar o primeiro item.' : 'Nenhum item cadastrado ainda.'));
@@ -28217,13 +28295,145 @@
         card.querySelector('.pl-event-title').textContent = it.nome;
         const partes = [it.categoria || 'Sem categoria', disp + ' de ' + (it.quantidade || 0) + ' disponíveis'];
         if(fora) partes.push(fora + ' emprestad' + (fora === 1 ? 'a' : 'as'));
-        if(it.local) partes.push(it.local);
+        const onde = lugarDe(it);
+        if(onde) partes.push(onde);
         card.querySelector('.pl-event-meta').textContent = partes.join(' · ');
         card.querySelector('.pl-event-tag').textContent = it.estado || '—';
         card.addEventListener('click', (ev) => { ev.preventDefault(); abrirDetalhe(it); });
         lista.appendChild(card);
       });
     }
+
+    function pintarSelectLocais(selecionado){
+      if(!fLocal) return;
+      fLocal.innerHTML = '';
+      const nenhum = document.createElement('option');
+      nenhum.value = ''; nenhum.textContent = locais.length ? 'Sem lugar definido' : 'Nenhum lugar cadastrado';
+      fLocal.appendChild(nenhum);
+      locais.forEach(l => {
+        const o = document.createElement('option');
+        o.value = l.id; o.textContent = l.nome;
+        fLocal.appendChild(o);
+      });
+      fLocal.value = selecionado || '';
+    }
+
+    // Quanto o clube tem por categoria. Uma série só: uma cor, sem legenda (o
+    // nome está em cada linha) e o número em texto neutro, não na cor da barra.
+    function pintarGrafico(){
+      const graf = document.getElementById('amGrafico');
+      const barras = document.getElementById('amGrafBarras');
+      const totalEl = document.getElementById('amGrafTotal');
+      if(!graf || !barras) return;
+      if(!itens.length){ graf.style.display = 'none'; return; }
+      graf.style.display = '';
+
+      const porCat = {};
+      itens.forEach(it => {
+        const c = it.categoria || 'Sem categoria';
+        if(!porCat[c]) porCat[c] = { unidades: 0, itens: 0 };
+        porCat[c].unidades += Number(it.quantidade) || 0;
+        porCat[c].itens++;
+      });
+      const ordem = Object.keys(porCat).sort((a, b) => porCat[b].unidades - porCat[a].unidades);
+      const maior = Math.max(1, ...ordem.map(c => porCat[c].unidades));
+      const total = ordem.reduce((t, c) => t + porCat[c].unidades, 0);
+      if(totalEl) totalEl.textContent = total + (total === 1 ? ' unidade' : ' unidades');
+
+      barras.innerHTML = '';
+      ordem.forEach(cat => {
+        const d = porCat[cat];
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'am-barra' + (categoriaFiltro === cat ? ' ativa' : '');
+        b.innerHTML =
+          '<span class="am-barra-nome"></span>' +
+          '<span class="am-barra-trilho"><span class="am-barra-fill"></span></span>' +
+          '<span class="am-barra-val"></span>';
+        b.querySelector('.am-barra-nome').textContent = cat;
+        b.querySelector('.am-barra-fill').style.width = Math.round((d.unidades / maior) * 100) + '%';
+        b.querySelector('.am-barra-val').textContent = d.unidades;
+        b.title = cat + ': ' + d.unidades + ' unidades em ' + d.itens + (d.itens === 1 ? ' item' : ' itens');
+        // Tocar filtra a lista; tocar de novo desfaz. No celular isso vale mais
+        // que um balão de informação, que não se mantém aberto com o dedo.
+        b.addEventListener('click', () => {
+          categoriaFiltro = (categoriaFiltro === cat) ? null : cat;
+          pintar();
+        });
+        barras.appendChild(b);
+      });
+    }
+
+    // ---- lugares do clube ----
+    const locaisOverlay = document.getElementById('amLocaisOverlay');
+    const locaisLista = document.getElementById('amLocaisLista');
+    const locaisBtn = document.getElementById('amLocaisBtn');
+    const localNovo = document.getElementById('amLocalNovo');
+    const localAddBtn = document.getElementById('amLocalAddBtn');
+
+    function pintarLocais(){
+      if(!locaisLista) return;
+      locaisLista.innerHTML = '';
+      if(!locais.length){
+        const p = document.createElement('p');
+        p.className = 'un-empty-hint'; p.style.margin = '0';
+        p.textContent = 'Nenhum lugar cadastrado ainda.';
+        locaisLista.appendChild(p);
+        return;
+      }
+      locais.forEach(l => {
+        const quantos = itens.filter(it => it.local_id === l.id).length;
+        const linha = document.createElement('div');
+        linha.className = 'un-mini-row';
+        linha.innerHTML = '<div style="flex:1; min-width:0;"><b style="display:block; font-size:12.5px;"></b>' +
+          '<span style="font-size:11px; color:rgba(245,239,225,0.5);"></span></div>';
+        linha.querySelector('b').textContent = l.nome;
+        linha.querySelector('span').textContent = quantos
+          ? quantos + (quantos === 1 ? ' item guardado aqui' : ' itens guardados aqui')
+          : 'nenhum item aqui';
+        const x = document.createElement('button');
+        x.type = 'button'; x.className = 'am-devolver';
+        x.style.background = 'rgba(255,107,92,0.9)'; x.textContent = 'Excluir';
+        x.addEventListener('click', () => excluirLocal(l, quantos));
+        linha.appendChild(x);
+        locaisLista.appendChild(linha);
+      });
+    }
+
+    async function excluirLocal(l, quantos){
+      if(!supa) return;
+      const aviso = quantos
+        ? 'Excluir "' + l.nome + '"? ' + quantos + ' item(ns) ficam sem lugar definido — nenhum item é apagado.'
+        : 'Excluir o lugar "' + l.nome + '"?';
+      if(!confirm(aviso)) return;
+      const { error } = await supa.from('almoxarifado_locais').delete().eq('id', l.id);
+      if(error){ alert('Não consegui excluir o lugar: ' + error.message); return; }
+      await carregar();
+      pintarLocais();
+    }
+
+    if(localAddBtn) localAddBtn.addEventListener('click', async () => {
+      const nome = (localNovo.value || '').trim();
+      if(!nome){ localNovo.style.borderColor = '#FF6B5C'; return; }
+      localNovo.style.borderColor = '';
+      if(locais.some(l => normalizar(l.nome) === normalizar(nome))){
+        alert('Já existe um lugar com esse nome.');
+        return;
+      }
+      if(!supa) return;
+      localAddBtn.disabled = true;
+      const { error } = await supa.from('almoxarifado_locais').insert({ nome: nome });
+      localAddBtn.disabled = false;
+      if(error){ alert('Não consegui salvar o lugar: ' + error.message); return; }
+      localNovo.value = '';
+      await carregar();
+      pintarLocais();
+    });
+
+    if(locaisBtn) locaisBtn.addEventListener('click', () => { pintarLocais(); abrirNaViewAtiva(locaisOverlay); });
+    const locaisFechar = document.getElementById('amLocaisFechar');
+    if(locaisFechar) locaisFechar.addEventListener('click', () => locaisOverlay.classList.remove('show'));
+    if(locaisOverlay) locaisOverlay.addEventListener('click', (e) => { if(e.target === locaisOverlay) locaisOverlay.classList.remove('show'); });
 
     // ---- cadastro do item ----
     function abrirCadastro(item){
@@ -28234,7 +28444,8 @@
       fCat.value = (item && item.categoria) || 'Acampamento';
       fQtd.value = item ? (item.quantidade != null ? item.quantidade : 0) : 0;
       fEstado.value = (item && item.estado) || 'Bom estado';
-      fLocal.value = (item && item.local) || '';
+      pintarSelectLocais(item ? item.local_id : null);
+      fLocalDet.value = (item && item.local_detalhe) || '';
       fObs.value = (item && item.observacao) || '';
       overlay.classList.add('show');
       setTimeout(() => fName.focus(), 150);
@@ -28251,7 +28462,8 @@
       if(!supa) return;
       const linha = {
         nome: nome, categoria: fCat.value, quantidade: Math.max(0, parseInt(fQtd.value, 10) || 0),
-        estado: fEstado.value, local: fLocal.value.trim() || null, observacao: fObs.value.trim() || null
+        estado: fEstado.value, local_id: fLocal.value || null,
+        local_detalhe: fLocalDet.value.trim() || null, observacao: fObs.value.trim() || null
       };
       saveBtn.disabled = true;
       let erro = null;
@@ -28303,7 +28515,8 @@
         '<div><b></b><span>Total</span></div>';
       const bs = detSaldo.querySelectorAll('b');
       bs[0].textContent = disp; bs[1].textContent = fora; bs[2].textContent = it.quantidade || 0;
-      detInfo.textContent = [it.categoria, it.estado, it.local ? 'Guardado em ' + it.local : '', it.observacao]
+      const onde = lugarDe(it);
+      detInfo.textContent = [it.categoria, it.estado, onde ? 'Guardado em ' + onde : '', it.observacao]
         .filter(Boolean).join(' · ');
 
       // quem está com o material agora
@@ -28427,6 +28640,7 @@
     // Quem não gerencia continua vendo tudo — só não ganha o botão de criar.
     window.__amAplicarAcesso = function(){
       if(addBtn) addBtn.style.display = podeGerenciar() ? '' : 'none';
+      if(locaisBtn) locaisBtn.style.display = podeGerenciar() ? '' : 'none';
       pintar();
     };
     window.__amAbrir = function(){ window.__amAplicarAcesso(); carregar(); };

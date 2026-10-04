@@ -1429,15 +1429,28 @@ create policy p_forca_partidas on forca_partidas for all using(true) with check(
 -- disponível é calculado, não guardado. Número guardado desencontra do
 -- real na primeira vez que alguém esquece de dar baixa.
 -- ---------------------------------------------------------------------
+-- Os lugares do clube (Sala 1, Armário de material, Depósito). Tabela e não
+-- texto livre no item porque "sala 2" e "Sala II" virariam dois lugares, e aí
+-- "o que tem na sala 2" nunca fecha. O detalhe fino (prateleira, caixa, gaveta)
+-- continua livre no item, que é onde varia de verdade.
+create table if not exists almoxarifado_locais (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null unique,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists almoxarifado_itens (
   id uuid primary key default gen_random_uuid(),
   nome text not null,
   categoria text,
   quantidade int not null default 0 check (quantidade >= 0),
   estado text,
-  -- Onde fica guardado: "Sala 2, prateleira de cima". Texto livre de
-  -- propósito, porque cada clube organiza o depósito do seu jeito.
-  local text,
+  -- Onde fica guardado, em dois níveis: o lugar vem da lista de locais e o
+  -- detalhe é livre ("prateleira de cima", "caixa 3"). on delete set null:
+  -- apagar um lugar não pode levar o item junto — o item continua existindo,
+  -- só fica sem lugar definido.
+  local_id uuid references almoxarifado_locais(id) on delete set null,
+  local_detalhe text,
   observacao text,
   criado_por text,
   created_at timestamptz not null default now()
@@ -1467,8 +1480,12 @@ create index if not exists almoxarifado_emprestimos_item_idx on almoxarifado_emp
 create index if not exists almoxarifado_emprestimos_abertos_idx
   on almoxarifado_emprestimos(item_id) where devolvido_em is null;
 
+alter table almoxarifado_locais enable row level security;
 alter table almoxarifado_itens enable row level security;
 alter table almoxarifado_emprestimos enable row level security;
+
+drop policy if exists p_almoxarifado_locais on almoxarifado_locais;
+create policy p_almoxarifado_locais on almoxarifado_locais for all using(true) with check(true);
 
 drop policy if exists p_almoxarifado_itens on almoxarifado_itens;
 create policy p_almoxarifado_itens on almoxarifado_itens for all using(true) with check(true);
