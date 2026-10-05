@@ -19073,9 +19073,30 @@
     };
     const REQ_TEXTOS = {};
 
+    // Uma linha no banco cobre só os campos que ela realmente preencheu; o resto
+    // continua vindo do catálogo. Antes a linha substituía o catálogo inteiro, e
+    // uma linha gravada só pra guardar a posição (modo Ordenar) levava junto uma
+    // cópia do texto — que congelava, e nenhuma correção no catálogo chegava mais
+    // na tela.
+    function mesclarComPadrao(padrao, salvo){
+      if(!salvo) return padrao || null;
+      if(!padrao) return salvo;
+      const escolhe = (a, b) => (a == null ? b : a);
+      return {
+        titulo: escolhe(salvo.titulo, padrao.titulo) || '',
+        subtitulo: escolhe(salvo.subtitulo, padrao.subtitulo) || '',
+        descricao: escolhe(salvo.descricao, padrao.descricao),
+        observacao: escolhe(salvo.observacao, padrao.observacao) || '',
+        modo: escolhe(salvo.modo, padrao.modo) === 'um' ? 'um' : 'todos',
+        area: escolhe(salvo.area, padrao.area) || '',
+        criado: !!salvo.criado,
+        oculto: !!salvo.oculto,
+        ordem: salvo.ordem == null ? null : salvo.ordem
+      };
+    }
     function textoDoRequisito(className, titulo){
       const chave = requisitoKey(className, titulo);
-      return REQ_TEXTOS[chave] || REQ_TEXTOS_PADRAO[chave] || null;
+      return mesclarComPadrao(REQ_TEXTOS_PADRAO[chave], REQ_TEXTOS[chave]);
     }
 
     // Enunciado com "a) b) c)" no meio do parágrafo fica ilegível na tela do
@@ -19149,12 +19170,16 @@
       if(error){ console.error('Erro ao carregar textos de requisitos:', error.message); return; }
       Object.keys(REQ_TEXTOS).forEach(k => delete REQ_TEXTOS[k]);
       (data || []).forEach(r => {
+        // null é guardado como null de propósito: significa "não definido aqui,
+        // usa o catálogo". '' significa "o Coordenador apagou de propósito".
+        // Virar '' na carga apagava a diferença — ver mesclarComPadrao.
         REQ_TEXTOS[requisitoKey(r.classe, r.requisito_titulo)] = {
-          titulo: r.titulo || '', subtitulo: r.subtitulo || '',
-          // null = usa a descrição do catálogo; '' = o Coordenador apagou de propósito.
-          descricao: r.descricao == null ? null : r.descricao, observacao: r.observacao || '',
-          modo: r.subitens_modo === 'um' ? 'um' : 'todos',
-          area: r.area || '',
+          titulo: r.titulo == null ? null : r.titulo,
+          subtitulo: r.subtitulo == null ? null : r.subtitulo,
+          descricao: r.descricao == null ? null : r.descricao,
+          observacao: r.observacao == null ? null : r.observacao,
+          modo: r.subitens_modo == null ? null : (r.subitens_modo === 'um' ? 'um' : 'todos'),
+          area: r.area == null ? null : r.area,
           criado: !!r.criado, oculto: !!r.oculto,
           ordem: r.ordem == null ? null : r.ordem
         };
@@ -22261,16 +22286,12 @@
         const atual = REQ_TEXTOS[k];
         if(atual && atual.ordem === i + 1) continue;
         const linha = { classe: classe, requisito_titulo: chave, ordem: i + 1, atualizado_por: usuario };
-        // Sem linha no banco, leva o texto padrão junto — senão a linha nova,
-        // só com a posição, apagaria o título/subtítulo do cartão.
+        // Só a posição. Copiar o texto padrão pra cá era o que congelava o
+        // catálogo no banco: depois de corrigido o catálogo, a cópia velha
+        // continuava ganhando. Os campos em branco agora significam "usa o
+        // catálogo" (ver mesclarComPadrao).
         if(!atual){
-          const t = textoDoRequisito(classe, chave) || {};
-          linha.titulo = t.titulo || null;
-          linha.subtitulo = t.subtitulo || null;
-          linha.observacao = t.observacao || null;
-          linha.subitens_modo = t.modo === 'um' ? 'um' : 'todos';
-          linha.area = t.area || null;
-          REQ_TEXTOS[k] = Object.assign({}, t, { ordem: i + 1 });
+          REQ_TEXTOS[k] = { ordem: i + 1 };
         } else {
           atual.ordem = i + 1;
         }
