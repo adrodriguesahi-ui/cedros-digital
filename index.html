@@ -18646,21 +18646,24 @@
     // os dados são as regras do banco.
     let cartoesDoInstrutor = null;
 
-    function soVeOsCartoesDele(){
+    function papeisDoUsuario(){
       const u = window.__currentUsuario;
-      if(!u) return false;
-      const papeis = [u.papel].concat(u.papeisAdicionais || []);
-      // Quem responde pelo clube continua vendo tudo. Coordenador de Classes
-      // também: ele acompanha os outros cartões em leitura (ver canManageStudents).
-      const mandaEmTudo = ['Administrador', 'Diretoria', 'Diretoria Executiva', 'Coordenador de Classes'];
-      if(papeis.some(p => mandaEmTudo.indexOf(p) !== -1)) return false;
-      return papeis.indexOf('Instrutores') !== -1;
+      return u ? [u.papel].concat(u.papeisAdicionais || []) : [];
+    }
+
+    // Quem responde pelo clube continua vendo tudo. Coordenador de Classes
+    // também: ele acompanha os outros cartões em leitura (ver canManageStudents).
+    // Qualquer outro papel — Diretoria inclusive — que esteja na equipe de algum
+    // cartão vira instrutor daquele cartão e só enxerga ele.
+    function veTodosOsCartoes(){
+      const mandaEmTudo = ['Administrador', 'Diretoria Executiva', 'Coordenador de Classes'];
+      return papeisDoUsuario().some(p => mandaEmTudo.indexOf(p) !== -1);
     }
 
     async function carregarCartoesDoInstrutor(){
       cartoesDoInstrutor = null;
       const u = window.__currentUsuario;
-      if(!supa || !u || !u.id || !soVeOsCartoesDele()) return;
+      if(!supa || !u || !u.id || veTodosOsCartoes()) return;
       const { data, error } = await supa.from('classe_instrutores')
         .select('classe').eq('usuario_id', u.id);
       if(error){
@@ -18670,8 +18673,12 @@
         console.warn('Não consegui ver de quais cartões você é instrutor:', error.message);
         return;
       }
-      cartoesDoInstrutor = new Set((data || []).map(r => r.classe).filter(Boolean));
+      const cartoes = (data || []).map(r => r.classe).filter(Boolean);
+      // Fora de equipe: só o papel Instrutores fica sem cartão (com o aviso do
+      // hub); os demais papéis seguem vendo a lista toda.
+      if(cartoes.length || papeisDoUsuario().indexOf('Instrutores') !== -1) cartoesDoInstrutor = new Set(cartoes);
     }
+    window.__clPodeVerCartao = classe => !cartoesDoInstrutor || cartoesDoInstrutor.has(classe);
 
     function aplicarCartoesVisiveis(){
       let visiveis = 0;
@@ -22910,7 +22917,11 @@
     }
 
     function populateClasses(){
-      const rows = Array.from(document.querySelectorAll('#view-classes .cl-hub-row[data-open-class]'));
+      // Instrutor só planeja os cartões que ele enxerga em Classes Regulares.
+      const podeVer = window.__clPodeVerCartao || (() => true);
+      const rows = Array.from(document.querySelectorAll('#view-classes .cl-hub-row[data-open-class]'))
+        .filter(row => podeVer(row.getAttribute('data-open-class')));
+      if(classe && !podeVer(classe)) classe = null;
       classSelect.innerHTML = '';
       rows.forEach(row => {
         const nome = row.getAttribute('data-open-class');
