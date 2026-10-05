@@ -34329,11 +34329,17 @@ const REQ_SUMMARIES = {
       options: { data: { full_name: values.fullname } }
     });
     if(error){
+      // "email rate limit exceeded" é o limite do envio de e-mail do Supabase,
+      // não culpa de quem está se cadastrando. Em inglês e cru, a mensagem só
+      // assusta.
+      if(/rate limit/i.test(error.message)){
+        return { error: 'O envio de e-mails do sistema atingiu o limite desta hora. Tente de novo mais tarde ou peça pra administração do clube criar seu acesso.' };
+      }
       return { error: /registered|exists/i.test(error.message) ? 'Este e-mail já está cadastrado.' : 'Não foi possível criar a conta: ' + error.message };
     }
     // Registra o pedido de acesso como pendente — só aparece no app depois que
     // um admin aprovar em Administração → Aprovações Pendentes.
-    await supa.from('usuarios').upsert({
+    const { error: erroFicha } = await supa.from('usuarios').upsert({
       nome: values.fullname.trim(),
       email: values.emailSignup.trim(),
       unidade: values.unidade,
@@ -34341,6 +34347,17 @@ const REQ_SUMMARIES = {
       aprovado: false,
       data_nascimento: values.birthdate || null
     }, { onConflict: 'email', ignoreDuplicates: true });
+    // A conta existe, mas o pedido não chegou na lista de aprovação. Dizer isso é
+    // melhor que mandar a pessoa esperar uma liberação que ninguém vai ver
+    // aparecer.
+    if(erroFicha){
+      await supa.auth.signOut();
+      return { error: 'A conta foi criada, mas não consegui registrar seu pedido: ' + erroFicha.message + '. Avise a administração do clube.' };
+    }
+    // Sem a confirmação por e-mail, o signUp já devolve sessão — a pessoa ficaria
+    // logada numa conta que a diretoria ainda nem aprovou, e no próximo acesso
+    // levaria um "cadastro não aprovado" sem entender de onde veio. Encerra aqui.
+    await supa.auth.signOut();
     showView('view-success');
   }, 'signupAuthError');
 
