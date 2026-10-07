@@ -10457,6 +10457,18 @@
             </span>
           </label>
 
+          <!-- Só nos requisitos que pedem uma especialidade: escolhe a área e a
+               especialidade vem da lista do Manual de Especialidades
+               (SPECIALTY_DB). A escolha entra na 1ª linha do resumo abaixo.
+               Ver prepararBlocoEspecialidade() no script. -->
+          <div id="clEspecBloco" style="display:none;">
+            <label class="pl-field-label">Área da especialidade</label>
+            <select class="pl-input" id="clEspecArea"></select>
+            <label class="pl-field-label">Especialidade</label>
+            <select class="pl-input" id="clEspecNome" disabled></select>
+            <p class="pl-reminder-hint" id="clEspecHint">Escolha a área pra ver as especialidades do Manual. A escolhida vai pro resumo abaixo.</p>
+          </div>
+
           <label class="pl-field-label" id="clFieldResumoLabel">Resumo do que foi feito</label>
           <textarea class="pl-input" id="clFieldResumo" rows="3" maxlength="500" placeholder="Ex.: acampou duas noites no sítio, montou a barraca sozinho e cozinhou no fogo de chão."></textarea>
           <p class="pl-reminder-hint" id="clResumoHint">Fica guardado na ficha do desbravador junto com o comprovante.</p>
@@ -20755,6 +20767,72 @@
       });
     }
 
+    // ----- Especialidade do requisito: área → lista do Manual de Especialidades -----
+    // Nos requisitos que pedem uma especialidade, escolher a área mostra as
+    // especialidades dela (SPECIALTY_DB) e a escolhida entra na 1ª linha do
+    // resumo ("Especialidade: Nome (Área)"), que já é gravado com o status.
+    const especBloco = document.getElementById('clEspecBloco');
+    const especArea = document.getElementById('clEspecArea');
+    const especNome = document.getElementById('clEspecNome');
+    const ESPEC_PREFIXO = 'Especialidade: ';
+
+    function requisitoPedeEspecialidade(card, texto){
+      const base = [card.dataset.title, texto && texto.titulo, texto && texto.subtitulo, card.dataset.desc].join(' ');
+      return /especialidade/i.test(base);
+    }
+    function especNoResumo(){
+      const linha = (fieldResumo ? fieldResumo.value : '').split('\n')[0];
+      if(linha.indexOf(ESPEC_PREFIXO) !== 0) return null;
+      const resto = linha.slice(ESPEC_PREFIXO.length);
+      const i = resto.lastIndexOf(' (');
+      if(i === -1 || resto.slice(-1) !== ')') return { nome: resto, area: '' };
+      return { nome: resto.slice(0, i), area: resto.slice(i + 2, -1) };
+    }
+    function opcaoEspec(valor, rotulo){
+      const o = document.createElement('option');
+      o.value = valor;
+      o.textContent = rotulo;
+      return o;
+    }
+    function preencherEspecNomes(area, escolhida){
+      const db = window.__SPECIALTY_DB || {};
+      const lista = (area && db[area]) ? db[area] : [];
+      especNome.innerHTML = '';
+      especNome.appendChild(opcaoEspec('', lista.length ? 'Escolha a especialidade…' : 'Escolha a área primeiro'));
+      lista.forEach(n => especNome.appendChild(opcaoEspec(n, n)));
+      especNome.disabled = !lista.length;
+      especNome.value = (escolhida && lista.indexOf(escolhida) !== -1) ? escolhida : '';
+    }
+    function gravarEspecNoResumo(){
+      if(!fieldResumo) return;
+      const linhas = fieldResumo.value.split('\n');
+      if(linhas[0].indexOf(ESPEC_PREFIXO) === 0) linhas.shift();
+      if(especNome.value) linhas.unshift(ESPEC_PREFIXO + especNome.value + ' (' + especArea.value + ')');
+      fieldResumo.value = linhas.join('\n');
+      fieldResumo.style.borderColor = '';
+    }
+    function prepararBlocoEspecialidade(card, texto){
+      if(!especBloco) return;
+      const db = window.__SPECIALTY_DB;
+      const pede = !!db && requisitoPedeEspecialidade(card, texto);
+      especBloco.style.display = pede ? '' : 'none';
+      if(!pede) return;
+      const atual = especNoResumo();
+      especArea.innerHTML = '';
+      especArea.appendChild(opcaoEspec('', 'Escolha a área…'));
+      Object.keys(db).forEach(a => especArea.appendChild(opcaoEspec(a, a)));
+      // Já escolhida antes → volta como estava; senão, se a área do requisito
+      // tem o mesmo nome de uma área do Manual, já vem marcada.
+      const areaInicial = (atual && db[atual.area]) ? atual.area : (db[card.dataset.area] ? card.dataset.area : '');
+      especArea.value = areaInicial;
+      preencherEspecNomes(areaInicial, atual ? atual.nome : '');
+    }
+    if(especArea) especArea.addEventListener('change', () => {
+      preencherEspecNomes(especArea.value, '');
+      gravarEspecNoResumo();
+    });
+    if(especNome) especNome.addEventListener('change', gravarEspecNoResumo);
+
     function openStatusPick(card){
       statusPickCard = card;
       const texto = textoDoRequisito(currentClass, card.dataset.title);
@@ -20794,6 +20872,7 @@
         fieldResumo.maxLength = Math.max(500, fieldResumo.value.length);
         fieldResumo.rows = fieldResumo.value.indexOf('\n') !== -1 ? Math.min(10, fieldResumo.value.split('\n').length + 2) : 3;
       }
+      prepararBlocoEspecialidade(card, texto);
       pintarLivrosDoRequisito(card);
       // Só quem gerencia a classe define o que exige comprovação.
       if(reqExigirRow) reqExigirRow.style.display = canManageStudents(currentClass) ? '' : 'none';
@@ -29148,6 +29227,9 @@
     "Habilidades Domésticas": ["Arte Culinária","Arte Culinária - Avançado","Comidas Típicas","Congelamento de Alimentos","Costura Básica","Cuidado de Bebês","Cuidados da Casa","Desidratação de Alimentos","Orçamento Familiar","Panificação","Produção de Pizza","Técnicas de Fazer Conserva","Técnicas de Lavanderia"],
     "Mestrados": ["Mestrado em ADRA","Mestrado em Aquática","Mestrado em Artes e Habilidades Manuais","Mestrado em Atividades Agrícolas","Mestrado em Atividades Profissionais","Mestrado em Atividades Recreativas","Mestrado em Botânica","Mestrado em Ciência e Tecnologia","Mestrado em Ecologia","Mestrado em Ensinos Bíblicos","Mestrado em Esportes","Mestrado em Habilidades Domésticas","Mestrado em Saúde","Mestrado em Testificação","Mestrado em Vida Campestre","Mestrado em Zoologia"],
   };
+  // Os cartões de classe (Classes Regulares) usam a mesma lista pra definir a
+  // especialidade de um requisito. Lido na hora de abrir o requisito.
+  window.__SPECIALTY_DB = SPECIALTY_DB;
 
   // Resumos de requisitos (texto próprio, não copiado do manual oficial) por especialidade.
   // Running collection of { "Specialty Name": "one-line requirement summary" }
