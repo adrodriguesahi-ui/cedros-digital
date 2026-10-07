@@ -18238,7 +18238,9 @@
           else { contagem.todo++; }
         });
         return {
-          titulo: titulo,
+          // Título como o Coordenador deixou no cartão (reescrito), igual ao que
+          // aparece em "Requisitos de <aluno>"; a conta continua pela chave.
+          titulo: tituloExibicao(className, titulo),
           concluiram: concluiram,
           alunos: students.length,
           pct: students.length ? Math.round((concluiram / students.length) * 100) : 0
