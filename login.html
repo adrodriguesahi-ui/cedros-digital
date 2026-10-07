@@ -13621,6 +13621,20 @@
             <p class="pl-reminder-hint">Como Líder, essa pessoa também monta o cronograma de aulas do cartão em Planejamento de Classes — Instrutor e Associado só ficam disponíveis pra escalar em cada aula.</p>
           </div>
 
+          <!-- Instrutor/Líder/Associado que também cumpre requisitos do cartão:
+               ligado, a pessoa aparece como aluno em Classes Regulares; desligado,
+               é só equipe. Ver syncDesbravadorFromUsuario() e save(). -->
+          <div id="adFieldClasseAlunoWrap" style="display:none;">
+            <label class="pl-reminder-toggle-row" for="adFieldClasseAluno" style="margin:14px 0 6px;">
+              <span class="pl-reminder-toggle-text">Também é aluno deste cartão</span>
+              <span class="pl-switch">
+                <input type="checkbox" id="adFieldClasseAluno">
+                <span class="pl-switch-track"><span class="pl-switch-thumb"></span></span>
+              </span>
+            </label>
+            <p class="pl-reminder-hint" id="adFieldClasseAlunoHint">Ligado: aparece na lista de alunos do cartão pra marcar requisitos. Desligado: só instrutor, sem requisitos.</p>
+          </div>
+
           <div id="adFieldClasseCoordWrap" style="display:none;">
             <label class="pl-field-label">Classe que coordena</label>
             <select class="pl-input" id="adFieldClasseCoord">
@@ -19412,6 +19426,17 @@
       await loadClassDataFromSupabase();
     }
     window.__syncDesbravadorFromUsuario = syncDesbravadorFromUsuario;
+
+    // Contrário de syncDesbravadorFromUsuario: tira da lista de alunos quem
+    // passou a ser só instrutor do cartão (o progresso dele nos requisitos
+    // some junto — a administração confirma antes, ver save() em Usuários).
+    async function removeDesbravadorFromUsuario(usuario){
+      if(!supa || !usuario) return;
+      const { error } = await supa.from('desbravadores').delete().eq('usuario_id', usuario.id);
+      if(error){ console.error('Erro ao tirar da lista de alunos:', error.message); return; }
+      await loadClassDataFromSupabase();
+    }
+    window.__removeDesbravadorFromUsuario = removeDesbravadorFromUsuario;
 
     // Espelha syncDesbravadorFromUsuario, mas pra quem NÃO é Desbravador (ver
     // adFieldClasseFuncao em Administração): em vez de virar aluno rastreado,
@@ -33004,6 +33029,9 @@ const REQ_SUMMARIES = {
 
     const ROLE_VISIBILITY = {}; // nome do papel -> permissoes_padrao (carregado da tabela `papeis`)
     const ROLE_COLORS = {};     // nome do papel -> cor da etiqueta
+    const fieldClasseAluno = document.getElementById('adFieldClasseAluno');
+    const fieldClasseAlunoWrap = document.getElementById('adFieldClasseAlunoWrap');
+    let ALUNO_POR_USUARIO = {}; // usuario_id -> true se também é aluno rastreado (linha em desbravadores)
     let FUNCAO_POR_USUARIO = {}; // usuario_id -> funcao em classe_instrutores (carregado em loadUsers)
     window.__ROLE_VISIBILITY = ROLE_VISIBILITY;
 
@@ -33094,6 +33122,7 @@ const REQ_SUMMARIES = {
       card.dataset.ativo = row.ativo === false ? '0' : '1';
       card.dataset.classe = row.classe || '';
       card.dataset.classeFuncao = FUNCAO_POR_USUARIO[row.id] || 'instrutor';
+      card.dataset.classeAluno = ALUNO_POR_USUARIO[row.id] ? '1' : '';
       card.dataset.classeCoord = row.classe_coordenada || '';
       card.dataset.papeisAdicionais = JSON.stringify(extras);
       if(row.acesso) card.dataset.access = JSON.stringify(row.acesso);
@@ -33153,13 +33182,16 @@ const REQ_SUMMARIES = {
 
     async function loadUsers(){
       if(!supa){ showMessage('Configure SUPABASE_URL e SUPABASE_ANON_KEY no início do script para carregar os usuários (ver supabase/schema.sql).'); return; }
-      const [{ data, error }, { data: instrutores }] = await Promise.all([
+      const [{ data, error }, { data: instrutores }, { data: alunos }] = await Promise.all([
         supa.from('usuarios').select('*').eq('aprovado', true).order('nome'),
-        supa.from('classe_instrutores').select('usuario_id, funcao')
+        supa.from('classe_instrutores').select('usuario_id, funcao'),
+        supa.from('desbravadores').select('usuario_id').not('usuario_id', 'is', null)
       ]);
       if(error){ showMessage('Não foi possível carregar os usuários: ' + error.message); return; }
       FUNCAO_POR_USUARIO = {};
       (instrutores || []).forEach(v => { FUNCAO_POR_USUARIO[v.usuario_id] = v.funcao || 'instrutor'; });
+      ALUNO_POR_USUARIO = {};
+      (alunos || []).forEach(v => { ALUNO_POR_USUARIO[v.usuario_id] = true; });
       content.innerHTML = '';
       if(!data.length){ showMessage('Nenhum usuário cadastrado ainda.'); return; }
       data.forEach(row => content.appendChild(buildCard(row)));
@@ -33442,14 +33474,16 @@ const REQ_SUMMARIES = {
       if(fieldClasseCoordWrap) fieldClasseCoordWrap.style.display = (fieldRole.value === 'Coordenador de Classes') ? '' : 'none';
       const ehEquipe = fieldRole.value && fieldRole.value !== 'Desbravador';
       if(fieldClasseFuncaoWrap) fieldClasseFuncaoWrap.style.display = ehEquipe ? '' : 'none';
+      if(fieldClasseAlunoWrap) fieldClasseAlunoWrap.style.display = (ehEquipe && fieldClasse.value) ? '' : 'none';
       if(fieldClasseHint){
         fieldClasseHint.textContent = ehEquipe
-          ? 'Ao definir, essa pessoa passa a fazer parte da equipe desse cartão (Instrutores do cartão, em Planejamento de Classes) — não vira aluno rastreado.'
+          ? 'Ao definir, essa pessoa passa a fazer parte da equipe desse cartão (Instrutores do cartão, em Planejamento de Classes) — por padrão só como instrutor; ligue "Também é aluno deste cartão" pra ela cumprir requisitos também.'
           : 'Ao definir, essa pessoa já aparece pronta em Classes Regulares → esse cartão, pra marcar requisitos — sem precisar cadastrar de novo lá.';
       }
       renderPapeisAdicionaisList();
     }
     fieldRole.addEventListener('change', updateClasseCoordVisibility);
+    fieldClasse.addEventListener('change', updateClasseCoordVisibility);
 
     function openModal(mode, card){
       editingCard = card || null;
@@ -33485,6 +33519,7 @@ const REQ_SUMMARIES = {
       fieldClasse.value = card ? (card.dataset.classe || '') : '';
       if(fieldClasseFuncao) fieldClasseFuncao.value = card ? (card.dataset.classeFuncao || 'instrutor') : 'instrutor';
       if(fieldClasseCoord) fieldClasseCoord.value = card ? (card.dataset.classeCoord || '') : '';
+      if(fieldClasseAluno) fieldClasseAluno.checked = !!(card && card.dataset.classeAluno === '1');
       updateClasseCoordVisibility();
       renderPapeisAdicionaisList(card && card.dataset.papeisAdicionais ? JSON.parse(card.dataset.papeisAdicionais) : []);
       userAccessBtn.style.display = (mode === 'edit') ? '' : 'none';
@@ -33502,6 +33537,14 @@ const REQ_SUMMARIES = {
         if(!birthdateIso){ fieldBirthdate.style.borderColor = '#FF6B5C'; return; }
       }
       if(!supa) return;
+      // Equipe (não Desbravador) com cartão definido: "Também é aluno" decide se
+      // ela aparece em Classes Regulares pra cumprir requisitos.
+      const equipeComCartao = fieldRole.value !== 'Desbravador' && !!fieldClasse.value;
+      const querSerAluno = equipeComCartao && !!(fieldClasseAluno && fieldClasseAluno.checked);
+      const eraAluno = !!(editingCard && editingCard.dataset.classeAluno === '1');
+      if(equipeComCartao && eraAluno && !querSerAluno){
+        if(!confirm('Deixar de ser aluno apaga o progresso dessa pessoa nos requisitos do cartão. Continuar?')) return;
+      }
       const payload = {
         nome: fieldName.value.trim(),
         email: fieldEmail.value.trim(),
@@ -33520,16 +33563,26 @@ const REQ_SUMMARIES = {
       const { data, error } = await supa.from('usuarios').upsert(payload).select().single();
       if(error){ alert('Não foi possível salvar: ' + error.message); return; }
       // Desbravador vira aluno rastreado (desbravadores); qualquer outro papel
-      // com Classe definida vira equipe do cartão (classe_instrutores) — nunca
-      // os dois ao mesmo tempo, ver updateClasseCoordVisibility() acima.
+      // com Classe definida vira equipe do cartão (classe_instrutores) e só
+      // também é aluno se "Também é aluno deste cartão" estiver ligado.
       if(fieldRole.value === 'Desbravador'){
         if(data.classe && window.__syncDesbravadorFromUsuario) await window.__syncDesbravadorFromUsuario(data);
         await supa.from('classe_instrutores').delete().eq('usuario_id', data.id);
         delete FUNCAO_POR_USUARIO[data.id];
+        ALUNO_POR_USUARIO[data.id] = !!data.classe;
       } else if(data.classe && window.__syncInstrutorFromUsuario){
         const funcao = fieldClasseFuncao ? fieldClasseFuncao.value : 'instrutor';
         await window.__syncInstrutorFromUsuario(data, funcao);
         FUNCAO_POR_USUARIO[data.id] = funcao;
+        // Também aluno: cria/atualiza a linha em desbravadores; só instrutor:
+        // tira da lista de alunos.
+        if(querSerAluno && window.__syncDesbravadorFromUsuario){
+          await window.__syncDesbravadorFromUsuario(data);
+          ALUNO_POR_USUARIO[data.id] = true;
+        } else if(eraAluno && window.__removeDesbravadorFromUsuario){
+          await window.__removeDesbravadorFromUsuario(data);
+          ALUNO_POR_USUARIO[data.id] = false;
+        }
       }
       const card = buildCard(data);
       if(editingCard){ editingCard.replaceWith(card); } else { content.insertBefore(card, content.firstChild); }
