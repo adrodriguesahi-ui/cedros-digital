@@ -10483,7 +10483,7 @@
             <label class="cl-photo-btn" for="clComprovanteFile">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4 7 9M12 4l5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
               Enviar arquivo
-              <input type="file" accept="image/*,.pdf,.doc,.docx" id="clComprovanteFile" multiple hidden>
+              <input type="file" accept="image/*,.pdf,.doc,.docx,.ppt,.pptx" id="clComprovanteFile" multiple hidden>
             </label>
           </div>
           <p class="pl-reminder-hint">Pode anexar quantas fotos ou arquivos quiser — cada um vira um comprovante separado.</p>
@@ -20550,7 +20550,7 @@
           [
             { rotulo: 'Tirar foto', camera: true, accept: 'image/*',
               icone: '<path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h7l1 1.5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="13" r="3.5"/>' },
-            { rotulo: 'Anexar arquivo', camera: false, accept: 'image/*,application/pdf',
+            { rotulo: 'Anexar arquivo', camera: false, accept: 'image/*,application/pdf,.pdf,.doc,.docx,.ppt,.pptx',
               icone: '<path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>' }
           ].forEach(cfg => {
             const botao = document.createElement('label');
