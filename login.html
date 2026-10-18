@@ -1048,6 +1048,7 @@
      a tabela cabe em celular sem rolagem lateral. */
   .am-pat col.c-n{ width:26px; } .am-pat col.c-qtd{ width:64px; } .am-pat col.c-item{ width:74px; }
   .am-pat col.c-desc{ width:auto; } .am-pat col.c-cond{ width:68px; } .am-pat col.c-valor{ width:64px; }
+  .am-pat td.am-pat-vazio{ padding:18px 10px; color:rgba(245,239,225,0.6); font-size:12px; }
   .am-pat tbody tr.am-pat-linha{ cursor:pointer; }
   .am-pat tbody tr.am-pat-linha:active, .am-pat tbody tr.am-pat-linha:hover{ background:rgba(255,255,255,0.06); }
   .am-pat td[class*="am-cond-"]{ font-size:10.5px; word-break:normal; }
@@ -28489,7 +28490,8 @@
           ? (itens.length + (itens.length === 1 ? ' item cadastrado' : ' itens cadastrados') +
              (totalFora ? ' · ' + totalFora + (totalFora === 1 ? ' unidade emprestada' : ' unidades emprestadas') : ' · nada emprestado') +
              (podeGerenciar() ? '' : ' · você pode consultar, mas não alterar'))
-          : 'Nenhum item cadastrado ainda.';
+          : 'Nenhum item cadastrado ainda' +
+            (podeGerenciar() ? ' · toque no + pra cadastrar' : ' · seu acesso é só de consulta, então o botão + de cadastrar não aparece');
       }
 
       pintarGrafico();
@@ -28502,17 +28504,14 @@
       }
 
       lista.innerHTML = '';
-      if(!visiveis.length){
-        const p = document.createElement('p');
-        p.className = 'pl-reminder-hint am-vazio';
-        p.textContent = categoriaFiltro ? 'Nenhum item em ' + categoriaFiltro + ' com esse filtro.'
-          : termo ? 'Nenhum item com esse nome.'
-          : (filtro === 'fora' ? 'Nada emprestado no momento.'
-            : filtro === 'atencao' ? 'Nenhum item pedindo atenção.'
-            : (podeGerenciar() ? 'Toque no + pra cadastrar o primeiro item.' : 'Nenhum item cadastrado ainda.'));
-        lista.appendChild(p);
-        return;
-      }
+      // A tabela (com o cabeçalho verde) aparece sempre, mesmo vazia, como a
+      // planilha em branco do clube; a explicação vai numa linha dentro dela.
+      const msgVazio = categoriaFiltro ? 'Nenhum item em ' + categoriaFiltro + ' com esse filtro.'
+        : termo ? 'Nenhum item com esse nome.'
+        : (filtro === 'fora' ? 'Nada emprestado no momento.'
+          : filtro === 'atencao' ? 'Nenhum item pedindo atenção.'
+          : (podeGerenciar() ? 'Nenhum item ainda. Toque no + pra cadastrar o primeiro.'
+            : 'Nenhum item cadastrado ainda.'));
 
       // Tabela no padrão da planilha: N° · Quantidade · Item · Descrição ·
       // Condição · Valor. Tocar numa linha abre o detalhe (retirada/devolução).
@@ -28562,6 +28561,16 @@
         tr.addEventListener('click', () => abrirDetalhe(it));
         corpo.appendChild(tr);
       });
+
+      if(!visiveis.length){
+        const vazio = document.createElement('tr');
+        vazio.innerHTML = '<td colspan="6" class="am-pat-vazio"></td>';
+        vazio.firstChild.textContent = msgVazio;
+        corpo.appendChild(vazio);
+        wrap.appendChild(tabela);
+        lista.appendChild(wrap);
+        return;
+      }
 
       const rodape = tabela.querySelector('tfoot');
       const totalTr = document.createElement('tr');
