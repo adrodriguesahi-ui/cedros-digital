@@ -12116,6 +12116,9 @@
             <div id="amGrafBarras"></div>
           </div>
 
+          <!-- Botão de cadastro dentro da tela: o "+" do canto some atrás da barra
+               de baixo em janelas largas/baixas e a pessoa não o encontra. -->
+          <button type="button" class="pl-btn pl-btn-primary am-locais-btn" id="amAddBtn2" style="display:none; background:var(--accent); color:#08130A;">+ Cadastrar item</button>
           <button type="button" class="pl-btn am-locais-btn" id="amLocaisBtn" style="display:none;">Lugares do clube</button>
 
           <div class="am-chips" id="amFiltros">
@@ -28774,6 +28777,8 @@
       setTimeout(() => fName.focus(), 150);
     }
     if(addBtn) addBtn.addEventListener('click', () => { if(podeGerenciar()) abrirCadastro(null); });
+    const addBtn2 = document.getElementById('amAddBtn2');
+    if(addBtn2) addBtn2.addEventListener('click', () => { if(podeGerenciar()) abrirCadastro(null); });
     const closeBtn = document.getElementById('amModalClose');
     if(closeBtn) closeBtn.addEventListener('click', () => overlay.classList.remove('show'));
     overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.classList.remove('show'); });
@@ -28986,6 +28991,8 @@
     // Quem não gerencia continua vendo tudo — só não ganha o botão de criar.
     window.__amAplicarAcesso = function(){
       if(addBtn) addBtn.style.display = podeGerenciar() ? '' : 'none';
+      const b2 = document.getElementById('amAddBtn2');
+      if(b2) b2.style.display = podeGerenciar() ? '' : 'none';
       if(locaisBtn) locaisBtn.style.display = podeGerenciar() ? '' : 'none';
       pintar();
     };
