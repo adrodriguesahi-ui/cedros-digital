@@ -12176,8 +12176,9 @@
 
           <label class="pl-field-label">Onde fica guardado</label>
           <select class="pl-input" id="amFieldLocal"></select>
+          <button type="button" class="pl-btn" id="amLocalNovoBtn" style="width:100%; margin-top:8px; background:rgba(255,255,255,0.08); color:var(--cream);">+ Novo lugar</button>
           <input type="text" class="pl-input" id="amFieldLocalDet" placeholder="Prateleira, caixa, gaveta…" maxlength="60" style="margin-top:8px;">
-          <p class="pl-reminder-hint" style="margin:8px 0 10px;">O lugar vem da lista do clube; o detalhe é livre. Pra criar ou renomear lugares, use "Lugares do clube" na tela do almoxarifado.</p>
+          <p class="pl-reminder-hint" style="margin:8px 0 10px;">Escolha o lugar na lista ou toque em "+ Novo lugar" pra criar um (ex.: Depósito, Sala 1). O detalhe — prateleira, caixa, gaveta — é livre.</p>
 
           <label class="pl-field-label">Observação</label>
           <input type="text" class="pl-input" id="amFieldObs" placeholder="Opcional (ex.: duas sem espeto)" maxlength="140">
@@ -28806,6 +28807,25 @@
       overlay.classList.add('show');
       setTimeout(() => fName.focus(), 150);
     }
+    // Cria o lugar sem sair do cadastro do item: antes era preciso fechar,
+    // abrir "Lugares do clube", criar e voltar — e quem não sabia disso via só
+    // "Nenhum lugar cadastrado" e achava que não dava pra informar onde fica.
+    const novoLugarBtn = document.getElementById('amLocalNovoBtn');
+    if(novoLugarBtn) novoLugarBtn.addEventListener('click', async () => {
+      if(!supa || !podeGerenciar()) return;
+      const nome = (prompt('Nome do lugar (ex.: Depósito, Sala 1, Armário de material):') || '').trim();
+      if(!nome) return;
+      const existente = locais.find(l => normalizar(l.nome) === normalizar(nome));
+      if(existente){ pintarSelectLocais(existente.id); return; }
+      novoLugarBtn.disabled = true;
+      const { data, error } = await supa.from('almoxarifado_locais').insert({ nome: nome }).select().single();
+      novoLugarBtn.disabled = false;
+      if(error || !data){ alert('Não consegui salvar o lugar: ' + ((error && error.message) || 'erro desconhecido')); return; }
+      locais.push(data);
+      locais.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+      pintarSelectLocais(data.id);
+    });
+
     fValor.addEventListener('blur', () => {
       const v = lerValor(fValor.value);
       if(v !== null && !Number.isNaN(v)) fValor.value = valorParaCampo(v);
