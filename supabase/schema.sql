@@ -1501,6 +1501,27 @@ create policy p_almoxarifado_emprestimos on almoxarifado_emprestimos for all usi
 alter table almoxarifado_itens add column if not exists descricao text;
 alter table almoxarifado_itens add column if not exists valor numeric(12,2) check (valor is null or valor >= 0);
 
+-- Lembretes ligados a itens do almoxarifado (ex.: "trocar a lona da barraca 3").
+-- Aparecem como card no topo da tela até alguém concluir. Concluído fica
+-- guardado (quem e quando) em vez de apagar. Apagar o item leva os lembretes.
+create table if not exists almoxarifado_lembretes (
+  id uuid primary key default gen_random_uuid(),
+  item_id uuid not null references almoxarifado_itens(id) on delete cascade,
+  mensagem text not null,
+  data_lembrete date,
+  concluido boolean not null default false,
+  concluido_em timestamptz,
+  concluido_por text,
+  criado_por text,
+  created_at timestamptz not null default now()
+);
+create index if not exists almoxarifado_lembretes_item_idx on almoxarifado_lembretes(item_id);
+create index if not exists almoxarifado_lembretes_abertos_idx
+  on almoxarifado_lembretes(data_lembrete) where concluido = false;
+alter table almoxarifado_lembretes enable row level security;
+drop policy if exists p_almoxarifado_lembretes on almoxarifado_lembretes;
+create policy p_almoxarifado_lembretes on almoxarifado_lembretes for all using(true) with check(true);
+
 -- Quem cadastra e dá baixa no almoxarifado. Coluna própria, e não um valor
 -- de usuarios.cargo, pela mesma razão do pode_pontuar_unidades: uma pessoa
 -- acumula funções no clube, e cargo só guarda uma. Quem não tem isto ligado

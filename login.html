@@ -1024,6 +1024,32 @@
 
   .am-vazio{ padding:12px 0; text-align:center; }
 
+  /* Lembretes do almoxarifado: um card por lembrete, com a cor dizendo a
+     urgência (vencido, hoje, a vencer, sem data). */
+  .am-lemb{ margin:0 0 12px; }
+  .am-lemb-topo{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+  .am-lemb-titulo{ font-size:11px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; color:rgba(245,239,225,0.55); }
+  .am-lemb-novo{ flex:none; padding:6px 12px; border-radius:10px; cursor:pointer; font-family:inherit; font-size:12px; font-weight:800; color:var(--deep); background:var(--accent); border:none; }
+  .am-lemb-card{
+    display:flex; align-items:flex-start; gap:10px; padding:11px 12px; margin-bottom:8px;
+    border-radius:13px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08);
+    border-left:4px solid rgba(245,239,225,0.35); cursor:pointer;
+  }
+  .am-lemb-card.vencido{ border-left-color:#FF6B5C; background:rgba(255,107,92,0.09); }
+  .am-lemb-card.hoje{ border-left-color:#E3B341; background:rgba(227,179,65,0.10); }
+  .am-lemb-card.breve{ border-left-color:var(--accent); }
+  .am-lemb-sino{ flex:none; margin-top:1px; color:rgba(245,239,225,0.7); }
+  .am-lemb-card.vencido .am-lemb-sino{ color:#FF6B5C; } .am-lemb-card.hoje .am-lemb-sino{ color:#E3B341; }
+  .am-lemb-corpo{ flex:1; min-width:0; }
+  .am-lemb-item{ display:block; font-size:12.5px; font-weight:800; color:var(--cream); }
+  .am-lemb-msg{ display:block; margin-top:2px; font-size:12.5px; line-height:1.4; color:rgba(245,239,225,0.85); word-break:break-word; }
+  .am-lemb-quando{ display:block; margin-top:4px; font-size:11px; font-weight:800; color:rgba(245,239,225,0.55); }
+  .am-lemb-card.vencido .am-lemb-quando{ color:#FF9E93; } .am-lemb-card.hoje .am-lemb-quando{ color:#E3B341; }
+  .am-lemb-acoes{ flex:none; display:flex; flex-direction:column; gap:5px; }
+  .am-lemb-acoes button{ padding:5px 10px; border-radius:9px; cursor:pointer; font-family:inherit; font-size:11px; font-weight:800; border:none; }
+  .am-lemb-ok{ color:var(--deep); background:var(--accent); }
+  .am-lemb-del{ color:#FF9E93; background:rgba(255,107,92,0.14); }
+
   /* Planilha de patrimônio: mesmo padrão da planilha do clube (título em
      verde, cabeçalho verde com texto branco em negrito e borda preta,
      colunas N° · Quantidade · Item · Descrição · Condição · Valor). */
@@ -12116,6 +12142,17 @@
             <input type="text" class="pl-input sp-search-input" id="amBusca" placeholder="Buscar item...">
           </div>
 
+          <!-- Lembretes ligados a itens (ex.: "trocar a lona da barraca 3").
+               Aparecem pra todo mundo que vê o almoxarifado; só quem gerencia
+               cria, conclui ou apaga. -->
+          <div class="am-lemb" id="amLembretes" style="display:none;">
+            <div class="am-lemb-topo">
+              <span class="am-lemb-titulo">Lembretes</span>
+              <button type="button" class="am-lemb-novo" id="amLembNovoBtn" style="display:none;">+ Lembrete</button>
+            </div>
+            <div id="amLembretesLista"></div>
+          </div>
+
           <!-- Quanto o clube tem por categoria. Uma série só, então uma cor
                só e sem legenda: o nome está em cada linha. Tocar na barra
                filtra a lista abaixo, que no celular vale mais que um balão de
@@ -12226,6 +12263,28 @@
         </div>
       </div>
 
+      <!-- Novo lembrete: de qual item, o que lembrar e pra quando (opcional). -->
+      <div class="pl-modal-overlay" id="amLembOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">Novo lembrete</h4>
+            <button type="button" class="pl-modal-close" id="amLembFechar" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <label class="pl-field-label">Item</label>
+          <select class="pl-input" id="amLembItem"></select>
+          <label class="pl-field-label">O que lembrar</label>
+          <input type="text" class="pl-input" id="amLembMsg" placeholder="Ex.: Trocar a lona, revisar as estacas" maxlength="140">
+          <label class="pl-field-label">Lembrar em (opcional)</label>
+          <input type="date" class="pl-input" id="amLembData">
+          <p class="pl-reminder-hint" style="margin:8px 0 10px;">O lembrete fica como card no topo do Almoxarifado até alguém concluir. Sem data, ele fica sempre visível.</p>
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-primary" id="amLembSalvar">Salvar lembrete</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Detalhe do item: quem está com ele e o que fazer. Separado do
            cadastro de propósito — retirar material é tarefa de quem usa, e
            editar a ficha é de quem cuida do depósito. -->
@@ -12245,6 +12304,7 @@
 
           <div class="am-saldo" id="amDetSaldo"></div>
           <p class="pl-reminder-hint" id="amDetInfo" style="margin-top:0;"></p>
+          <button type="button" class="pl-btn" id="amDetLembBtn" style="display:none; width:100%; margin-bottom:10px; background:rgba(255,255,255,0.08); color:var(--cream);">+ Lembrete deste item</button>
 
           <div class="sp-area-heading" style="margin-top:6px;">Está com</div>
           <div class="un-mini-list" id="amDetFora"></div>
@@ -28413,6 +28473,8 @@
     let categoriaFiltro = null;   // escolhida tocando numa barra do gráfico
     let editando = null;   // item em edição no modal de cadastro
     let aberto = null;     // item aberto no detalhe
+    let lembretes = [];    // lembretes ainda não concluídos
+    let lembretesErro = '';
 
     const CORES = { 'Novo':'green', 'Bom estado':'green', 'Péssimo estado':'red',
       // Condições antigas, de itens cadastrados antes da lista passar a ter só três.
@@ -28493,10 +28555,11 @@
 
     async function carregar(){
       if(!supa){ lista.innerHTML = '<p class="pl-reminder-hint am-vazio">Sem conexão com o banco.</p>'; return; }
-      const [i, e, lo] = await Promise.all([
+      const [i, e, lo, le] = await Promise.all([
         supa.from('almoxarifado_itens').select('*').order('created_at', { ascending: true }),
         supa.from('almoxarifado_emprestimos').select('*').order('retirado_em', { ascending: false }),
-        supa.from('almoxarifado_locais').select('*').order('nome')
+        supa.from('almoxarifado_locais').select('*').order('nome'),
+        supa.from('almoxarifado_lembretes').select('*').eq('concluido', false)
       ]);
       if(i.error){
         const msg = i.error.message || '';
@@ -28512,6 +28575,10 @@
       itens = i.data || [];
       emprestimos = e.data || [];
       locais = (lo && lo.data) || [];
+      // Lembretes não podem derrubar o resto do almoxarifado: se a tabela ainda
+      // não existe, a tela segue funcionando e só avisa quem gerencia.
+      lembretes = (le && !le.error && le.data) || [];
+      lembretesErro = (le && le.error) ? (le.error.message || 'erro') : '';
       pintar();
     }
 
@@ -28538,6 +28605,7 @@
       }
 
       pintarGrafico();
+      pintarLembretes();
 
       // Título da planilha; com uma categoria escolhida no gráfico vira
       // "PATRIMÔNIO - CLUBE CEDROS DO LÍBANO (OUTROS)", como a aba da planilha.
@@ -29015,6 +29083,8 @@
       // Sem material disponível não dá pra retirar — e dizer o motivo evita a
       // pessoa achar que o botão quebrou.
       if(detEditar) detEditar.style.display = podeGerenciar() ? '' : 'none';
+      const detLemb = document.getElementById('amDetLembBtn');
+      if(detLemb) detLemb.style.display = podeGerenciar() ? '' : 'none';
       if(retBloco){
         const pode = podeGerenciar();
         retBloco.style.display = pode ? '' : 'none';
@@ -29081,6 +29151,171 @@
     const detFechar = document.getElementById('amDetFechar');
     if(detFechar) detFechar.addEventListener('click', () => detOverlay.classList.remove('show'));
     detOverlay.addEventListener('click', (e) => { if(e.target === detOverlay) detOverlay.classList.remove('show'); });
+
+    // ---- lembretes por item ----
+    const lembSecao = document.getElementById('amLembretes');
+    const lembLista = document.getElementById('amLembretesLista');
+    const lembNovoBtn = document.getElementById('amLembNovoBtn');
+    const lembOverlay = document.getElementById('amLembOverlay');
+    const lembItem = document.getElementById('amLembItem');
+    const lembMsg = document.getElementById('amLembMsg');
+    const lembData = document.getElementById('amLembData');
+    const lembSalvar = document.getElementById('amLembSalvar');
+
+    // 'YYYY-MM-DD' lido como data local. new Date('2026-10-20') seria meia-noite
+    // UTC e, no Brasil, viraria o dia anterior — o lembrete "de hoje" apareceria
+    // como vencido.
+    function diasAte(dataStr){
+      const p = String(dataStr).split('-').map(n => parseInt(n, 10));
+      if(p.length < 3 || p.some(isNaN)) return null;
+      const alvo = new Date(p[0], p[1] - 1, p[2]);
+      const h = new Date();
+      const hoje = new Date(h.getFullYear(), h.getMonth(), h.getDate());
+      return Math.round((alvo - hoje) / 86400000);
+    }
+    function dataBR(dataStr){
+      const p = String(dataStr).split('-');
+      return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : dataStr;
+    }
+
+    function pintarLembretes(){
+      if(!lembSecao || !lembLista) return;
+      const gerencia = podeGerenciar();
+      if(lembNovoBtn) lembNovoBtn.style.display = gerencia && !lembretesErro ? '' : 'none';
+      lembLista.innerHTML = '';
+
+      if(lembretesErro){
+        // Só quem cuida do almoxarifado precisa saber; pra os outros a seção some.
+        lembSecao.style.display = gerencia ? '' : 'none';
+        if(gerencia){
+          const p = document.createElement('p');
+          p.className = 'pl-reminder-hint am-vazio';
+          p.textContent = /does not exist|schema cache/i.test(lembretesErro)
+            ? 'Os lembretes ainda não foram criados no banco. Rode o SQL dos lembretes (supabase/schema.sql) no Supabase.'
+            : 'Não consegui carregar os lembretes: ' + lembretesErro;
+          lembLista.appendChild(p);
+        }
+        return;
+      }
+      if(!lembretes.length && !gerencia){ lembSecao.style.display = 'none'; return; }
+      lembSecao.style.display = '';
+      if(!lembretes.length){
+        const p = document.createElement('p');
+        p.className = 'pl-reminder-hint am-vazio';
+        p.style.margin = '0';
+        p.textContent = 'Nenhum lembrete. Toque em "+ Lembrete" pra criar um ligado a um item.';
+        lembLista.appendChild(p);
+        return;
+      }
+
+      // Mais urgente primeiro: vencidos, hoje, próximos; sem data por último.
+      const ordenados = lembretes.slice().sort((a, b) => {
+        if(!a.data_lembrete && !b.data_lembrete) return String(a.created_at).localeCompare(String(b.created_at));
+        if(!a.data_lembrete) return 1;
+        if(!b.data_lembrete) return -1;
+        return String(a.data_lembrete).localeCompare(String(b.data_lembrete));
+      });
+
+      ordenados.forEach(l => {
+        const it = itens.find(x => x.id === l.item_id);
+        const dias = l.data_lembrete ? diasAte(l.data_lembrete) : null;
+        let classe = 'sem-data', quando = 'Sem data';
+        if(dias !== null){
+          if(dias < 0){ classe = 'vencido'; quando = 'Venceu há ' + (-dias) + (dias === -1 ? ' dia' : ' dias') + ' · ' + dataBR(l.data_lembrete); }
+          else if(dias === 0){ classe = 'hoje'; quando = 'Hoje · ' + dataBR(l.data_lembrete); }
+          else { classe = 'breve'; quando = (dias === 1 ? 'Amanhã' : 'Em ' + dias + ' dias') + ' · ' + dataBR(l.data_lembrete); }
+        }
+        const card = document.createElement('div');
+        card.className = 'am-lemb-card ' + classe;
+        card.innerHTML =
+          '<svg class="am-lemb-sino" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>' +
+          '<div class="am-lemb-corpo"><span class="am-lemb-item"></span><span class="am-lemb-msg"></span><span class="am-lemb-quando"></span></div>';
+        card.querySelector('.am-lemb-item').textContent = it ? it.nome : 'Item removido';
+        card.querySelector('.am-lemb-msg').textContent = l.mensagem;
+        card.querySelector('.am-lemb-quando').textContent = quando;
+        if(it) card.addEventListener('click', () => abrirDetalhe(it));
+        if(gerencia){
+          const ac = document.createElement('div');
+          ac.className = 'am-lemb-acoes';
+          const ok = document.createElement('button');
+          ok.type = 'button'; ok.className = 'am-lemb-ok'; ok.textContent = 'Concluir';
+          ok.addEventListener('click', (ev) => { ev.stopPropagation(); concluirLembrete(l); });
+          const del = document.createElement('button');
+          del.type = 'button'; del.className = 'am-lemb-del'; del.textContent = 'Excluir';
+          del.addEventListener('click', (ev) => { ev.stopPropagation(); excluirLembrete(l); });
+          ac.appendChild(ok); ac.appendChild(del);
+          card.appendChild(ac);
+        }
+        lembLista.appendChild(card);
+      });
+    }
+
+    function abrirLembrete(itemId){
+      if(!podeGerenciar() || !lembOverlay) return;
+      lembItem.innerHTML = '';
+      if(!itens.length){ alert('Cadastre um item antes de criar um lembrete.'); return; }
+      itens.forEach(it => {
+        const o = document.createElement('option');
+        o.value = it.id; o.textContent = numeroDe(it) + ' · ' + it.nome;
+        lembItem.appendChild(o);
+      });
+      lembItem.value = itemId || itens[0].id;
+      lembMsg.value = ''; lembMsg.style.borderColor = '';
+      lembData.value = '';
+      abrirNaViewAtiva(lembOverlay);
+      setTimeout(() => lembMsg.focus(), 150);
+    }
+
+    if(lembNovoBtn) lembNovoBtn.addEventListener('click', () => abrirLembrete(null));
+    const detLembBtn = document.getElementById('amDetLembBtn');
+    if(detLembBtn) detLembBtn.addEventListener('click', () => {
+      if(!aberto) return;
+      const id = aberto.id;
+      // Fecha o detalhe antes: os dois são overlay e ficariam empilhados.
+      detOverlay.classList.remove('show');
+      abrirLembrete(id);
+    });
+    const lembFechar = document.getElementById('amLembFechar');
+    if(lembFechar) lembFechar.addEventListener('click', () => lembOverlay.classList.remove('show'));
+    if(lembOverlay) lembOverlay.addEventListener('click', (e) => { if(e.target === lembOverlay) lembOverlay.classList.remove('show'); });
+
+    if(lembSalvar) lembSalvar.addEventListener('click', async () => {
+      const msg = lembMsg.value.trim();
+      if(!msg){ lembMsg.style.borderColor = '#FF6B5C'; return; }
+      lembMsg.style.borderColor = '';
+      if(!supa || !lembItem.value) return;
+      lembSalvar.disabled = true;
+      const { error } = await supa.from('almoxarifado_lembretes').insert({
+        item_id: lembItem.value, mensagem: msg, data_lembrete: lembData.value || null,
+        criado_por: (window.__currentUsuario && window.__currentUsuario.nome) || ''
+      });
+      lembSalvar.disabled = false;
+      if(error){
+        alert(/does not exist|schema cache/i.test(error.message || '')
+          ? 'Os lembretes ainda não foram criados no banco. Rode o SQL dos lembretes (supabase/schema.sql) no Supabase.'
+          : 'Não consegui salvar o lembrete: ' + error.message);
+        return;
+      }
+      lembOverlay.classList.remove('show');
+      await carregar();
+    });
+
+    async function concluirLembrete(l){
+      if(!supa || !podeGerenciar()) return;
+      const { error } = await supa.from('almoxarifado_lembretes').update({
+        concluido: true, concluido_em: new Date().toISOString(),
+        concluido_por: (window.__currentUsuario && window.__currentUsuario.nome) || ''
+      }).eq('id', l.id);
+      if(error){ alert('Não consegui concluir o lembrete: ' + error.message); return; }
+      await carregar();
+    }
+    async function excluirLembrete(l){
+      if(!supa || !podeGerenciar()) return;
+      if(!confirm('Excluir este lembrete?')) return;
+      const { error } = await supa.from('almoxarifado_lembretes').delete().eq('id', l.id);
+      if(error){ alert('Não consegui excluir o lembrete: ' + error.message); return; }
+      await carregar();
+    }
 
     if(busca) busca.addEventListener('input', pintar);
     document.querySelectorAll('#amFiltros .am-chip').forEach(chip => {
