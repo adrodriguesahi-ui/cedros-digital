@@ -12171,9 +12171,7 @@
           <select class="pl-input" id="amFieldStatus">
             <option value="Novo" data-color="green">Novo</option>
             <option value="Bom estado" data-color="green">Bom estado</option>
-            <option value="Regular" data-color="gold">Regular</option>
-            <option value="Danificado" data-color="red">Danificado</option>
-            <option value="Em falta" data-color="red">Em falta</option>
+            <option value="Péssimo estado" data-color="red">Péssimo estado</option>
           </select>
 
           <label class="pl-field-label">Onde fica guardado</label>
@@ -28402,7 +28400,9 @@
     let editando = null;   // item em edição no modal de cadastro
     let aberto = null;     // item aberto no detalhe
 
-    const CORES = { 'Novo':'green', 'Bom estado':'green', 'Regular':'gold', 'Danificado':'red', 'Em falta':'red' };
+    const CORES = { 'Novo':'green', 'Bom estado':'green', 'Péssimo estado':'red',
+      // Condições antigas, de itens cadastrados antes da lista passar a ter só três.
+      'Regular':'gold', 'Danificado':'red', 'Em falta':'red' };
 
     // O overlay precisa estar dentro da view que está na tela, senão herda o
     // opacity:0 da view escondida e "abre" invisível. Mesma razão do
@@ -28501,7 +28501,7 @@
         if(termo && !normalizar(it.nome + ' ' + (it.descricao || '') + ' ' + (it.categoria || '') + ' ' + lugarDe(it)).includes(termo)) return false;
         if(filtro === 'fora') return somaFora(it.id) > 0;
         // "Precisam atenção": acabou o disponível, ou o estado pede conserto/compra.
-        if(filtro === 'atencao') return disponivelDe(it) === 0 || it.estado === 'Danificado' || it.estado === 'Em falta';
+        if(filtro === 'atencao') return disponivelDe(it) === 0 || it.estado === 'Péssimo estado' || it.estado === 'Danificado' || it.estado === 'Em falta';
         return true;
       });
 
@@ -28788,7 +28788,18 @@
       fValor.style.borderColor = '';
       fCat.value = (item && item.categoria) || 'Acampamento';
       fQtd.value = item ? (item.quantidade != null ? item.quantidade : 0) : 0;
-      fEstado.value = (item && item.estado) || 'Bom estado';
+      // Item antigo com uma condição que saiu da lista (Regular, Danificado, Em
+      // falta): mantém o valor como opção extra, senão o select cairia na
+      // primeira opção e salvar trocaria a condição sem ninguém perceber.
+      Array.from(fEstado.querySelectorAll('option[data-legado]')).forEach(o => o.remove());
+      const estadoAtual = (item && item.estado) || 'Bom estado';
+      if(!Array.from(fEstado.options).some(o => o.value === estadoAtual)){
+        const leg = document.createElement('option');
+        leg.value = estadoAtual; leg.textContent = estadoAtual + ' (antigo)';
+        leg.setAttribute('data-legado', '1');
+        fEstado.appendChild(leg);
+      }
+      fEstado.value = estadoAtual;
       pintarSelectLocais(item ? item.local_id : null);
       fLocalDet.value = (item && item.local_detalhe) || '';
       fObs.value = (item && item.observacao) || '';
