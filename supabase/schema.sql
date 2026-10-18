@@ -1496,6 +1496,8 @@ create policy p_almoxarifado_emprestimos on almoxarifado_emprestimos for all usi
 -- Planilha de patrimônio do clube (N°, Quantidade, Item, Descrição, Condição,
 -- Valor): o Almoxarifado segue esse padrão. Item = nome, Condição = estado.
 -- Faltavam Descrição e Valor. O N° é a ordem de cadastro, calculada na tela.
+-- 'valor' é o valor UNITÁRIO; o total do item (quantidade × valor) é calculado
+-- na tela e não é guardado.
 alter table almoxarifado_itens add column if not exists descricao text;
 alter table almoxarifado_itens add column if not exists valor numeric(12,2) check (valor is null or valor >= 0);
 

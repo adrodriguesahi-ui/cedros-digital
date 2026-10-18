@@ -1046,8 +1046,20 @@
   .am-pat td.am-pat-num{ white-space:nowrap; }
   /* Soma das larguras fixas ≈ 286px: sobra o resto da tela pra Descrição, e
      a tabela cabe em celular sem rolagem lateral. */
-  .am-pat col.c-n{ width:26px; } .am-pat col.c-qtd{ width:64px; } .am-pat col.c-item{ width:74px; }
-  .am-pat col.c-desc{ width:auto; } .am-pat col.c-cond{ width:68px; } .am-pat col.c-valor{ width:64px; }
+  .am-pat col.c-n{ width:34px; } .am-pat col.c-qtd{ width:78px; } .am-pat col.c-item{ width:120px; }
+  .am-pat col.c-desc{ width:auto; } .am-pat col.c-cond{ width:92px; }
+  .am-pat col.c-vun{ width:92px; } .am-pat col.c-vtot{ width:100px; }
+  .am-pat td.am-pat-din{ white-space:nowrap; }
+  .am-pat span.am-desc-mobile{ display:none; }
+  /* Celular: não cabem sete colunas. A Descrição sai da coluna dela e vai pra
+     baixo do nome do item; as colunas de valor continuam as duas visíveis. */
+  @media (max-width:560px){
+    .am-pat col.c-n{ width:24px; } .am-pat col.c-qtd{ width:62px; } .am-pat col.c-item{ width:auto; }
+    .am-pat col.c-desc, .am-pat .am-col-desc{ display:none; }
+    .am-pat col.c-cond{ width:62px; } .am-pat col.c-vun{ width:66px; } .am-pat col.c-vtot{ width:72px; }
+    .am-pat td.am-pat-din{ font-size:10px; }
+    .am-pat span.am-desc-mobile{ display:block; margin-top:3px; font-size:10.5px; color:rgba(245,239,225,0.72); }
+  }
   .am-pat td.am-pat-vazio{ padding:18px 10px; color:rgba(245,239,225,0.6); font-size:12px; }
   .am-pat tbody tr.am-pat-linha{ cursor:pointer; }
   .am-pat tbody tr.am-pat-linha:active, .am-pat tbody tr.am-pat-linha:hover{ background:rgba(255,255,255,0.06); }
@@ -12165,8 +12177,9 @@
               <input type="number" class="pl-input" id="amFieldQty" min="0" placeholder="0">
             </div>
           </div>
-          <label class="pl-field-label">Valor (R$)</label>
-          <input type="text" class="pl-input" id="amFieldValor" inputmode="decimal" autocomplete="off" placeholder="Ex.: 3.330,00" maxlength="16">
+          <label class="pl-field-label">Valor unitário (R$)</label>
+          <input type="text" class="pl-input" id="amFieldValor" inputmode="decimal" autocomplete="off" placeholder="Ex.: 25,00" maxlength="16">
+          <p class="pl-reminder-hint" id="amTotalPrev" style="margin:6px 0 4px;"></p>
           <label class="pl-field-label">Condição</label>
           <select class="pl-input" id="amFieldStatus">
             <option value="Novo" data-color="green">Novo</option>
@@ -28459,6 +28472,14 @@
       return Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
+    // O valor cadastrado é o UNITÁRIO; o total do item é quantidade × unitário.
+    // Não é guardado: igual ao disponível, número guardado desencontra do real
+    // na primeira vez que alguém corrige a quantidade e esquece o total.
+    function totalDe(it){
+      if(!it || it.valor === null || it.valor === undefined || it.valor === '' || isNaN(Number(it.valor))) return null;
+      return Math.round((Number(it.quantidade) || 0) * Number(it.valor) * 100) / 100;
+    }
+
     // Valor em reais; vazio vira traço, como célula em branco da planilha.
     function reais(v){
       if(v === null || v === undefined || v === '' || isNaN(Number(v))) return '—';
@@ -28542,24 +28563,25 @@
       const tabela = document.createElement('table');
       tabela.className = 'am-pat';
       tabela.innerHTML =
-        '<colgroup><col class="c-n"><col class="c-qtd"><col class="c-item"><col class="c-desc"><col class="c-cond"><col class="c-valor"></colgroup>' +
-        '<thead><tr><th>N°</th><th>Quantidade</th><th>Item</th><th>Descrição</th><th>Condição</th><th>Valor</th></tr></thead>' +
+        '<colgroup><col class="c-n"><col class="c-qtd"><col class="c-item"><col class="c-desc"><col class="c-cond"><col class="c-vun"><col class="c-vtot"></colgroup>' +
+        '<thead><tr><th>N°</th><th>Quantidade</th><th>Item</th><th class="am-col-desc">Descrição</th><th>Condição</th><th>Valor unit.</th><th>Valor total</th></tr></thead>' +
         '<tbody></tbody><tfoot></tfoot>';
       const corpo = tabela.querySelector('tbody');
-      let somaQtd = 0, somaValor = 0;
+      let somaQtd = 0, somaTotal = 0;
 
       visiveis.forEach(it => {
         const fora = somaFora(it.id);
         const disp = disponivelDe(it);
         const cor = CORES[it.estado] || 'gray';
         somaQtd += Number(it.quantidade) || 0;
-        somaValor += Number(it.valor) || 0;
+        somaTotal += totalDe(it) || 0;
 
         const tr = document.createElement('tr');
         tr.className = 'am-pat-linha';
         tr.innerHTML =
           '<td class="am-pat-num"></td><td class="am-pat-num"></td><td class="am-pat-txt"></td>' +
-          '<td class="am-pat-txt"></td><td class="am-cond-' + cor + '"></td><td class="am-pat-num"></td>';
+          '<td class="am-pat-txt am-col-desc"></td><td class="am-cond-' + cor + '"></td>' +
+          '<td class="am-pat-num am-pat-din"></td><td class="am-pat-num am-pat-din"></td>';
         const td = tr.children;
         td[0].textContent = numeroDe(it);
         td[1].textContent = it.quantidade || 0;
@@ -28571,6 +28593,12 @@
         if(fora) apoio.push(disp + ' disp. · ' + fora + ' emprestad' + (fora === 1 ? 'a' : 'as'));
         const onde = lugarDe(it);
         if(onde) apoio.push(onde);
+        if(it.descricao){
+          const d = document.createElement('span');
+          d.className = 'am-pat-sub am-desc-mobile';
+          d.textContent = it.descricao;
+          td[2].appendChild(d);
+        }
         if(apoio.length){
           const sub = document.createElement('span');
           sub.className = 'am-pat-sub';
@@ -28580,13 +28608,14 @@
         td[3].textContent = it.descricao || '';
         td[4].textContent = it.estado || '—';
         td[5].textContent = reais(it.valor);
+        td[6].textContent = reais(totalDe(it));
         tr.addEventListener('click', () => abrirDetalhe(it));
         corpo.appendChild(tr);
       });
 
       if(!visiveis.length){
         const vazio = document.createElement('tr');
-        vazio.innerHTML = '<td colspan="6" class="am-pat-vazio"></td>';
+        vazio.innerHTML = '<td colspan="7" class="am-pat-vazio"></td>';
         vazio.firstChild.textContent = msgVazio;
         corpo.appendChild(vazio);
         wrap.appendChild(tabela);
@@ -28597,9 +28626,9 @@
       const rodape = tabela.querySelector('tfoot');
       const totalTr = document.createElement('tr');
       totalTr.className = 'am-pat-total';
-      totalTr.innerHTML = '<td></td><td class="am-pat-num"></td><td class="am-pat-txt">Total</td><td></td><td></td><td class="am-pat-num"></td>';
+      totalTr.innerHTML = '<td></td><td class="am-pat-num"></td><td class="am-pat-txt">Total</td><td class="am-col-desc"></td><td></td><td></td><td class="am-pat-num am-pat-din"></td>';
       totalTr.children[1].textContent = somaQtd;
-      totalTr.children[5].textContent = reais(somaValor);
+      totalTr.children[6].textContent = reais(somaTotal);
       rodape.appendChild(totalTr);
 
       wrap.appendChild(tabela);
@@ -28786,6 +28815,7 @@
       fName.value = item ? item.nome : '';
       fDesc.value = (item && item.descricao) || '';
       fValor.value = valorParaCampo(item && item.valor);
+      atualizarTotalPrev();
       fValor.style.borderColor = '';
       fCat.value = (item && item.categoria) || 'Acampamento';
       fQtd.value = item ? (item.quantidade != null ? item.quantidade : 0) : 0;
@@ -28825,6 +28855,19 @@
       locais.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
       pintarSelectLocais(data.id);
     });
+
+    // Mostra, ao digitar, quanto dá quantidade × valor unitário.
+    const totalPrev = document.getElementById('amTotalPrev');
+    function atualizarTotalPrev(){
+      if(!totalPrev) return;
+      const v = lerValor(fValor.value);
+      if(v === null || Number.isNaN(v)){ totalPrev.textContent = ''; return; }
+      const q = Math.max(0, parseInt(fQtd.value, 10) || 0);
+      totalPrev.textContent = 'Total do item: ' + reais(Math.round(q * v * 100) / 100) +
+        ' (' + q + ' × ' + reais(v) + ')';
+    }
+    fValor.addEventListener('input', atualizarTotalPrev);
+    fQtd.addEventListener('input', atualizarTotalPrev);
 
     fValor.addEventListener('blur', () => {
       const v = lerValor(fValor.value);
@@ -28918,7 +28961,7 @@
       const bs = detSaldo.querySelectorAll('b');
       bs[0].textContent = disp; bs[1].textContent = fora; bs[2].textContent = it.quantidade || 0;
       const onde = lugarDe(it);
-      detInfo.textContent = [it.descricao, it.categoria, it.estado, it.valor != null ? 'Valor ' + reais(it.valor) : '',
+      detInfo.textContent = [it.descricao, it.categoria, it.estado, it.valor != null ? 'Valor unitário ' + reais(it.valor) + ' · total ' + reais(totalDe(it)) : '',
           onde ? 'Guardado em ' + onde : '', it.observacao]
         .filter(Boolean).join(' · ');
 
