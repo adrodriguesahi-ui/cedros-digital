@@ -1024,6 +1024,36 @@
 
   .am-vazio{ padding:12px 0; text-align:center; }
 
+  /* Planilha de patrimônio: mesmo padrão da planilha do clube (título em
+     verde, cabeçalho verde com texto branco em negrito e borda preta,
+     colunas N° · Quantidade · Item · Descrição · Condição · Valor). */
+  .am-pat-titulo{
+    margin:2px 0 8px; text-align:center; font-size:14px; font-weight:900;
+    letter-spacing:0.02em; text-transform:uppercase; color:#6FBF2E;
+  }
+  .am-pat-scroll{ overflow-x:auto; margin:0 -2px 12px; padding:0 2px; -webkit-overflow-scrolling:touch; }
+  .am-pat{ width:100%; min-width:540px; border-collapse:collapse; table-layout:fixed; font-size:12px; }
+  .am-pat th{
+    background:#00CC00; color:#fff; font-weight:900; text-align:center;
+    padding:7px 6px; border:2px solid #000; font-size:12px; white-space:nowrap;
+  }
+  .am-pat td{
+    padding:8px 6px; border:1px solid rgba(255,255,255,0.14); color:var(--cream);
+    vertical-align:top; word-break:break-word; text-align:center;
+  }
+  .am-pat td.am-pat-txt{ text-align:left; }
+  .am-pat td.am-pat-num{ white-space:nowrap; }
+  .am-pat col.c-n{ width:44px; } .am-pat col.c-qtd{ width:76px; } .am-pat col.c-item{ width:130px; }
+  .am-pat col.c-desc{ width:auto; } .am-pat col.c-cond{ width:92px; } .am-pat col.c-valor{ width:92px; }
+  .am-pat tbody tr.am-pat-linha{ cursor:pointer; }
+  .am-pat tbody tr.am-pat-linha:active, .am-pat tbody tr.am-pat-linha:hover{ background:rgba(255,255,255,0.06); }
+  .am-pat td.am-cond-green{ color:#3FCB6B; font-weight:800; }
+  .am-pat td.am-cond-gold{ color:#E3B341; font-weight:800; }
+  .am-pat td.am-cond-red{ color:#FF6B5C; font-weight:800; }
+  .am-pat td.am-cond-gray{ color:rgba(245,239,225,0.6); }
+  .am-pat tr.am-pat-total td{ font-weight:900; background:rgba(0,204,0,0.12); border-color:rgba(0,204,0,0.45); }
+  .am-pat .am-pat-sub{ display:block; margin-top:3px; font-size:10.5px; font-weight:700; color:rgba(245,239,225,0.5); }
+
   .ad-senha-bloco{
     margin:4px 0 14px; padding:12px 13px; border-radius:13px;
     background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
@@ -12089,6 +12119,9 @@
             <button type="button" class="am-chip" data-am-filtro="atencao">Precisam atenção</button>
           </div>
 
+          <!-- Planilha de patrimônio: N° · Quantidade · Item · Descrição ·
+               Condição · Valor, como na planilha do clube. -->
+          <h4 class="am-pat-titulo" id="amPatTitulo">Patrimônio - Clube Cedros do Líbano</h4>
           <div id="amLista"></div>
         </div>
       </div>
@@ -12103,8 +12136,10 @@
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>
-          <label class="pl-field-label">Nome do item</label>
+          <label class="pl-field-label">Item</label>
           <input type="text" class="pl-input" id="amFieldName" placeholder="Ex.: Barracas de campanha" maxlength="60">
+          <label class="pl-field-label">Descrição</label>
+          <input type="text" class="pl-input" id="amFieldDesc" placeholder="Ex.: Barraca iglu para 4 pessoas, cor verde" maxlength="140">
           <div class="pl-field-row">
             <div class="pl-field-col pl-field-col-wide">
               <label class="pl-field-label">Categoria</label>
@@ -12122,7 +12157,9 @@
               <input type="number" class="pl-input" id="amFieldQty" min="0" placeholder="0">
             </div>
           </div>
-          <label class="pl-field-label">Estado</label>
+          <label class="pl-field-label">Valor (R$)</label>
+          <input type="number" class="pl-input" id="amFieldValor" min="0" step="0.01" inputmode="decimal" placeholder="0,00">
+          <label class="pl-field-label">Condição</label>
           <select class="pl-input" id="amFieldStatus">
             <option value="Bom estado" data-color="green">Bom estado</option>
             <option value="Regular" data-color="gold">Regular</option>
@@ -28324,6 +28361,9 @@
     const overlay = document.getElementById('amModalOverlay');
     const modalTitle = document.getElementById('amModalTitle');
     const fName = document.getElementById('amFieldName');
+    const fDesc = document.getElementById('amFieldDesc');
+    const fValor = document.getElementById('amFieldValor');
+    const patTitulo = document.getElementById('amPatTitulo');
     const fCat = document.getElementById('amFieldCategory');
     const fQtd = document.getElementById('amFieldQty');
     const fEstado = document.getElementById('amFieldStatus');
@@ -28392,10 +28432,21 @@
       return isNaN(d) ? '' : d.toLocaleDateString('pt-BR');
     }
 
+    // Valor em reais; vazio vira traço, como célula em branco da planilha.
+    function reais(v){
+      if(v === null || v === undefined || v === '' || isNaN(Number(v))) return '—';
+      return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    // N° da planilha: posição do item na ordem de cadastro. Os itens chegam
+    // ordenados por created_at, então o número não muda quando se filtra ou
+    // se busca — o item 7 continua sendo o 7.
+    const numeroDe = it => itens.indexOf(it) + 1;
+
     async function carregar(){
       if(!supa){ lista.innerHTML = '<p class="pl-reminder-hint am-vazio">Sem conexão com o banco.</p>'; return; }
       const [i, e, lo] = await Promise.all([
-        supa.from('almoxarifado_itens').select('*').order('nome'),
+        supa.from('almoxarifado_itens').select('*').order('created_at', { ascending: true }),
         supa.from('almoxarifado_emprestimos').select('*').order('retirado_em', { ascending: false }),
         supa.from('almoxarifado_locais').select('*').order('nome')
       ]);
@@ -28421,7 +28472,7 @@
       const termo = normalizar((busca && busca.value || '').trim());
       const visiveis = itens.filter(it => {
         if(categoriaFiltro && (it.categoria || '') !== categoriaFiltro) return false;
-        if(termo && !normalizar(it.nome + ' ' + (it.categoria || '') + ' ' + lugarDe(it)).includes(termo)) return false;
+        if(termo && !normalizar(it.nome + ' ' + (it.descricao || '') + ' ' + (it.categoria || '') + ' ' + lugarDe(it)).includes(termo)) return false;
         if(filtro === 'fora') return somaFora(it.id) > 0;
         // "Precisam atenção": acabou o disponível, ou o estado pede conserto/compra.
         if(filtro === 'atencao') return disponivelDe(it) === 0 || it.estado === 'Danificado' || it.estado === 'Em falta';
@@ -28439,6 +28490,13 @@
 
       pintarGrafico();
 
+      // Título da planilha; com uma categoria escolhida no gráfico vira
+      // "PATRIMÔNIO - CLUBE CEDROS DO LÍBANO (OUTROS)", como a aba da planilha.
+      if(patTitulo){
+        patTitulo.textContent = 'Patrimônio - Clube Cedros do Líbano' +
+          (categoriaFiltro ? ' (' + categoriaFiltro + ')' : '');
+      }
+
       lista.innerHTML = '';
       if(!visiveis.length){
         const p = document.createElement('p');
@@ -28452,26 +28510,65 @@
         return;
       }
 
+      // Tabela no padrão da planilha: N° · Quantidade · Item · Descrição ·
+      // Condição · Valor. Tocar numa linha abre o detalhe (retirada/devolução).
+      const wrap = document.createElement('div');
+      wrap.className = 'am-pat-scroll';
+      const tabela = document.createElement('table');
+      tabela.className = 'am-pat';
+      tabela.innerHTML =
+        '<colgroup><col class="c-n"><col class="c-qtd"><col class="c-item"><col class="c-desc"><col class="c-cond"><col class="c-valor"></colgroup>' +
+        '<thead><tr><th>N°</th><th>Quantidade</th><th>Item</th><th>Descrição</th><th>Condição</th><th>Valor</th></tr></thead>' +
+        '<tbody></tbody><tfoot></tfoot>';
+      const corpo = tabela.querySelector('tbody');
+      let somaQtd = 0, somaValor = 0;
+
       visiveis.forEach(it => {
         const fora = somaFora(it.id);
         const disp = disponivelDe(it);
         const cor = CORES[it.estado] || 'gray';
-        const card = document.createElement('a');
-        card.href = '#'; card.className = 'pl-event-card am-card';
-        card.innerHTML =
-          '<div class="am-thumb"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>' +
-          '<div class="pl-event-body"><h4 class="pl-event-title"></h4><p class="pl-event-meta"></p></div>' +
-          '<span class="pl-event-tag pl-tag-' + cor + '"></span>';
-        card.querySelector('.pl-event-title').textContent = it.nome;
-        const partes = [it.categoria || 'Sem categoria', disp + ' de ' + (it.quantidade || 0) + ' disponíveis'];
-        if(fora) partes.push(fora + ' emprestad' + (fora === 1 ? 'a' : 'as'));
+        somaQtd += Number(it.quantidade) || 0;
+        somaValor += Number(it.valor) || 0;
+
+        const tr = document.createElement('tr');
+        tr.className = 'am-pat-linha';
+        tr.innerHTML =
+          '<td class="am-pat-num"></td><td class="am-pat-num"></td><td class="am-pat-txt"></td>' +
+          '<td class="am-pat-txt"></td><td class="am-cond-' + cor + '"></td><td class="am-pat-num"></td>';
+        const td = tr.children;
+        td[0].textContent = numeroDe(it);
+        td[1].textContent = it.quantidade || 0;
+        // Disponibilidade e lugar não têm coluna na planilha; entram como
+        // linha de apoio embaixo do item pra não se perder o que o almoxarifado
+        // já controla (quanto está emprestado e onde fica guardado).
+        td[2].textContent = it.nome;
+        const apoio = [];
+        if(fora) apoio.push(disp + ' disp. · ' + fora + ' emprestad' + (fora === 1 ? 'a' : 'as'));
         const onde = lugarDe(it);
-        if(onde) partes.push(onde);
-        card.querySelector('.pl-event-meta').textContent = partes.join(' · ');
-        card.querySelector('.pl-event-tag').textContent = it.estado || '—';
-        card.addEventListener('click', (ev) => { ev.preventDefault(); abrirDetalhe(it); });
-        lista.appendChild(card);
+        if(onde) apoio.push(onde);
+        if(apoio.length){
+          const sub = document.createElement('span');
+          sub.className = 'am-pat-sub';
+          sub.textContent = apoio.join(' · ');
+          td[2].appendChild(sub);
+        }
+        td[3].textContent = it.descricao || '';
+        td[4].textContent = it.estado || '—';
+        td[5].textContent = reais(it.valor);
+        tr.addEventListener('click', () => abrirDetalhe(it));
+        corpo.appendChild(tr);
       });
+
+      const rodape = tabela.querySelector('tfoot');
+      const totalTr = document.createElement('tr');
+      totalTr.className = 'am-pat-total';
+      totalTr.innerHTML = '<td></td><td class="am-pat-num"></td><td class="am-pat-txt">Total</td><td></td><td></td><td class="am-pat-num"></td>';
+      totalTr.children[1].textContent = somaQtd;
+      totalTr.children[5].textContent = reais(somaValor);
+      rodape.appendChild(totalTr);
+
+      wrap.appendChild(tabela);
+      lista.appendChild(wrap);
     }
 
     function pintarSelectLocais(selecionado){
@@ -28652,6 +28749,8 @@
       modalTitle.textContent = item ? 'Editar Item' : 'Novo Item';
       deleteBtn.style.display = item ? '' : 'none';
       fName.value = item ? item.nome : '';
+      fDesc.value = (item && item.descricao) || '';
+      fValor.value = (item && item.valor != null) ? item.valor : '';
       fCat.value = (item && item.categoria) || 'Acampamento';
       fQtd.value = item ? (item.quantidade != null ? item.quantidade : 0) : 0;
       fEstado.value = (item && item.estado) || 'Bom estado';
@@ -28672,7 +28771,9 @@
       fName.style.borderColor = '';
       if(!supa) return;
       const linha = {
-        nome: nome, categoria: fCat.value, quantidade: Math.max(0, parseInt(fQtd.value, 10) || 0),
+        nome: nome, descricao: fDesc.value.trim() || null,
+        valor: fValor.value === '' ? null : Math.max(0, parseFloat(fValor.value) || 0),
+        categoria: fCat.value, quantidade: Math.max(0, parseInt(fQtd.value, 10) || 0),
         estado: fEstado.value, local_id: fLocal.value || null,
         local_detalhe: fLocalDet.value.trim() || null, observacao: fObs.value.trim() || null
       };
@@ -28687,7 +28788,15 @@
         erro = r.error;
       }
       saveBtn.disabled = false;
-      if(erro){ alert('Não consegui salvar o item: ' + erro.message); return; }
+      if(erro){
+        // Colunas novas (descrição e valor) ainda não existem no banco.
+        if(/descricao|valor/i.test(erro.message || '') && /column|schema cache/i.test(erro.message || '')){
+          alert('O banco ainda não tem as colunas Descrição e Valor. Rode o SQL do almoxarifado (supabase/schema.sql) no Supabase e tente de novo.');
+        } else {
+          alert('Não consegui salvar o item: ' + erro.message);
+        }
+        return;
+      }
       overlay.classList.remove('show');
       await carregar();
       // Editado pelo detalhe: reabre com os dados novos, senão a pessoa volta
@@ -28730,7 +28839,8 @@
       const bs = detSaldo.querySelectorAll('b');
       bs[0].textContent = disp; bs[1].textContent = fora; bs[2].textContent = it.quantidade || 0;
       const onde = lugarDe(it);
-      detInfo.textContent = [it.categoria, it.estado, onde ? 'Guardado em ' + onde : '', it.observacao]
+      detInfo.textContent = [it.descricao, it.categoria, it.estado, it.valor != null ? 'Valor ' + reais(it.valor) : '',
+          onde ? 'Guardado em ' + onde : '', it.observacao]
         .filter(Boolean).join(' · ');
 
       // quem está com o material agora

@@ -1493,6 +1493,12 @@ create policy p_almoxarifado_itens on almoxarifado_itens for all using(true) wit
 drop policy if exists p_almoxarifado_emprestimos on almoxarifado_emprestimos;
 create policy p_almoxarifado_emprestimos on almoxarifado_emprestimos for all using(true) with check(true);
 
+-- Planilha de patrimônio do clube (N°, Quantidade, Item, Descrição, Condição,
+-- Valor): o Almoxarifado segue esse padrão. Item = nome, Condição = estado.
+-- Faltavam Descrição e Valor. O N° é a ordem de cadastro, calculada na tela.
+alter table almoxarifado_itens add column if not exists descricao text;
+alter table almoxarifado_itens add column if not exists valor numeric(12,2) check (valor is null or valor >= 0);
+
 -- Quem cadastra e dá baixa no almoxarifado. Coluna própria, e não um valor
 -- de usuarios.cargo, pela mesma razão do pode_pontuar_unidades: uma pessoa
 -- acumula funções no clube, e cargo só guarda uma. Quem não tem isto ligado
