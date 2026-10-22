@@ -2408,6 +2408,20 @@
   .tr-pdf-btn:hover{ border-color:var(--t-ink); }
   .tr-whats-mini{ flex-shrink:0; width:32px; height:30px; margin-left:6px; border-radius:9px; border:1px solid #25D366; background:color-mix(in srgb, #25D366 14%, transparent); font-size:14px; cursor:pointer; }
   .tr-whats-mini.sem-numero{ border-style:dashed; opacity:0.7; }
+  /* Doação: doador, WhatsApp, quem pediu e lembrete */
+  .tr-doacao-box{ margin:14px 0 4px; padding:12px 14px 14px; border-radius:16px; background:color-mix(in srgb, var(--t-gold, #D8A83E) 9%, transparent); border:1px solid color-mix(in srgb, var(--t-gold, #D8A83E) 28%, transparent); }
+  .tr-doacao-tit{ font-size:13px; font-weight:900; color:var(--t-ink, var(--cream)); margin-bottom:2px; }
+  .tr-doacao-aviso{ margin:6px 2px 0; padding:7px 10px; border-radius:10px; font-size:11.5px; font-weight:800; line-height:1.4; background:color-mix(in srgb, var(--t-out, #FF6B5C) 14%, transparent); color:var(--t-ink, var(--cream)); }
+  .tr-doacao-box .pl-reminder-toggle-row{ margin-top:12px; }
+  .tr-lembretes{ margin:0 0 12px; padding:12px; border-radius:16px; background:color-mix(in srgb, var(--t-gold, #D8A83E) 10%, transparent); border:1px solid color-mix(in srgb, var(--t-gold, #D8A83E) 30%, transparent); }
+  .tr-lembretes h5{ margin:0 0 8px; font-size:13px; font-weight:900; color:var(--t-ink, var(--cream)); }
+  .tr-lemb{ display:flex; align-items:center; gap:8px; padding:8px 0; border-top:1px solid var(--t-line, rgba(255,255,255,0.1)); }
+  .tr-lemb:first-of-type{ border-top:0; }
+  .tr-lemb-corpo{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .tr-lemb-nome{ font-size:13.5px; font-weight:800; color:var(--t-ink, var(--cream)); }
+  .tr-lemb-meta{ font-size:11.5px; font-weight:700; color:var(--t-muted, rgba(245,239,225,0.6)); }
+  .tr-lemb-meta.atraso{ color:var(--t-out, #FF6B5C); }
+  .tr-lemb-ok{ flex-shrink:0; width:32px; height:30px; border-radius:9px; border:1px solid var(--t-line2, rgba(255,255,255,0.2)); background:var(--t-card2, transparent); color:var(--t-ink, var(--cream)); font-size:14px; font-weight:900; cursor:pointer; }
   .tr-whats-mini:disabled{ opacity:0.3; cursor:default; }
   @media (max-width:420px){ .tr-aba-web{ display:none; } .tr-aba-cel{ display:inline; } .tr-aba{ font-size:11.5px; padding:9px 2px; } .tr-hero-saldo{ font-size:32px; } }
   @media (min-width:900px){
@@ -11587,6 +11601,7 @@
               <div class="tr-resumo-item"><span>Resultado</span><b id="trResultadoMes">R$ 0,00</b></div>
             </div>
             <div class="tr-cats" id="trCats"></div>
+            <div class="tr-lembretes" id="trLembretes" style="display:none;"></div>
             <div class="tr-filtros-linha">
               <div class="tr-filtros" id="trFiltros">
                 <button type="button" class="tr-filtro active" data-filtro="todos">Todos</button>
@@ -11681,6 +11696,28 @@
           <div id="trFieldItemWrap" style="display:none;">
             <label class="pl-field-label" for="trFieldItem">Item do orçamento</label>
             <select class="pl-input" id="trFieldItem"></select>
+          </div>
+          <!-- Só aparece em entrada de "Doação": doador, WhatsApp, quem pediu e o lembrete. -->
+          <div class="tr-doacao-box" id="trDoacaoBox" style="display:none;">
+            <div class="tr-doacao-tit">🤝 Doador e lembrete</div>
+            <label class="pl-field-label" for="trDoadorNome">Doador</label>
+            <input type="text" class="pl-input" id="trDoadorNome" list="trDoadoresLista" placeholder="Nome de quem doa" maxlength="80" autocomplete="off">
+            <datalist id="trDoadoresLista"></datalist>
+            <label class="pl-field-label" for="trDoadorWhats">WhatsApp do doador</label>
+            <input type="tel" class="pl-input" id="trDoadorWhats" inputmode="tel" placeholder="(11) 91234-5678" maxlength="20" autocomplete="off">
+            <p class="tr-doacao-aviso" id="trDoadorWhatsAviso" style="display:none;">📵 Cadastre o WhatsApp do doador para poder mandar o lembrete.</p>
+            <label class="pl-field-label" for="trDoacaoPediu">Quem pediu a doação</label>
+            <input type="text" class="pl-input" id="trDoacaoPediu" list="trSolicitantesLista" placeholder="Nome de quem pediu" maxlength="80" autocomplete="off">
+            <datalist id="trSolicitantesLista"></datalist>
+            <label class="pl-reminder-toggle-row" for="trLembreteOn">
+              <span class="pl-reminder-toggle-text">🔔 Lembrar o doador</span>
+              <span class="pl-switch"><input type="checkbox" id="trLembreteOn"><span class="pl-switch-track"><span class="pl-switch-thumb"></span></span></span>
+            </label>
+            <div id="trLembreteCampos" style="display:none;">
+              <label class="pl-field-label" for="trLembreteData">Data do lembrete</label>
+              <input type="date" class="pl-input" id="trLembreteData">
+              <p class="pl-reminder-hint">Nesse dia o app avisa na Tesouraria e no sino do Início, com botão para mandar a mensagem pelo WhatsApp.</p>
+            </div>
           </div>
           <label class="pl-field-label" for="trFieldObs">Observação</label>
           <input type="text" class="pl-input" id="trFieldObs" placeholder="Opcional (ex.: recibo nº 12)" maxlength="120">
@@ -11847,7 +11884,9 @@
           <textarea class="pl-input pl-textarea" id="trCfgMsgCob" rows="6"></textarea>
           <label class="pl-field-label" for="trCfgMsgRec">Mensagem de recibo (WhatsApp)</label>
           <textarea class="pl-input pl-textarea" id="trCfgMsgRec" rows="5"></textarea>
-          <p class="pl-reminder-hint">Use os campos entre chaves, que o app troca na hora: {responsavel}, {desbravador}, {descricao}, {valor}, {parcela}, {vencimento}, {data_pagamento}, {pix}, {pix_nome}, {clube}. Linhas com {pix} somem se a chave estiver vazia.</p>
+          <label class="pl-field-label" for="trCfgMsgDoa">Mensagem de lembrete de doação (WhatsApp)</label>
+          <textarea class="pl-input pl-textarea" id="trCfgMsgDoa" rows="5"></textarea>
+          <p class="pl-reminder-hint">Use os campos entre chaves, que o app troca na hora: {responsavel}, {desbravador}, {descricao}, {valor}, {parcela}, {vencimento}, {data_pagamento}, {pix}, {pix_nome}, {clube}. Na mensagem de doação: {doador}, {valor}, {data}, {pediu}. Linhas com {pix} somem se a chave estiver vazia.</p>
           <div class="pl-modal-actions">
             <button type="button" class="pl-btn pl-btn-neutral" id="trCfgPadrao">Textos padrão</button>
             <button type="button" class="pl-btn pl-btn-primary" id="trCfgSalvar">Salvar</button>
@@ -17739,6 +17778,14 @@
           });
         }
       }
+      // Lembretes de doação da Tesouraria (já vencidos) — itens sintéticos, sem card na Agenda.
+      if(typeof window.__trGetDoacaoReminders === 'function'){
+        window.__trGetDoacaoReminders().forEach(r => due.push({
+          card: { dataset: { local: '' } },
+          title: r.title, msg: r.msg, day: r.day, monAbbr: r.monAbbr,
+          repeatOn: false, timesLeft: 0, isDoacao: true, lancId: r.lancId
+        }));
+      }
       return due;
     }
 
@@ -17778,6 +17825,9 @@
     async function confirmReminderItem(item){
       if(item.isBirthday){
         if(window.__btConfirmBirthdayReminder) await window.__btConfirmBirthdayReminder(item.meetingId);
+        refreshReminderBell();
+      } else if(item.isDoacao){
+        if(window.__trConfirmDoacao) await window.__trConfirmDoacao(item.lancId);
         refreshReminderBell();
       } else {
         await confirmReminderRead(item.card);
@@ -25347,7 +25397,7 @@
     });
 
     // ---- Estado ----
-    let lancamentos = [], eventos = [], itens = [], cobrancas = [], parcelas = [], agenda = [], pessoas = [];
+    let lancamentos = [], eventos = [], itens = [], cobrancas = [], parcelas = [], agenda = [], pessoas = [], doadores = [];
     let cobrancasOk = true;
     const agora = new Date();
     let mesSel = { ano: agora.getFullYear(), mes: agora.getMonth() + 1 };
@@ -25377,6 +25427,8 @@
         return;
       }
       lancamentos = (l.data || []).map(num);
+      const d = await supa.from('tesouraria_doadores').select('*').order('nome');
+      doadores = d.error ? [] : (d.data || []);
       eventos = e.data || [];
       itens = (o.data || []).map(num);
       cobrancasOk = !c.error && !p.error;
@@ -25412,7 +25464,8 @@
     // Configurações do clube (clube_config): chave Pix, recebedor e textos.
     const MSG_PADRAO = {
       msg_cobranca: 'Olá, {responsavel}! 👋\nLembrete do {clube}: {descricao} de {desbravador}{parcela} — {valor}, {vencimento}.\n\nPix: {pix} ({pix_nome})\n\nSe já pagou, por favor desconsidere. Obrigado!',
-      msg_recibo: 'Olá, {responsavel}! ✅\nRecebemos {valor} referente a {descricao} de {desbravador}{parcela}, em {data_pagamento}.\n\nObrigado! — Tesouraria do {clube}'
+      msg_recibo: 'Olá, {responsavel}! ✅\nRecebemos {valor} referente a {descricao} de {desbravador}{parcela}, em {data_pagamento}.\n\nObrigado! — Tesouraria do {clube}',
+      msg_doacao: 'Olá, {doador}! 👋\nPassando para lembrar da doação de {valor} ao {clube}, combinada para {data}{pediu}.\n\nPix: {pix} ({pix_nome})\n\nSe já realizou, por favor desconsidere. Deus abençoe! 🙏'
     };
     let config = {};
     async function carregarConfig(){
@@ -26124,7 +26177,8 @@
       if(ev) desc.appendChild(el('span', 'tr-row-evento', ev.nome));
       corpo.appendChild(desc);
       // Nas listas agrupadas por dia a data já está no cabeçalho do dia.
-      corpo.appendChild(el('span', 'tr-l-meta', [mostrarEvento ? '' : dataCurta(x.data), x.forma_pagamento, x.registrado_por].filter(Boolean).join(' · ')));
+      const lembPendente = x.lembrete_data && !x.lembrete_feito_em;
+      corpo.appendChild(el('span', 'tr-l-meta', [mostrarEvento ? '' : dataCurta(x.data), x.forma_pagamento, x.registrado_por, lembPendente ? '🔔 ' + dataCurta(x.lembrete_data) : ''].filter(Boolean).join(' · ')));
       linha.appendChild(corpo);
       linha.appendChild(el('span', 'tr-l-val ' + (ent ? 'tr-value-in' : 'tr-value-out'), (ent ? '+ ' : '− ') + brl(x.valor)));
       if(x.observacao) linha.title = x.observacao;
@@ -26163,6 +26217,7 @@
       const termo = normalizar(busca);
       const filtrados = doMes.filter(x => (filtro === 'todos' ? true : filtro === 'geral' ? !x.evento_id : filtro === 'eventos' ? !!x.evento_id : x.tipo === filtro)
         && (!termo || normalizar([x.descricao, x.categoria, x.forma_pagamento, x.registrado_por, (eventoPorId(x.evento_id) || {}).nome].join(' ')).indexOf(termo) !== -1));
+      desenharLembretesDoacao();
       lista.innerHTML = '';
       if(!filtrados.length){ lista.appendChild(vazio(doMes.length ? 'Nenhum lançamento com esse filtro neste mês.' : 'Nenhum lançamento em ' + MESES[mesSel.mes - 1] + '.')); return; }
       porDia(filtrados, lista);
@@ -26680,6 +26735,175 @@
 
     // ---- Lançamento ----
     let lancEditando = null, tipoLanc = 'entrada';
+
+    // ---------------------------------------------------------------
+    // Doações: doador, WhatsApp, quem pediu e lembrete da data
+    // ---------------------------------------------------------------
+    // Cada doação é uma entrada da categoria "Doação". Os dados do doador
+    // (nome + WhatsApp) ficam em tesouraria_doadores, pra não digitar de novo;
+    // quem pediu e a data do lembrete ficam no próprio lançamento (colunas
+    // doador_id, solicitado_por, lembrete_data, lembrete_feito_em/_por —
+    // ver supabase/atualizacao-doacoes.sql). O lembrete aparece no card da
+    // aba Lançamentos e no sino do Início até alguém marcar como feito.
+    const SQL_DOACOES = 'Rode o arquivo supabase/atualizacao-doacoes.sql no Supabase para ligar o lembrete de doação.';
+    const erroDeDoacao = msg => /doador|solicitado_por|lembrete_|tesouraria_doadores/i.test(msg || '');
+    const doadorPorId = id => doadores.find(d => d.id === id) || null;
+    const doadorPorNome = nome => { const n = normalizar(nome); return n ? doadores.find(d => normalizar(d.nome) === n) || null : null; };
+    const clubeNome = () => window.CLUBE_CONFIG ? window.CLUBE_CONFIG.nomeCompleto : 'Clube';
+    const ehDoacaoAgora = () => tipoLanc === 'entrada' && $('trFieldCategory').value === 'Doação';
+
+    function atualizarAvisoWhats(){
+      const sem = $('trLembreteOn').checked && !$('trDoadorWhats').value.trim();
+      $('trDoadorWhatsAviso').style.display = sem ? '' : 'none';
+    }
+    function atualizarCaixaDoacao(){
+      const ver = ehDoacaoAgora();
+      $('trDoacaoBox').style.display = ver ? '' : 'none';
+      if(!ver) return;
+      // O nome de quem doa costuma ir no "Detalhe": reaproveita nos dois sentidos.
+      if(!$('trDoadorNome').value && $('trFieldDesc').value && !lancEditando) $('trDoadorNome').value = $('trFieldDesc').value.trim();
+      const nomes = $('trDoadoresLista'); nomes.innerHTML = '';
+      doadores.forEach(d => { const o = el('option'); o.value = d.nome; nomes.appendChild(o); });
+      const pediu = $('trSolicitantesLista'); pediu.innerHTML = '';
+      Array.from(new Set(lancamentos.map(x => x.solicitado_por).filter(Boolean))).sort().forEach(n => { const o = el('option'); o.value = n; pediu.appendChild(o); });
+      $('trLembreteCampos').style.display = $('trLembreteOn').checked ? '' : 'none';
+      atualizarAvisoWhats();
+    }
+    function preencherDoacao(x){
+      const d = x && x.doador_id ? doadorPorId(x.doador_id) : null;
+      $('trDoadorNome').value = d ? d.nome : '';
+      $('trDoadorWhats').value = d && d.whatsapp ? d.whatsapp : '';
+      $('trDoacaoPediu').value = x && x.solicitado_por ? x.solicitado_por : '';
+      $('trLembreteOn').checked = !!(x && x.lembrete_data);
+      $('trLembreteData').value = x && x.lembrete_data ? x.lembrete_data : '';
+      atualizarCaixaDoacao();
+    }
+    $('trDoadorNome').addEventListener('input', () => {
+      // Doador já cadastrado: traz o WhatsApp dele.
+      const d = doadorPorNome($('trDoadorNome').value);
+      if(d && d.whatsapp && !$('trDoadorWhats').value.trim()){ $('trDoadorWhats').value = d.whatsapp; atualizarAvisoWhats(); }
+    });
+    $('trDoadorWhats').addEventListener('input', () => { $('trDoadorWhats').style.borderColor = ''; atualizarAvisoWhats(); });
+    $('trLembreteOn').addEventListener('change', () => {
+      if($('trLembreteOn').checked && !$('trLembreteData').value){
+        // Sugestão: a própria data da doação, se ainda não passou; senão, daqui a uma semana.
+        const d = $('trFieldDate').value;
+        $('trLembreteData').value = d && d >= hoje() ? d : isoDe(new Date(Date.now() + 7 * 86400000));
+      }
+      atualizarCaixaDoacao();
+    });
+    $('trFieldCatChips').addEventListener('click', atualizarCaixaDoacao);
+
+    // Grava (ou atualiza) o doador e devolve o id. null = sem nome; false = erro já avisado.
+    async function salvarDoador(nome, whats){
+      nome = (nome || '').trim();
+      if(!nome) return null;
+      const fone = whats ? foneWhats(whats).replace(/^55/, '') : '';
+      const ja = doadorPorNome(nome);
+      if(ja){
+        if((ja.whatsapp || '') !== fone && (fone || !ja.whatsapp)){
+          const { error } = await supa.from('tesouraria_doadores').update({ whatsapp: fone || null }).eq('id', ja.id);
+          if(error){ alert(erroDeDoacao(error.message) ? SQL_DOACOES : 'Não consegui salvar o doador: ' + error.message); return false; }
+        }
+        return ja.id;
+      }
+      const { data, error } = await supa.from('tesouraria_doadores').insert({ nome, whatsapp: fone || null }).select().single();
+      if(error){ alert(erroDeDoacao(error.message) ? SQL_DOACOES : 'Não consegui salvar o doador: ' + error.message); return false; }
+      return data.id;
+    }
+
+    // ---- Lembretes pendentes (card da aba Lançamentos + sino do Início) ----
+    const lembretesPendentes = () => lancamentos
+      .filter(x => x.tipo === 'entrada' && x.lembrete_data && !x.lembrete_feito_em)
+      .sort((a, b) => a.lembrete_data.localeCompare(b.lembrete_data));
+    const lembretesVencidos = () => lembretesPendentes().filter(x => x.lembrete_data <= hoje());
+    function nomeDoDoador(x){ const d = doadorPorId(x.doador_id); return d ? d.nome : (x.descricao || 'Doador'); }
+
+    async function enviarLembreteDoacao(x){
+      const d = doadorPorId(x.doador_id);
+      let fone = foneWhats(d && d.whatsapp);
+      if(!fone){
+        const digitado = prompt('WhatsApp de ' + nomeDoDoador(x) + ' (com DDD).\nFica salvo no cadastro do doador.', '');
+        if(digitado === null) return;
+        fone = foneWhats(digitado);
+        if(!fone){ alert('Número inválido. Use DDD + número, ex.: (11) 91234-5678.'); return; }
+        if(d){
+          const { error } = await supa.from('tesouraria_doadores').update({ whatsapp: fone.replace(/^55/, '') }).eq('id', d.id);
+          if(error) alert('O número não foi salvo: ' + (erroDeDoacao(error.message) ? SQL_DOACOES : error.message) + ' A mensagem abre mesmo assim.');
+          else d.whatsapp = fone.replace(/^55/, '');
+        }
+      }
+      const vars = {
+        doador: nomeDoDoador(x).split(' ')[0], valor: brl(x.valor), data: dataLonga(x.data),
+        pediu: x.solicitado_por ? ' (pedido de ' + x.solicitado_por + ')' : '',
+        descricao: x.descricao || 'doação', pix: (config.pix_chave || '').trim(), pix_nome: (config.pix_nome || '').trim(), clube: clubeNome()
+      };
+      abrirWhats(fone, montarMensagem(cfg('msg_doacao'), vars));
+    }
+    async function concluirLembreteDoacao(id){
+      const quem = (window.__currentUsuario && window.__currentUsuario.nome) || null;
+      const { error } = await supa.from('tesouraria_lancamentos').update({ lembrete_feito_em: new Date().toISOString(), lembrete_feito_por: quem }).eq('id', id);
+      if(error){ alert('Não consegui marcar como feito: ' + error.message); return false; }
+      const x = lancamentos.find(l => l.id === id);
+      if(x){ x.lembrete_feito_em = new Date().toISOString(); x.lembrete_feito_por = quem; }
+      desenharLembretesDoacao();
+      desenharGeral();
+      if(window.__plRefreshReminderBell) window.__plRefreshReminderBell();
+      return true;
+    }
+    function desenharLembretesDoacao(){
+      const box = $('trLembretes');
+      const lista_ = podeEditar() ? lembretesPendentes() : [];
+      box.innerHTML = '';
+      box.style.display = lista_.length ? '' : 'none';
+      if(!lista_.length) return;
+      box.appendChild(el('h5', null, '🔔 Lembretes de doação (' + lista_.length + ')'));
+      lista_.forEach(x => {
+        const d = doadorPorId(x.doador_id);
+        const atraso = x.lembrete_data < hoje(), hojeE = x.lembrete_data === hoje();
+        const quando = hojeE ? 'hoje' : atraso ? 'atrasado desde ' + dataCurta(x.lembrete_data) : 'em ' + dataCurta(x.lembrete_data);
+        const linha = el('div', 'tr-lemb');
+        const corpo = el('div', 'tr-lemb-corpo');
+        corpo.appendChild(el('span', 'tr-lemb-nome', nomeDoDoador(x) + ' · ' + brl(x.valor)));
+        corpo.appendChild(el('span', 'tr-lemb-meta' + (atraso ? ' atraso' : ''), [quando, x.solicitado_por ? 'pediu: ' + x.solicitado_por : '', d && d.whatsapp ? '' : '📵 sem WhatsApp'].filter(Boolean).join(' · ')));
+        const w = el('button', 'tr-whats-mini' + (d && d.whatsapp ? '' : ' sem-numero'), '📲');
+        w.type = 'button'; w.title = d && d.whatsapp ? 'Lembrar pelo WhatsApp' : 'Cadastrar o WhatsApp e lembrar';
+        w.addEventListener('click', () => enviarLembreteDoacao(x));
+        const ok = el('button', 'tr-lemb-ok', '✓'); ok.type = 'button'; ok.title = 'Marcar como feito';
+        ok.addEventListener('click', () => concluirLembreteDoacao(x.id));
+        linha.append(corpo, w, ok);
+        corpo.addEventListener('click', () => abrirLancamento(x));
+        box.appendChild(linha);
+      });
+    }
+
+    // Sino do Início: itens sintéticos dos lembretes que já venceram (ver collectDueReminders).
+    window.__trGetDoacaoReminders = function(){
+      if(!podeEditar()) return [];
+      return lembretesVencidos().map(x => {
+        const [a, m, dia] = x.lembrete_data.split('-');
+        return {
+          lancId: x.id, title: 'Lembrar doação',
+          msg: 'Lembrar ' + nomeDoDoador(x) + ' da doação de ' + brl(x.valor) + (x.solicitado_por ? ' (pediu: ' + x.solicitado_por + ')' : ''),
+          day: dia, monAbbr: MES_CURTO[Number(m) - 1].replace(/^./, c => c.toUpperCase())
+        };
+      });
+    };
+    window.__trConfirmDoacao = id => concluirLembreteDoacao(id);
+    // Carga leve pro sino funcionar sem abrir a Tesouraria: só quem lança/edita.
+    async function carregarLembretesLeve(){
+      if(!supa || !podeEditar()) return;
+      const [l, d] = await Promise.all([
+        supa.from('tesouraria_lancamentos').select('*').not('lembrete_data', 'is', null).is('lembrete_feito_em', null),
+        supa.from('tesouraria_doadores').select('*')
+      ]);
+      if(l.error || d.error) return; // banco ainda sem o SQL de doações
+      doadores = d.data || [];
+      const outros = lancamentos.filter(x => !(x.lembrete_data && !x.lembrete_feito_em));
+      lancamentos = outros.concat((l.data || []).map(num));
+      if(window.__plRefreshReminderBell) window.__plRefreshReminderBell();
+    }
+
     function preencherItens(atualItem){
       const evId = $('trFieldEvento').value;
       const doEvento = itens.filter(x => x.evento_id === evId && x.tipo === tipoLanc);
@@ -26705,6 +26929,8 @@
       preencherEventos($('trFieldEvento'), x ? x.evento_id : (pre.evento || ''));
       preencherItens(x ? x.orcamento_item_id : (pre.item || null));
       $('trFieldObs').value = x ? (x.observacao || '') : '';
+      preencherDoacao(x);
+      $('trDoadorWhats').style.borderColor = '';
       $('trDeleteBtn').style.display = x ? '' : 'none';
       $('trLancCobAviso').style.display = x && parcelas.some(p => p.lancamento_id === x.id) ? '' : 'none';
       // Recibo só faz sentido pra entrada já gravada.
@@ -26716,7 +26942,7 @@
     }
     $('trFieldKind').querySelectorAll('.tr-tipo-btn').forEach(b => b.addEventListener('click', () => {
       tipoLanc = b.dataset.tipo; marcarTipo($('trFieldKind'), tipoLanc);
-      preencherCategorias($('trFieldCategory'), tipoLanc, null); preencherItens(null);
+      preencherCategorias($('trFieldCategory'), tipoLanc, null); preencherItens(null); atualizarCaixaDoacao();
     }));
     $('trFieldEvento').addEventListener('change', () => preencherItens(null));
     $('trModalClose').addEventListener('click', () => $('trModalOverlay').classList.remove('show'));
@@ -26727,7 +26953,21 @@
       if(!descricao){ $('trFieldDesc').style.borderColor = 'var(--t-out)'; ok = false; }
       if(!(valor > 0)){ $('trFieldValue').style.borderColor = 'var(--t-out)'; ok = false; }
       if(!$('trFieldDate').value){ alert('Informe a data do lançamento.'); ok = false; }
+      const ehDoacao = ehDoacaoAgora();
+      let doadorFone = '';
+      if(ehDoacao){
+        const bruto = $('trDoadorWhats').value.trim();
+        doadorFone = bruto ? foneWhats(bruto) : '';
+        if(bruto && !doadorFone){ $('trDoadorWhats').style.borderColor = 'var(--t-out)'; alert('WhatsApp inválido. Use DDD + número, ex.: (11) 91234-5678.'); ok = false; }
+        if($('trLembreteOn').checked && !$('trLembreteData').value){ alert('Informe a data do lembrete.'); ok = false; }
+        if($('trLembreteOn').checked && !$('trDoadorNome').value.trim() && !$('trFieldDesc').value.trim()){ alert('Informe o doador para poder lembrar.'); ok = false; }
+      }
       if(!ok) return;
+      // Lembrete ligado e sem número: lembra de cadastrar antes de seguir.
+      if(ehDoacao && $('trLembreteOn').checked && !doadorFone &&
+         !confirm('Este doador está sem WhatsApp cadastrado, então não dá para mandar o lembrete pelo app.\n\nSalvar assim mesmo? (Cancelar para preencher o número)')){
+        $('trDoadorWhats').focus(); return;
+      }
       const linha = {
         data: $('trFieldDate').value, descricao, tipo: tipoLanc, valor,
         categoria: $('trFieldCategory').value || null, forma_pagamento: $('trFieldPagamento').value || null,
@@ -26736,11 +26976,26 @@
         registrado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
       };
       $('trSaveBtn').disabled = true;
+      if(ehDoacao){
+        const nomeDoador = $('trDoadorNome').value.trim() || ($('trLembreteOn').checked ? descricao : '');
+        const idDoador = await salvarDoador(nomeDoador, doadorFone);
+        if(idDoador === false){ $('trSaveBtn').disabled = false; return; }
+        const antes = lancEditando || {};
+        const lembData = $('trLembreteOn').checked ? $('trLembreteData').value : null;
+        linha.doador_id = idDoador;
+        linha.solicitado_por = $('trDoacaoPediu').value.trim() || null;
+        linha.lembrete_data = lembData;
+        // Mudou a data (ou ligou de novo): o lembrete volta a ficar pendente.
+        if(lembData !== (antes.lembrete_data || null)){ linha.lembrete_feito_em = null; linha.lembrete_feito_por = null; }
+      } else if(lancEditando && (lancEditando.doador_id || lancEditando.solicitado_por || lancEditando.lembrete_data)){
+        // Saiu da categoria Doação: limpa os dados de doador/lembrete.
+        Object.assign(linha, { doador_id: null, solicitado_por: null, lembrete_data: null, lembrete_feito_em: null, lembrete_feito_por: null });
+      }
       const { error } = lancEditando
         ? await supa.from('tesouraria_lancamentos').update(linha).eq('id', lancEditando.id)
         : await supa.from('tesouraria_lancamentos').insert(linha);
       $('trSaveBtn').disabled = false;
-      if(error){ alert('Não consegui salvar o lançamento: ' + error.message); return; }
+      if(error){ alert(erroDeDoacao(error.message) ? SQL_DOACOES : 'Não consegui salvar o lançamento: ' + error.message); return; }
       $('trModalOverlay').classList.remove('show');
       // Lançou num mês que não está na tela: vai pra ele, senão parece que sumiu.
       const [a, m] = linha.data.split('-').map(Number);
@@ -27070,6 +27325,7 @@
       $('trCfgCidade').value = config.cidade || '';
       $('trCfgMsgCob').value = cfg('msg_cobranca');
       $('trCfgMsgRec').value = cfg('msg_recibo');
+      $('trCfgMsgDoa').value = cfg('msg_doacao');
       mostrarModal($('trConfigModal'));
     }
     $('trConfigBtn').addEventListener('click', async () => { await carregarConfig(); abrirConfig(); });
@@ -27077,12 +27333,13 @@
     $('trCfgPadrao').addEventListener('click', () => {
       $('trCfgMsgCob').value = MSG_PADRAO.msg_cobranca;
       $('trCfgMsgRec').value = MSG_PADRAO.msg_recibo;
+      $('trCfgMsgDoa').value = MSG_PADRAO.msg_doacao;
     });
     $('trCfgSalvar').addEventListener('click', async () => {
       const quem = (window.__currentUsuario && window.__currentUsuario.nome) || null;
       const linhas = [['pix_chave', $('trCfgPix').value.trim()], ['pix_nome', $('trCfgPixNome').value.trim()],
         ['tesoureiro_nome', $('trCfgAssNome').value.trim()], ['tesoureiro_cargo', $('trCfgAssCargo').value.trim()], ['cidade', $('trCfgCidade').value.trim()],
-        ['msg_cobranca', $('trCfgMsgCob').value.trim()], ['msg_recibo', $('trCfgMsgRec').value.trim()]]
+        ['msg_cobranca', $('trCfgMsgCob').value.trim()], ['msg_recibo', $('trCfgMsgRec').value.trim()], ['msg_doacao', $('trCfgMsgDoa').value.trim()]]
         .map(([chave, valor]) => ({ chave, valor, atualizado_por: quem, atualizado_em: new Date().toISOString() }));
       $('trCfgSalvar').disabled = true;
       const { error } = await supa.from('clube_config').upsert(linhas);
@@ -27116,7 +27373,7 @@
       carregarAgenda().then(() => { if(eventoAberto) desenharDetalhe(); });
       carregarPessoas().then(() => { if($('trAbaCobrancas').style.display !== 'none') desenharCobrancas(); });
     };
-    document.addEventListener('cedros:loggedin', () => { if(view.classList.contains('active')) carregar(); else desenharTudo(); });
+    document.addEventListener('cedros:loggedin', () => { if(view.classList.contains('active')) carregar(); else { desenharTudo(); carregarConfig(); carregarLembretesLeve(); } });
   })();
 
   // ---- Generic helper: simple "list + tag + modal" screens (Secretaria, Almoxarifado, Manuais, Aniversário, Especialidades) ----
