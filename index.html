@@ -11887,6 +11887,11 @@
           <label class="pl-field-label" for="trCfgMsgDoa">Mensagem de lembrete de doação (WhatsApp)</label>
           <textarea class="pl-input pl-textarea" id="trCfgMsgDoa" rows="5"></textarea>
           <p class="pl-reminder-hint">Use os campos entre chaves, que o app troca na hora: {responsavel}, {desbravador}, {descricao}, {valor}, {parcela}, {vencimento}, {data_pagamento}, {pix}, {pix_nome}, {clube}. Na mensagem de doação: {doador}, {valor}, {data}, {pediu}. Linhas com {pix} somem se a chave estiver vazia.</p>
+          <div class="tr-doacao-box">
+            <div class="tr-doacao-tit">🔔 Avisos de doação neste celular</div>
+            <p class="pl-reminder-hint" id="trAvisosTexto">Todo dia às 8h, o celular avisa se há lembretes de doação para fazer.</p>
+            <button type="button" class="tr-pdf-btn" id="trAvisosBtn">Ativar neste celular</button>
+          </div>
           <div class="pl-modal-actions">
             <button type="button" class="pl-btn pl-btn-neutral" id="trCfgPadrao">Textos padrão</button>
             <button type="button" class="pl-btn pl-btn-primary" id="trCfgSalvar">Salvar</button>
@@ -27326,6 +27331,7 @@
       $('trCfgMsgCob').value = cfg('msg_cobranca');
       $('trCfgMsgRec').value = cfg('msg_recibo');
       $('trCfgMsgDoa').value = cfg('msg_doacao');
+      atualizarAvisos();
       mostrarModal($('trConfigModal'));
     }
     $('trConfigBtn').addEventListener('click', async () => { await carregarConfig(); abrirConfig(); });
@@ -27363,6 +27369,76 @@
     window.addEventListener('resize', () => {
       clearTimeout(redimensionando);
       redimensionando = setTimeout(() => { if(view.classList.contains('active') && $('trAbaPainel').style.display !== 'none') desenharPainel(); }, 200);
+    });
+
+
+    // ---------------------------------------------------------------
+    // Avisos de doação no celular (notificação push pela web)
+    // ---------------------------------------------------------------
+    // Cada celular/navegador que ativa aqui vira uma linha em push_inscricoes.
+    // Todo dia às 8h a função lembretes-doacao (Supabase) manda a notificação
+    // pra todos os inscritos que têm lembrete vencido. O botão fica no ⚙ da
+    // Tesouraria, que só quem lança (Tesoureiro, Diretoria, Administrador) vê.
+    const VAPID_PUBLICA = 'BBlZlpHr_EAvRq249eTpGQ6veBFqiGGwVirzwKmqt9XmdKQmMH3h58kl2r1u-cqcpNMlP6rTFj1ynRoDk3tIfAU';
+    const suportaPush = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    function chaveParaBytes(b64){
+      const p = '='.repeat((4 - b64.length % 4) % 4);
+      const bin = atob((b64 + p).replace(/-/g, '+').replace(/_/g, '/'));
+      return Uint8Array.from(bin, c => c.charCodeAt(0));
+    }
+    async function assinaturaAtual(){
+      if(!suportaPush()) return null;
+      const reg = await navigator.serviceWorker.ready;
+      return reg.pushManager.getSubscription();
+    }
+    async function atualizarAvisos(){
+      const btn = $('trAvisosBtn'), txt = $('trAvisosTexto');
+      if(!suportaPush()){
+        btn.style.display = 'none';
+        txt.textContent = 'Este navegador não permite avisos. No celular, abra o app pelo Chrome (ou pelo atalho instalado dele). No iPhone, adicione o app à tela de início antes. O app instalado por APK não recebe estes avisos.';
+        return;
+      }
+      btn.style.display = '';
+      if(Notification.permission === 'denied'){
+        btn.style.display = 'none';
+        txt.textContent = 'As notificações estão bloqueadas para este site. Libere nas configurações do navegador (cadeado ao lado do endereço) e abra esta tela de novo.';
+        return;
+      }
+      const ativo = !!(await assinaturaAtual().catch(() => null)) && Notification.permission === 'granted';
+      btn.textContent = ativo ? 'Desativar neste celular' : 'Ativar neste celular';
+      btn.dataset.ativo = ativo ? '1' : '';
+      txt.textContent = ativo
+        ? 'Ativado neste celular: todo dia às 8h chega o aviso quando houver lembrete de doação pendente.'
+        : 'Todo dia às 8h, o celular avisa se há lembretes de doação para fazer.';
+    }
+    async function ativarAvisos(){
+      const perm = await Notification.requestPermission();
+      if(perm !== 'granted'){ alert('Sem a permissão de notificações não dá para avisar. Toque em "Permitir" quando o navegador perguntar.'); return; }
+      const reg = await navigator.serviceWorker.ready;
+      const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: chaveParaBytes(VAPID_PUBLICA) });
+      const j = sub.toJSON();
+      const u = window.__currentUsuario || {};
+      const { error } = await supa.from('push_inscricoes').insert({ endpoint: sub.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, usuario_id: u.id || null, usuario_nome: u.nome || null });
+      // 23505 = este celular já estava inscrito: tudo certo.
+      if(error && error.code !== '23505'){
+        alert(/push_inscricoes/.test(error.message) ? 'Rode o arquivo supabase/atualizacao-avisos-push.sql no Supabase para ligar os avisos.' : 'Não consegui ativar os avisos: ' + error.message);
+        return;
+      }
+    }
+    async function desativarAvisos(){
+      const sub = await assinaturaAtual();
+      if(sub){
+        await supa.from('push_inscricoes').delete().eq('endpoint', sub.endpoint);
+        await sub.unsubscribe();
+      }
+    }
+    $('trAvisosBtn').addEventListener('click', async () => {
+      const btn = $('trAvisosBtn');
+      btn.disabled = true;
+      try { if(btn.dataset.ativo) await desativarAvisos(); else await ativarAvisos(); }
+      catch(e){ alert('Não consegui mudar os avisos: ' + (e && e.message ? e.message : e)); }
+      btn.disabled = false;
+      atualizarAvisos();
     });
 
     // Abre/atualiza ao entrar na tela (ver o atalho data-goto) e ao logar.

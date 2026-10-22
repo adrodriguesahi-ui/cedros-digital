@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cedros-digital-v23';
+const CACHE_NAME = 'cedros-digital-v24';
 const ASSETS = [
   './login.html',
   './manifest.json',
@@ -64,6 +64,32 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => cached);
+    })
+  );
+});
+
+// Avisos de doação (push). Quem manda é a função lembretes-doacao, do Supabase,
+// todo dia às 8h; o celular só mostra e, ao tocar, abre o app.
+self.addEventListener('push', (event) => {
+  let d = {};
+  try { d = event.data ? event.data.json() : {}; } catch (e) { d = { body: event.data ? event.data.text() : '' }; }
+  event.waitUntil(self.registration.showNotification(d.title || 'Cedros Digital', {
+    body: d.body || '',
+    icon: './icon-192.png?v=3',
+    badge: './icon-192.png?v=3',
+    tag: d.tag || 'cedros-aviso',
+    renotify: true,
+    data: { url: d.url || './' }
+  }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const alvo = (event.notification.data && event.notification.data.url) || './';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((lista) => {
+      for (const c of lista) { if ('focus' in c) return c.focus(); }
+      return self.clients.openWindow(alvo);
     })
   );
 });
