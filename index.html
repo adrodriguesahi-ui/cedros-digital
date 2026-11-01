@@ -1033,25 +1033,81 @@
   }
   #view-planning .pl-content .pl-event-card:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 
-  /* Próximo evento: borda verde e o rótulo "Próximo" acima do título. */
+  /* Próximo evento: borda verde e o rótulo "Próximo" antes do título. */
   #view-planning .pl-content .pl-event-card.pl-event-next[class]{ border-color:rgba(63,203,107,0.5); background:rgba(63,203,107,0.07); }
   #view-planning .pl-content .pl-event-next .pl-event-title::before{
-    content:'Próximo'; display:block; margin-bottom:4px;
-    font-size:10.5px; font-weight:900; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent);
+    content:'Próximo · '; font-size:10.5px; font-weight:900; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent);
   }
 
-  /* ---- Responsivo ----
-     Tablet (700px+): cards em duas colunas; separador, ferramentas e resumo
-     ocupam a largura toda. Computador (1100px+): calendário, busca e filtros
-     numa coluna fixa à esquerda (.pl-side) e a lista à direita. */
-  @media (min-width:700px){
-    #view-planning > .pl-scroll > .pl-content{
-      display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); column-gap:12px; align-content:start;
-    }
-    #view-planning .pl-content > *{ grid-column:1 / -1; }
-    #view-planning .pl-content > .pl-event-card{ grid-column:auto; margin-bottom:12px; }
-    #view-planning .pl-content > .pl-cat-stats{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
+  /* ---- Lista compacta (agenda) ----
+     Cada evento numa linha: dia (na cor da categoria) | título + horário ·
+     local | selo. Feriados (.pl-holiday-row) usam a mesma grade, entre os
+     eventos, em tom mais discreto. Sobrescreve o card grande acima. */
+  #view-planning .pl-content > .pl-event-card{
+    grid-template-columns:44px minmax(0,1fr) auto; column-gap:12px; row-gap:0;
+    align-items:center; margin-bottom:6px; padding:10px 46px 10px 8px; border-radius:14px;
   }
+  #view-planning .pl-content > .pl-event-card .pl-event-date{
+    grid-row:auto; width:44px; padding:0; background:none; border-radius:0; align-self:center;
+  }
+  #view-planning .pl-content > .pl-event-card .pl-event-date em{ font-size:10px; font-weight:900; color:rgba(245,239,225,0.5); margin:0; }
+  #view-planning .pl-content > .pl-event-card .pl-event-date b{ font-size:22px; line-height:1.05; color:var(--cream); }
+  #view-planning .pl-content > .pl-event-card .pl-event-date.periodo em{ font-size:9px; }
+  #view-planning .pl-content > .pl-event-card:has(.pl-tag-green) .pl-event-date b{ color:var(--accent); }
+  #view-planning .pl-content > .pl-event-card:has(.pl-tag-gold) .pl-event-date b{ color:var(--gold); }
+  #view-planning .pl-content > .pl-event-card:has(.pl-tag-blue) .pl-event-date b{ color:#5B9BFF; }
+  #view-planning .pl-content > .pl-event-card:has(.pl-tag-red) .pl-event-date b{ color:#FF6B5C; }
+  #view-planning .pl-content > .pl-event-card:has(.pl-tag-purple) .pl-event-date b{ color:#B98BFF; }
+  #view-planning .pl-content > .pl-event-card:has(.pl-tag-gray) .pl-event-date b{ color:#B5BDB2; }
+  #view-planning .pl-content > .pl-event-card .pl-event-date em,
+  #view-planning .pl-content > .pl-event-card:has([class*="pl-tag-"]) .pl-event-date em{ color:rgba(245,239,225,0.5); }
+  #view-planning .pl-content > .pl-event-card .pl-event-body{
+    display:grid; grid-template-columns:auto minmax(0,1fr); column-gap:0; row-gap:2px; align-items:baseline;
+  }
+  /* Título em até duas linhas: em uma só, com selo ao lado, o celular cortava
+     em "Limpe…". */
+  #view-planning .pl-content > .pl-event-card .pl-event-title{
+    grid-column:1 / -1; margin:0; font-size:14.5px; font-weight:900; line-height:1.3;
+    overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+  }
+  #view-planning .pl-content > .pl-event-card .pl-event-meta{ font-size:12.5px; white-space:nowrap; }
+  #view-planning .pl-content > .pl-event-card .pl-event-meta svg{ display:none; }
+  #view-planning .pl-content > .pl-event-card .pl-event-place{ min-width:0; overflow:hidden; text-overflow:ellipsis; display:block; }
+  #view-planning .pl-content > .pl-event-card .pl-event-place::before{ content:'\00a0·\00a0'; }
+  #view-planning .pl-content > .pl-event-card .pl-event-responsible{ display:none !important; }
+  #view-planning .pl-content > .pl-event-card .pl-event-reminder-mark{ grid-column:1 / -1; }
+  #view-planning .pl-content > .pl-event-card .pl-event-tag{
+    grid-column:3; grid-row:1; align-self:center; justify-self:end; padding:4px 9px; font-size:10.5px;
+    max-width:96px; overflow:hidden; text-overflow:ellipsis;
+  }
+  @media (min-width:700px){
+    #view-planning .pl-content > .pl-event-card .pl-event-tag{ max-width:200px; }
+  }
+  #view-planning .pl-content > .pl-event-card .pl-event-gcal-btn{ top:50%; transform:translateY(-50%); right:10px; }
+
+  .pl-holiday-row{
+    display:grid; grid-template-columns:44px minmax(0,1fr) auto; column-gap:12px; align-items:center;
+    width:100%; margin:0 0 6px; padding:8px 12px 8px 8px; border-radius:14px; cursor:pointer; text-align:left;
+    font-family:inherit; color:var(--cream);
+    background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.12);
+  }
+  .pl-holiday-row:hover{ background:rgba(255,255,255,0.04); }
+  .pl-holiday-date{ display:flex; flex-direction:column; align-items:center; line-height:1.05; }
+  .pl-holiday-date em{ font-style:normal; font-size:10px; font-weight:900; color:rgba(245,239,225,0.5); }
+  .pl-holiday-date b{ font-size:22px; font-weight:900; }
+  .pl-holiday-name{ font-size:14px; font-weight:800; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+  .pl-holiday-type{ font-size:10.5px; font-weight:800; padding:4px 9px; border-radius:12px; white-space:nowrap; }
+  .pl-holiday-row.pl-cal-holiday-feriado b{ color:#FF8A7A; }
+  .pl-holiday-row.pl-cal-holiday-feriado .pl-holiday-type{ color:#FF8A7A; background:rgba(255,107,92,0.14); }
+  .pl-holiday-row.pl-cal-holiday-facultativo b{ color:#FFB3A8; }
+  .pl-holiday-row.pl-cal-holiday-facultativo .pl-holiday-type{ color:#FFB3A8; background:rgba(255,107,92,0.08); }
+  .pl-holiday-row.pl-cal-holiday-data b{ color:var(--gold); }
+  .pl-holiday-row.pl-cal-holiday-data .pl-holiday-type{ color:var(--gold); background:rgba(216,168,62,0.12); }
+
+  /* ---- Responsivo ----
+     A lista é uma coluna só em qualquer tela (é uma agenda: lê-se de cima pra
+     baixo). Computador (1100px+): calendário, busca e filtros numa coluna fixa
+     à esquerda (.pl-side) e a lista à direita, com largura de leitura. */
   /* .pl-content é item flex de .pl-scroll: sem isso ele encolhe até caber na
      tela e, como os cards têm overflow:hidden, as linhas da grade achatam. */
   #view-planning > .pl-scroll > .pl-content{ flex-shrink:0; }
@@ -5592,9 +5648,6 @@
               <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
             </div>
             <div class="pl-cal-grid" id="plCalGrid"></div>
-            <!-- Feriados e datas comemorativas do mês exibido, calculados pelo
-                 app (não são eventos cadastrados). -->
-            <div class="pl-cal-holidays" id="plCalHolidays"></div>
           </div>
 
           <!-- Busca e chave Mês | Ano na mesma linha. -->
@@ -17949,40 +18002,77 @@
       renderMonthBreaks(!monthFilterOn || !!term);
     }
 
-    // Separadores "Fevereiro · 6 eventos" antes do primeiro card de cada mês,
-    // quando a lista mostra mais de um mês (ano todo ou busca); no modo mês,
-    // um aviso quando o mês não tem evento. Refeito do zero a cada filtro,
-    // então inserir/editar card nunca deixa separador no lugar errado.
+    // Monta a lista "agenda" em volta dos cards: feriados/datas (calculados,
+    // ver plDatasDoAno) entram na ordem das datas entre os eventos, e, quando
+    // a lista mostra mais de um mês (ano todo ou busca), um separador
+    // "Fevereiro · 6 eventos" abre cada mês. Busca ou filtro de categoria
+    // escondem os feriados (não são eventos do clube). Refeito do zero a cada
+    // filtro, então inserir/editar evento nunca deixa nada fora do lugar.
     function renderMonthBreaks(multiMonth){
       const list = document.querySelector('#view-planning > .pl-scroll > .pl-content');
       if(!list) return;
-      list.querySelectorAll(':scope > .pl-month-sep, :scope > .pl-list-empty').forEach(el => el.remove());
+      list.querySelectorAll(':scope > .pl-month-sep, :scope > .pl-list-empty, :scope > .pl-holiday-row').forEach(el => el.remove());
       const visible = Array.from(list.querySelectorAll(':scope > .pl-event-card')).filter(c => c.style.display !== 'none');
+      const chave = (mes, dia) => mes * 100 + dia;
+      const chaveCard = c => chave(parseInt(c.dataset.monIndex, 10) || 0, parseInt(c.dataset.day, 10) || 0);
+      // Os cards ficam no fim do .pl-content (o resumo do ano vem ANTES deles no
+      // HTML e só aparece embaixo por causa do order:1), então "depois do último
+      // evento" é o fim do contêiner: insertBefore(x, null) = appendChild.
+      const fimDaLista = null;
+
+      const term = plSearchInput ? plSearchInput.value.trim() : '';
+      if(!term && activeTagFilters.size === 0){
+        const datas = Object.values(plDatasDoAno(calViewYear)).flat()
+          .filter(x => multiMonth || x.mes === calViewMonth)
+          .sort((a, b) => chave(a.mes, a.dia) - chave(b.mes, b.dia));
+        datas.forEach(x => {
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'pl-holiday-row pl-cal-holiday-' + x.tipo;
+          row.dataset.monIndex = x.mes;
+          row.dataset.day = x.dia;
+          const dow = ['DOM','SEG','TER','QUA','QUI','SEX','SÁB'][new Date(calViewYear, x.mes - 1, x.dia).getDay()];
+          row.innerHTML = '<span class="pl-holiday-date"><em></em><b></b></span><span class="pl-holiday-name"></span><span class="pl-holiday-type"></span>';
+          row.querySelector('em').textContent = dow;
+          row.querySelector('b').textContent = String(x.dia).padStart(2, '0');
+          row.querySelector('.pl-holiday-name').textContent = x.nome;
+          row.querySelector('.pl-holiday-type').textContent = PL_TIPO_DATA_LABEL[x.tipo];
+          row.addEventListener('click', () => openDayView(x.mes, x.dia));
+          const depois = visible.find(c => chaveCard(c) > chave(x.mes, x.dia));
+          list.insertBefore(row, depois || fimDaLista);
+        });
+      }
+
+      const itens = Array.from(list.querySelectorAll(':scope > .pl-event-card, :scope > .pl-holiday-row'))
+        .filter(el => el.style.display !== 'none');
       if(!visible.length){
         const empty = document.createElement('p');
         empty.className = 'pl-list-empty';
         empty.textContent = multiMonth
           ? 'Nenhum evento encontrado.'
-          : 'Nenhum evento em ' + MONTH_NAMES_PT[calViewMonth - 1].toLowerCase() + '.';
-        const first = list.querySelector(':scope > .pl-event-card') || list.querySelector(':scope > .pl-summary-title');
-        list.insertBefore(empty, first);
-        return;
+          : 'Nenhum evento do clube em ' + MONTH_NAMES_PT[calViewMonth - 1].toLowerCase() + '.';
+        list.insertBefore(empty, fimDaLista);
+        if(!itens.length || !multiMonth) return;
       }
       if(!multiMonth) return;
-      const perMonth = {};
-      visible.forEach(c => { const m = c.dataset.monIndex; perMonth[m] = (perMonth[m] || 0) + 1; });
+      const eventosNoMes = {}, datasNoMes = {};
+      itens.forEach(el => {
+        const m = el.dataset.monIndex;
+        const alvo = el.classList.contains('pl-holiday-row') ? datasNoMes : eventosNoMes;
+        alvo[m] = (alvo[m] || 0) + 1;
+      });
       let last = null;
-      visible.forEach(c => {
-        const m = c.dataset.monIndex;
+      itens.forEach(el => {
+        const m = el.dataset.monIndex;
         if(m === last) return;
         last = m;
         const sep = document.createElement('div');
-        sep.className = 'pl-month-sep' + (c === visible[0] ? ' first' : '');
-        const n = perMonth[m];
+        sep.className = 'pl-month-sep' + (el === itens[0] ? ' first' : '');
+        const n = eventosNoMes[m] || 0;
         sep.innerHTML = '<span class="pl-month-sep-name"></span><span class="pl-month-sep-line" aria-hidden="true"></span><small></small>';
         sep.firstChild.textContent = MONTH_NAMES_PT[parseInt(m, 10) - 1] || '';
-        sep.lastChild.textContent = n + (n === 1 ? ' evento' : ' eventos');
-        list.insertBefore(sep, c);
+        sep.lastChild.textContent = n ? n + (n === 1 ? ' evento' : ' eventos') : 'sem eventos';
+        list.insertBefore(sep, el);
       });
     }
 
