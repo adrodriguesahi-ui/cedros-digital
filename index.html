@@ -944,13 +944,34 @@
   .pl-month-sep small{ font-size:11px; font-weight:700; letter-spacing:0; text-transform:none; color:rgba(245,239,225,0.45); }
   .pl-list-empty{ margin:6px 2px 18px; font-size:13px; font-weight:600; color:rgba(245,239,225,0.45); }
 
-  /* Números do ano e PDF ficam no fim da lista, como resumo — antes vinham
-     entre o calendário e os eventos. order só vale porque .pl-content vira
-     coluna flex aqui (ver #view-planning .pl-content). */
+  /* Números do ano ficam no fim da lista, como resumo — antes vinham entre o
+     calendário e os eventos. order só vale porque .pl-content vira coluna
+     flex aqui. */
   #view-planning > .pl-scroll > .pl-content{ display:flex; flex-direction:column; }
   #view-planning .pl-content > .pl-summary-title,
-  #view-planning .pl-content > .pl-cat-stats,
-  #view-planning .pl-content > .pl-plano-btn{ order:1; }
+  #view-planning .pl-content > .pl-cat-stats{ order:1; }
+
+  /* Busca + chave Mês | Ano numa linha só. */
+  #view-planning .pl-tools{ display:flex; gap:10px; align-items:stretch; margin:0 0 12px; }
+  #view-planning .pl-tools .pl-search-wrap{ flex:1 1 auto; min-width:0; margin:0; }
+  #view-planning .pl-tools .pl-month-filter-chip{ flex:0 0 auto; margin:0; }
+  #view-planning .pl-tools .pl-month-filter-chip button{ flex:0 0 auto; padding:8px 12px; }
+
+  /* Legenda vira fileira de filtros (chips), sem a caixa em volta. */
+  #view-planning .pl-legend{ gap:8px; padding:0; margin:0 0 18px; background:none; border:none; border-radius:0; }
+  #view-planning .pl-legend-item{
+    height:32px; padding:0 12px; font-size:12px; font-weight:800;
+    border:1px solid rgba(255,255,255,0.09); border-radius:16px;
+  }
+  #view-planning .pl-legend-item.active{ background:rgba(245,239,225,0.1); border-color:rgba(245,239,225,0.3); color:var(--cream); }
+
+  /* Card de evento mais limpo: fundo e borda finos no lugar da faixa colorida
+     lateral e da sombra; a cor da categoria fica na pastilha de data e no selo. */
+  #view-planning .pl-content .pl-event-card{
+    border:1px solid rgba(255,255,255,0.08); border-left-width:1px; border-radius:18px;
+    box-shadow:none; background:rgba(255,255,255,0.04);
+  }
+  #view-planning .pl-content .pl-event-card[class]{ border-left-color:rgba(255,255,255,0.08); }
   .pl-summary-title{ margin:22px 2px 10px; font-size:12.5px; font-weight:900; letter-spacing:0.04em; text-transform:uppercase; color:rgba(245,239,225,0.55); }
 
   /* ---- Planejamento Anual: busca de eventos ---- */
@@ -1173,9 +1194,6 @@
   #adUnidadesSalvarBtn:disabled{ opacity:0.35; cursor:default; }
 
   /* ---- Agenda: gerar o planejamento do período em PDF ---- */
-  /* Dupla classe: .pl-list-add-btn (declarado mais abaixo) força width:100%,
-     que somado à margem estourava a borda direita. */
-  .pl-list-add-btn.pl-plano-btn{ width:calc(100% - 32px); margin:2px 16px 18px; }
   .pl-plano-chips{ display:flex; gap:7px; margin-bottom:12px; }
   .pl-plano-chip{
     flex:1; padding:9px 6px; border-radius:11px; cursor:pointer; font-family:inherit;
@@ -5446,6 +5464,12 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <h3 class="pl-title">Planejamento Anual</h3>
+          <!-- Junta o que já está na agenda num documento do período escolhido.
+               Não cadastra nada: só organiza o que foi lançado. Antes era um
+               botão tracejado no meio da tela, entre o calendário e a lista. -->
+          <button type="button" class="pl-back" id="plPlanoBtn" aria-label="Gerar planejamento em PDF" title="Gerar planejamento em PDF">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3"/></svg>
+          </button>
           <button type="button" class="pl-role-toggle" id="plRoleToggle" aria-label="Alternar modo de acesso">
             <svg id="plRoleIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
             <span id="plRoleLabel">Editor</span>
@@ -5470,17 +5494,20 @@
             <div class="pl-cal-grid" id="plCalGrid"></div>
           </div>
 
-          <div class="pl-month-filter-chip" id="plMonthFilterChip" style="display:none;" role="group" aria-label="O que a lista mostra">
-            <button type="button" id="plMonthFilterLabel"></button>
-            <button type="button" id="plMonthFilterToggle">Ano todo</button>
+          <!-- Busca e chave Mês | Ano na mesma linha. -->
+          <div class="pl-tools">
+            <div class="pl-search-wrap">
+              <svg class="pl-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" class="pl-input pl-search-input" id="plSearchInput" placeholder="Buscar evento ou local">
+            </div>
+            <div class="pl-month-filter-chip" id="plMonthFilterChip" style="display:none;" role="group" aria-label="O que a lista mostra">
+              <button type="button" id="plMonthFilterLabel"></button>
+              <button type="button" id="plMonthFilterToggle">Ano</button>
+            </div>
           </div>
 
-          <div class="pl-search-wrap">
-            <svg class="pl-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" class="pl-input pl-search-input" id="plSearchInput" placeholder="Buscar evento por nome ou local...">
-          </div>
-
-          <div class="pl-legend" id="plLegend">
+          <div class="pl-legend" id="plLegend" role="group" aria-label="Filtrar por categoria">
+            <button type="button" class="pl-legend-item pl-legend-all active" data-tag-filter="">Todas</button>
             <button type="button" class="pl-legend-item" data-tag-filter="green"><span class="pl-legend-dot" style="background:var(--accent)"></span>Reunião</button>
             <button type="button" class="pl-legend-item" data-tag-filter="blue"><span class="pl-legend-dot" style="background:#5B9BFF"></span>Curso</button>
             <button type="button" class="pl-legend-item" data-tag-filter="gold"><span class="pl-legend-dot" style="background:var(--gold)"></span>Acampamento</button>
@@ -5491,10 +5518,6 @@
 
           <div class="pl-summary-title">Resumo do ano</div>
           <div class="pl-cat-stats" id="plCatStats"></div>
-
-          <!-- Junta o que já está na agenda num documento do período escolhido.
-               Não cadastra nada: só organiza o que foi lançado. -->
-          <button type="button" class="pl-list-add-btn pl-plano-btn" id="plPlanoBtn">Gerar planejamento em PDF</button>
 
         </div>
       </div>
@@ -17732,11 +17755,17 @@
     if(plSearchInput){
       plSearchInput.addEventListener('input', () => { applyPlanningFilters(); updateMonthFilterChip(); });
     }
+    // "Todas" limpa os filtros; ela fica marcada sempre que nenhum está ligado.
+    const legendAllBtn = document.querySelector('#plLegend .pl-legend-all');
     document.querySelectorAll('#plLegend .pl-legend-item').forEach(btn => {
       btn.addEventListener('click', () => {
         const tag = btn.dataset.tagFilter;
-        if(activeTagFilters.has(tag)){ activeTagFilters.delete(tag); btn.classList.remove('active'); }
+        if(!tag){
+          activeTagFilters.clear();
+          document.querySelectorAll('#plLegend .pl-legend-item').forEach(b => b.classList.remove('active'));
+        } else if(activeTagFilters.has(tag)){ activeTagFilters.delete(tag); btn.classList.remove('active'); }
         else { activeTagFilters.add(tag); btn.classList.add('active'); }
+        if(legendAllBtn) legendAllBtn.classList.toggle('active', activeTagFilters.size === 0);
         applyPlanningFilters();
       });
     });
