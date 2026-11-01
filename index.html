@@ -859,6 +859,43 @@
   .pl-cal-day-empty{ pointer-events:none; }
   .pl-cal-day.is-selected .pl-cal-day-num{ background:var(--accent); color:#08130A; font-weight:900; }
 
+  /* Feriados e datas (calculados pelo app, ver plDatasDoAno): feriado com o
+     número em coral, ponto facultativo em coral claro, data comemorativa com
+     um traço dourado embaixo do número. */
+  .pl-cal-day.is-feriado .pl-cal-day-num{ color:#FF8A7A; font-weight:900; }
+  .pl-cal-day.is-facultativo .pl-cal-day-num{ color:#FFB3A8; }
+  .pl-cal-day.is-data .pl-cal-day-num{ text-decoration:underline; text-decoration-color:var(--gold); text-decoration-thickness:2px; text-underline-offset:3px; }
+  .pl-cal-day.is-today .pl-cal-day-num, .pl-cal-day.is-selected .pl-cal-day-num{ text-decoration:none; }
+  .pl-cal-day.is-today.is-feriado .pl-cal-day-num, .pl-cal-day.is-selected.is-feriado .pl-cal-day-num{ color:#08130A; }
+
+  .pl-cal-holidays{ display:flex; flex-direction:column; gap:2px; margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.07); }
+  .pl-cal-holiday{
+    display:grid; grid-template-columns:28px minmax(0,1fr) auto; align-items:center; column-gap:10px;
+    width:100%; padding:6px 4px; border:none; border-radius:10px; background:none; cursor:pointer; text-align:left;
+    font-family:inherit; color:var(--cream);
+  }
+  .pl-cal-holiday:hover{ background:rgba(255,255,255,0.04); }
+  .pl-cal-holiday b{ font-size:13px; font-weight:900; font-variant-numeric:tabular-nums; text-align:center; }
+  .pl-cal-holiday-name{ font-size:12.5px; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pl-cal-holiday-type{ font-size:10.5px; font-weight:800; padding:3px 8px; border-radius:10px; white-space:nowrap; }
+  .pl-cal-holiday-feriado b{ color:#FF8A7A; }
+  .pl-cal-holiday-feriado .pl-cal-holiday-type{ color:#FF8A7A; background:rgba(255,107,92,0.14); }
+  .pl-cal-holiday-facultativo b{ color:#FFB3A8; }
+  .pl-cal-holiday-facultativo .pl-cal-holiday-type{ color:#FFB3A8; background:rgba(255,107,92,0.08); }
+  .pl-cal-holiday-data b{ color:var(--gold); }
+  .pl-cal-holiday-data .pl-cal-holiday-type{ color:var(--gold); background:rgba(216,168,62,0.12); }
+
+  /* Na tela do dia, o feriado vem antes dos eventos do clube. */
+  .pl-dayview-holiday{
+    display:flex; flex-direction:column; gap:2px; margin-bottom:10px; padding:10px 12px;
+    border-radius:14px; border:1px dashed rgba(255,255,255,0.14); background:rgba(255,255,255,0.03);
+  }
+  .pl-dayview-holiday-type{ font-size:10.5px; font-weight:900; letter-spacing:0.08em; text-transform:uppercase; }
+  .pl-dayview-holiday-name{ font-size:14px; font-weight:800; color:var(--cream); }
+  .pl-dayview-holiday.pl-cal-holiday-feriado .pl-dayview-holiday-type{ color:#FF8A7A; }
+  .pl-dayview-holiday.pl-cal-holiday-facultativo .pl-dayview-holiday-type{ color:#FFB3A8; }
+  .pl-dayview-holiday.pl-cal-holiday-data .pl-dayview-holiday-type{ color:var(--gold); }
+
   /* ---- Planejamento Anual: tela de dia (abre ao tocar um dia com evento na grade) ---- */
   .pl-dayview-overlay{
     position:absolute; inset:0; z-index:15;
@@ -897,6 +934,9 @@
   .pl-dayview-week-num{ font-size:15px; font-weight:800; }
   .pl-dayview-week-dot{ width:4px; height:4px; border-radius:50%; background:var(--gold); }
   .pl-dayview-week-day.is-today .pl-dayview-week-num{ color:var(--gold); }
+  .pl-dayview-week-day.is-holiday:not(.is-selected) .pl-dayview-week-num{ color:#FF8A7A; }
+  /* O JS já escreve "15 de Novembro de 2026"; o capitalize da classe virava "De". */
+  #plDayViewTitle{ text-transform:none; }
   .pl-dayview-week-day.is-selected{ background:var(--accent); }
   .pl-dayview-week-day.is-selected .pl-dayview-week-dow,
   .pl-dayview-week-day.is-selected .pl-dayview-week-num{ color:#08130A; }
@@ -5552,6 +5592,9 @@
               <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
             </div>
             <div class="pl-cal-grid" id="plCalGrid"></div>
+            <!-- Feriados e datas comemorativas do mês exibido, calculados pelo
+                 app (não são eventos cadastrados). -->
+            <div class="pl-cal-holidays" id="plCalHolidays"></div>
           </div>
 
           <!-- Busca e chave Mês | Ano na mesma linha. -->
@@ -16901,6 +16944,88 @@
       });
     }
 
+    // ---- Feriados e datas comemorativas ----
+    // Calculados no próprio app pra qualquer ano: nada disso fica no banco nem
+    // vira evento. As datas móveis saem da Páscoa (algoritmo de Meeus/Jones/
+    // Butcher): Carnaval −48/−47, Cinzas −46, Sexta-feira Santa −2, Corpus
+    // Christi +60. tipo: 'feriado' (nacional/estadual), 'facultativo' (ponto
+    // facultativo) ou 'data' (comemorativa, não é folga).
+    const plDatasCache = {};
+    function plPascoa(ano){
+      const a = ano % 19, b = Math.floor(ano / 100), c = ano % 100;
+      const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+      const g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+      const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7;
+      const m = Math.floor((a + 11 * h + 22 * l) / 451);
+      const mes = Math.floor((h + l - 7 * m + 114) / 31);
+      const dia = ((h + l - 7 * m + 114) % 31) + 1;
+      return new Date(ano, mes - 1, dia);
+    }
+    // n-ésimo dia da semana (0 = domingo) de um mês: 2º domingo de maio etc.
+    function plEnesimoDiaDaSemana(ano, mes, diaSemana, n){
+      const primeiro = new Date(ano, mes - 1, 1).getDay();
+      return 1 + ((diaSemana - primeiro + 7) % 7) + (n - 1) * 7;
+    }
+    function plDatasDoAno(ano){
+      if(plDatasCache[ano]) return plDatasCache[ano];
+      const datas = {};
+      const add = (mes, dia, nome, tipo) => {
+        (datas[mes + '-' + dia] || (datas[mes + '-' + dia] = [])).push({ mes, dia, nome, tipo });
+      };
+      const pascoa = plPascoa(ano);
+      const relPascoa = (dias, nome, tipo) => {
+        const d = new Date(pascoa);
+        d.setDate(d.getDate() + dias);
+        add(d.getMonth() + 1, d.getDate(), nome, tipo);
+      };
+      add(1, 1, 'Confraternização Universal', 'feriado');
+      relPascoa(-48, 'Carnaval', 'facultativo');
+      relPascoa(-47, 'Carnaval', 'facultativo');
+      relPascoa(-46, 'Quarta-feira de Cinzas', 'facultativo');
+      relPascoa(-2, 'Sexta-feira Santa', 'feriado');
+      relPascoa(0, 'Páscoa', 'data');
+      add(4, 21, 'Tiradentes', 'feriado');
+      add(5, 1, 'Dia do Trabalho', 'feriado');
+      add(5, plEnesimoDiaDaSemana(ano, 5, 0, 2), 'Dia das Mães', 'data');
+      relPascoa(60, 'Corpus Christi', 'facultativo');
+      add(7, 9, 'Revolução Constitucionalista (SP)', 'feriado');
+      add(8, plEnesimoDiaDaSemana(ano, 8, 0, 2), 'Dia dos Pais', 'data');
+      add(9, 7, 'Independência do Brasil', 'feriado');
+      add(9, plEnesimoDiaDaSemana(ano, 9, 6, 3), 'Dia Mundial dos Desbravadores', 'data');
+      add(10, 12, 'Nossa Senhora Aparecida · Dia das Crianças', 'feriado');
+      add(11, 2, 'Finados', 'feriado');
+      add(11, 15, 'Proclamação da República', 'feriado');
+      add(11, 20, 'Dia da Consciência Negra', 'feriado');
+      add(12, 25, 'Natal', 'feriado');
+      return (plDatasCache[ano] = datas);
+    }
+    function plDatasNoDia(mes, dia){
+      return plDatasDoAno(calViewYear)[mes + '-' + dia] || [];
+    }
+    const PL_TIPO_DATA_LABEL = { feriado:'Feriado', facultativo:'Ponto facultativo', data:'Data comemorativa' };
+
+    function renderCalendarHolidays(){
+      const wrap = document.getElementById('plCalHolidays');
+      if(!wrap) return;
+      const datas = plDatasDoAno(calViewYear);
+      const doMes = Object.values(datas).flat()
+        .filter(x => x.mes === calViewMonth)
+        .sort((a, b) => a.dia - b.dia);
+      wrap.innerHTML = '';
+      wrap.style.display = doMes.length ? '' : 'none';
+      doMes.forEach(x => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'pl-cal-holiday pl-cal-holiday-' + x.tipo;
+        item.innerHTML = '<b></b><span class="pl-cal-holiday-name"></span><span class="pl-cal-holiday-type"></span>';
+        item.querySelector('b').textContent = String(x.dia).padStart(2, '0');
+        item.querySelector('.pl-cal-holiday-name').textContent = x.nome;
+        item.querySelector('.pl-cal-holiday-type').textContent = PL_TIPO_DATA_LABEL[x.tipo];
+        item.addEventListener('click', () => openDayView(calViewMonth, x.dia));
+        wrap.appendChild(item);
+      });
+    }
+
     function renderCalendarGrid(){
       const grid = document.getElementById('plCalGrid');
       const label = document.getElementById('plCalMonthLabel');
@@ -16936,8 +17061,15 @@
         btn.type = 'button';
         btn.className = 'pl-cal-day';
         const tags = dayTags[d];
+        const datasDia = plDatasNoDia(calViewMonth, d);
         if(tags) btn.classList.add('has-event');
-        else btn.disabled = true;
+        else if(!datasDia.length) btn.disabled = true;
+        if(datasDia.length){
+          // Feriado pesa mais que ponto facultativo, que pesa mais que data comemorativa.
+          const tipo = ['feriado', 'facultativo', 'data'].find(t => datasDia.some(x => x.tipo === t));
+          btn.classList.add('is-' + tipo);
+          btn.title = datasDia.map(x => x.nome).join(' · ');
+        }
         if(isCurrentMonth && d === todayDay) btn.classList.add('is-today');
         if(dayViewDate && dayViewDate.monIdx === calViewMonth && dayViewDate.day === d) btn.classList.add('is-selected');
 
@@ -16955,11 +17087,12 @@
             dot.style.background = CAL_TAG_COLOR[tag] || CAL_TAG_COLOR.gray;
             dotsWrap.appendChild(dot);
           });
-          btn.addEventListener('click', () => openDayView(calViewMonth, d));
         }
+        if(tags || datasDia.length) btn.addEventListener('click', () => openDayView(calViewMonth, d));
         btn.appendChild(dotsWrap);
         grid.appendChild(btn);
       }
+      renderCalendarHolidays();
     }
 
     let dayViewDate = null; // { monIdx, day } — dia atualmente aberto na tela de dia
@@ -17436,6 +17569,7 @@
         btn.className = 'pl-dayview-week-day';
         if(dMon === monIdx && dDay === day) btn.classList.add('is-selected');
         if(d.getFullYear() === now.getFullYear() && dMon === now.getMonth() + 1 && dDay === now.getDate()) btn.classList.add('is-today');
+        if((plDatasDoAno(d.getFullYear())[dMon + '-' + dDay] || []).some(x => x.tipo === 'feriado')) btn.classList.add('is-holiday');
         const hasEvent = dayHasEventOn(dMon, dDay);
         btn.innerHTML =
           '<span class="pl-dayview-week-dow">' + WEEKDAY_LETTERS[i] + '</span>' +
@@ -17459,8 +17593,18 @@
         })
         .sort((a, b) => (a.dataset.time || '').localeCompare(b.dataset.time || ''));
       listEl.innerHTML = '';
+      const datasDia = plDatasNoDia(monIdx, day);
+      datasDia.forEach(x => {
+        const row = document.createElement('div');
+        row.className = 'pl-dayview-holiday pl-cal-holiday-' + x.tipo;
+        row.innerHTML = '<span class="pl-dayview-holiday-type"></span><span class="pl-dayview-holiday-name"></span>';
+        row.firstChild.textContent = PL_TIPO_DATA_LABEL[x.tipo];
+        row.lastChild.textContent = x.nome;
+        listEl.appendChild(row);
+      });
       cards.forEach(card => listEl.appendChild(buildDayViewItem(card)));
       emptyEl.style.display = cards.length ? 'none' : '';
+      emptyEl.textContent = datasDia.length ? 'Nenhum evento do clube neste dia.' : 'Nenhum evento neste dia.';
     }
 
     function buildDayViewItem(card){
