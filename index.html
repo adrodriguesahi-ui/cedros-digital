@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0B120C">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -32,6 +32,9 @@
     --ink-dim:rgba(245,239,225,0.5);
   }
   *{box-sizing:border-box;}
+  /* Botões e campos não herdam a fonte do body por padrão — sem isso, toda aba
+     e botão que não declara font-family cai na fonte do sistema. */
+  button, input, select, textarea{ font-family:inherit; }
   /* Sem isso, um arraste horizontal perto da borda pode ser interpretado pelo
      próprio navegador como "voltar/avançar no histórico" (gesto nativo do
      Chrome mobile) em vez de chegar como pointermove/touchmove no JS do
@@ -682,7 +685,9 @@
   .pl-view-block{ margin-top:22px; }
   .pl-view-text{ margin:0; font-size:13.5px; font-weight:600; line-height:1.5; color:rgba(245,239,225,0.8); }
 
-  .pl-content{ padding:4px 16px calc(96px + env(safe-area-inset-bottom,0px)); }
+  /* 160px = barra inferior + botão flutuante (.pl-fab), pra o último item da
+     lista poder rolar pra cima dele em vez de ficar escondido embaixo. */
+  .pl-content{ padding:4px 16px calc(160px + env(safe-area-inset-bottom,0px)); }
 
   .pl-month-group{ margin-bottom:22px; }
   .pl-month-head{ display:flex; align-items:baseline; justify-content:space-between; margin:0 2px 10px; }
@@ -715,6 +720,13 @@
     flex-shrink:0; font-size:10.5px; font-weight:800; padding:5px 9px; border-radius:20px;
     white-space:nowrap;
   }
+  /* Card de usuário (Administração) no celular: e-mail e unidade quebram em
+     linhas em vez de espremer a unidade numa coluna embaixo do papel. O ícone
+     de acesso fica dentro de um <a>, então sem cor própria herdava o azul de link. */
+  .ad-card .pl-event-meta{ flex-direction:column; align-items:flex-start; gap:2px; }
+  .ad-card .ad-col-sep{ display:none; }
+  .ad-card .ad-col-email{ max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ad-card-access-btn{ display:flex; flex-shrink:0; color:rgba(245,239,225,0.45); }
   .pl-tag-green{ background:rgba(63,203,107,0.16); color:var(--accent); }
   .pl-tag-gold{ background:rgba(216,168,62,0.18); color:var(--gold); }
   .pl-tag-blue{ background:rgba(91,155,255,0.16); color:#5B9BFF; }
@@ -1127,7 +1139,9 @@
   #adUnidadesSalvarBtn:disabled{ opacity:0.35; cursor:default; }
 
   /* ---- Agenda: gerar o planejamento do período em PDF ---- */
-  .pl-plano-btn{ width:calc(100% - 32px); margin:2px 16px 18px; }
+  /* Dupla classe: .pl-list-add-btn (declarado mais abaixo) força width:100%,
+     que somado à margem estourava a borda direita. */
+  .pl-list-add-btn.pl-plano-btn{ width:calc(100% - 32px); margin:2px 16px 18px; }
   .pl-plano-chips{ display:flex; gap:7px; margin-bottom:12px; }
   .pl-plano-chip{
     flex:1; padding:9px 6px; border-radius:11px; cursor:pointer; font-family:inherit;
@@ -1649,6 +1663,10 @@
   .un-empty-hint{ font-size:12.5px; font-weight:600; color:rgba(245,239,225,0.4); padding:8px 0; margin:0; }
 
   /* ---- Pontuação de Unidades (view-unit-scoring) ---- */
+  /* Esta tela não usa .pl-content, então a margem lateral e o respiro inferior
+     (barra + botão flutuante) vêm daqui. */
+  #view-unit-scoring .pl-scroll{ padding-bottom:calc(160px + env(safe-area-inset-bottom,0px)); }
+  #view-unit-scoring .pl-scroll > :not(.pl-topbar){ margin-left:16px; margin-right:16px; }
   .us-unit-list{ display:flex; flex-direction:column; gap:10px; }
   .us-sign-toggle{ display:flex; gap:8px; margin:12px 0 4px; }
   .us-sign-btn{
@@ -2455,7 +2473,12 @@
   /* ---- Manual de Especialidades: busca ---- */
   .sp-search-wrap{ position:relative; padding:2px 16px 0; }
   .sp-search-icon{ position:absolute; left:28px; top:50%; transform:translateY(-50%); color:rgba(245,239,225,0.4); }
-  .sp-search-input{ padding-left:38px; }
+  /* Dupla classe: .pl-input (declarado mais abaixo) zerava este recuo e a lupa
+     ficava em cima do texto. */
+  .pl-input.sp-search-input{ padding-left:38px; }
+  /* Busca sem recuo lateral (Administração, Almoxarifado): a lupa acompanha. */
+  .sp-search-wrap--flush{ padding:0; margin-bottom:12px; }
+  .sp-search-wrap--flush .sp-search-icon{ left:13px; }
   .sp-disclaimer{ margin:8px 16px 4px; font-size:11px; font-weight:600; line-height:1.4; color:rgba(245,239,225,0.4); }
   .sp-empty{ padding:30px 4px; text-align:center; font-size:13px; font-weight:600; color:rgba(245,239,225,0.45); }
   .sp-area-heading{ margin:18px 2px 8px; font-size:12px; font-weight:900; letter-spacing:0.03em; text-transform:uppercase; color:var(--gold); }
@@ -12176,7 +12199,7 @@
 
           <p class="pl-reminder-hint" id="amHint" style="margin-top:0;"></p>
 
-          <div class="sp-search-wrap" style="padding:0; margin-bottom:12px;">
+          <div class="sp-search-wrap sp-search-wrap--flush">
             <svg class="sp-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="text" class="pl-input sp-search-input" id="amBusca" placeholder="Buscar item...">
           </div>
@@ -13620,7 +13643,7 @@
                cadastro de cada uma. Ver window.__adAbrirUnidades. -->
           <button type="button" class="pl-list-add-btn ad-un-btn" id="adUnidadesBtn">Distribuir unidades</button>
 
-          <div class="sp-search-wrap" style="padding:0; margin-bottom:12px;">
+          <div class="sp-search-wrap sp-search-wrap--flush">
             <svg class="sp-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <input type="text" class="pl-input sp-search-input" id="adUserSearchInput" placeholder="Buscar usuário por nome ou e-mail...">
           </div>
