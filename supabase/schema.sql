@@ -1033,6 +1033,14 @@ alter table planejamentos_aula add column if not exists instrutor_convidado bool
 -- Aulas que o Coordenador da classe marcou pra acompanhar pessoalmente.
 alter table planejamentos_aula add column if not exists coordenador_acompanha boolean not null default false;
 
+-- Semana planejada, independente da data: a aula pode ficar "Fevereiro, 1ª
+-- semana" e ganhar a data depois. Com data marcada, o app grava o mês e a
+-- semana derivados dela.
+alter table planejamentos_aula add column if not exists mes_planejado smallint
+  check (mes_planejado between 1 and 12);
+alter table planejamentos_aula add column if not exists semana_planejada smallint
+  check (semana_planejada between 1 and 5);
+
 -- Texto do requisito ajustado pelo Coordenador daquele cartão: o catálogo de
 -- requisitos é fixo no app, e esta tabela guarda só o que foi reescrito.
 -- ATENÇÃO: requisito_titulo é a CHAVE do requisito no catálogo e nunca muda —
