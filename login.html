@@ -2467,48 +2467,6 @@
   .sp-search-wrap--flush .sp-search-icon{ left:13px; }
   .sp-disclaimer{ margin:8px 16px 4px; font-size:11px; font-weight:600; line-height:1.4; color:rgba(245,239,225,0.4); }
   .sp-empty{ padding:30px 4px; text-align:center; font-size:13px; font-weight:600; color:rgba(245,239,225,0.45); }
-
-  /* ---- Manual de Especialidades: grade de áreas ----
-     #spContent[data-sp-mode]: 'grid' mostra só os cards de área; 'area' mostra
-     a barra de voltar + a lista da área tocada; 'search' é a lista de seções
-     filtrada de sempre. --area vem do JS (cor própria de cada área). */
-  .sp-areas{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px; }
-  .sp-area-card{
-    display:flex; flex-direction:column; align-items:flex-start; gap:8px; min-width:0;
-    padding:12px; border-radius:16px; cursor:pointer; text-align:left; color:var(--cream);
-    background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
-  }
-  .sp-area-card:active{ transform:scale(0.98); }
-  .sp-area-card--wide{ grid-column:1 / -1; }
-  .sp-area-ico{
-    width:34px; height:34px; border-radius:11px; flex-shrink:0;
-    display:flex; align-items:center; justify-content:center;
-    color:var(--area); background:var(--area-soft);
-  }
-  .sp-area-name{ font-size:13px; font-weight:800; line-height:1.25; min-height:2.5em; }
-  .sp-area-card--wide .sp-area-name{ min-height:0; }
-  .sp-area-bar{ display:block; width:100%; height:4px; border-radius:3px; background:rgba(255,255,255,0.08); overflow:hidden; }
-  .sp-area-bar i{ display:block; height:100%; border-radius:3px; background:var(--area); transition:width .35s ease; }
-  .sp-area-meta{ font-size:11px; font-weight:800; color:rgba(245,239,225,0.5); font-variant-numeric:tabular-nums; }
-
-  .sp-area-back{
-    display:none; width:100%; align-items:center; gap:10px; margin:4px 0 12px; padding:10px 12px;
-    border-radius:16px; cursor:pointer; text-align:left; color:var(--cream);
-    background:var(--area-soft);
-    border:1px solid var(--area-line);
-  }
-  .sp-area-back-text{ display:flex; flex-direction:column; min-width:0; }
-  .sp-area-back-text b{ font-size:14px; font-weight:900; }
-  .sp-area-back-text span{ font-size:11px; font-weight:700; color:rgba(245,239,225,0.55); }
-
-  #spContent:not([data-sp-mode="grid"]) .sp-areas{ display:none; }
-  #spContent[data-sp-mode="grid"] .cl-area-section{ display:none; }
-  #spContent[data-sp-mode="area"] .sp-area-back{ display:flex; }
-  #spContent[data-sp-mode="area"] .cl-area-section:not(.sp-open){ display:none; }
-  #spContent[data-sp-mode="area"] .cl-area-section.sp-open .cl-area-heading{ display:none; }
-  #spContent[data-sp-mode="area"] .cl-area-section.sp-open .cl-area-cards{ display:flex; }
-  /* Dentro da área aberta o selo com o nome da área é redundante e espremia o título. */
-  #spContent[data-sp-mode="area"] .sp-card .pl-event-tag{ display:none; }
   .sp-area-heading{ margin:18px 2px 8px; font-size:12px; font-weight:900; letter-spacing:0.03em; text-transform:uppercase; color:var(--gold); }
 
   /* Card "Desafio de Especialidades" (Diretoria/Dir. Associado(a)) — reaproveita
@@ -30711,127 +30669,6 @@ const REQ_SUMMARIES = {
     emptyMsg.style.display = 'none';
     content.appendChild(emptyMsg);
 
-    // Grade de áreas: a tela abre com as 11 áreas em cards (ícone, cor própria
-    // e quantas a pessoa já conquistou). Tocar num card mostra só a lista
-    // daquela área; a busca volta pro modo antigo de seções filtradas.
-    // Modo fica em content.dataset.spMode: 'grid' | 'area' | 'search'.
-    const SP_AREA_LOOK = {
-      'ADRA':                                   { cor:'#4F9BFF', icone:'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>' },
-      'Artes e Habilidades Manuais':            { cor:'#E879F9', icone:'<path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.65-.75 1.65-1.69 0-.44-.18-.84-.44-1.13-.29-.29-.44-.65-.44-1.13a1.64 1.64 0 0 1 1.67-1.67h2c3.05 0 5.55-2.5 5.55-5.55C21.97 6.01 17.46 2 12 2z"/><circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/>' },
-      'Atividades Agrícolas e Afins':           { cor:'#A3C94A', icone:'<path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/>' },
-      'Atividades Missionárias e Comunitárias': { cor:'#FB923C', icone:'<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>' },
-      'Ensinos Bíblicos':                       { cor:'#A78BFA', icone:'<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>' },
-      'Atividades Profissionais':               { cor:'#38BDF8', icone:'<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>' },
-      'Atividades Recreativas':                 { cor:'#3FCB6B', icone:'<path d="M3.5 21 14 3"/><path d="M20.5 21 10 3"/><path d="M15.5 21 12 15l-3.5 6"/><path d="M2 21h20"/>' },
-      'Ciência e Saúde':                        { cor:'#F87171', icone:'<path d="M10 2v7.53a2 2 0 0 1-.21.9L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.07-10.13A2 2 0 0 1 14 9.53V2"/><path d="M8.5 2h7"/><path d="M7 16h10"/>' },
-      'Estudo da Natureza':                     { cor:'#2DD4BF', icone:'<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>' },
-      'Habilidades Domésticas':                 { cor:'#F472B6', icone:'<path d="M3 10 12 3l9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>' },
-      'Mestrados':                              { cor:'#D8A83E', icone:'<circle cx="12" cy="8" r="6"/><path d="M15.48 12.89 17 22l-5-3-5 3 1.52-9.11"/>' }
-    };
-    const SP_AREA_LOOK_PADRAO = { cor:'#9AA3A0', icone:'<circle cx="12" cy="12" r="9"/>' };
-    function spAreaIconHTML(look, size){
-      return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + look.icone + '</svg>';
-    }
-    // --area (cor cheia), --area-soft (fundo do ícone/barra) e --area-line (borda).
-    function spSetAreaColors(el, hex){
-      const n = parseInt(hex.slice(1), 16);
-      const rgb = (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255);
-      el.style.setProperty('--area', hex);
-      el.style.setProperty('--area-soft', 'rgba(' + rgb + ',0.15)');
-      el.style.setProperty('--area-line', 'rgba(' + rgb + ',0.32)');
-    }
-
-    const grid = document.createElement('div');
-    grid.className = 'sp-areas';
-    const backBar = document.createElement('button');
-    backBar.type = 'button';
-    backBar.className = 'sp-area-back';
-    content.insertBefore(backBar, content.firstChild);
-    content.insertBefore(grid, content.firstChild);
-
-    const areaCards = {};
-    Object.keys(SPECIALTY_DB).forEach(area => {
-      const look = SP_AREA_LOOK[area] || SP_AREA_LOOK_PADRAO;
-      const card = document.createElement('button');
-      card.type = 'button';
-      card.className = 'sp-area-card' + (area === 'Mestrados' ? ' sp-area-card--wide' : '');
-      spSetAreaColors(card, look.cor);
-      card.innerHTML =
-        '<span class="sp-area-ico">' + spAreaIconHTML(look, 18) + '</span>' +
-        '<span class="sp-area-name"></span>' +
-        '<span class="sp-area-bar"><i></i></span>' +
-        '<span class="sp-area-meta"></span>';
-      card.querySelector('.sp-area-name').textContent = area;
-      card.addEventListener('click', () => openArea(area));
-      grid.appendChild(card);
-      areaCards[area] = card;
-    });
-
-    function setMode(mode, area){
-      content.dataset.spMode = mode;
-      Object.keys(areaSections).forEach(a => {
-        areaSections[a].classList.toggle('sp-open', mode === 'area' && a === area);
-      });
-      if(mode === 'area'){
-        const look = SP_AREA_LOOK[area] || SP_AREA_LOOK_PADRAO;
-        spSetAreaColors(backBar, look.cor);
-        backBar.innerHTML =
-          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>' +
-          '<span class="sp-area-ico">' + spAreaIconHTML(look, 16) + '</span>' +
-          '<span class="sp-area-back-text"><b></b><span>Todas as áreas</span></span>';
-        backBar.querySelector('b').textContent = area;
-      }
-    }
-    function openArea(area){
-      setMode('area', area);
-      const scroller = content.closest('.pl-scroll');
-      if(scroller) scroller.scrollTop = 0;
-    }
-    backBar.addEventListener('click', () => setMode('grid'));
-    setMode('grid');
-
-    // Progresso: especialidades distintas que a pessoa logada já concluiu
-    // (qualquer ano), contadas pela área do catálogo.
-    const AREA_BY_NAME = {};
-    Object.keys(SPECIALTY_DB).forEach(a => SPECIALTY_DB[a].forEach(n => { AREA_BY_NAME[normalize(n)] = a; }));
-    function paintProgress(doneByArea){
-      Object.keys(areaCards).forEach(area => {
-        const card = areaCards[area];
-        const total = SPECIALTY_DB[area].length;
-        const done = doneByArea ? (doneByArea[area] || 0) : null;
-        card.querySelector('.sp-area-meta').textContent = done === null
-          ? total + ' especialidades'
-          : done + ' de ' + total;
-        card.querySelector('.sp-area-bar').style.display = done === null ? 'none' : '';
-        card.querySelector('.sp-area-bar i').style.width = done ? Math.max(4, done / total * 100) + '%' : '0';
-      });
-    }
-    async function refreshProgress(){
-      const me = window.__currentUsuario;
-      if(!me || !supa){ paintProgress(null); return; }
-      const { data, error } = await supa.from('especialidades_concluidas').select('especialidade').eq('usuario_id', me.id);
-      if(error){ paintProgress(null); return; }
-      const seen = {};
-      const doneByArea = {};
-      (data || []).forEach(r => {
-        const key = normalize(r.especialidade);
-        if(seen[key]) return;
-        seen[key] = true;
-        const area = AREA_BY_NAME[key];
-        if(area) doneByArea[area] = (doneByArea[area] || 0) + 1;
-      });
-      paintProgress(doneByArea);
-    }
-    paintProgress(null);
-    // Atualiza toda vez que a tela de Especialidades abre (inclusive depois de
-    // registrar uma conquista na aba ao lado e voltar).
-    const spView = document.getElementById('view-specialties');
-    if(spView){
-      new MutationObserver(() => {
-        if(spView.classList.contains('active')) refreshProgress();
-      }).observe(spView, { attributes:true, attributeFilter:['class'] });
-    }
-
     function filterList(term){
       const t = normalize(term);
       let visibleCount = 0;
@@ -30857,12 +30694,7 @@ const REQ_SUMMARIES = {
     }
 
     if(searchInput){
-      searchInput.addEventListener('input', () => {
-        const term = searchInput.value.trim();
-        filterList(term);
-        if(term) setMode('search');
-        else if(content.dataset.spMode === 'search') setMode('grid');
-      });
+      searchInput.addEventListener('input', () => filterList(searchInput.value.trim()));
     }
   })();
 
