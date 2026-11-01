@@ -777,6 +777,21 @@
   #view-planning .pl-event-date b{ font-size:19px; }
   #view-planning .pl-event-tag{ font-size:11px; font-weight:900; padding:6px 12px; }
 
+  /* Card em grade: pastilha de data à esquerda (ocupando as duas linhas) e,
+     à direita, título/horário/local em cima e o selo da categoria embaixo.
+     Antes o selo era uma terceira coluna e espremia o texto em 4–5 linhas. */
+  #view-planning .pl-content .pl-event-card{
+    display:grid; grid-template-columns:50px minmax(0,1fr); column-gap:14px; row-gap:8px;
+    align-items:start; padding-right:46px;
+  }
+  #view-planning .pl-content .pl-event-card .pl-event-date{ grid-row:1 / span 2; align-self:center; }
+  #view-planning .pl-content .pl-event-card .pl-event-body{ grid-column:2; }
+  #view-planning .pl-content .pl-event-card .pl-event-tag{ grid-column:2; justify-self:start; padding:4px 10px; font-size:10.5px; }
+  #view-planning .pl-content .pl-event-meta{ align-items:flex-start; line-height:1.35; }
+  #view-planning .pl-content .pl-event-meta svg,
+  #view-planning .pl-content .pl-event-responsible svg{ flex-shrink:0; margin-top:2px; }
+  #view-planning .pl-content .pl-event-responsible{ align-items:flex-start; color:rgba(245,239,225,0.5); font-weight:700; }
+
   /* Cor de categoria só no traço lateral e na pastilha de data — sem o preenchimento
      em gradiente da versão anterior, que lia mais "app infantil" que "painel de gestão". */
   #view-planning .pl-event-card:has(.pl-tag-green){ border-left-color:var(--accent); }
@@ -906,18 +921,37 @@
   .pl-dayview-item-local{ display:flex; align-items:center; gap:5px; margin:0; font-size:12px; font-weight:600; color:rgba(245,239,225,0.5); }
   .pl-dayview-empty{ margin:30px 2px; text-align:center; font-size:13px; font-weight:600; color:rgba(245,239,225,0.45); }
 
-  /* ---- Planejamento Anual: chip do filtro por mês (segue a navegação do calendário) ---- */
+  /* ---- Planejamento Anual: chave "mês do calendário | ano todo" da lista ---- */
   .pl-month-filter-chip{
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-    margin:0 0 14px; padding:9px 8px 9px 14px;
-    background:rgba(91,155,255,0.12); border:1px solid rgba(91,155,255,0.3); border-radius:14px;
-    font-size:12.5px; font-weight:800; color:#5B9BFF;
+    display:flex; gap:4px; margin:0 0 14px; padding:4px;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:14px;
   }
   .pl-month-filter-chip button{
-    flex-shrink:0; border:none; cursor:pointer; padding:6px 12px; border-radius:20px;
-    background:rgba(255,255,255,0.1); color:var(--cream); font-size:11.5px; font-weight:800;
+    flex:1 1 0; border:none; cursor:pointer; padding:8px 10px; border-radius:10px;
+    background:none; color:rgba(245,239,225,0.55); font-size:12.5px; font-weight:800;
   }
-  .pl-month-filter-chip button:active{ background:rgba(255,255,255,0.18); }
+  .pl-month-filter-chip button.active{ background:rgba(63,203,107,0.16); color:var(--accent); }
+  #plMonthFilterLabel{ text-transform:capitalize; }
+
+  /* Separador de mês na lista (ano todo ou busca): o card só mostra dia da
+     semana + dia, então sem isso não dava pra saber de que mês era o evento. */
+  .pl-month-sep{
+    display:flex; align-items:baseline; justify-content:space-between; gap:10px;
+    margin:22px 2px 10px; font-size:12.5px; font-weight:900; letter-spacing:0.04em;
+    text-transform:uppercase; color:var(--gold);
+  }
+  .pl-month-sep.first{ margin-top:4px; }
+  .pl-month-sep small{ font-size:11px; font-weight:700; letter-spacing:0; text-transform:none; color:rgba(245,239,225,0.45); }
+  .pl-list-empty{ margin:6px 2px 18px; font-size:13px; font-weight:600; color:rgba(245,239,225,0.45); }
+
+  /* Números do ano e PDF ficam no fim da lista, como resumo — antes vinham
+     entre o calendário e os eventos. order só vale porque .pl-content vira
+     coluna flex aqui (ver #view-planning .pl-content). */
+  #view-planning > .pl-scroll > .pl-content{ display:flex; flex-direction:column; }
+  #view-planning .pl-content > .pl-summary-title,
+  #view-planning .pl-content > .pl-cat-stats,
+  #view-planning .pl-content > .pl-plano-btn{ order:1; }
+  .pl-summary-title{ margin:22px 2px 10px; font-size:12.5px; font-weight:900; letter-spacing:0.04em; text-transform:uppercase; color:rgba(245,239,225,0.55); }
 
   /* ---- Planejamento Anual: busca de eventos ---- */
   .pl-search-wrap{ position:relative; margin:0 0 14px; }
@@ -5422,9 +5456,9 @@
             <div class="pl-cal-grid" id="plCalGrid"></div>
           </div>
 
-          <div class="pl-month-filter-chip" id="plMonthFilterChip" style="display:none;">
-            <span id="plMonthFilterLabel"></span>
-            <button type="button" id="plMonthFilterToggle"></button>
+          <div class="pl-month-filter-chip" id="plMonthFilterChip" style="display:none;" role="group" aria-label="O que a lista mostra">
+            <button type="button" id="plMonthFilterLabel"></button>
+            <button type="button" id="plMonthFilterToggle">Ano todo</button>
           </div>
 
           <div class="pl-search-wrap">
@@ -5441,6 +5475,7 @@
             <button type="button" class="pl-legend-item" data-tag-filter="gray"><span class="pl-legend-dot" style="background:#9AA3A0"></span>Outro</button>
           </div>
 
+          <div class="pl-summary-title">Resumo do ano</div>
           <div class="pl-cat-stats" id="plCatStats"></div>
 
           <!-- Junta o que já está na agenda num documento do período escolhido.
@@ -16577,8 +16612,8 @@
       const mesFimCard = parseInt(data.monEnd, 10) || data.monIdx;
       const ehPeriodo = !!data.dayEnd && (data.dayEnd !== data.day || mesFimCard !== data.monIdx);
       const rotuloFim = mesFimCard !== data.monIdx
-        ? ('a ' + parseInt(data.dayEnd, 10) + '/' + mesFimCard)
-        : ('a ' + data.dayEnd);
+        ? ('até ' + parseInt(data.dayEnd, 10) + '/' + mesFimCard)
+        : ('até ' + data.dayEnd);
       a.innerHTML =
         '<div class="pl-event-date' + (ehPeriodo ? ' periodo' : '') + '"><em>' +
           (ehPeriodo ? rotuloFim : dowAbbr) + '</em><b>' + data.day + '</b></div>' +
@@ -16795,10 +16830,12 @@
       const toggleBtn = document.getElementById('plMonthFilterToggle');
       if(!chip || !label || !toggleBtn) return;
       if(isPlSearchActive()){ chip.style.display = 'none'; return; }
-      label.textContent = monthFilterOn
-        ? 'Mostrando ' + MONTH_NAMES_PT[calViewMonth - 1]
-        : 'Mostrando ano todo';
-      toggleBtn.textContent = monthFilterOn ? 'Ver ano todo' : 'Ver só ' + MONTH_NAMES_PT[calViewMonth - 1];
+      // Chave de duas posições: o mês que o calendário mostra | ano todo.
+      label.textContent = MONTH_NAMES_PT[calViewMonth - 1];
+      label.classList.toggle('active', monthFilterOn);
+      toggleBtn.classList.toggle('active', !monthFilterOn);
+      label.setAttribute('aria-pressed', String(monthFilterOn));
+      toggleBtn.setAttribute('aria-pressed', String(!monthFilterOn));
       chip.style.display = '';
     }
 
@@ -17341,9 +17378,15 @@
       updateMonthFilterChip();
     });
 
+    const monthFilterMonthBtn = document.getElementById('plMonthFilterLabel');
+    if(monthFilterMonthBtn) monthFilterMonthBtn.addEventListener('click', () => {
+      monthFilterOn = true;
+      updateMonthFilterChip();
+      applyPlanningFilters();
+    });
     const monthFilterToggleBtn = document.getElementById('plMonthFilterToggle');
     if(monthFilterToggleBtn) monthFilterToggleBtn.addEventListener('click', () => {
-      monthFilterOn = !monthFilterOn;
+      monthFilterOn = false;
       updateMonthFilterChip();
       applyPlanningFilters();
     });
@@ -17606,6 +17649,44 @@
         // calendário de abril.
         const matchesMonth = !monthFilterOn || term || !!trechoNoMes(card, calViewMonth, calViewYear);
         card.style.display = (matchesTerm && matchesTag && matchesMonth) ? '' : 'none';
+      });
+      renderMonthBreaks(!monthFilterOn || !!term);
+    }
+
+    // Separadores "Fevereiro · 6 eventos" antes do primeiro card de cada mês,
+    // quando a lista mostra mais de um mês (ano todo ou busca); no modo mês,
+    // um aviso quando o mês não tem evento. Refeito do zero a cada filtro,
+    // então inserir/editar card nunca deixa separador no lugar errado.
+    function renderMonthBreaks(multiMonth){
+      const list = document.querySelector('#view-planning > .pl-scroll > .pl-content');
+      if(!list) return;
+      list.querySelectorAll(':scope > .pl-month-sep, :scope > .pl-list-empty').forEach(el => el.remove());
+      const visible = Array.from(list.querySelectorAll(':scope > .pl-event-card')).filter(c => c.style.display !== 'none');
+      if(!visible.length){
+        const empty = document.createElement('p');
+        empty.className = 'pl-list-empty';
+        empty.textContent = multiMonth
+          ? 'Nenhum evento encontrado.'
+          : 'Nenhum evento em ' + MONTH_NAMES_PT[calViewMonth - 1].toLowerCase() + '.';
+        const first = list.querySelector(':scope > .pl-event-card') || list.querySelector(':scope > .pl-summary-title');
+        list.insertBefore(empty, first);
+        return;
+      }
+      if(!multiMonth) return;
+      const perMonth = {};
+      visible.forEach(c => { const m = c.dataset.monIndex; perMonth[m] = (perMonth[m] || 0) + 1; });
+      let last = null;
+      visible.forEach(c => {
+        const m = c.dataset.monIndex;
+        if(m === last) return;
+        last = m;
+        const sep = document.createElement('div');
+        sep.className = 'pl-month-sep' + (c === visible[0] ? ' first' : '');
+        const n = perMonth[m];
+        sep.innerHTML = '<span></span><small></small>';
+        sep.firstChild.textContent = MONTH_NAMES_PT[parseInt(m, 10) - 1] || '';
+        sep.lastChild.textContent = n + (n === 1 ? ' evento' : ' eventos');
+        list.insertBefore(sep, c);
       });
     }
 
