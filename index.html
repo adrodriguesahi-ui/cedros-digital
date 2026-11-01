@@ -23209,15 +23209,29 @@
     // Sugestões de requisito: reaproveita os cards já cadastrados em Classes
     // Regulares pra essa classe (data-title em .cl-activity-card), sem duplicar
     // esse catálogo numa tabela própria.
+    // O "GE-1. Idade mínima" é a CHAVE do requisito (amarra progresso,
+    // comprovantes e aulas no banco). Na tela vai o texto do requisito como
+    // está no cartão ("1. Ter, no mínimo, 10 anos de idade."); a chave só
+    // aparece quando não há texto cadastrado.
+    let rotuloParaChave = {};
+    function rotuloDoRequisito(classe, chave){
+      const t = window.__clTextoDoRequisito && window.__clTextoDoRequisito(classe, chave);
+      return (t && (t.subtitulo || '').trim()) || chave;
+    }
     function populateRequisitoOptions(classe){
       requisitoOptions.innerHTML = '';
+      rotuloParaChave = {};
       const seen = new Set();
       document.querySelectorAll('#view-classes .cl-activity-card[data-class="' + CSS.escape(classe) + '"]').forEach(card => {
         const title = card.dataset.title;
         if(!title || seen.has(title)) return;
         seen.add(title);
+        let rotulo = rotuloDoRequisito(classe, title);
+        // Dois requisitos com o mesmo texto: o segundo leva a chave junto pra não se confundirem.
+        if(rotuloParaChave[rotulo] && rotuloParaChave[rotulo] !== title) rotulo = rotulo + ' (' + title + ')';
+        rotuloParaChave[rotulo] = title;
         const opt = document.createElement('option');
-        opt.value = title;
+        opt.value = rotulo;
         requisitoOptions.appendChild(opt);
       });
     }
@@ -23271,7 +23285,8 @@
         chip.innerHTML = '<span></span>' + (pode
           ? '<button type="button" aria-label="Remover requisito"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>'
           : '');
-        chip.querySelector('span').textContent = titulo;
+        chip.querySelector('span').textContent = rotuloDoRequisito(planningClass, titulo);
+        chip.title = titulo;
         const btn = chip.querySelector('button');
         if(btn) btn.addEventListener('click', () => {
           reqSelecionados = reqSelecionados.filter(t => t !== titulo);
@@ -23282,8 +23297,10 @@
     }
 
     function adicionarRequisito(){
-      const titulo = fields.requisito.value.trim();
-      if(!titulo) return;
+      const digitado = fields.requisito.value.trim();
+      if(!digitado) return;
+      // Escolhido na lista: guarda a chave. Digitado à mão: guarda como veio.
+      const titulo = rotuloParaChave[digitado] || digitado;
       if(reqSelecionados.indexOf(titulo) === -1) reqSelecionados.push(titulo);
       fields.requisito.value = '';
       renderReqChips();
@@ -23401,7 +23418,8 @@
           '</div>' +
           '<svg class="cl-planning-row-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
         row.querySelector('.cl-planning-row-title').textContent = plan.classe + (plan.tema ? ' — ' + plan.tema : ' — Sem tema');
-        row.querySelector('.cl-planning-row-meta').textContent = [dateLabel, plan.requisito_titulo].filter(Boolean).join(' · ') || 'Sem data';
+        const reqRotulo = plan.requisito_titulo ? rotuloDoRequisito(plan.classe, plan.requisito_titulo) : '';
+        row.querySelector('.cl-planning-row-meta').textContent = [dateLabel, reqRotulo].filter(Boolean).join(' · ') || 'Sem data';
         row.addEventListener('click', () => openForm(plan));
         list.appendChild(row);
       });
@@ -23891,7 +23909,11 @@
     function tituloDaAula(plan){
       const lista = plan.requisitos || [];
       if(!lista.length) return plan.tema || 'Aula sem requisito';
-      const primeiro = window.__clTituloExibicao ? window.__clTituloExibicao(classe, lista[0]) : lista[0];
+      // Texto do requisito (subtítulo do cartão, ex.: "1. Ter, no mínimo, 10 anos
+      // de idade."); o título do cartão é o nome da área ("I. GERAIS"), que não
+      // diz qual requisito é.
+      const t = window.__clTextoDoRequisito && window.__clTextoDoRequisito(classe, lista[0]);
+      const primeiro = (t && (t.subtitulo || '').trim()) || lista[0];
       return lista.length === 1 ? primeiro : primeiro + ' +' + (lista.length - 1);
     }
 
