@@ -3533,12 +3533,39 @@
 
   /* Planejamento de Classes: cronograma do cartão (requisito → data → instrutor) */
   .cp-summary{
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    display:block;
     background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.09);
-    border-radius:14px; padding:11px 13px; margin-bottom:14px;
+    border-radius:16px; padding:13px 14px; margin-bottom:14px;
     font-size:12px; font-weight:700; color:rgba(245,239,225,0.6);
   }
-  .cp-summary b{ font-size:15px; font-weight:900; color:var(--accent); }
+  .cp-summary-top{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:8px; }
+  .cp-summary-top b{ font-size:15px; font-weight:900; color:var(--cream); }
+  .cp-summary-pct{ flex-shrink:0; font-size:17px; font-weight:900; color:var(--accent); }
+  .cp-summary-bar{ display:block; height:6px; border-radius:4px; background:rgba(255,255,255,0.1); overflow:hidden; }
+  .cp-summary-bar > span{ display:block; height:100%; border-radius:4px; background:var(--accent); transition:width .35s ease; }
+  .cp-summary-linhas{ display:flex; flex-direction:column; gap:5px; margin-top:10px; }
+  .cp-summary-linha{ display:flex; align-items:center; gap:7px; font-size:12px; font-weight:700; color:rgba(245,239,225,0.65); min-width:0; }
+  .cp-summary-linha > span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cp-summary-linha svg{ flex-shrink:0; color:rgba(245,239,225,0.45); }
+  .cp-summary-linha.alerta, .cp-summary-linha.alerta svg{ color:var(--gold); }
+  /* Próxima aula da lista ganha um contorno pra achar de relance. */
+  .cp-row.proxima{ border-color:rgba(63,203,107,0.45); background:rgba(63,203,107,0.08); }
+  .cp-row.agendado.realizada{ opacity:0.6; border-left-color:rgba(255,255,255,0.2); }
+  .cp-row.realizada .cp-row-date{ background:rgba(255,255,255,0.06); }
+  .cp-row.realizada .cp-row-date b{ color:rgba(245,239,225,0.6); }
+  .cp-secao-toggle{
+    width:100%; display:flex; align-items:center; gap:7px;
+    margin:16px 0 8px; padding:0 2px; background:none; border:none; cursor:pointer;
+    font-size:12px; font-weight:900; letter-spacing:0.04em; text-transform:uppercase; color:rgba(245,239,225,0.6);
+  }
+  .cp-secao-chevron{ flex-shrink:0; transition:transform .2s ease; }
+  .cp-secao-toggle[aria-expanded="true"] .cp-secao-chevron{ transform:rotate(90deg); }
+  .cp-secao-count{ font-size:10.5px; font-weight:700; color:rgba(245,239,225,0.4); letter-spacing:0; text-transform:none; }
+  /* A planejar: requisitos sem aula, agrupados pela área do cartão. */
+  .cp-area{ margin-bottom:4px; }
+  .cp-area .cl-area-heading{ margin-top:10px; }
+  .cp-area.collapsed .cp-area-rows{ display:none; }
+  .cp-area.collapsed .cl-area-chevron{ transform:rotate(-90deg); }
   .cp-row{
     display:flex; align-items:center; gap:11px; width:100%; text-align:left;
     background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
@@ -3555,6 +3582,50 @@
   .cp-row-date em{ font-style:normal; font-size:9px; font-weight:800; letter-spacing:0.04em; color:rgba(245,239,225,0.55); }
   .cp-row-date.vazio{ background:rgba(255,255,255,0.06); }
   .cp-row-date.vazio b{ color:rgba(245,239,225,0.4); font-size:12px; }
+  /* Aula só com a semana ("S1 / FEV"): tracejado = data ainda a definir. */
+  .cp-row-date.semana{ background:rgba(216,168,62,0.1); box-shadow:inset 0 0 0 1px rgba(216,168,62,0.45); }
+  .cp-row-date.semana b{ color:var(--gold); }
+
+  /* ---- Formulário do planejamento de aula (Novo/Editar Planejamento) ----
+     Seções em cartões numerados, chave "Data marcada | Só a semana" e os
+     botões presos no rodapé. No computador, coluna de leitura centralizada. */
+  /* display:flex só vale enquanto o JS não põe style.display = 'none' (inline vence). */
+  #clPlanningFormState{ display:flex; flex-direction:column; gap:14px; padding-top:6px; }
+  .cl-plan-atalho{
+    padding:12px 14px 14px; border-radius:16px;
+    background:rgba(216,168,62,0.08); border:1px solid rgba(216,168,62,0.28);
+  }
+  .cl-plan-atalho .pl-field-label{ color:var(--gold); }
+  .cl-plan-sec{
+    padding:14px 14px 16px; border-radius:18px;
+    background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08);
+  }
+  .cl-plan-sec > .pl-field-label:first-of-type{ margin-top:0; }
+  .cl-plan-sec-title{
+    display:flex; align-items:center; gap:10px; margin:0 0 12px;
+    font-size:15px; font-weight:900; color:var(--cream);
+  }
+  .cl-plan-sec-title span{
+    width:24px; height:24px; border-radius:8px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:12.5px; font-weight:900; color:#08130A; background:var(--accent);
+  }
+  .cl-plan-quando{
+    display:flex; gap:4px; padding:4px; margin:0 0 12px;
+    border-radius:14px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.08);
+  }
+  .cl-plan-quando button{
+    flex:1 1 0; padding:9px 10px; border:none; border-radius:10px; cursor:pointer;
+    background:none; color:rgba(245,239,225,0.6); font-size:13px; font-weight:800;
+  }
+  .cl-plan-quando button.active{ background:rgba(63,203,107,0.16); color:var(--accent); }
+  .cl-plan-semana{ display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:8px; }
+  .cl-plan-acoes{ margin-top:2px; }
+  .cl-plan-acoes .pl-btn-primary{ flex:1 1 auto; }
+  .cl-plan-quando button:disabled{ cursor:default; opacity:0.6; }
+  @media (min-width:900px){
+    #clPlanningFormState{ max-width:760px; width:100%; margin:0 auto; }
+  }
   .cp-row-body{ flex:1; min-width:0; display:block; }
   .cp-row-title{ display:block; font-size:13.5px; font-weight:800; color:var(--cream); line-height:1.3; }
   .cp-row-meta{ display:block; margin-top:3px; font-size:11.5px; font-weight:700; color:rgba(245,239,225,0.5); }
@@ -10884,17 +10955,41 @@
         </div>
 
         <div class="pl-dayview-list-wrap" id="clPlanningFormState" style="display:none;">
-          <div id="clPlanningTemplateWrap" style="display:none;">
+          <div id="clPlanningTemplateWrap" class="cl-plan-atalho" style="display:none;">
             <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Modelo Pronto</label>
             <select class="pl-input" id="clPlanningTemplateSelect">
               <option value="">Carregar modelo do currículo anual (opcional)...</option>
             </select>
           </div>
-          <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>1. Informações</label>
+          <section class="cl-plan-sec">
+          <h5 class="cl-plan-sec-title"><span>1</span>Quando e quem</h5>
+          <!-- A aula pode ficar só com a semana ("Fevereiro, 1ª semana") e
+               ganhar a data depois. Grava em mes_planejado/semana_planejada. -->
+          <div class="cl-plan-quando" role="group" aria-label="Quando é a aula">
+            <button type="button" class="active" data-quando="data" aria-pressed="true">Data marcada</button>
+            <button type="button" data-quando="semana" aria-pressed="false">Só a semana</button>
+          </div>
           <div class="pl-field-row">
-            <div class="pl-field-col">
-              <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Data</label>
+            <div class="pl-field-col pl-field-col-wide" id="clPlanQuandoData">
+              <label class="pl-field-label" style="margin-top:0;" for="clPlanField_data"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Data</label>
               <input type="date" class="pl-input" id="clPlanField_data">
+            </div>
+            <div class="pl-field-col pl-field-col-wide" id="clPlanQuandoSemana" style="display:none;">
+              <label class="pl-field-label" style="margin-top:0;" for="clPlanField_mes"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 14h8"/></svg>Mês e semana</label>
+              <div class="cl-plan-semana">
+                <select class="pl-input" id="clPlanField_mes" aria-label="Mês">
+                  <option value="">Mês</option>
+                  <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option>
+                  <option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option>
+                  <option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option>
+                  <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+                </select>
+                <select class="pl-input" id="clPlanField_semana" aria-label="Semana">
+                  <option value="">Semana</option>
+                  <option value="1">1ª sem.</option><option value="2">2ª sem.</option><option value="3">3ª sem.</option>
+                  <option value="4">4ª sem.</option><option value="5">5ª sem.</option>
+                </select>
+              </div>
             </div>
             <div class="pl-field-col">
               <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Horário</label>
@@ -10928,7 +11023,10 @@
             </div>
           </div>
 
-          <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/></svg>2. Atividade</label>
+          </section>
+
+          <section class="cl-plan-sec">
+          <h5 class="cl-plan-sec-title"><span>2</span>Atividade</h5>
           <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Requisito da classe</label>
           <div class="cl-req-add-row">
             <input type="text" class="pl-input" id="clPlanField_requisito" list="clPlanningRequisitoOptions" placeholder="Selecione ou digite o requisito" maxlength="120">
@@ -10952,7 +11050,10 @@
           <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/></svg>Materiais necessários</label>
           <textarea class="pl-input pl-textarea" id="clPlanField_materiais" rows="2" placeholder="Bíblia, cartolina, canetinha..." maxlength="300"></textarea>
 
-          <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>3. Modelo de Aula</label>
+          </section>
+
+          <section class="cl-plan-sec">
+          <h5 class="cl-plan-sec-title"><span>3</span>Roteiro da aula</h5>
           <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Texto bíblico</label>
           <input type="text" class="pl-input" id="clPlanField_textoBiblico" placeholder="Ex.: Salmo 119:105" maxlength="80">
           <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Introdução</label>
@@ -10964,7 +11065,11 @@
           <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>Aplicação espiritual</label>
           <textarea class="pl-input pl-textarea" id="clPlanField_aplicacao" rows="2" placeholder="Como podemos aplicar isso no nosso dia a dia?" maxlength="500"></textarea>
 
-          <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Avaliação</label>
+          </section>
+
+          <section class="cl-plan-sec">
+          <h5 class="cl-plan-sec-title"><span>4</span>Depois da aula</h5>
+          <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Avaliação</label>
           <label class="pl-checklist-row" style="margin-bottom:8px;">
             <input type="checkbox" class="pl-checklist-done" id="clPlanField_avParticipou">
             <span style="color:var(--cream); font-size:13.5px; font-weight:600;">Participou</span>
@@ -10980,8 +11085,9 @@
 
           <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Observações do instrutor</label>
           <textarea class="pl-input pl-textarea" id="clPlanField_observacoes" rows="2" placeholder="Observações gerais sobre a aula..." maxlength="400"></textarea>
+          </section>
 
-          <div class="pl-modal-actions">
+          <div class="pl-modal-actions cl-plan-acoes">
             <button type="button" class="pl-btn pl-btn-danger" id="clPlanningDeleteBtn" style="display:none;">Excluir</button>
             <button type="button" class="pl-btn" id="clPlanningDuplicateBtn" style="display:none; background:rgba(255,255,255,0.08); color:var(--cream);">Duplicar</button>
             <button type="button" class="pl-btn pl-btn-primary" id="clPlanningSaveBtn">Salvar Planejamento</button>
@@ -12984,14 +13090,31 @@
             <button type="button" class="cp-view-btn" id="cpViewCal">Calendário</button>
           </div>
 
+          <!-- Lista em seções: o que vem pela frente, o que já passou (recolhido),
+               aulas criadas sem data e os requisitos que ainda não têm aula,
+               agrupados pela área do cartão. -->
           <div id="cpListaWrap">
-            <h4 class="un-section-title">Agendados</h4>
-            <div id="cpScheduled"></div>
-            <p class="un-empty-hint" id="cpScheduledEmpty" style="display:none;">Nenhuma aula agendada neste cartão ainda.</p>
+            <h4 class="un-section-title">Próximas aulas</h4>
+            <div id="cpProximas"></div>
+            <p class="un-empty-hint" id="cpProximasEmpty" style="display:none;">Nenhuma aula marcada daqui pra frente.</p>
 
-            <h4 class="un-section-title">Sem data</h4>
-            <div id="cpUnscheduled"></div>
-            <p class="un-empty-hint" id="cpUnscheduledEmpty" style="display:none;">Todos os requisitos deste cartão já têm data.</p>
+            <div id="cpRealizadasWrap" style="display:none;">
+              <button type="button" class="cp-secao-toggle" id="cpRealizadasBtn" aria-expanded="false">
+                <svg class="cp-secao-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                <span>Já realizadas</span>
+                <span class="cp-secao-count" id="cpRealizadasCount"></span>
+              </button>
+              <div id="cpRealizadas" class="cp-realizadas" style="display:none;"></div>
+            </div>
+
+            <div id="cpSemDataWrap" style="display:none;">
+              <h4 class="un-section-title">Sem data marcada</h4>
+              <div id="cpSemData"></div>
+            </div>
+
+            <h4 class="un-section-title">A planejar</h4>
+            <div id="cpAPlanejar"></div>
+            <p class="un-empty-hint" id="cpAPlanejarEmpty" style="display:none;">Todos os requisitos deste cartão já têm aula.</p>
           </div>
 
           <div id="cpCalWrap" style="display:none;">
@@ -22343,6 +22466,7 @@
         .map(x => x.a);
     }
     window.__clTituloDaArea = tituloDaArea;
+    window.__clCorDaArea = corDaArea;
 
     // Áreas criadas pelo Coordenador: aparecem na lista mesmo sem requisito.
     const AREAS_CRIADAS = {}; // AREAS_CRIADAS['Classe'] = ['chave-da-area', ...]
@@ -23199,6 +23323,7 @@
       if(deleteBtn) deleteBtn.style.display = (pode && editingPlan) ? '' : 'none';
       if(duplicateBtn) duplicateBtn.style.display = (pode && editingPlan) ? '' : 'none';
       formState.querySelectorAll('input, select, textarea').forEach(el => { el.disabled = !pode; });
+      quandoBtns.forEach(b => { b.disabled = !pode; });
       if(reqAddBtn) reqAddBtn.style.display = pode ? '' : 'none';
       // Quem marca que vai acompanhar é o Coordenador da classe (ou o Admin) —
       // o instrutor responsável planeja, mas não agenda a presença do coordenador.
@@ -23217,7 +23342,7 @@
       plans.forEach(plan => {
         const row = document.createElement('div');
         row.className = 'cl-planning-row';
-        const dateLabel = formatPlanDate(plan.data);
+        const dateLabel = plan.data ? formatPlanDate(plan.data) : semanaLabel(plan);
         row.innerHTML =
           '<span class="cl-planning-row-dot">' + classDot(plan.classe) + '</span>' +
           '<div class="cl-planning-row-body">' +
@@ -23257,8 +23382,47 @@
       renderList();
     }
 
+    // ---- Quando: data marcada ou só a semana ----
+    // "Só a semana" guarda mes_planejado + semana_planejada e deixa a data
+    // vazia; a data entra depois, editando a aula. Com data marcada, mês e
+    // semana são derivados dela (semana = dia 1–7 → 1ª, 8–14 → 2ª…).
+    const quandoBtns = Array.from(document.querySelectorAll('#clPlanningFormState .cl-plan-quando button'));
+    const quandoDataEl = document.getElementById('clPlanQuandoData');
+    const quandoSemanaEl = document.getElementById('clPlanQuandoSemana');
+    const fieldMes = document.getElementById('clPlanField_mes');
+    const fieldSemana = document.getElementById('clPlanField_semana');
+    const MESES_NOME = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    let quandoModo = 'data';
+    function setQuando(modo){
+      quandoModo = modo;
+      quandoBtns.forEach(b => {
+        const on = b.dataset.quando === modo;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+      quandoDataEl.style.display = modo === 'data' ? '' : 'none';
+      quandoSemanaEl.style.display = modo === 'semana' ? '' : 'none';
+    }
+    quandoBtns.forEach(b => b.addEventListener('click', () => {
+      // Ao passar pra "Só a semana" com uma data já escolhida, aproveita o mês e a semana dela.
+      if(b.dataset.quando === 'semana' && fields.data.value){
+        const [, m, d] = fields.data.value.split('-').map(n => parseInt(n, 10));
+        fieldMes.value = String(m);
+        fieldSemana.value = String(Math.min(5, Math.ceil(d / 7)));
+      }
+      setQuando(b.dataset.quando);
+    }));
+    function semanaLabel(plan){
+      if(!plan.mes_planejado || !plan.semana_planejada) return '';
+      return MESES_NOME[plan.mes_planejado - 1] + ' · ' + plan.semana_planejada + 'ª semana';
+    }
+    window.__clSemanaLabel = semanaLabel;
+
     function resetFields(){
       FIELD_IDS.forEach(key => { if(fields[key]) fields[key].value = ''; });
+      fieldMes.value = '';
+      fieldSemana.value = '';
+      setQuando('data');
       avParticipou.checked = false;
       avCompreendeu.checked = false;
       avCumpriu.checked = false;
@@ -23270,6 +23434,9 @@
 
     function fillFields(plan){
       fields.data.value = plan.data || '';
+      fieldMes.value = plan.mes_planejado ? String(plan.mes_planejado) : '';
+      fieldSemana.value = plan.semana_planejada ? String(plan.semana_planejada) : '';
+      setQuando(!plan.data && plan.semana_planejada ? 'semana' : 'data');
       fields.horario.value = plan.horario || '';
       // O instrutor é preenchido por populateInstrutorOptions(), que monta as
       // opções do cartão e já seleciona a pessoa certa.
@@ -23337,6 +23504,14 @@
       if(hasContent && !confirm('Isso vai substituir o Tema e o Desenvolvimento já preenchidos. Continuar?')) return;
       fields.tema.value = row.mes + ' — Semana ' + row.semana;
       fields.desenvolvimento.value = row.texto;
+      // O currículo já diz o mês e a semana: sem data escolhida ainda, a aula
+      // fica marcada por semana e a data entra depois.
+      const mesIdx = MESES_NOME.findIndex(n => n.toLowerCase() === String(row.mes).toLowerCase()) + 1;
+      if(mesIdx && row.semana && !fields.data.value){
+        fieldMes.value = String(mesIdx);
+        fieldSemana.value = String(Math.min(5, parseInt(row.semana, 10) || 1));
+        setQuando('semana');
+      }
     });
 
     // O overlay é `position:absolute` dentro de uma <section class="view">, e
@@ -23394,9 +23569,26 @@
       // O que ficou digitado e não virou chip ainda entra como requisito.
       if(fields.requisito.value.trim()) adicionarRequisito();
       const instrutor = instrutorEscolhido();
+      let dataAula = fields.data.value || null;
+      let mesPlanejado = null, semanaPlanejada = null;
+      if(quandoModo === 'semana'){
+        if(!fieldMes.value || !fieldSemana.value){
+          alert('Escolha o mês e a semana da aula (ou marque uma data).');
+          return;
+        }
+        dataAula = null;
+        mesPlanejado = parseInt(fieldMes.value, 10);
+        semanaPlanejada = parseInt(fieldSemana.value, 10);
+      } else if(dataAula){
+        const [, m, d] = dataAula.split('-').map(n => parseInt(n, 10));
+        mesPlanejado = m;
+        semanaPlanejada = Math.min(5, Math.ceil(d / 7));
+      }
       const payload = {
         classe: planningClass,
-        data: fields.data.value || null,
+        data: dataAula,
+        mes_planejado: mesPlanejado,
+        semana_planejada: semanaPlanejada,
         horario: fields.horario.value || null,
         instrutor_responsavel: instrutor.nome,
         instrutor_usuario_id: instrutor.id,
@@ -23420,10 +23612,22 @@
         observacoes: fields.observacoes.value.trim() || null
       };
       saveBtn.disabled = true;
-      const query = editingPlan
-        ? supa.from('planejamentos_aula').update(payload).eq('id', editingPlan.id).select().single()
-        : supa.from('planejamentos_aula').insert(payload).select().single();
-      const { data: salvo, error } = await query;
+      const gravar = (corpo) => editingPlan
+        ? supa.from('planejamentos_aula').update(corpo).eq('id', editingPlan.id).select().single()
+        : supa.from('planejamentos_aula').insert(corpo).select().single();
+      let resposta = await gravar(payload);
+      // Banco que ainda não tem as colunas da semana (ex.: o do Controle de
+      // Classes antes da migration): salva sem elas em vez de travar tudo.
+      if(resposta.error && /mes_planejado|semana_planejada/.test(resposta.error.message || '')){
+        const semSemana = Object.assign({}, payload);
+        delete semSemana.mes_planejado;
+        delete semSemana.semana_planejada;
+        resposta = await gravar(semSemana);
+        if(!resposta.error && quandoModo === 'semana'){
+          alert('A aula foi salva, mas sem a semana: o banco ainda não tem as colunas mes_planejado e semana_planejada.');
+        }
+      }
+      const { data: salvo, error } = resposta;
       if(!error && salvo){
         // Regrava a lista de requisitos da aula do zero — mais simples e seguro
         // do que tentar casar o que entrou e o que saiu.
@@ -23488,10 +23692,16 @@
     if(!view || !classSelect) return;
 
     const summaryEl = document.getElementById('cpSummary');
-    const scheduledEl = document.getElementById('cpScheduled');
-    const scheduledEmpty = document.getElementById('cpScheduledEmpty');
-    const unscheduledEl = document.getElementById('cpUnscheduled');
-    const unscheduledEmpty = document.getElementById('cpUnscheduledEmpty');
+    const proximasEl = document.getElementById('cpProximas');
+    const proximasEmpty = document.getElementById('cpProximasEmpty');
+    const realizadasWrap = document.getElementById('cpRealizadasWrap');
+    const realizadasBtn = document.getElementById('cpRealizadasBtn');
+    const realizadasCount = document.getElementById('cpRealizadasCount');
+    const realizadasEl = document.getElementById('cpRealizadas');
+    const semDataWrap = document.getElementById('cpSemDataWrap');
+    const semDataEl = document.getElementById('cpSemData');
+    const aPlanejarEl = document.getElementById('cpAPlanejar');
+    const aPlanejarEmpty = document.getElementById('cpAPlanejarEmpty');
     const readOnlyHint = document.getElementById('cpReadOnlyHint');
     const instrutoresBtn = document.getElementById('cpInstrutoresBtn');
     const areasBtn = document.getElementById('cpAreasBtn');
@@ -23531,10 +23741,33 @@
     window.__cpGetInstrutores = function(qualClasse){ return instrutoresPorClasse[qualClasse] || []; };
     window.__cpReloadInstrutores = loadInstrutores;
 
-    function requisitosDaClasse(qualClasse){
+    function cardsDaClasse(qualClasse){
       const group = document.querySelector('#view-classes .pl-month-group[data-class="' + (qualClasse || '').replace(/"/g, '\\"') + '"]');
       if(!group) return [];
-      return Array.from(group.querySelectorAll('.cl-activity-card')).map(c => c.dataset.title).filter(Boolean);
+      return Array.from(group.querySelectorAll('.cl-activity-card')).filter(c => c.dataset.title);
+    }
+    function requisitosDaClasse(qualClasse){
+      return cardsDaClasse(qualClasse).map(c => c.dataset.title);
+    }
+
+    // Os cards já estão na ordem das áreas das Classes Regulares (numeração do
+    // Coordenador incluída), então a primeira aparição de cada área dá a ordem.
+    function requisitosPorArea(qualClasse){
+      const grupos = [];
+      const porArea = {};
+      cardsDaClasse(qualClasse).forEach(c => {
+        const area = c.dataset.area || 'Vida em Sociedade';
+        if(!porArea[area]){ porArea[area] = { area: area, titulos: [] }; grupos.push(porArea[area]); }
+        porArea[area].titulos.push(c.dataset.title);
+      });
+      return grupos;
+    }
+    const areasRecolhidas = {}; // areasRecolhidas['Classe|Área'] = true
+    let realizadasAbertas = false;
+
+    function hojeIso(){
+      const h = new Date();
+      return h.getFullYear() + '-' + String(h.getMonth() + 1).padStart(2, '0') + '-' + String(h.getDate()).padStart(2, '0');
     }
 
     function populateClasses(){
@@ -23615,15 +23848,20 @@
     function buildRow(opts){
       const row = document.createElement('button');
       row.type = 'button';
-      row.className = 'cp-row' + (opts.data ? ' agendado' : '');
+      row.className = 'cp-row' + (opts.data ? ' agendado' : '') + (opts.extraClass ? ' ' + opts.extraClass : '');
       row.innerHTML =
-        '<span class="cp-row-date' + (opts.data ? '' : ' vazio') + '"><b></b><em></em></span>' +
+        '<span class="cp-row-date' + (opts.data ? '' : (opts.semana ? ' semana' : ' vazio')) + '"><b></b><em></em></span>' +
         '<span class="cp-row-body"><span class="cp-row-title"></span><span class="cp-row-meta"></span></span>';
       const dateBox = row.querySelector('.cp-row-date');
       if(opts.data){
         const [, m, d] = opts.data.split('-');
         dateBox.querySelector('b').textContent = d;
         dateBox.querySelector('em').textContent = MES_ABBR[parseInt(m, 10) - 1] || '';
+      } else if(opts.semana){
+        // Só a semana: "S1" grande e o mês embaixo, como a data.
+        dateBox.querySelector('b').textContent = 'S' + opts.semana.semana;
+        dateBox.querySelector('em').textContent = MES_ABBR[opts.semana.mes - 1] || '';
+        row.title = (window.__clSemanaLabel ? window.__clSemanaLabel({ mes_planejado: opts.semana.mes, semana_planejada: opts.semana.semana }) : '') + ' — data a definir';
       } else {
         dateBox.querySelector('b').textContent = '—';
       }
@@ -23677,56 +23915,135 @@
       if(areasBtn) areasBtn.style.display = canManageRoster(classe) ? '' : 'none';
 
       const requisitos = requisitosDaClasse(classe);
+      const hoje = hojeIso();
       const comData = plans.filter(p => p.data).sort((a, b) => a.data.localeCompare(b.data));
-      const semData = plans.filter(p => !p.data);
-      // Uma aula pode cobrir vários requisitos: todos contam como agendados.
+      const proximas = comData.filter(p => p.data >= hoje);
+      // Realizadas: a mais recente primeiro, que é a que se procura.
+      const realizadas = comData.filter(p => p.data < hoje).reverse();
+      // Sem data: as que já têm semana vêm primeiro, na ordem do ano.
+      const ordemSemana = p => (p.mes_planejado && p.semana_planejada) ? p.mes_planejado * 10 + p.semana_planejada : 999;
+      const semData = plans.filter(p => !p.data).sort((a, b) => ordemSemana(a) - ordemSemana(b));
+      // Uma aula pode cobrir vários requisitos: todos contam como planejados.
       const planejados = new Set();
       plans.forEach(p => (p.requisitos || []).forEach(t => planejados.add(t)));
 
-      scheduledEl.innerHTML = '';
-      comData.forEach(plan => {
-        scheduledEl.appendChild(buildRow({
-          data: plan.data,
-          titulo: tituloDaAula(plan),
-          instrutor: plan.instrutor_responsavel,
-          convidado: plan.instrutor_convidado,
-          acompanha: plan.coordenador_acompanha,
-          meta: [plan.horario, plan.local].filter(Boolean).join(' · '),
-          plan: plan
-        }));
+      const linhaDaAula = (plan, extra) => buildRow({
+        data: plan.data,
+        titulo: tituloDaAula(plan),
+        instrutor: plan.instrutor_responsavel,
+        convidado: plan.instrutor_convidado,
+        acompanha: plan.coordenador_acompanha,
+        meta: plan.data
+          ? [plan.horario, plan.local].filter(Boolean).join(' · ')
+          : (plan.semana_planejada ? 'Data a definir' : 'Planejamento sem data'),
+        semana: !plan.data && plan.mes_planejado && plan.semana_planejada
+          ? { mes: plan.mes_planejado, semana: plan.semana_planejada } : null,
+        plan: plan,
+        extraClass: extra
       });
-      scheduledEmpty.style.display = comData.length ? 'none' : '';
 
-      unscheduledEl.innerHTML = '';
-      semData.forEach(plan => {
-        unscheduledEl.appendChild(buildRow({
-          data: null,
-          titulo: tituloDaAula(plan),
-          instrutor: plan.instrutor_responsavel,
-          convidado: plan.instrutor_convidado,
-          acompanha: plan.coordenador_acompanha,
-          meta: 'Planejamento sem data',
-          plan: plan
-        }));
-      });
-      requisitos.filter(t => !planejados.has(t)).forEach(titulo => {
-        unscheduledEl.appendChild(buildRow({
-          data: null,
-          titulo: window.__clTituloExibicao ? window.__clTituloExibicao(classe, titulo) : titulo,
-          instrutor: null,
-          meta: pode ? 'Toque pra planejar' : 'Ainda não planejado',
-          requisito: titulo
-        }));
-      });
-      unscheduledEmpty.style.display = unscheduledEl.children.length ? 'none' : '';
+      proximasEl.innerHTML = '';
+      proximas.forEach((plan, i) => proximasEl.appendChild(linhaDaAula(plan, i === 0 ? 'proxima' : '')));
+      proximasEmpty.style.display = proximas.length ? 'none' : '';
 
+      realizadasEl.innerHTML = '';
+      realizadas.forEach(plan => realizadasEl.appendChild(linhaDaAula(plan, 'realizada')));
+      realizadasWrap.style.display = realizadas.length ? '' : 'none';
+      realizadasCount.textContent = realizadas.length;
+      realizadasBtn.setAttribute('aria-expanded', realizadasAbertas ? 'true' : 'false');
+      realizadasEl.style.display = realizadasAbertas ? '' : 'none';
+
+      semDataEl.innerHTML = '';
+      semData.forEach(plan => semDataEl.appendChild(linhaDaAula(plan, '')));
+      semDataWrap.style.display = semData.length ? '' : 'none';
+
+      aPlanejarEl.innerHTML = '';
+      let faltam = 0;
+      requisitosPorArea(classe).forEach(grupo => {
+        const pendentes = grupo.titulos.filter(t => !planejados.has(t));
+        if(!pendentes.length) return;
+        faltam += pendentes.length;
+        const chave = classe + '|' + grupo.area;
+        const secao = document.createElement('div');
+        secao.className = 'cp-area' + (areasRecolhidas[chave] ? ' collapsed' : '');
+        const cor = window.__clCorDaArea ? window.__clCorDaArea(classe, grupo.area) : 'gray';
+        const heading = document.createElement('button');
+        heading.type = 'button';
+        heading.className = 'cl-area-heading';
+        heading.innerHTML =
+          '<span class="cl-class-dot cl-color-' + cor + '"></span>' +
+          '<span class="cl-area-heading-text"></span>' +
+          '<span class="cl-area-heading-count">' + (grupo.titulos.length - pendentes.length) + '/' + grupo.titulos.length + '</span>' +
+          '<svg class="cl-area-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+        heading.querySelector('.cl-area-heading-text').textContent =
+          window.__clTituloDaArea ? window.__clTituloDaArea(classe, grupo.area) : grupo.area;
+        heading.addEventListener('click', () => {
+          areasRecolhidas[chave] = secao.classList.toggle('collapsed');
+        });
+        const rows = document.createElement('div');
+        rows.className = 'cp-area-rows';
+        pendentes.forEach(titulo => {
+          rows.appendChild(buildRow({
+            data: null,
+            titulo: window.__clTituloExibicao ? window.__clTituloExibicao(classe, titulo) : titulo,
+            instrutor: null,
+            meta: pode ? 'Toque pra planejar' : 'Ainda não planejado',
+            requisito: titulo
+          }));
+        });
+        secao.appendChild(heading);
+        secao.appendChild(rows);
+        aPlanejarEl.appendChild(secao);
+      });
+      aPlanejarEmpty.style.display = faltam ? 'none' : '';
+
+      renderResumo(requisitos, comData, proximas);
+    }
+
+    // Painel do topo: quanto do cartão já tem data, a próxima aula e o que
+    // precisa de atenção (aula marcada sem instrutor escalado).
+    function renderResumo(requisitos, comData, proximas){
       const agendadosDoCartao = new Set();
       comData.forEach(p => (p.requisitos || []).forEach(t => {
         if(requisitos.indexOf(t) !== -1) agendadosDoCartao.add(t);
       }));
-      summaryEl.innerHTML = '<span><b>' + agendadosDoCartao.size + '</b> de ' + requisitos.length + ' requisitos com data</span>' +
-        '<span>' + comData.length + (comData.length === 1 ? ' aula agendada' : ' aulas agendadas') + '</span>';
+      const total = requisitos.length;
+      const pct = total ? Math.round(agendadosDoCartao.size / total * 100) : 0;
+      const semInstrutor = proximas.filter(p => !p.instrutor_responsavel).length;
+
+      const ICONE_CAL = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
+      const ICONE_ALERTA = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+
+      summaryEl.innerHTML =
+        '<div class="cp-summary-top"><span><b>' + agendadosDoCartao.size + '</b> de ' + total + ' requisitos com data</span>' +
+        '<span class="cp-summary-pct">' + pct + '%</span></div>' +
+        '<span class="cp-summary-bar"><span style="width:' + pct + '%"></span></span>' +
+        '<div class="cp-summary-linhas"></div>';
+      const linhas = summaryEl.querySelector('.cp-summary-linhas');
+      const addLinha = (icone, texto, alerta) => {
+        const l = document.createElement('div');
+        l.className = 'cp-summary-linha' + (alerta ? ' alerta' : '');
+        l.innerHTML = icone + '<span></span>';
+        l.querySelector('span').textContent = texto;
+        linhas.appendChild(l);
+      };
+      if(proximas.length){
+        const p = proximas[0];
+        const [, m, d] = p.data.split('-');
+        addLinha(ICONE_CAL, 'Próxima: ' + d + ' ' + (MES_ABBR[parseInt(m, 10) - 1] || '') + ' · ' + tituloDaAula(p));
+      } else {
+        addLinha(ICONE_CAL, 'Nenhuma aula marcada daqui pra frente');
+      }
+      if(semInstrutor){
+        addLinha(ICONE_ALERTA, semInstrutor === 1 ? '1 aula sem instrutor escalado' : semInstrutor + ' aulas sem instrutor escalado', true);
+      }
     }
+
+    if(realizadasBtn) realizadasBtn.addEventListener('click', () => {
+      realizadasAbertas = !realizadasAbertas;
+      realizadasBtn.setAttribute('aria-expanded', realizadasAbertas ? 'true' : 'false');
+      realizadasEl.style.display = realizadasAbertas ? '' : 'none';
+    });
 
     // ---- Texto do requisito (título, subtítulo, descrição, observação) ----
     // Guardado em requisitos_personalizados; o título do catálogo continua sendo
