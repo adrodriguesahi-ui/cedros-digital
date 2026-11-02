@@ -3824,6 +3824,7 @@
     .dcl-corpo{ flex-direction:row; align-items:flex-start; }
     .dcl-campos{ flex:1 1 auto; }
     .dcl-previa-wrap{ flex:0 0 340px; position:sticky; top:0; }
+    #scPdfPanel .dcl-previa-wrap{ flex-basis:250px; }
   }
   .pl-modal{
     width:100%; max-width:460px;
@@ -12373,32 +12374,59 @@
                   <span class="dcl-atalho-txt"><b>Declaração de idade mínima</b><span>Comprovante do requisito 1 das classes, no modelo do clube</span></span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
-                <label class="pl-field-label" style="margin-top:0;">Título do documento</label>
-                <input type="text" class="pl-input" id="scPdfTitle" placeholder="Ex.: Autorização para Acampamento de Unidade" maxlength="80">
+                <div class="dcl-corpo">
+                  <div class="dcl-campos">
+                    <label class="pl-field-label" style="margin-top:0;">Evento</label>
+                    <input type="text" class="pl-input" id="scPdfEvent" placeholder="Ex.: VI Campori Sul-Americano da DSA" maxlength="90">
 
-                <label class="pl-field-label">Desbravador(a)</label>
-                <input type="text" class="pl-input" id="scPdfMember" placeholder="Nome completo do desbravador">
+                    <div class="pl-field-row">
+                      <div class="pl-field-col">
+                        <label class="pl-field-label">Data de início</label>
+                        <input type="date" class="pl-input" id="scPdfDate">
+                      </div>
+                      <div class="pl-field-col">
+                        <label class="pl-field-label">Até</label>
+                        <input type="date" class="pl-input" id="scPdfFim">
+                      </div>
+                    </div>
 
-                <div class="pl-field-row">
-                  <div class="pl-field-col pl-field-col-wide">
-                    <label class="pl-field-label">Unidade</label>
-                    <select class="pl-input" id="scPdfUnit" data-unidades></select>
+                    <div class="pl-field-row">
+                      <div class="pl-field-col">
+                        <label class="pl-field-label">Saída de</label>
+                        <input type="text" class="pl-input" id="scPdfOrigem" value="Cotia - SP" maxlength="50">
+                      </div>
+                      <div class="pl-field-col">
+                        <label class="pl-field-label">Destino</label>
+                        <input type="text" class="pl-input" id="scPdfCidade" placeholder="Ex.: Barretos - SP" maxlength="50">
+                      </div>
+                    </div>
+
+                    <label class="pl-field-label">Participante</label>
+                    <input type="text" class="pl-input" id="scPdfMember" list="scPdfMembros" placeholder="Nome completo do desbravador" maxlength="80" autocomplete="off">
+                    <datalist id="scPdfMembros"></datalist>
+
+                    <label class="pl-field-label">Responsável pelo clube (opcional)</label>
+                    <input type="text" class="pl-input" id="scPdfRespNome" placeholder="Maior de 18 anos" maxlength="80">
+                    <div class="pl-field-row">
+                      <div class="pl-field-col">
+                        <label class="pl-field-label">RG (opcional)</label>
+                        <input type="text" class="pl-input" id="scPdfRespRg" maxlength="20" autocomplete="off">
+                      </div>
+                      <div class="pl-field-col">
+                        <label class="pl-field-label">CPF (opcional)</label>
+                        <input type="text" class="pl-input" id="scPdfRespCpf" maxlength="20" autocomplete="off">
+                      </div>
+                    </div>
+
+                    <p class="pl-reminder-hint">Os dados do pai, mãe ou responsável legal, o documento do participante e a assinatura ficam em branco para preencher à mão. Para outro participante, é só trocar o nome e gerar de novo.</p>
+
+                    <button type="button" class="pl-btn pl-btn-primary" id="scPdfGenerateBtn" style="margin-top:6px;">Gerar PDF</button>
                   </div>
-                  <div class="pl-field-col">
-                    <label class="pl-field-label">Data do evento</label>
-                    <input type="date" class="pl-input" id="scPdfDate">
+                  <div class="dcl-previa-wrap">
+                    <span class="dcl-previa-rotulo">Prévia</span>
+                    <img id="scPdfPrevia" class="dcl-previa" alt="Prévia da autorização">
                   </div>
                 </div>
-
-                <label class="pl-field-label">Evento</label>
-                <input type="text" class="pl-input" id="scPdfEvent" placeholder="Ex.: Acampamento de Unidade">
-
-                <label class="pl-field-label">Local (opcional)</label>
-                <input type="text" class="pl-input" id="scPdfLocal" placeholder="Local do evento">
-
-                <p class="pl-reminder-hint">O PDF é gerado com um modelo padrão de autorização. Assim que você enviar o modelo oficial do clube, eu ajusto o texto e o layout pra ficar idêntico.</p>
-
-                <button type="button" class="pl-btn pl-btn-primary" id="scPdfGenerateBtn" style="margin-top:6px;">Gerar PDF</button>
               </div>
 
               <div class="sc-pdf-panel" id="scAttendancePanel" style="display:none;">
@@ -29060,96 +29088,245 @@
     });
   })();
 
-  // Secretaria: gerar PDF de autorização (modelo padrão até o clube enviar o oficial)
+  // Secretaria: Autorização para saída de desbravadores (modelo do clube)
+  //
+  // Evento, período, cidades e participante vêm do formulário; os dados do
+  // pai, mãe ou responsável legal e a assinatura ficam em branco para
+  // preencher à mão. Como na Declaração de idade, o documento é desenhado num
+  // canvas A4 e vai pro PDF como imagem; a mesma função gera a prévia.
+  // RG e CPF do responsável pelo clube não ficam guardados: só vão pro PDF.
   (function(){
     const btn = document.getElementById('scPdfGenerateBtn');
     if(!btn) return;
-    btn.addEventListener('click', () => {
-      const title = document.getElementById('scPdfTitle').value.trim() || 'Autorização de Participação';
-      const member = document.getElementById('scPdfMember').value.trim();
-      const unit = document.getElementById('scPdfUnit').value;
-      const dateVal = document.getElementById('scPdfDate').value;
-      const eventName = document.getElementById('scPdfEvent').value.trim();
-      const local = document.getElementById('scPdfLocal').value.trim();
+    const $ = id => document.getElementById(id);
+    const campos = {
+      evento: $('scPdfEvent'), inicio: $('scPdfDate'), fim: $('scPdfFim'), origem: $('scPdfOrigem'),
+      cidade: $('scPdfCidade'), participante: $('scPdfMember'), respNome: $('scPdfRespNome'),
+      respRg: $('scPdfRespRg'), respCpf: $('scPdfRespCpf')
+    };
+    const previa = $('scPdfPrevia');
+    const W = 1654, H = 2339, LARG = 595.5, ALT = 842.25, ESQ = 30, DIR = 565.5;
+    const FONTE = '"Fira Sans", "Trebuchet MS", Arial, sans-serif';
+    const TINTA = '#231F20';
+    const TERMOS = [
+      'AUTORIZO a viagem conforme o artigo 83, § 1º, b, 2, da Lei nº 8.069, de 13 de julho de 1990, Estatuto da Criança e do adolescente - ECA. ' +
+      'Consciente dos grandes benefícios recebidos através do Clube de desbravadores acima descrito, abdico responsabilizar, em qualquer instância judicial, ' +
+      'o (os) responsável (eis) do referido Clube em todos os níveis, bem como a Igreja Adventista do Sétimo Dia, por qualquer dano causado ou sofrido por meu ' +
+      'dependente, devido a sua própria atuação, no percurso de ida e volta bem como no decurso do referido evento.',
+      'Em caso de acidente, ou doença, autorizo o responsável acima identificado a tomar toda e qualquer decisão necessária para o restabelecimento da saúde ' +
+      'do meu dependente, junto a todo e qualquer órgão que se fizer necessário, inclusive se houver necessidade de intervenção clínica ou cirúrgica. ' +
+      'Declaro ainda que nada omiti na declaração de saúde, sendo de minha responsabilidade qualquer complicação clínica devido ao preenchimento equivocado ou omissão.'
+    ];
+    let brasao = null;
+    let fontesProntas = null;
+    let usuarios = null;
 
-      if(!member || !eventName || !dateVal){
-        [['scPdfMember', member], ['scPdfEvent', eventName], ['scPdfDate', dateVal]].forEach(([id, val]) => {
-          document.getElementById(id).style.borderColor = val ? '' : '#FF6B5C';
-        });
-        return;
+    const normalizar = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+    function carregarFontes(){
+      if(fontesProntas) return fontesProntas;
+      if(!$('autFontes')){
+        const link = document.createElement('link');
+        link.id = 'autFontes';
+        link.rel = 'stylesheet';
+        link.href = 'https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;700&display=swap';
+        document.head.appendChild(link);
       }
+      const espera = Promise.all([
+        document.fonts.load('400 20px "Fira Sans"'),
+        document.fonts.load('700 20px "Fira Sans"')
+      ]).catch(() => {});
+      fontesProntas = Promise.race([espera, new Promise(r => setTimeout(r, 3500))]);
+      return fontesProntas;
+    }
+    function carregarBrasao(){
+      if(brasao) return Promise.resolve();
+      return new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => { brasao = img; resolve(); };
+        img.onerror = () => resolve();
+        img.src = 'brasao-autorizacao.png';
+      });
+    }
+    const carregarRecursos = () => Promise.all([carregarFontes(), carregarBrasao()]);
 
-      const dateObj = new Date(dateVal + 'T00:00:00');
-      const dateFormatted = dateObj.toLocaleDateString('pt-BR');
+    function dados(){
+      const d = {};
+      Object.keys(campos).forEach(k => { d[k] = campos[k].value.trim(); });
+      const nome = normalizar(d.participante);
+      const u = nome && usuarios && usuarios.find(x => normalizar(x.nome) === nome);
+      d.nascimento = (u && u.data_nascimento) || '';
+      return d;
+    }
+    function dataPorExtenso(iso){
+      if(!iso) return '';
+      const d = new Date(iso + 'T12:00:00');
+      const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+      return (d.getDate() === 1 ? '1º' : d.getDate()) + ' de ' + meses[d.getMonth()] + ' de ' + d.getFullYear();
+    }
+    function dataCurta(iso){
+      if(!iso) return '';
+      const [a, m, d] = iso.split('-');
+      return d + '/' + m + '/' + a;
+    }
+    function quebrar(x, texto, largura){
+      const linhas = [];
+      let atual = '';
+      texto.split(' ').forEach(p => {
+        const teste = atual ? atual + ' ' + p : p;
+        if(atual && x.measureText(teste).width > largura){ linhas.push(atual); atual = p; }
+        else atual = teste;
+      });
+      if(atual) linhas.push(atual);
+      return linhas;
+    }
 
+    // Linhas da tabela do modelo: [altura, células]. Cada célula é
+    // [fração da largura, rótulo, valor preenchido pelo formulário].
+    function linhasDaTabela(d){
+      const clube = (window.CLUBE_CONFIG && window.CLUBE_CONFIG.nomeClube) || 'Cedros do Líbano';
+      return [
+        [28, [[1, 'CLUBE DE DESBRAVADORES :', clube]]],
+        [29, [[1, 'RESPONSÁVEL PELO CLUBE (maior de 18 anos) :', d.respNome]]],
+        [33, [[0.49, 'RG. DO RESPONSÁVEL PELO CLUBE:', d.respRg], [0.51, 'CPF DO RESPONSÁVEL PELO CLUBE :', d.respCpf]]],
+        [29, [[0.075, 'EU,'], [0.415, '(NOME DO PAI, MÃE, OU RESPONSÁVEL LEGAL)'], [0.212, 'Brasileiro (a),'], [0.298, 'PORTADOR DO RG Nº']]],
+        [31, [[0.49, 'PROFISSÃO:'], [0.51, 'RESIDENTE A RUA:']]],
+        [29, [[0.075, 'Número:'], [0.415, 'COMPLEMENTO:'], [0.212, 'CEP:'], [0.298, 'BAIRRO:']]],
+        [27, [[0.49, 'CIDADE:'], [0.212, 'UF:'], [0.298, 'FONE PARA CONTATO COM DDD:']]],
+        [29, [[1, 'EM CASO DE EMERGÊNCIA LIGAR PARA (NOME, TELEFONE, GRAU DE PARENTESCO):']]],
+        [30, [[0.49, 'AUTORIZO MEU FILHO (A) OU DEPENDENTE LEGAL,'], [0.51, '(Nome do dependente legal)', d.participante]]],
+        [31, [[0.49, 'DATA DE NASCIMENTO:', dataCurta(d.nascimento)], [0.51, 'NOME E NÚMERO DO DOCUMENTO DE IDENTIFICAÇÃO:']]],
+        [32, [[1, 'A PARTICIPAR DO (DESCRIÇÃO DO EVENTO):', d.evento]]],
+        [31, [[0.49, 'QUE REALIZAR-SE-Á NO PERÍODO DE:', dataPorExtenso(d.inicio)], [0.51, 'ATÉ:', dataPorExtenso(d.fim || d.inicio)]]],
+        [31, [[0.49, 'NA CIDADE DE:', d.cidade], [0.51, 'TENDO O MESMO QUE SE DESLOCAR DE (NOME DA CIDADE COM UF):', d.origem]]],
+        [31, [[1, 'PARA (NOME DA CIDADE DE DESTINO COM UF):', d.cidade]]]
+      ];
+    }
+
+    function celula(x, cx, cy, larg, alt, rotulo, valor){
+      x.fillStyle = TINTA;
+      x.font = '400 7.5px ' + FONTE;
+      x.textAlign = 'left';
+      x.fillText(rotulo, cx + 4, cy + 9.5, larg - 7);
+      if(valor){
+        let tam = 11;
+        x.font = '700 ' + tam + 'px ' + FONTE;
+        while(tam > 7 && x.measureText(valor).width > larg - 8){
+          tam -= 0.5;
+          x.font = '700 ' + tam + 'px ' + FONTE;
+        }
+        x.fillText(valor, cx + 4, cy + alt - 5.5);
+      }
+    }
+
+    function desenhar(d){
+      const c = document.createElement('canvas');
+      c.width = W; c.height = H;
+      const x = c.getContext('2d');
+      x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, W, H);
+      x.scale(W / LARG, H / ALT);
+
+      if(brasao) x.drawImage(brasao, ESQ, 18, 72, 72);
+      x.fillStyle = TINTA;
+      x.textAlign = 'center';
+      x.font = '700 18px ' + FONTE;
+      x.fillText('AUTORIZAÇÃO PARA SAÍDA', (ESQ + 72 + DIR) / 2, 50);
+      x.fillText('DE DESBRAVADORES', (ESQ + 72 + DIR) / 2, 72);
+
+      // Tabela.
+      const largTabela = DIR - ESQ;
+      let y = 98;
+      x.strokeStyle = TINTA; x.lineWidth = 1;
+      linhasDaTabela(d).forEach(([alt, celulas]) => {
+        let cx = ESQ;
+        celulas.forEach(([fracao, rotulo, valor]) => {
+          const larg = fracao * largTabela;
+          x.strokeRect(cx, y, larg, alt);
+          celula(x, cx, y, larg, alt, rotulo, valor);
+          cx += larg;
+        });
+        y += alt;
+      });
+      const nomeacao = 'BEM COMO O SEU RESPECTIVO RETORNO. E, NOMEIO, NESTE PERÍODO, COMO RESPONSÁVEL PELO MEU DEPENDENTE ACIMA DESCRITO, ' +
+        'O RESPONSÁVEL PELO CLUBE DE DESBRAVADORES CONFORME IDENTIFICADO ACIMA.';
+      x.strokeRect(ESQ, y, largTabela, 26);
+      x.fillStyle = TINTA;
+      x.font = '400 7.5px ' + FONTE;
+      x.textAlign = 'left';
+      quebrar(x, nomeacao, largTabela - 8).forEach((linha, i) => x.fillText(linha, ESQ + 4, y + 10 + i * 10));
+      y += 26;
+
+      // Termos.
+      y += 16;
+      x.font = '400 9px ' + FONTE;
+      TERMOS.forEach(p => {
+        quebrar(x, p, largTabela).forEach(linha => { x.fillText(linha, ESQ, y); y += 12; });
+        y += 5;
+      });
+
+      // Assinatura: a área à direita fica livre para o carimbo do cartório.
+      y += 8;
+      x.font = '400 10px ' + FONTE;
+      x.fillText('Ciente e de acordo,', ESQ, y);
+      x.textAlign = 'center';
+      x.fillText('/', 455, y);
+      x.fillText('/', 490, y);
+      x.lineWidth = 0.8;
+      x.beginPath();
+      [[425, 450], [460, 485], [495, 540]].forEach(([a, b]) => { x.moveTo(a, y + 2); x.lineTo(b, y + 2); });
+      y += 46;
+      x.moveTo(ESQ, y); x.lineTo(ESQ + 274, y);
+      x.stroke();
+      x.textAlign = 'left';
+      x.font = '400 9px ' + FONTE;
+      x.fillText('Assinatura (reconhecimento de firma obrigatório para menores de 16 anos)', ESQ, y + 12);
+      x.fillText('Obs.: Apresentar cópia do RG do pai, mãe ou responsável legal e da', ESQ, y + 34);
+      x.fillText('Certidão de Nascimento da criança ou Documento de Identidade com foto.', ESQ, y + 46);
+      return c;
+    }
+
+    let previaTimer = null;
+    function atualizarPrevia(){
+      clearTimeout(previaTimer);
+      previaTimer = setTimeout(() => { previa.src = desenhar(dados()).toDataURL('image/jpeg', 0.7); }, 200);
+    }
+    async function carregarParticipantes(){
+      if(usuarios || !supa) return;
+      const { data } = await supa.from('usuarios').select('nome, data_nascimento, ativo').order('nome');
+      usuarios = (data || []).filter(u => u.ativo !== false);
+      const lista = $('scPdfMembros');
+      lista.innerHTML = '';
+      usuarios.forEach(u => {
+        const o = document.createElement('option');
+        o.value = u.nome;
+        lista.appendChild(o);
+      });
+      atualizarPrevia();
+    }
+
+    document.querySelectorAll('.sc-pdf-tab[data-tab="pdf"]').forEach(t => t.addEventListener('click', () => {
+      carregarParticipantes();
+      carregarRecursos().then(atualizarPrevia);
+    }));
+    Object.values(campos).forEach(el => {
+      el.addEventListener('input', () => { el.style.borderColor = ''; atualizarPrevia(); });
+    });
+
+    btn.addEventListener('click', async () => {
+      const d = dados();
+      const faltando = ['evento', 'inicio', 'cidade', 'participante'].filter(k => !d[k]);
+      faltando.forEach(k => { campos[k].style.borderColor = '#FF6B5C'; });
+      if(faltando.length) return;
       const jsPDFLib = window.jspdf && window.jspdf.jsPDF;
       if(!jsPDFLib){
         alert('Não foi possível carregar a biblioteca de PDF. Verifique sua conexão com a internet e tente novamente.');
         return;
       }
+      await carregarRecursos();
       const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const marginX = 22;
-      let y = 26;
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(13);
-      doc.text(window.CLUBE_CONFIG.nomeCompleto, pageWidth / 2, y, { align: 'center' });
-      y += 6;
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Ficha de Autorização de Participação', pageWidth / 2, y, { align: 'center' });
-      y += 10;
-      doc.setDrawColor(180);
-      doc.line(marginX, y, pageWidth - marginX, y);
-      y += 10;
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(14);
-      doc.text(title, pageWidth / 2, y, { align: 'center' });
-      y += 12;
-
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(11);
-      const bodyLines = doc.splitTextToSize(
-        'Eu, responsável legal pelo(a) desbravador(a) ' + member + ', da unidade ' + unit +
-        ', autorizo sua participação no evento "' + eventName + '"' +
-        (local ? (', a ser realizado em ' + local) : '') +
-        ', no dia ' + dateFormatted + '.',
-        pageWidth - marginX * 2
-      );
-      doc.text(bodyLines, marginX, y);
-      y += bodyLines.length * 6 + 6;
-
-      const infoRows = [
-        ['Desbravador(a):', member],
-        ['Unidade:', unit],
-        ['Evento:', eventName],
-        ['Data:', dateFormatted],
-        ['Local:', local || '—']
-      ];
-      infoRows.forEach(([label, value]) => {
-        doc.setFont('helvetica', 'bold');
-        doc.text(label, marginX, y);
-        doc.setFont('helvetica', 'normal');
-        doc.text(value, marginX + 32, y);
-        y += 7;
-      });
-      y += 14;
-
-      doc.line(marginX, y, marginX + 70, y);
-      doc.setFontSize(9);
-      doc.text('Assinatura do responsável', marginX, y + 5);
-
-      doc.line(pageWidth - marginX - 70, y, pageWidth - marginX, y);
-      doc.text('Data', pageWidth - marginX - 70, y + 5);
-
-      const fileName = 'autorizacao-' + member.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '.pdf';
-      salvarPDF(doc, fileName);
-    });
-
-    [document.getElementById('scPdfMember'), document.getElementById('scPdfEvent'), document.getElementById('scPdfDate')].forEach(el => {
-      if(el) el.addEventListener('input', () => { el.style.borderColor = ''; });
+      doc.addImage(desenhar(d).toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 210, 297);
+      const nome = s => normalizar(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      await salvarPDF(doc, 'Autorizacao-' + nome(d.evento) + '-' + nome(d.participante) + '.pdf');
     });
   })();
 
