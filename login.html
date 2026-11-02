@@ -11022,10 +11022,6 @@
                 </select>
               </div>
             </div>
-            <div class="pl-field-col">
-              <label class="pl-field-label" style="margin-top:0;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Horário</label>
-              <input type="time" class="pl-input" id="clPlanField_horario">
-            </div>
           </div>
           <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Instrutor responsável</label>
           <select class="pl-input" id="clPlanField_instrutor"></select>
@@ -11043,16 +11039,6 @@
             </span>
           </label>
           <p class="pl-reminder-hint" id="clPlanCoordHint" style="display:none; margin:-8px 0 6px;">Marca no cronograma que o Coordenador da classe estará presente nesta atividade.</p>
-          <div class="pl-field-row">
-            <div class="pl-field-col">
-              <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Qtd. de desbravadores</label>
-              <input type="number" class="pl-input" id="clPlanField_qtd" min="0" placeholder="Ex.: 12">
-            </div>
-            <div class="pl-field-col pl-field-col-wide">
-              <label class="pl-field-label"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>Local</label>
-              <input type="text" class="pl-input" id="clPlanField_local" placeholder="Ex.: Sede do Clube" maxlength="60">
-            </div>
-          </div>
 
           </section>
 
@@ -23237,7 +23223,7 @@
     const templateSelect = document.getElementById('clPlanningTemplateSelect');
 
     const FIELD_IDS = [
-      'data', 'horario', 'instrutor', 'qtd', 'local', 'requisito', 'tema',
+      'data', 'instrutor', 'requisito', 'tema',
       'objetivo', 'duracao', 'materiais', 'textoBiblico', 'introducao',
       'desenvolvimento', 'atividade', 'aplicacao', 'observacoes'
     ];
@@ -23562,11 +23548,8 @@
       fieldMes.value = plan.mes_planejado ? String(plan.mes_planejado) : '';
       fieldSemana.value = plan.semana_planejada ? String(plan.semana_planejada) : '';
       setQuando(!plan.data && plan.semana_planejada ? 'semana' : 'data');
-      fields.horario.value = plan.horario || '';
       // O instrutor é preenchido por populateInstrutorOptions(), que monta as
       // opções do cartão e já seleciona a pessoa certa.
-      fields.qtd.value = plan.quantidade_desbravadores != null ? plan.quantidade_desbravadores : '';
-      fields.local.value = plan.local || '';
       // A lista completa de requisitos vem de planejamento_requisitos; quando
       // não há (planejamento antigo), vale o requisito_titulo que já existia.
       reqSelecionados = (plan.requisitos && plan.requisitos.length)
@@ -23714,13 +23697,12 @@
         data: dataAula,
         mes_planejado: mesPlanejado,
         semana_planejada: semanaPlanejada,
-        horario: fields.horario.value || null,
+        // horario, local e quantidade_desbravadores saíram do formulário e, de
+        // propósito, daqui: editar uma aula antiga não apaga o que ela já tem.
         instrutor_responsavel: instrutor.nome,
         instrutor_usuario_id: instrutor.id,
         instrutor_convidado: !!instrutor.convidado,
         coordenador_acompanha: coordToggle ? coordToggle.checked : false,
-        quantidade_desbravadores: fields.qtd.value ? parseInt(fields.qtd.value, 10) : null,
-        local: fields.local.value.trim() || null,
         requisito_titulo: reqSelecionados[0] || null,
         tema: fields.tema.value.trim() || null,
         objetivo: fields.objetivo.value.trim() || null,
