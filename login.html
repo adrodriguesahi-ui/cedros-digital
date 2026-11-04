@@ -1916,6 +1916,39 @@
   .un-hub-row.us-row-first{ background:rgba(216,168,62,0.1); border:1px solid rgba(216,168,62,0.35); }
   .us-trophy-icon{ flex-shrink:0; margin-left:2px; color:var(--gold); }
 
+  /* ---- Especialidade: criar avaliação ---- */
+  .prv-lista{ display:flex; flex-direction:column; gap:8px; margin-bottom:8px; }
+  .prv-card{
+    display:flex; flex-direction:column; gap:8px; padding:12px; border-radius:12px;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+  }
+  .prv-card b{ font-size:13.5px; font-weight:800; color:var(--cream); overflow-wrap:anywhere; }
+  .prv-card span{ font-size:11.5px; font-weight:600; color:var(--ink-dim); }
+  .prv-acoes{ display:flex; flex-wrap:wrap; gap:6px; }
+  #prvOverlay .pl-modal.dcl-modal{ max-width:640px; }
+  .prv-capa{ display:flex; align-items:center; gap:10px; }
+  .prv-capa img{ width:88px; height:48px; object-fit:cover; border-radius:8px; flex-shrink:0; }
+  .prv-capa-txt{ flex:1; min-width:0; font-size:12px; font-weight:600; color:var(--ink-dim); }
+  .prv-titulo-itens{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .prv-itens{ display:flex; flex-direction:column; gap:10px; }
+  .prv-item{
+    padding:12px; border-radius:12px;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+  }
+  .prv-item.prv-sub{ margin-left:16px; }
+  .prv-item.prv-erro{ border-color:#FF6B5C; }
+  .prv-item-topo{ display:flex; align-items:center; gap:6px; margin-bottom:8px; }
+  .prv-item-rotulo{ flex:1; min-width:0; font-size:12.5px; font-weight:900; color:var(--gold); }
+  .prv-item textarea{ min-height:64px; resize:vertical; font-family:inherit; }
+  .prv-item .pl-field-label{ margin-top:8px; }
+  .prv-alt{ display:flex; align-items:center; gap:6px; margin-top:6px; }
+  .prv-alt input[type="radio"]{ width:18px; height:18px; flex-shrink:0; accent-color:var(--accent); }
+  .prv-alt-letra{ width:20px; flex-shrink:0; font-size:12.5px; font-weight:800; color:var(--ink-soft); }
+  .prv-alt .pl-input{ flex:1; min-width:0; }
+  .prv-sub-opcao{ display:flex; align-items:center; gap:8px; min-height:40px; margin-top:6px; font-size:12.5px; font-weight:700; color:var(--ink-soft); cursor:pointer; }
+  .prv-sub-opcao input{ width:18px; height:18px; flex-shrink:0; accent-color:var(--accent); }
+  #prvOverlay .pl-modal-actions{ flex-wrap:wrap; }
+  #prvOverlay .pl-modal-actions .pl-btn{ flex:1 1 140px; }
   /* ---- Detalhe de especialidade (view-specialty-detail) ---- */
   .sd-header{ display:flex; flex-direction:column; align-items:center; gap:12px; margin:6px 0 20px; text-align:center; }
   /* Redondo de propósito: a insígnia é um círculo, e a imagem que o clube envia
@@ -13902,6 +13935,8 @@
         <button type="button" class="pl-list-add-btn" id="sdAulaAddBtn">+ Anexar arquivo de aula</button>
 
         <h4 class="un-section-title" style="margin-top:20px;"><svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Avaliação</h4>
+        <div class="prv-lista" id="sdProvasList"></div>
+        <button type="button" class="pl-list-add-btn" id="sdProvaNovaBtn">+ Criar avaliação</button>
         <div class="cl-comprovante-list" id="sdAvalList"></div>
         <button type="button" class="pl-list-add-btn" id="sdAvalAddBtn" style="margin-bottom:20px;">+ Anexar arquivo de avaliação</button>
 
@@ -13909,6 +13944,62 @@
 
       <input type="file" id="sdAulaFileInput" hidden>
       <input type="file" id="sdAvalFileInput" hidden>
+
+      <!-- Criar avaliação: modelo, capa e itens digitados; o PDF é montado no JS. -->
+      <div class="pl-modal-overlay" id="prvOverlay">
+        <div class="pl-modal dcl-modal" role="dialog" aria-labelledby="prvTitulo">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title" id="prvTitulo">Criar avaliação</h4>
+            <button type="button" class="pl-modal-close" id="prvFechar" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <label class="pl-field-label" style="margin-top:0;">Modelo do documento</label>
+          <select class="pl-input" id="prvModelo">
+            <option value="cedros">Cedros do Líbano</option>
+            <option value="nota_gabarito">Azul com nota</option>
+            <option value="ficha_completa">Ficha completa (capa + requisitos)</option>
+          </select>
+          <label class="pl-field-label">Nome da avaliação</label>
+          <input type="text" class="pl-input" id="prvNome" maxlength="90">
+          <div class="pl-field-row" id="prvBlocoAssociacao">
+            <div class="pl-field-col pl-field-col-wide">
+              <label class="pl-field-label">Associação</label>
+              <input type="text" class="pl-input" id="prvAssociacao" maxlength="60">
+            </div>
+            <div class="pl-field-col">
+              <label class="pl-field-label">Região</label>
+              <input type="text" class="pl-input" id="prvRegiao" placeholder="Ex.: 9ª Região" maxlength="30">
+            </div>
+          </div>
+          <div id="prvBlocoAbertura">
+            <label class="pl-field-label" id="prvAberturaRotulo">Instruções</label>
+            <textarea class="pl-input" id="prvAbertura" maxlength="400" rows="3" style="resize:vertical; font-family:inherit;"></textarea>
+          </div>
+          <div id="prvBlocoCapa">
+          <label class="pl-field-label">Imagem da capa (opcional)</label>
+          <div class="prv-capa">
+            <img id="prvCapaPrevia" alt="" style="display:none;">
+            <span class="prv-capa-txt" id="prvCapaTxt">Sem imagem, a capa usa a insígnia da especialidade.</span>
+            <button type="button" class="aut-btn-mini" id="prvCapaBtn">Escolher</button>
+            <button type="button" class="aut-btn-mini aut-perigo" id="prvCapaRemover" style="display:none;">Remover</button>
+          </div>
+          <input type="file" id="prvCapaInput" accept="image/*" hidden>
+          </div>
+          <div class="prv-titulo-itens">
+            <label class="pl-field-label">Itens da avaliação</label>
+            <span class="aut-contagem" id="prvContagem"></span>
+          </div>
+          <div class="prv-itens" id="prvItens"></div>
+          <button type="button" class="pl-list-add-btn" id="prvAdicionar">+ Adicionar item</button>
+          <p class="aut-msg" id="prvMsg" style="display:none;"></p>
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-neutral" id="prvSalvar">Salvar</button>
+            <button type="button" class="pl-btn pl-btn-neutral" id="prvGabarito">Gerar gabarito</button>
+            <button type="button" class="pl-btn pl-btn-primary" id="prvGerar">Gerar PDF</button>
+          </div>
+        </div>
+      </div>
 
       <div class="pl-modal-overlay" id="sdMetaOverlay">
         <div class="pl-modal">
@@ -38492,7 +38583,819 @@ const REQ_SUMMARIES = {
       renderMeta();
       renderReq();
       renderFiles();
+      prvCarregar();
     }
+
+    // ---- Avaliações criadas no app (tabela especialidade_avaliacoes) ----
+    // O instrutor escolhe o modelo e digita os itens; o PDF sai com capa, faixa
+    // de dados da especialidade e os itens com espaço para responder à mão.
+    // O texto vai como texto de verdade (não imagem): continua nítido e leve
+    // mesmo em provas de várias páginas.
+    const provasList = document.getElementById('sdProvasList');
+    const prvOverlay = document.getElementById('prvOverlay');
+    const prvItensEl = document.getElementById('prvItens');
+    const prvCampos = {
+      modelo: document.getElementById('prvModelo'), nome: document.getElementById('prvNome'),
+      associacao: document.getElementById('prvAssociacao'), regiao: document.getElementById('prvRegiao'),
+      abertura: document.getElementById('prvAbertura')
+    };
+    const PRV_ABERTURA = {
+      cedros: 'Leia atentamente cada questão e responda de forma clara e objetiva. Quando necessário, apresente exemplos para complementar suas respostas.',
+      nota_gabarito: 'Você é inteligente e dedicado, tudo dará certo na prova!'
+    };
+    const PRV_MEMORIA = 'clube:avaliacao-associacao';
+    const PRV_TIPOS = { escrita: 'Resposta escrita', multipla: 'Múltipla escolha', vf: 'Verdadeiro ou falso' };
+    let provas = [];
+    let provaAtual = null;
+    let prvItens = [];
+    let prvCapa = '';
+    let prvAlterada = false;
+
+    const prvNovoItem = () => ({ tipo: 'escrita', texto: '', linhas: 4, alternativas: ['', '', '', ''], pontos: '', subitem: false, resposta: '', correta: null });
+    // O gabarito fica guardado junto: quem tem perfil de Desbravador não vê as avaliações.
+    function prvPodeVer(){
+      const u = window.__currentUsuario;
+      return !!(u && u.papel !== 'Desbravador');
+    }
+    function prvAjustarModelo(){
+      const m = prvCampos.modelo.value;
+      document.getElementById('prvBlocoAssociacao').style.display = m === 'nota_gabarito' ? 'none' : '';
+      document.getElementById('prvBlocoAbertura').style.display = m === 'ficha_completa' ? 'none' : '';
+      document.getElementById('prvBlocoCapa').style.display = m === 'ficha_completa' ? '' : 'none';
+      document.getElementById('prvAberturaRotulo').textContent = m === 'nota_gabarito' ? 'Frase de incentivo' : 'Instruções';
+      const atual = prvCampos.abertura.value.trim();
+      if(PRV_ABERTURA[m] && (!atual || Object.values(PRV_ABERTURA).includes(atual))) prvCampos.abertura.value = PRV_ABERTURA[m];
+    }
+    function prvEl(tag, classe, props){
+      const el = document.createElement(tag);
+      if(classe) el.className = classe;
+      if(props) Object.assign(el, props);
+      return el;
+    }
+    // Rótulos como no modelo: 1., 2., e a), b) nos subitens do item anterior.
+    function prvRotulos(lista){
+      let n = 0, sub = 0;
+      return lista.map(i => {
+        if(i.subitem){ sub++; return String.fromCharCode(96 + ((sub - 1) % 26) + 1) + ')'; }
+        n++; sub = 0;
+        return n + '.';
+      });
+    }
+    function prvMsg(texto, erro){
+      const el = document.getElementById('prvMsg');
+      el.textContent = texto;
+      el.classList.toggle('aut-msg-erro', !!erro);
+      el.style.display = texto ? '' : 'none';
+    }
+    function prvMarcarAlterada(){ prvAlterada = true; prvMsg(''); }
+
+    function prvRenderItens(){
+      const rotulos = prvRotulos(prvItens);
+      prvItensEl.innerHTML = '';
+      prvItens.forEach((item, idx) => {
+        const card = prvEl('div', 'prv-item' + (item.subitem ? ' prv-sub' : ''));
+        const topo = prvEl('div', 'prv-item-topo');
+        topo.appendChild(prvEl('span', 'prv-item-rotulo', { textContent: 'Item ' + rotulos[idx] }));
+        const mover = (destino, texto, titulo) => {
+          const b = prvEl('button', 'aut-btn-mini', { type: 'button', textContent: texto, title: titulo, disabled: destino < 0 || destino >= prvItens.length });
+          b.setAttribute('aria-label', titulo);
+          b.addEventListener('click', () => {
+            prvItens.splice(destino, 0, prvItens.splice(idx, 1)[0]);
+            prvMarcarAlterada();
+            prvRenderItens();
+          });
+          return b;
+        };
+        topo.appendChild(mover(idx - 1, '↑', 'Subir item'));
+        topo.appendChild(mover(idx + 1, '↓', 'Descer item'));
+        const excluir = prvEl('button', 'aut-btn-mini aut-perigo', { type: 'button', textContent: 'Excluir' });
+        excluir.addEventListener('click', () => {
+          prvItens.splice(idx, 1);
+          prvMarcarAlterada();
+          prvRenderItens();
+        });
+        topo.appendChild(excluir);
+        card.appendChild(topo);
+
+        const tipo = prvEl('select', 'pl-input');
+        tipo.setAttribute('aria-label', 'Tipo do item');
+        Object.keys(PRV_TIPOS).forEach(k => tipo.appendChild(prvEl('option', '', { value: k, textContent: PRV_TIPOS[k] })));
+        tipo.value = item.tipo;
+        tipo.addEventListener('change', () => { item.tipo = tipo.value; prvMarcarAlterada(); prvRenderItens(); });
+        card.appendChild(tipo);
+
+        card.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Pergunta ou requisito' }));
+        const texto = prvEl('textarea', 'pl-input', { value: item.texto, maxLength: 1000 });
+        texto.addEventListener('input', () => { item.texto = texto.value; card.classList.remove('prv-erro'); prvMarcarAlterada(); });
+        card.appendChild(texto);
+
+        if(item.tipo === 'multipla'){
+          card.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Alternativas (marque a correta)' }));
+          item.alternativas.forEach((alt, a) => {
+            const linha = prvEl('div', 'prv-alt');
+            const certa = prvEl('input', '', { type: 'radio', name: 'prvCorreta' + idx, checked: item.correta === a });
+            certa.setAttribute('aria-label', 'Alternativa correta');
+            certa.addEventListener('change', () => { item.correta = a; prvMarcarAlterada(); });
+            linha.appendChild(certa);
+            linha.appendChild(prvEl('span', 'prv-alt-letra', { textContent: String.fromCharCode(97 + a) + ')' }));
+            const campo = prvEl('input', 'pl-input', { type: 'text', value: alt, maxLength: 200 });
+            campo.addEventListener('input', () => { item.alternativas[a] = campo.value; card.classList.remove('prv-erro'); prvMarcarAlterada(); });
+            linha.appendChild(campo);
+            const tirar = prvEl('button', 'aut-btn-mini', { type: 'button', textContent: '×', disabled: item.alternativas.length <= 2 });
+            tirar.setAttribute('aria-label', 'Remover alternativa');
+            tirar.addEventListener('click', () => {
+              item.alternativas.splice(a, 1);
+              if(item.correta === a) item.correta = null;
+              else if(item.correta > a) item.correta--;
+              prvMarcarAlterada();
+              prvRenderItens();
+            });
+            linha.appendChild(tirar);
+            card.appendChild(linha);
+          });
+          if(item.alternativas.length < 8){
+            const mais = prvEl('button', 'pl-list-add-btn', { type: 'button', textContent: '+ Alternativa' });
+            mais.addEventListener('click', () => { item.alternativas.push(''); prvMarcarAlterada(); prvRenderItens(); });
+            card.appendChild(mais);
+          }
+        }
+
+        if(item.tipo === 'vf'){
+          card.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Resposta correta' }));
+          const certa = prvEl('select', 'pl-input');
+          [['', 'Não informar'], ['V', 'Verdadeiro'], ['F', 'Falso']].forEach(([v, t]) => certa.appendChild(prvEl('option', '', { value: v, textContent: t })));
+          certa.value = item.correta === 'V' || item.correta === 'F' ? item.correta : '';
+          certa.addEventListener('change', () => { item.correta = certa.value || null; prvMarcarAlterada(); });
+          card.appendChild(certa);
+        }
+        if(item.tipo === 'escrita'){
+          card.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Resposta esperada (opcional)' }));
+          const esperada = prvEl('textarea', 'pl-input', { value: item.resposta || '', maxLength: 1000 });
+          esperada.addEventListener('input', () => { item.resposta = esperada.value; prvMarcarAlterada(); });
+          card.appendChild(esperada);
+        }
+
+        const linhaCampos = prvEl('div', 'pl-field-row');
+        if(item.tipo === 'escrita'){
+          const col = prvEl('div', 'pl-field-col');
+          col.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Linhas' }));
+          const linhas = prvEl('input', 'pl-input', { type: 'number', min: 0, max: 30, value: item.linhas, inputMode: 'numeric' });
+          linhas.addEventListener('input', () => {
+            item.linhas = Math.min(30, Math.max(0, parseInt(linhas.value, 10) || 0));
+            prvMarcarAlterada();
+          });
+          col.appendChild(linhas);
+          linhaCampos.appendChild(col);
+        }
+        const colPontos = prvEl('div', 'pl-field-col');
+        colPontos.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Pontos (opcional)' }));
+        const pontos = prvEl('input', 'pl-input', { type: 'text', value: item.pontos, maxLength: 6, placeholder: 'Ex.: 2,0' });
+        pontos.addEventListener('input', () => { item.pontos = pontos.value; prvMarcarAlterada(); });
+        colPontos.appendChild(pontos);
+        linhaCampos.appendChild(colPontos);
+        card.appendChild(linhaCampos);
+
+        const opcao = prvEl('label', 'prv-sub-opcao');
+        const caixa = prvEl('input', '', { type: 'checkbox', checked: item.subitem });
+        caixa.addEventListener('change', () => { item.subitem = caixa.checked; prvMarcarAlterada(); prvRenderItens(); });
+        opcao.appendChild(caixa);
+        opcao.appendChild(prvEl('span', '', { textContent: 'Subitem do item anterior (a, b, c…)' }));
+        card.appendChild(opcao);
+        prvItensEl.appendChild(card);
+      });
+      const n = prvItens.length;
+      document.getElementById('prvContagem').textContent = n === 1 ? '1 item' : n + ' itens';
+    }
+    function prvRenderCapa(){
+      const img = document.getElementById('prvCapaPrevia');
+      img.style.display = prvCapa ? '' : 'none';
+      if(prvCapa) img.src = prvCapa; else img.removeAttribute('src');
+      document.getElementById('prvCapaTxt').textContent = prvCapa ? 'Imagem escolhida para a capa.' : 'Sem imagem, a capa usa a insígnia da especialidade.';
+      document.getElementById('prvCapaBtn').textContent = prvCapa ? 'Trocar' : 'Escolher';
+      document.getElementById('prvCapaRemover').style.display = prvCapa ? '' : 'none';
+    }
+    function prvAbrir(prova){
+      provaAtual = prova ? prova.id : null;
+      let associacaoPadrao = 'Associação Paulistana – AP';
+      try { associacaoPadrao = localStorage.getItem(PRV_MEMORIA) || associacaoPadrao; } catch(e){}
+      prvCampos.modelo.value = (prova && prova.modelo) || 'cedros';
+      prvCampos.nome.value = prova ? prova.titulo : 'Avaliação de ' + currentName;
+      prvCampos.associacao.value = prova ? (prova.associacao || '') : associacaoPadrao;
+      prvCampos.regiao.value = prova ? (prova.regiao || '') : '9ª Região';
+      prvCampos.abertura.value = (prova && prova.abertura) || '';
+      prvAjustarModelo();
+      prvCapa = (prova && prova.capa_data) || '';
+      prvItens = prova ? JSON.parse(JSON.stringify(prova.itens || [])).map(i => Object.assign(prvNovoItem(), i)) : [prvNovoItem()];
+      prvAlterada = false;
+      document.getElementById('prvTitulo').textContent = prova ? 'Editar avaliação' : 'Criar avaliação';
+      prvMsg('');
+      prvRenderCapa();
+      prvRenderItens();
+      prvOverlay.classList.add('show');
+    }
+    function prvFechar(){
+      if(prvAlterada && !confirm('Fechar sem salvar as alterações?')) return;
+      prvAlterada = false;
+      prvOverlay.classList.remove('show');
+    }
+    // Junta o formulário; item em branco é ignorado. Devolve null se faltar algo.
+    function prvColetar(){
+      prvItensEl.querySelectorAll('.prv-erro').forEach(c => c.classList.remove('prv-erro'));
+      const cards = prvItensEl.children;
+      let incompleto = false;
+      const itens = [];
+      prvItens.forEach((i, idx) => {
+        const alternativas = [];
+        let correta = i.tipo === 'vf' ? i.correta : null;
+        i.alternativas.forEach((a, k) => {
+          if(!a.trim()) return;
+          if(i.tipo === 'multipla' && i.correta === k) correta = alternativas.length;
+          alternativas.push(a.trim());
+        });
+        if(!i.texto.trim()){
+          if(i.tipo === 'multipla' && alternativas.length){ cards[idx].classList.add('prv-erro'); incompleto = true; }
+          return;
+        }
+        if(i.tipo === 'multipla' && alternativas.length < 2){ cards[idx].classList.add('prv-erro'); incompleto = true; return; }
+        itens.push(Object.assign({}, i, { texto: i.texto.trim(), alternativas: alternativas.length ? alternativas : i.alternativas, pontos: i.pontos.trim(), resposta: (i.resposta || '').trim(), correta }));
+      });
+      if(incompleto){ prvMsg('Complete os itens marcados: múltipla escolha precisa de pergunta e duas alternativas.', true); return null; }
+      if(!itens.length){ prvMsg('Digite pelo menos um item.', true); return null; }
+      return {
+        titulo: prvCampos.nome.value.trim() || 'Avaliação de ' + currentName,
+        modelo: prvCampos.modelo.value, associacao: prvCampos.associacao.value.trim() || null,
+        regiao: prvCampos.regiao.value.trim() || null, abertura: prvCampos.abertura.value.trim() || null, capa_data: prvCapa || null, itens
+      };
+    }
+    function prvRenderLista(){
+      provasList.innerHTML = '';
+      provas.forEach(p => {
+        const card = prvEl('div', 'prv-card');
+        card.appendChild(prvEl('b', '', { textContent: p.titulo }));
+        const n = (p.itens || []).length;
+        card.appendChild(prvEl('span', '', { textContent: n === 1 ? '1 item' : n + ' itens' }));
+        const acoes = prvEl('div', 'prv-acoes');
+        const gerar = prvEl('button', 'aut-btn-mini', { type: 'button', textContent: 'Gerar PDF' });
+        gerar.addEventListener('click', () => prvGerarPdf(p));
+        const gabarito = prvEl('button', 'aut-btn-mini', { type: 'button', textContent: 'Gabarito' });
+        gabarito.addEventListener('click', () => prvGerarGabarito(p));
+        const editar = prvEl('button', 'aut-btn-mini', { type: 'button', textContent: 'Editar' });
+        editar.addEventListener('click', () => prvAbrir(p));
+        const excluir = prvEl('button', 'aut-btn-mini aut-perigo', { type: 'button', textContent: 'Excluir' });
+        excluir.addEventListener('click', async () => {
+          if(!confirm('Excluir a avaliação "' + p.titulo + '"?')) return;
+          const { error } = await supa.from('especialidade_avaliacoes').delete().eq('id', p.id);
+          if(error){ alert('Não foi possível excluir a avaliação.\n\nDetalhe: ' + error.message); return; }
+          provas = provas.filter(x => x.id !== p.id);
+          prvRenderLista();
+        });
+        acoes.appendChild(gerar); acoes.appendChild(gabarito); acoes.appendChild(editar); acoes.appendChild(excluir);
+        card.appendChild(acoes);
+        provasList.appendChild(card);
+      });
+    }
+    async function prvCarregar(){
+      provas = [];
+      prvRenderLista();
+      const pode = prvPodeVer();
+      document.getElementById('sdProvaNovaBtn').style.display = pode ? '' : 'none';
+      if(!supa || !pode) return;
+      const nome = currentName;
+      const { data, error } = await supa.from('especialidade_avaliacoes').select('*').eq('nome', nome).order('created_at');
+      if(error){ console.error('Erro ao carregar avaliações:', error.message); return; }
+      if(nome !== currentName) return;
+      provas = data || [];
+      prvRenderLista();
+    }
+    async function prvSalvar(){
+      const dados = prvColetar();
+      if(!dados) return;
+      const botao = document.getElementById('prvSalvar');
+      botao.disabled = true;
+      const { data, error } = provaAtual
+        ? await supa.from('especialidade_avaliacoes').update(dados).eq('id', provaAtual).select()
+        : await supa.from('especialidade_avaliacoes').insert(Object.assign({ nome: currentName }, dados)).select();
+      botao.disabled = false;
+      if(error || !data || !data.length){
+        prvMsg('Não foi possível salvar' + (error ? ': ' + error.message : '. A avaliação pode ter sido excluída.'), true);
+        return;
+      }
+      try { if(dados.associacao) localStorage.setItem(PRV_MEMORIA, dados.associacao); } catch(e){}
+      provaAtual = data[0].id;
+      prvAlterada = false;
+      await prvCarregar();
+      document.getElementById('prvTitulo').textContent = 'Editar avaliação';
+      prvMsg('Avaliação salva.');
+    }
+
+    // Lê a imagem pelo canvas: o jsPDF precisa de um formato conhecido e a
+    // insígnia pode ter vindo em qualquer um. 'cobrir' recorta para preencher;
+    // 'fundo' pinta atrás (o JPEG não tem transparência); 'alfa' clareia.
+    function prvImagem(src, largura, altura, op){
+      const { cobrir, fundo, alfa } = op || {};
+      return new Promise(resolve => {
+        if(!src) return resolve(null);
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const escala = cobrir
+              ? Math.max(largura / img.width, altura / img.height)
+              : Math.min(largura / img.width, altura / img.height);
+            const w = img.width * escala, h = img.height * escala;
+            const c = document.createElement('canvas');
+            c.width = cobrir ? largura : Math.round(w);
+            c.height = cobrir ? altura : Math.round(h);
+            const x = c.getContext('2d');
+            x.fillStyle = fundo || '#FFFFFF';
+            x.fillRect(0, 0, c.width, c.height);
+            if(alfa) x.globalAlpha = alfa;
+            x.drawImage(img, cobrir ? (largura - w) / 2 : 0, cobrir ? (altura - h) / 2 : 0, w, h);
+            resolve({ data: c.toDataURL('image/jpeg', 0.88), w: c.width, h: c.height });
+          } catch(e){ resolve(null); }
+        };
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+    }
+    function prvEncaixar(doc, img, x, y, w, h){
+      if(!img) return;
+      const escala = Math.min(w / img.w, h / img.h);
+      const iw = img.w * escala, ih = img.h * escala;
+      doc.addImage(img.data, 'JPEG', x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
+    }
+    // A insígnia só fica em memória depois que o card aparece no catálogo.
+    async function prvInsignia(){
+      const emMemoria = (typeof spPhotoMap !== 'undefined' && spPhotoMap[currentName]) || '';
+      if(emMemoria || !supa) return emMemoria;
+      const { data } = await supa.from('especialidade_fotos').select('foto').eq('nome', currentName).maybeSingle();
+      return (data && data.foto) || '';
+    }
+    function prvNomeClube(){
+      return (window.CLUBE_CONFIG && window.CLUBE_CONFIG.nomeClube) || 'Cedros do Líbano';
+    }
+    function prvTamanhoQueCabe(doc, texto, tamMax, largura){
+      let tam = tamMax;
+      doc.setFontSize(tam);
+      while(tam > 8 && doc.getTextWidth(texto) > largura){ tam -= 0.5; doc.setFontSize(tam); }
+    }
+    function prvSubtitulo(p){
+      return [p.regiao, p.associacao].filter(Boolean).join(' | ');
+    }
+
+    // Itens: a mesma rotina para os três modelos, mudando só o estilo.
+    function prvItensPdf(doc, p, yInicial, e){
+      let y = yInicial;
+      const garantir = altura => { if(y + altura > e.base){ y = e.novaPagina(); doc.setFontSize(e.tam); doc.setTextColor(e.cor[0], e.cor[1], e.cor[2]); } };
+      doc.setFontSize(e.tam);
+      doc.setTextColor(e.cor[0], e.cor[1], e.cor[2]);
+      const rotulos = prvRotulos(p.itens);
+      p.itens.forEach((item, idx) => {
+        const sub = !!item.subitem;
+        const rotulo = sub ? rotulos[idx].replace(')', e.fimSub) : rotulos[idx];
+        const texto = item.texto + (item.pontos ? ' (' + item.pontos + ')' : '');
+        const xRotulo = sub ? e.xSub : e.xItem;
+        doc.setFont(e.fonte, 'bold');
+        const larguraRotulo = doc.getTextWidth(rotulo + ' ');
+        const xTexto = xRotulo + (e.recuoFixo ? (sub ? e.recuoSub : e.recuoItem) : larguraRotulo);
+        const estiloTexto = e.perguntaNegrito && !sub ? 'bold' : 'normal';
+        doc.setFont(e.fonte, estiloTexto);
+        const linhas = doc.splitTextToSize(texto, e.dir - xTexto);
+        const primeira = item.tipo === 'escrita' ? (item.linhas > 0 ? 7 : 0) : e.linha;
+        garantir(linhas.length * e.linha + primeira);
+        doc.setFont(e.fonte, 'bold');
+        doc.text(rotulo, xRotulo, y);
+        doc.setFont(e.fonte, estiloTexto);
+        linhas.forEach(l => { doc.text(l, xTexto, y); y += e.linha; });
+        doc.setFont(e.fonte, 'normal');
+        if(item.tipo === 'escrita'){
+          doc.setDrawColor(e.corLinha[0], e.corLinha[1], e.corLinha[2]);
+          doc.setLineWidth(0.2);
+          if(item.linhas > 0) y += 1.5;
+          for(let i = 0; i < item.linhas; i++){
+            garantir(7);
+            doc.line(e.xItem, y + 1.5, e.dir, y + 1.5);
+            y += 7;
+          }
+        } else if(item.tipo === 'multipla'){
+          const xAlt = e.recuoFixo ? xTexto + 4 : e.xItem;
+          item.alternativas.forEach((alt, a) => {
+            const letra = String.fromCharCode(97 + a) + ') ';
+            const larg = doc.getTextWidth(letra);
+            const altLinhas = doc.splitTextToSize(alt, e.dir - xAlt - larg);
+            garantir(altLinhas.length * e.linha);
+            doc.text(letra, xAlt, y);
+            altLinhas.forEach(l => { doc.text(l, xAlt + larg, y); y += e.linha; });
+          });
+        } else {
+          garantir(e.linha);
+          doc.text('(     ) Verdadeiro          (     ) Falso', e.recuoFixo ? xTexto : e.xItem, y);
+          y += e.linha;
+        }
+        y += e.depois;
+      });
+      return y;
+    }
+
+    // ---- Modelo: Cedros do Líbano ----
+    async function prvPdfCedros(doc, p){
+      const foto = await prvInsignia();
+      const [brasao, insignia] = await Promise.all([
+        prvImagem('brasao-autorizacao.png', 500, 500),
+        prvImagem(foto, 500, 500)
+      ]);
+      const novoTopo = () => { doc.addPage(); return 22; };
+      prvEncaixar(doc, insignia, 12, 12, 30, 30);
+      prvEncaixar(doc, brasao, 160, 9, 38, 38);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.setTextColor(58, 107, 42);
+      doc.text('CLUBE DE DESBRAVADORES — ' + prvNomeClube().toUpperCase(), 105, 15, { align: 'center' });
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(22);
+      doc.text('PROVA', 105, 31, { align: 'center' });
+      const titulo = 'ESPECIALIDADE DE ' + currentName.toUpperCase();
+      prvTamanhoQueCabe(doc, titulo, 13, 112);
+      doc.text(titulo, 105, 39, { align: 'center' });
+
+      const campo = (rotulo, x, fim, y) => {
+        doc.text(rotulo, x, y);
+        doc.setDrawColor(40, 40, 40);
+        doc.setLineWidth(0.2);
+        doc.line(x + doc.getTextWidth(rotulo) + 1, y + 0.6, fim, y + 0.6);
+      };
+      doc.setFont('times', 'normal');
+      doc.setFontSize(11);
+      campo('Nome:', 15, 154, 56);
+      campo('Data:', 156, 183, 56);
+      campo('Classe:', 15, 62, 65);
+      campo('Instrutor:', 64, 115, 65);
+      const sub = prvSubtitulo(p);
+      prvTamanhoQueCabe(doc, sub, 11, 66);
+      doc.text(sub, 183, 65, { align: 'right' });
+      doc.setDrawColor(40, 40, 40);
+      doc.setLineWidth(0.4);
+      doc.roundedRect(186, 48, 19, 19, 2, 2, 'S');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.text('NOTA', 195.5, 53, { align: 'center' });
+
+      doc.setFont('times', 'bold');
+      doc.setFontSize(14);
+      doc.text('PERGUNTAS', 105, 77, { align: 'center' });
+      let y = 85;
+      if(p.abertura){
+        doc.setFontSize(10.5);
+        const rotulo = 'Instruções: ';
+        const larg = doc.getTextWidth(rotulo);
+        doc.text(rotulo, 15, y);
+        doc.setFont('times', 'normal');
+        const linhas = doc.splitTextToSize(p.abertura, 180 - larg);
+        doc.text(linhas[0], 15 + larg, y);
+        const resto = linhas.length > 1 ? doc.splitTextToSize(linhas.slice(1).join(' '), 180) : [];
+        resto.forEach((l, i) => doc.text(l, 15, y + 5 * (i + 1)));
+        y += 5 * (resto.length + 1) + 5;
+      }
+      y = prvItensPdf(doc, p, y, {
+        fonte: 'times', tam: 11, linha: 5.2, depois: 2.6, cor: [0, 0, 0], corLinha: [90, 90, 90],
+        xItem: 15, xSub: 33, recuoFixo: true, recuoItem: 14, recuoSub: 8, dir: 195, base: 283, fimSub: '.',
+        perguntaNegrito: true, novaPagina: novoTopo
+      });
+      if(y + 12 > 283) y = novoTopo();
+      doc.setFont('times', 'bold');
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Boa Prova!!!', 105, y + 7, { align: 'center' });
+    }
+
+    // ---- Modelo: Azul com nota ----
+    const PRV_AZUL = [5, 71, 155], PRV_AZUL_CLARO = [197, 213, 236], PRV_TINTA = [59, 27, 79];
+    function prvDecorAzul(doc, marca){
+      doc.setFillColor(247, 247, 247);
+      doc.rect(0, 0, 210, 297, 'F');
+      if(marca) doc.addImage(marca.data, 'JPEG', 54, 112, 102, 106, 'prvMarca');
+      doc.setFillColor(PRV_AZUL[0], PRV_AZUL[1], PRV_AZUL[2]);
+      doc.rect(0, 0, 210, 7, 'F');
+      doc.rect(0, 291, 210, 6, 'F');
+      doc.setFillColor(PRV_AZUL_CLARO[0], PRV_AZUL_CLARO[1], PRV_AZUL_CLARO[2]);
+      [[0, 38], [8.5, 32], [13, 26], [17.5, 20], [22, 12]].forEach(([y, w]) => doc.rect(0, y, w, 2.2, 'F'));
+      [[281, 28], [285.5, 42]].forEach(([y, w]) => doc.rect(210 - w, y, w, 2.2, 'F'));
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(27);
+      doc.setTextColor(PRV_AZUL[0], PRV_AZUL[1], PRV_AZUL[2]);
+      doc.text('PROVA', 105, 25, { align: 'center' });
+    }
+    async function prvPdfAzul(doc, p){
+      const marca = await prvImagem('selo-desbravadores.png', 700, 730, { fundo: '#F7F7F7', alfa: 0.1 });
+      const novoTopo = () => { doc.addPage(); prvDecorAzul(doc, marca); return 40; };
+      prvDecorAzul(doc, marca);
+
+      // Selo de nota: círculo com duas fitas.
+      doc.setFillColor(PRV_AZUL[0], PRV_AZUL[1], PRV_AZUL[2]);
+      doc.triangle(170, 18, 182, 18, 171, 33, 'F');
+      doc.triangle(172, 18, 184, 18, 183, 33, 'F');
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(PRV_AZUL[0], PRV_AZUL[1], PRV_AZUL[2]);
+      doc.setLineWidth(1);
+      doc.circle(177, 12, 10, 'FD');
+      doc.setFontSize(8);
+      doc.setTextColor(190, 190, 190);
+      doc.text('NOTA', 177, 13.5, { align: 'center' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(40, 40, 40);
+      prvTamanhoQueCabe(doc, currentName.toUpperCase(), 12, 135);
+      doc.text(currentName.toUpperCase(), 105, 33, { align: 'center' });
+
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.5);
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10.5);
+      [['Nome do Clube:', prvNomeClube()], ['Nome do Instrutor:', ''], ['Nome do DBV:', '']].forEach(([rotulo, valor], i) => {
+        const y = 37 + i * 6.5;
+        // O texto troca a cor de preenchimento do PDF: repõe antes de cada linha.
+        doc.setFillColor(255, 255, 255);
+        doc.rect(8, y, 194, 6.5, 'FD');
+        doc.setFont('helvetica', 'bold');
+        doc.text(rotulo, 9.5, y + 4.6);
+        if(valor){
+          const x = 9.5 + doc.getTextWidth(rotulo + ' ');
+          doc.setFont('helvetica', 'normal');
+          doc.text(valor, x, y + 4.6);
+        }
+      });
+      let y = 64;
+      if(p.abertura){
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(PRV_TINTA[0], PRV_TINTA[1], PRV_TINTA[2]);
+        doc.setFontSize(10.5);
+        const linhas = doc.splitTextToSize('“' + p.abertura + '”', 170);
+        doc.text(linhas, 20, y);
+        y += linhas.length * 5;
+      }
+      y += 6;
+      prvItensPdf(doc, p, y, {
+        fonte: 'helvetica', tam: 10.5, linha: 4.8, depois: 3.2, cor: PRV_TINTA, corLinha: PRV_TINTA,
+        xItem: 12, xSub: 12, recuoFixo: false, dir: 198, base: 277, fimSub: ')',
+        perguntaNegrito: true, novaPagina: novoTopo
+      });
+    }
+
+    // ---- Modelo: Ficha completa ----
+    const PRV_CINZA = '#BFBFBF';
+    function prvCapaFicha(doc, p, imgs){
+      doc.setFillColor(191, 191, 191);
+      doc.rect(107, 0, 103, 297, 'F');
+      doc.rect(0, 82, 210, 118, 'F');
+      prvEncaixar(doc, imgs.selo, 122, 5, 78, 70);
+      doc.setFillColor(255, 255, 255);
+      doc.rect(5, 89, 198, 96, 'F');
+      if(imgs.capa) doc.addImage(imgs.capa.data, 'JPEG', 5, 89, 198, 96);
+      else prvEncaixar(doc, imgs.insigniaCapa, 15, 94, 178, 86);
+      doc.setFillColor(0, 0, 0);
+      doc.rect(0, 185, 210, 15, 'F');
+      doc.setFont('times', 'bold');
+      doc.setTextColor(255, 255, 255);
+      prvTamanhoQueCabe(doc, currentName, 24, 190);
+      doc.text(currentName, 203, 195.5, { align: 'right' });
+
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(13);
+      [['Desbravador:', ''], ['Região:', p.regiao || ''], ['Clube:', prvNomeClube()], ['Unidade:', ''], ['Conselheiro:', ''], ['Data:', '']].forEach(([rotulo, valor], i) => {
+        const y = 215 + i * 13;
+        doc.setFont('times', 'bold');
+        doc.text(rotulo, 11, y);
+        const fim = 11 + doc.getTextWidth(rotulo) + 2;
+        if(valor){
+          doc.setFont('times', 'normal');
+          doc.text(valor, fim, y);
+        } else {
+          doc.setDrawColor(150, 150, 150);
+          doc.setLineWidth(0.2);
+          doc.line(fim, y + 0.8, 101, y + 0.8);
+        }
+      });
+
+      doc.setFont('times', 'bold');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(19);
+      doc.text(doc.splitTextToSize(currentArea || '', 92), 158.5, 228, { align: 'center' });
+      doc.setFontSize(13);
+      doc.text(doc.splitTextToSize(p.associacao || '', 92), 158.5, 268, { align: 'center' });
+    }
+    // Faixa de dados no topo da primeira página de requisitos. Devolve onde ela termina.
+    function prvFaixa(doc, imgs){
+      const d = currentDetalhe;
+      doc.setFont('times', 'bold');
+      doc.setTextColor(125, 125, 125);
+      doc.setFontSize(17);
+      doc.text(currentArea || '', 105, 24, { align: 'center' });
+      doc.text(doc.splitTextToSize(currentName, 180)[0], 105, 32, { align: 'center' });
+
+      const y = 40, alt = 13, X = 10;
+      const ESCURO = [88, 89, 91], MEDIO = [109, 110, 113], CLARO = [191, 191, 191];
+      const caixa = (x, yy, w, h, cor) => { doc.setFillColor(cor[0], cor[1], cor[2]); doc.rect(x, yy, w, h, 'F'); };
+      caixa(X, y, 34, alt * 2 + 1, CLARO);
+      prvEncaixar(doc, imgs.selo, X + 2, y + 1, 30, alt * 2 - 1);
+      caixa(X + 35, y, 14, alt, ESCURO);
+      caixa(X + 50, y, 96, alt, MEDIO);
+      caixa(X + 35, y + alt + 1, 14, alt, ESCURO);
+      caixa(X + 50, y + alt + 1, 15, alt, CLARO);
+      caixa(X + 66, y + alt + 1, 15, alt, CLARO);
+      caixa(X + 82, y + alt + 1, 64, alt, MEDIO);
+      caixa(X + 147, y, 43, alt * 2 + 1, CLARO);
+      prvEncaixar(doc, imgs.insignia, X + 150, y + 1, 37, alt * 2 - 1);
+
+      const partes = String(d.codigo || '').trim().split(/\s+/);
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(12);
+      doc.text(partes[0] || '—', X + 42, y + 8.5, { align: 'center' });
+      doc.setFontSize(10);
+      doc.text(partes[1] || '—', X + 42, y + alt + 9.5, { align: 'center' });
+      doc.setFontSize(12);
+      doc.text(doc.splitTextToSize(currentName, 90)[0], X + 53, y + 8.5);
+      doc.setFontSize(8);
+      doc.setFont('times', 'normal');
+      doc.text('Instituição de origem', X + 85, y + alt + 5);
+      doc.setFont('times', 'bold');
+      doc.setFontSize(9);
+      doc.text(doc.splitTextToSize(d.instituicao || '—', 58)[0], X + 85, y + alt + 10);
+      doc.setTextColor(40, 40, 40);
+      [['Nível', d.nivel, X + 57.5], ['Ano', d.ano, X + 73.5]].forEach(([rotulo, valor, cx]) => {
+        doc.setFontSize(8);
+        doc.text(rotulo, cx, y + alt + 5.5, { align: 'center' });
+        doc.setFontSize(10);
+        doc.text(String(valor || '—'), cx, y + alt + 10.5, { align: 'center' });
+      });
+      return y + alt * 2 + 1;
+    }
+    async function prvPdfFicha(doc, p){
+      const foto = await prvInsignia();
+      const [selo, insignia, insigniaCapa, capa] = await Promise.all([
+        prvImagem('selo-desbravadores.png', 500, 520, { fundo: PRV_CINZA }),
+        prvImagem(foto, 500, 500, { fundo: PRV_CINZA }),
+        prvImagem(foto, 800, 800),
+        prvImagem(p.capa_data, 1400, 675, { cobrir: true })
+      ]);
+      const imgs = { selo, insignia, insigniaCapa, capa };
+      prvCapaFicha(doc, p, imgs);
+      doc.addPage();
+      const fim = prvFaixa(doc, imgs);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('times', 'normal');
+      doc.setFontSize(11.5);
+      doc.text('REQUISITOS', 12.5, fim + 9);
+      prvItensPdf(doc, p, fim + 18, {
+        fonte: 'times', tam: 11.5, linha: 5.4, depois: 3, cor: [0, 0, 0], corLinha: [70, 70, 70],
+        xItem: 12.5, xSub: 12.5, recuoFixo: false, dir: 197.5, base: 284, fimSub: ')',
+        perguntaNegrito: false, novaPagina: () => { doc.addPage(); return 20; }
+      });
+    }
+
+    function prvArquivo(texto){
+      return String(texto).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    }
+    async function prvGerarPdf(p){
+      const jsPDFLib = window.jspdf && window.jspdf.jsPDF;
+      if(!jsPDFLib){
+        alert('Não foi possível carregar a biblioteca de PDF. Verifique sua conexão com a internet e tente novamente.');
+        return;
+      }
+      const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
+      if(p.modelo === 'nota_gabarito') await prvPdfAzul(doc, p);
+      else if(p.modelo === 'ficha_completa') await prvPdfFicha(doc, p);
+      else await prvPdfCedros(doc, p);
+      await salvarPDF(doc, prvArquivo(p.titulo) + '.pdf');
+    }
+
+    // Gabarito: arquivo separado, para a prova impressa não levar as respostas.
+    function prvRespostas(p){
+      let n = 0, sub = 0;
+      const linhas = [];
+      p.itens.forEach(i => {
+        if(i.subitem) sub++; else { n++; sub = 0; }
+        const rotulo = n + (i.subitem ? String.fromCharCode(96 + ((sub - 1) % 26) + 1) : '');
+        let resposta = '';
+        if(i.tipo === 'multipla' && Number.isInteger(i.correta)) resposta = String.fromCharCode(65 + i.correta);
+        else if(i.tipo === 'vf' && i.correta) resposta = i.correta === 'V' ? 'Verdadeiro' : 'Falso';
+        else if(i.tipo === 'escrita') resposta = i.resposta || '';
+        // Enunciado sem linhas nem resposta (como "Escolher 2 dos itens") não entra.
+        if(!resposta && i.tipo === 'escrita' && !i.linhas) return;
+        linhas.push({ rotulo, resposta });
+      });
+      return linhas;
+    }
+    async function prvGerarGabarito(p){
+      const jsPDFLib = window.jspdf && window.jspdf.jsPDF;
+      if(!jsPDFLib){
+        alert('Não foi possível carregar a biblioteca de PDF. Verifique sua conexão com a internet e tente novamente.');
+        return;
+      }
+      const respostas = prvRespostas(p);
+      if(!respostas.some(r => r.resposta)){
+        alert('Nenhuma resposta cadastrada ainda. Marque as respostas corretas nos itens da avaliação.');
+        return;
+      }
+      const azul = p.modelo === 'nota_gabarito';
+      const marca = azul ? await prvImagem('selo-desbravadores.png', 700, 730, { fundo: '#F7F7F7', alfa: 0.1 }) : null;
+      const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
+      const cor = azul ? PRV_AZUL : p.modelo === 'ficha_completa' ? [88, 89, 91] : [31, 90, 46];
+      const X = 30, L = 150;
+      const cabecalho = () => {
+        if(azul) prvDecorAzul(doc, marca);
+        const y = azul ? 33 : 18;
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(cor[0], cor[1], cor[2]);
+        doc.setFontSize(azul ? 12 : 16);
+        doc.text('GABARITO', 105, y, { align: 'center' });
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(40, 40, 40);
+        doc.setFontSize(10.5);
+        doc.text(doc.splitTextToSize(p.titulo, 170)[0], 105, y + 6, { align: 'center' });
+        doc.setFontSize(8.5);
+        doc.text('Uso do instrutor. Não entregar aos participantes.', 105, y + 11, { align: 'center' });
+        const t = y + 16;
+        doc.setFillColor(cor[0], cor[1], cor[2]);
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.3);
+        doc.rect(X, t, L, 8, 'FD');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(255, 255, 255);
+        doc.text('Resposta Esperada/Exata', 105, t + 5.5, { align: 'center' });
+        return t + 8;
+      };
+      let y = cabecalho();
+      const BASE = azul ? 277 : 285;
+      respostas.forEach(r => {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        const linhas = doc.splitTextToSize(r.rotulo + ' - ' + (r.resposta || '—'), L - 4);
+        const alt = Math.max(7, linhas.length * 4.6 + 2.6);
+        if(y + alt > BASE){
+          doc.addPage();
+          y = cabecalho();
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10);
+        }
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.3);
+        doc.rect(X, y, L, alt, 'FD');
+        doc.setTextColor(0, 0, 0);
+        doc.text(linhas, X + 2, y + 4.6);
+        y += alt;
+      });
+      await salvarPDF(doc, 'gabarito-' + prvArquivo(p.titulo) + '.pdf');
+    }
+
+    document.getElementById('sdProvaNovaBtn').addEventListener('click', () => prvAbrir(null));
+    document.getElementById('prvFechar').addEventListener('click', prvFechar);
+    prvOverlay.addEventListener('click', (e) => { if(e.target === prvOverlay) prvFechar(); });
+    Object.values(prvCampos).forEach(el => el.addEventListener('input', prvMarcarAlterada));
+    prvCampos.modelo.addEventListener('change', () => { prvMarcarAlterada(); prvAjustarModelo(); });
+    document.getElementById('prvAdicionar').addEventListener('click', () => {
+      const ultimo = prvItens[prvItens.length - 1];
+      const novo = prvNovoItem();
+      if(ultimo){ novo.tipo = ultimo.tipo; novo.subitem = ultimo.subitem; novo.linhas = ultimo.linhas; }
+      prvItens.push(novo);
+      prvMarcarAlterada();
+      prvRenderItens();
+      const cartoes = prvItensEl.children;
+      const ultimoCard = cartoes[cartoes.length - 1];
+      const modal = prvOverlay.querySelector('.pl-modal');
+      modal.scrollTop += ultimoCard.getBoundingClientRect().top - modal.getBoundingClientRect().top - 60;
+      ultimoCard.querySelector('textarea').focus({ preventScroll: true });
+    });
+    document.getElementById('prvCapaBtn').addEventListener('click', () => document.getElementById('prvCapaInput').click());
+    document.getElementById('prvCapaRemover').addEventListener('click', () => { prvCapa = ''; prvMarcarAlterada(); prvRenderCapa(); });
+    document.getElementById('prvCapaInput').addEventListener('change', (e) => {
+      const arquivo = e.target.files && e.target.files[0];
+      e.target.value = '';
+      if(!arquivo) return;
+      const leitor = new FileReader();
+      leitor.onload = async () => {
+        const img = await prvImagem(String(leitor.result), 1400, 675, { cobrir: true });
+        if(!img){ prvMsg('Não foi possível abrir esta imagem.', true); return; }
+        prvCapa = img.data;
+        prvMarcarAlterada();
+        prvRenderCapa();
+      };
+      leitor.readAsDataURL(arquivo);
+    });
+    document.getElementById('prvSalvar').addEventListener('click', prvSalvar);
+    document.getElementById('prvGabarito').addEventListener('click', () => {
+      const dados = prvColetar();
+      if(dados) prvGerarGabarito(dados);
+    });
+    document.getElementById('prvGerar').addEventListener('click', async () => {
+      const dados = prvColetar();
+      if(!dados) return;
+      const botao = document.getElementById('prvGerar');
+      botao.disabled = true;
+      botao.textContent = 'Gerando…';
+      try { await prvGerarPdf(dados); }
+      finally { botao.disabled = false; botao.textContent = 'Gerar PDF'; }
+    });
 
     window.__spOpenDetail = function(name, area){
       currentName = name;

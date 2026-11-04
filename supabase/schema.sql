@@ -1587,3 +1587,23 @@ create table if not exists autorizacao_modelos (
 alter table autorizacao_modelos enable row level security;
 drop policy if exists p_autorizacao_modelos on autorizacao_modelos;
 create policy p_autorizacao_modelos on autorizacao_modelos for all using(true) with check(true);
+
+
+-- Avaliações de especialidade criadas no app: modelo do documento, capa e os
+-- itens digitados (tipo, texto, linhas, alternativas, pontos, subitem, gabarito).
+create table if not exists especialidade_avaliacoes (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null,
+  titulo text not null,
+  modelo text not null default 'cedros',
+  associacao text,
+  regiao text,
+  abertura text,
+  capa_data text,
+  itens jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists especialidade_avaliacoes_nome_idx on especialidade_avaliacoes(nome);
+alter table especialidade_avaliacoes enable row level security;
+drop policy if exists p_especialidade_avaliacoes on especialidade_avaliacoes;
+create policy p_especialidade_avaliacoes on especialidade_avaliacoes for all using(true) with check(true);
