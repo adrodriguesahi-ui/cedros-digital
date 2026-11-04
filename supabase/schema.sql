@@ -1568,3 +1568,22 @@ alter table usuarios add column if not exists gerencia_almoxarifado boolean not 
 -- Vive em usuarios, e não no metadata do Auth, porque o app já lê esta tabela
 -- no login e porque assim o administrador enxerga quem ainda não trocou.
 alter table usuarios add column if not exists senha_provisoria boolean not null default false;
+
+
+-- Modelos de Autorização de Saída salvos na Secretaria. Só os dados do evento
+-- e o nome do responsável pelo clube: RG e CPF não vêm para cá, porque esta
+-- tabela segue a mesma política aberta das demais. O app apaga os vencidos.
+create table if not exists autorizacao_modelos (
+  id uuid primary key default gen_random_uuid(),
+  evento text not null,
+  data_inicio date not null,
+  data_fim date,
+  origem text,
+  destino text not null,
+  responsavel_nome text,
+  valido_ate date not null,
+  created_at timestamptz not null default now()
+);
+alter table autorizacao_modelos enable row level security;
+drop policy if exists p_autorizacao_modelos on autorizacao_modelos;
+create policy p_autorizacao_modelos on autorizacao_modelos for all using(true) with check(true);

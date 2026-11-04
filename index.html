@@ -3818,6 +3818,58 @@
     width:100%; max-width:320px; aspect-ratio:210 / 297; object-fit:contain; border-radius:6px;
     background:#F3EEDD; box-shadow:0 10px 30px rgba(0,0,0,0.45);
   }
+  /* ---- Secretaria: Autorização de Saída (vários nomes e modelos salvos) ---- */
+  .aut-modelos{ margin-bottom:14px; }
+  .aut-modelos-lista{ display:flex; flex-direction:column; gap:8px; }
+  .aut-modelo{
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:12px;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+  }
+  .aut-modelo.active{ border-color:var(--accent); background:rgba(63,203,107,0.08); }
+  .aut-modelo-txt{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .aut-modelo-txt b{ font-size:13.5px; font-weight:800; color:var(--cream); overflow-wrap:anywhere; }
+  .aut-modelo-txt span{ font-size:11.5px; font-weight:600; color:var(--ink-dim); }
+  .aut-btn-mini{
+    flex-shrink:0; min-height:36px; padding:0 12px; border-radius:10px; cursor:pointer; font:inherit;
+    font-size:12.5px; font-weight:800; color:var(--cream);
+    background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.14);
+  }
+  .aut-btn-mini.aut-perigo{ color:#FF8A7C; }
+  .aut-btn-mini:disabled{ opacity:0.45; cursor:default; }
+  .aut-sel-topo{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .aut-contagem{ margin:12px 2px 6px; font-size:12px; font-weight:800; color:var(--accent); white-space:nowrap; }
+  .aut-filtros{ display:flex; gap:8px; }
+  .aut-filtros .pl-input:first-child{ flex:1 1 60%; min-width:0; }
+  .aut-filtros .pl-input:last-child{ flex:1 1 40%; min-width:0; }
+  .aut-acoes{ display:flex; gap:8px; margin-top:8px; }
+  .aut-lista{
+    margin-top:8px; max-height:264px; overflow-y:auto; border-radius:12px;
+    border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.14);
+  }
+  .aut-lista.aut-erro{ border-color:#FF6B5C; }
+  .aut-membro{
+    display:flex; align-items:center; gap:10px; min-height:44px; padding:7px 12px; cursor:pointer;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+  }
+  .aut-membro:last-child{ border-bottom:none; }
+  .aut-membro input{ width:18px; height:18px; flex-shrink:0; accent-color:var(--accent); }
+  .aut-membro-txt{ min-width:0; display:flex; flex-direction:column; }
+  .aut-membro-txt b{ font-size:13px; font-weight:700; color:var(--cream); overflow-wrap:anywhere; }
+  .aut-membro-txt small{ font-size:11px; font-weight:600; color:var(--ink-dim); }
+  .aut-lista-vazia{ padding:14px 12px; font-size:12.5px; font-weight:600; color:var(--ink-dim); }
+  .aut-adicionar{
+    display:block; width:100%; min-height:44px; padding:8px 12px; text-align:left; cursor:pointer; font:inherit;
+    font-size:13px; font-weight:800; color:var(--accent); background:none; border:none;
+  }
+  .aut-salvar{
+    margin-top:14px; padding:12px; border-radius:12px;
+    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1);
+  }
+  .aut-salvar .pl-field-label{ margin-top:0; }
+  .aut-salvar-acoes{ display:flex; gap:8px; margin-top:8px; }
+  .aut-salvar-acoes .pl-btn{ flex:1; }
+  .aut-msg{ margin:8px 2px 0; font-size:12px; font-weight:700; color:var(--accent); }
+  .aut-msg.aut-msg-erro{ color:#FF8A7C; }
   .pl-reminder-hint.dcl-alerta{ color:var(--gold); font-weight:800; }
   @media (min-width:900px){
     #dclOverlay .pl-modal.dcl-modal{ max-width:860px; }
@@ -12317,7 +12369,7 @@
             <div class="sc-pdf-card">
               <div class="sc-pdf-tabs">
                 <button type="button" class="sc-pdf-tab active" data-tab="doc">Documentos</button>
-                <button type="button" class="sc-pdf-tab" data-tab="pdf">Gerar Autorização (PDF)</button>
+                <button type="button" class="sc-pdf-tab" data-tab="pdf">Autorização de Saída</button>
                 <button type="button" class="sc-pdf-tab" data-tab="attendance">Chamada de Presença</button>
                 <button type="button" class="sc-pdf-tab" data-tab="events">Postar Eventos</button>
                 <button type="button" class="sc-pdf-tab" data-tab="officers" id="scOfficersTab" style="display:none;">Escala de Oficiais</button>
@@ -12374,6 +12426,10 @@
                   <span class="dcl-atalho-txt"><b>Declaração de idade mínima</b><span>Comprovante do requisito 1 das classes, no modelo do clube</span></span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
+                <div class="aut-modelos" id="autModelos" style="display:none;">
+                  <label class="pl-field-label" style="margin-top:0;">Modelos salvos</label>
+                  <div class="aut-modelos-lista" id="autModelosLista"></div>
+                </div>
                 <div class="dcl-corpo">
                   <div class="dcl-campos">
                     <label class="pl-field-label" style="margin-top:0;">Evento</label>
@@ -12401,9 +12457,19 @@
                       </div>
                     </div>
 
-                    <label class="pl-field-label">Participante</label>
-                    <input type="text" class="pl-input" id="scPdfMember" list="scPdfMembros" placeholder="Nome completo do desbravador" maxlength="80" autocomplete="off">
-                    <datalist id="scPdfMembros"></datalist>
+                    <div class="aut-sel-topo">
+                      <label class="pl-field-label">Participantes</label>
+                      <span class="aut-contagem" id="autContagem">Nenhum selecionado</span>
+                    </div>
+                    <div class="aut-filtros">
+                      <input type="search" class="pl-input" id="autBusca" placeholder="Buscar nome" maxlength="80" autocomplete="off">
+                      <select class="pl-input" id="autUnidade" aria-label="Filtrar por unidade"><option value="">Todas</option></select>
+                    </div>
+                    <div class="aut-acoes">
+                      <button type="button" class="aut-btn-mini" id="autTodos">Selecionar os listados</button>
+                      <button type="button" class="aut-btn-mini" id="autLimpar">Limpar seleção</button>
+                    </div>
+                    <div class="aut-lista" id="autLista"><p class="aut-lista-vazia">Carregando nomes…</p></div>
 
                     <label class="pl-field-label">Responsável pelo clube (opcional)</label>
                     <input type="text" class="pl-input" id="scPdfRespNome" placeholder="Maior de 18 anos" maxlength="80">
@@ -12418,12 +12484,23 @@
                       </div>
                     </div>
 
-                    <p class="pl-reminder-hint">Os dados do pai, mãe ou responsável legal, o documento do participante e a assinatura ficam em branco para preencher à mão. Para outro participante, é só trocar o nome e gerar de novo.</p>
+                    <p class="pl-reminder-hint">Sai uma página para cada participante, em ordem alfabética, num único PDF. Os dados do pai, mãe ou responsável legal, o documento do participante e a assinatura ficam em branco para preencher à mão.</p>
 
                     <button type="button" class="pl-btn pl-btn-primary" id="scPdfGenerateBtn" style="margin-top:6px;">Gerar PDF</button>
+
+                    <div class="aut-salvar">
+                      <label class="pl-field-label">Manter modelo salvo até</label>
+                      <input type="date" class="pl-input" id="autValidade">
+                      <div class="aut-salvar-acoes">
+                        <button type="button" class="pl-btn pl-btn-neutral" id="autSalvarBtn">Salvar modelo</button>
+                        <button type="button" class="pl-btn pl-btn-neutral" id="autNovoBtn" style="display:none;">Novo modelo</button>
+                      </div>
+                      <p class="aut-msg" id="autMsg" style="display:none;"></p>
+                      <p class="pl-reminder-hint">Fica disponível para quem acessa a Secretaria e some sozinho depois dessa data. Os participantes, o RG e o CPF não são salvos no modelo.</p>
+                    </div>
                   </div>
                   <div class="dcl-previa-wrap">
-                    <span class="dcl-previa-rotulo">Prévia</span>
+                    <span class="dcl-previa-rotulo" id="autPreviaRotulo">Prévia</span>
                     <img id="scPdfPrevia" class="dcl-previa" alt="Prévia da autorização">
                   </div>
                 </div>
@@ -28418,7 +28495,7 @@
     return a;
   }
 
-  // Secretaria: alternar aba (Documentos / Gerar Autorização / Chamada de Presença / Postar Eventos)
+  // Secretaria: alternar aba (Documentos / Autorização de Saída / Chamada de Presença / Postar Eventos)
   (function(){
     const tabs = document.querySelectorAll('.sc-pdf-tab');
     const pdfPanel = document.getElementById('scPdfPanel');
@@ -29090,7 +29167,9 @@
 
   // Secretaria: Autorização para saída de desbravadores (modelo do clube)
   //
-  // Evento, período, cidades e participante vêm do formulário; os dados do
+  // Evento, período, cidades e participantes vêm do formulário: sai uma página
+  // por pessoa num único PDF. Os dados do evento podem ficar salvos até uma
+  // data (tabela autorizacao_modelos); os dados do
   // pai, mãe ou responsável legal e a assinatura ficam em branco para
   // preencher à mão. Como na Declaração de idade, o documento é desenhado num
   // canvas A4 e vai pro PDF como imagem; a mesma função gera a prévia.
@@ -29101,8 +29180,7 @@
     const $ = id => document.getElementById(id);
     const campos = {
       evento: $('scPdfEvent'), inicio: $('scPdfDate'), fim: $('scPdfFim'), origem: $('scPdfOrigem'),
-      cidade: $('scPdfCidade'), participante: $('scPdfMember'), respNome: $('scPdfRespNome'),
-      respRg: $('scPdfRespRg'), respCpf: $('scPdfRespCpf')
+      cidade: $('scPdfCidade'), respNome: $('scPdfRespNome'), respRg: $('scPdfRespRg'), respCpf: $('scPdfRespCpf')
     };
     const previa = $('scPdfPrevia');
     const W = 1654, H = 2339, LARG = 595.5, ALT = 842.25, ESQ = 30, DIR = 565.5;
@@ -29119,7 +29197,12 @@
     ];
     let brasao = null;
     let fontesProntas = null;
-    let usuarios = null;
+    let membros = [];
+    let membrosCarregados = false;
+    const selecionados = new Map();
+    let modelos = [];
+    let modeloAtual = null;
+    let validadeEditada = false;
 
     const normalizar = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 
@@ -29153,10 +29236,11 @@
     function dados(){
       const d = {};
       Object.keys(campos).forEach(k => { d[k] = campos[k].value.trim(); });
-      const nome = normalizar(d.participante);
-      const u = nome && usuarios && usuarios.find(x => normalizar(x.nome) === nome);
-      d.nascimento = (u && u.data_nascimento) || '';
       return d;
+    }
+    const comPessoa = (d, p) => Object.assign({}, d, { participante: p ? p.nome : '', nascimento: p ? p.nascimento : '' });
+    function isoLocal(dt){
+      return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
     }
     function dataPorExtenso(iso){
       if(!iso) return '';
@@ -29288,45 +29372,313 @@
     let previaTimer = null;
     function atualizarPrevia(){
       clearTimeout(previaTimer);
-      previaTimer = setTimeout(() => { previa.src = desenhar(dados()).toDataURL('image/jpeg', 0.7); }, 200);
+      previaTimer = setTimeout(() => {
+        const lista = escolhidos();
+        previa.src = desenhar(comPessoa(dados(), lista[0])).toDataURL('image/jpeg', 0.7);
+        $('autPreviaRotulo').textContent = lista.length > 1 ? 'Prévia · 1 de ' + lista.length : 'Prévia';
+      }, 200);
     }
+
+    // ---- Participantes: usuários ativos + desbravadores das classes, sem
+    // repetir nomes. Nome fora do cadastro pode ser adicionado pela busca. ----
+    const escolhidos = () => Array.from(selecionados.values()).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
     async function carregarParticipantes(){
-      if(usuarios || !supa) return;
-      const { data } = await supa.from('usuarios').select('nome, data_nascimento, ativo').order('nome');
-      usuarios = (data || []).filter(u => u.ativo !== false);
-      const lista = $('scPdfMembros');
-      lista.innerHTML = '';
-      usuarios.forEach(u => {
-        const o = document.createElement('option');
-        o.value = u.nome;
-        lista.appendChild(o);
+      if(membrosCarregados || !supa) return;
+      membrosCarregados = true;
+      const [us, desb] = await Promise.all([
+        supa.from('usuarios').select('nome, unidade, data_nascimento, ativo').order('nome'),
+        supa.from('desbravadores').select('nome, classe, data_nascimento')
+      ]);
+      const porNome = new Map();
+      // Inativo não volta para a lista por ainda constar na classe.
+      const inativos = new Set((us.data || []).filter(u => u.ativo === false).map(u => normalizar(u.nome)));
+      (us.data || []).filter(u => u.ativo !== false).forEach(u => {
+        porNome.set(normalizar(u.nome), { nome: u.nome, unidade: u.unidade || '', classe: '', nascimento: u.data_nascimento || '' });
       });
+      (desb.data || []).forEach(x => {
+        const chave = normalizar(x.nome);
+        if(inativos.has(chave)) return;
+        const ja = porNome.get(chave);
+        if(ja){
+          ja.classe = x.classe || '';
+          if(!ja.nascimento) ja.nascimento = x.data_nascimento || '';
+        } else {
+          porNome.set(chave, { nome: x.nome, unidade: '', classe: x.classe || '', nascimento: x.data_nascimento || '' });
+        }
+      });
+      membros = Array.from(porNome.values()).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+      const unidades = Array.from(new Set(membros.map(m => m.unidade).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+      unidades.forEach(u => {
+        const o = document.createElement('option');
+        o.value = u; o.textContent = u;
+        $('autUnidade').appendChild(o);
+      });
+      renderMembros();
+    }
+    function membrosVisiveis(){
+      const busca = normalizar($('autBusca').value);
+      const unidade = $('autUnidade').value;
+      return membros.filter(m => (!busca || normalizar(m.nome).includes(busca)) && (!unidade || m.unidade === unidade));
+    }
+    function atualizarContagem(){
+      const n = selecionados.size;
+      $('autContagem').textContent = !n ? 'Nenhum selecionado' : n === 1 ? '1 selecionado' : n + ' selecionados';
+      btn.textContent = n > 1 ? 'Gerar PDF (' + n + ' autorizações)' : 'Gerar PDF';
+    }
+    function renderMembros(){
+      const lista = $('autLista');
+      lista.innerHTML = '';
+      membrosVisiveis().forEach(m => {
+        const chave = normalizar(m.nome);
+        const linha = document.createElement('label');
+        linha.className = 'aut-membro';
+        const caixa = document.createElement('input');
+        caixa.type = 'checkbox';
+        caixa.checked = selecionados.has(chave);
+        caixa.addEventListener('change', () => {
+          if(caixa.checked) selecionados.set(chave, m); else selecionados.delete(chave);
+          lista.classList.remove('aut-erro');
+          atualizarContagem();
+          atualizarPrevia();
+        });
+        const txt = document.createElement('span');
+        txt.className = 'aut-membro-txt';
+        const nome = document.createElement('b');
+        nome.textContent = m.nome;
+        txt.appendChild(nome);
+        const detalhe = [m.unidade, m.classe].filter(Boolean).join(' · ');
+        if(detalhe){
+          const sub = document.createElement('small');
+          sub.textContent = detalhe;
+          txt.appendChild(sub);
+        }
+        linha.appendChild(caixa);
+        linha.appendChild(txt);
+        lista.appendChild(linha);
+      });
+      const digitado = $('autBusca').value.trim();
+      if(digitado && !membros.some(m => normalizar(m.nome) === normalizar(digitado))){
+        const add = document.createElement('button');
+        add.type = 'button';
+        add.className = 'aut-adicionar';
+        add.textContent = '+ Adicionar “' + digitado + '”';
+        add.addEventListener('click', () => {
+          const novo = { nome: digitado, unidade: '', classe: 'Fora do cadastro', nascimento: '' };
+          membros.push(novo);
+          membros.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+          selecionados.set(normalizar(digitado), novo);
+          $('autBusca').value = '';
+          lista.classList.remove('aut-erro');
+          renderMembros();
+          atualizarContagem();
+          atualizarPrevia();
+        });
+        lista.appendChild(add);
+      }
+      if(!lista.children.length){
+        const vazio = document.createElement('p');
+        vazio.className = 'aut-lista-vazia';
+        vazio.textContent = 'Nenhum nome encontrado.';
+        lista.appendChild(vazio);
+      }
+    }
+
+    // ---- Modelos salvos ----
+    function mostrarMsg(texto, erro){
+      const el = $('autMsg');
+      el.textContent = texto;
+      el.classList.toggle('aut-msg-erro', !!erro);
+      el.style.display = texto ? '' : 'none';
+    }
+    function sugerirValidade(){
+      if(validadeEditada) return;
+      const evento = campos.fim.value || campos.inicio.value;
+      const hoje = isoLocal(new Date());
+      if(evento && evento >= hoje){ $('autValidade').value = evento; return; }
+      const d = new Date();
+      d.setDate(d.getDate() + 30);
+      $('autValidade').value = isoLocal(d);
+    }
+    function marcarModeloAtual(){
+      $('autSalvarBtn').textContent = modeloAtual ? 'Salvar alterações' : 'Salvar modelo';
+      $('autNovoBtn').style.display = modeloAtual ? '' : 'none';
+    }
+    function periodo(m){
+      const ini = dataCurta(m.data_inicio);
+      return m.data_fim && m.data_fim !== m.data_inicio ? ini + ' a ' + dataCurta(m.data_fim) : ini;
+    }
+    function usarModelo(m){
+      modeloAtual = m.id;
+      campos.evento.value = m.evento;
+      campos.inicio.value = m.data_inicio;
+      campos.fim.value = m.data_fim || '';
+      campos.origem.value = m.origem || '';
+      campos.cidade.value = m.destino;
+      campos.respNome.value = m.responsavel_nome || '';
+      campos.respRg.value = '';
+      campos.respCpf.value = '';
+      $('autValidade').value = m.valido_ate;
+      validadeEditada = true;
+      Object.values(campos).forEach(el => { el.style.borderColor = ''; });
+      mostrarMsg('');
+      marcarModeloAtual();
+      renderModelos();
       atualizarPrevia();
+    }
+    function novoModelo(){
+      modeloAtual = null;
+      Object.values(campos).forEach(el => { el.value = ''; el.style.borderColor = ''; });
+      campos.origem.value = 'Cotia - SP';
+      validadeEditada = false;
+      sugerirValidade();
+      mostrarMsg('');
+      marcarModeloAtual();
+      renderModelos();
+      atualizarPrevia();
+    }
+    function renderModelos(){
+      const lista = $('autModelosLista');
+      lista.innerHTML = '';
+      $('autModelos').style.display = modelos.length ? '' : 'none';
+      modelos.forEach(m => {
+        const card = document.createElement('div');
+        card.className = 'aut-modelo' + (m.id === modeloAtual ? ' active' : '');
+        const txt = document.createElement('div');
+        txt.className = 'aut-modelo-txt';
+        const titulo = document.createElement('b');
+        titulo.textContent = m.evento;
+        const sub = document.createElement('span');
+        sub.textContent = periodo(m) + ' · ' + m.destino;
+        const val = document.createElement('span');
+        val.textContent = 'Salvo até ' + dataCurta(m.valido_ate);
+        txt.appendChild(titulo); txt.appendChild(sub); txt.appendChild(val);
+        const usar = document.createElement('button');
+        usar.type = 'button';
+        usar.className = 'aut-btn-mini';
+        usar.textContent = m.id === modeloAtual ? 'Em uso' : 'Usar';
+        usar.disabled = m.id === modeloAtual;
+        usar.addEventListener('click', () => usarModelo(m));
+        const excluir = document.createElement('button');
+        excluir.type = 'button';
+        excluir.className = 'aut-btn-mini aut-perigo';
+        excluir.textContent = 'Excluir';
+        excluir.addEventListener('click', async () => {
+          if(!confirm('Excluir o modelo "' + m.evento + '"?')) return;
+          const { error } = await supa.from('autorizacao_modelos').delete().eq('id', m.id);
+          if(error){ mostrarMsg('Não consegui excluir o modelo: ' + error.message, true); return; }
+          if(modeloAtual === m.id){ modeloAtual = null; marcarModeloAtual(); }
+          await carregarModelos();
+        });
+        card.appendChild(txt); card.appendChild(usar); card.appendChild(excluir);
+        lista.appendChild(card);
+      });
+    }
+    async function carregarModelos(){
+      if(!supa) return;
+      const hoje = isoLocal(new Date());
+      await supa.from('autorizacao_modelos').delete().lt('valido_ate', hoje);
+      const { data, error } = await supa.from('autorizacao_modelos').select('*').gte('valido_ate', hoje).order('data_inicio');
+      if(error){ console.error('Erro ao carregar os modelos de autorização:', error.message); return; }
+      modelos = data || [];
+      if(modeloAtual && !modelos.some(m => m.id === modeloAtual)){ modeloAtual = null; marcarModeloAtual(); }
+      renderModelos();
+    }
+    function marcarFaltando(d){
+      const faltando = ['evento', 'inicio', 'cidade'].filter(k => !d[k]);
+      faltando.forEach(k => { campos[k].style.borderColor = '#FF6B5C'; });
+      return faltando.length > 0;
+    }
+    async function salvarModelo(){
+      const d = dados();
+      const validade = $('autValidade').value;
+      let invalido = marcarFaltando(d);
+      if(d.fim && d.fim < d.inicio){ campos.fim.style.borderColor = '#FF6B5C'; invalido = true; }
+      if(!validade || validade < isoLocal(new Date())){
+        $('autValidade').style.borderColor = '#FF6B5C';
+        mostrarMsg('Escolha uma data de hoje em diante para manter o modelo.', true);
+        return;
+      }
+      if(invalido){ mostrarMsg('Preencha os campos marcados para salvar.', true); return; }
+      const registro = {
+        evento: d.evento, data_inicio: d.inicio, data_fim: d.fim || null, origem: d.origem || null,
+        destino: d.cidade, responsavel_nome: d.respNome || null, valido_ate: validade
+      };
+      const botao = $('autSalvarBtn');
+      botao.disabled = true;
+      const { data, error } = modeloAtual
+        ? await supa.from('autorizacao_modelos').update(registro).eq('id', modeloAtual).select()
+        : await supa.from('autorizacao_modelos').insert(registro).select();
+      botao.disabled = false;
+      if(error || !data || !data.length){
+        mostrarMsg('Não consegui salvar o modelo' + (error ? ': ' + error.message : '. Ele pode ter sido excluído.'), true);
+        return;
+      }
+      modeloAtual = data[0].id;
+      marcarModeloAtual();
+      await carregarModelos();
+      mostrarMsg('Modelo salvo até ' + dataCurta(validade) + '.');
     }
 
     document.querySelectorAll('.sc-pdf-tab[data-tab="pdf"]').forEach(t => t.addEventListener('click', () => {
       carregarParticipantes();
+      carregarModelos();
+      sugerirValidade();
       carregarRecursos().then(atualizarPrevia);
     }));
     Object.values(campos).forEach(el => {
-      el.addEventListener('input', () => { el.style.borderColor = ''; atualizarPrevia(); });
+      el.addEventListener('input', () => { el.style.borderColor = ''; sugerirValidade(); atualizarPrevia(); });
     });
+    $('autBusca').addEventListener('input', renderMembros);
+    $('autUnidade').addEventListener('change', renderMembros);
+    $('autTodos').addEventListener('click', () => {
+      membrosVisiveis().forEach(m => selecionados.set(normalizar(m.nome), m));
+      $('autLista').classList.remove('aut-erro');
+      renderMembros();
+      atualizarContagem();
+      atualizarPrevia();
+    });
+    $('autLimpar').addEventListener('click', () => {
+      selecionados.clear();
+      renderMembros();
+      atualizarContagem();
+      atualizarPrevia();
+    });
+    $('autValidade').addEventListener('input', () => { validadeEditada = true; $('autValidade').style.borderColor = ''; mostrarMsg(''); });
+    $('autSalvarBtn').addEventListener('click', salvarModelo);
+    $('autNovoBtn').addEventListener('click', novoModelo);
 
     btn.addEventListener('click', async () => {
       const d = dados();
-      const faltando = ['evento', 'inicio', 'cidade', 'participante'].filter(k => !d[k]);
-      faltando.forEach(k => { campos[k].style.borderColor = '#FF6B5C'; });
-      if(faltando.length) return;
+      const lista = escolhidos();
+      const faltaCampo = marcarFaltando(d);
+      if(!lista.length) $('autLista').classList.add('aut-erro');
+      if(faltaCampo || !lista.length) return;
       const jsPDFLib = window.jspdf && window.jspdf.jsPDF;
       if(!jsPDFLib){
         alert('Não foi possível carregar a biblioteca de PDF. Verifique sua conexão com a internet e tente novamente.');
         return;
       }
-      await carregarRecursos();
-      const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
-      doc.addImage(desenhar(d).toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 210, 297);
-      const nome = s => normalizar(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-      await salvarPDF(doc, 'Autorizacao-' + nome(d.evento) + '-' + nome(d.participante) + '.pdf');
+      btn.disabled = true;
+      try {
+        await carregarRecursos();
+        const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
+        for(let i = 0; i < lista.length; i++){
+          btn.textContent = 'Gerando ' + (i + 1) + ' de ' + lista.length + '…';
+          // Devolve a vez pro navegador: sem isso a tela congela em listas grandes.
+          await new Promise(r => setTimeout(r));
+          if(i > 0) doc.addPage('a4');
+          const pagina = desenhar(comPessoa(d, lista[i]));
+          doc.addImage(pagina.toDataURL('image/jpeg', 0.85), 'JPEG', 0, 0, 210, 297);
+          pagina.width = 0;
+        }
+        const nome = s => normalizar(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        const fim = lista.length === 1 ? nome(lista[0].nome) : lista.length + '-participantes';
+        await salvarPDF(doc, 'Autorizacoes-' + nome(d.evento) + '-' + fim + '.pdf');
+      } finally {
+        btn.disabled = false;
+        atualizarContagem();
+      }
     });
   })();
 
