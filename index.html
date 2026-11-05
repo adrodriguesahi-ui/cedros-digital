@@ -1929,6 +1929,8 @@
   .prv-capa{ display:flex; align-items:center; gap:10px; }
   .prv-capa img{ width:88px; height:48px; object-fit:cover; border-radius:8px; flex-shrink:0; }
   .prv-capa-txt{ flex:1; min-width:0; font-size:12px; font-weight:600; color:var(--ink-dim); }
+  #prvBlocoIncluir .aut-filtros{ align-items:center; }
+  #prvBlocoIncluir .pl-input{ flex:1 1 auto; }
   .prv-titulo-itens{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
   .prv-itens{ display:flex; flex-direction:column; gap:10px; }
   .prv-item{
@@ -1945,11 +1947,18 @@
   .prv-alt input[type="radio"]{ width:18px; height:18px; flex-shrink:0; accent-color:var(--accent); }
   .prv-alt-letra{ width:20px; flex-shrink:0; font-size:12.5px; font-weight:800; color:var(--ink-soft); }
   .prv-alt .pl-input{ flex:1; min-width:0; }
+  .prv-imagem{ display:flex; align-items:center; gap:8px; margin-top:8px; }
+  .prv-imagem img{ width:64px; height:48px; object-fit:contain; border-radius:6px; background:#FFFFFF; flex-shrink:0; }
+  .prv-imagem-txt{ flex:1; min-width:0; font-size:11.5px; font-weight:600; color:var(--ink-dim); }
   .prv-sub-opcao{ display:flex; align-items:center; gap:8px; min-height:40px; margin-top:6px; font-size:12.5px; font-weight:700; color:var(--ink-soft); cursor:pointer; }
   .prv-sub-opcao input{ width:18px; height:18px; flex-shrink:0; accent-color:var(--accent); }
   #prvOverlay .pl-modal-actions{ flex-wrap:wrap; }
   #prvOverlay .pl-modal-actions .pl-btn{ flex:1 1 140px; }
   /* ---- Detalhe de especialidade (view-specialty-detail) ---- */
+  /* A rolagem é em coluna flex: sem isto a tabela encolhia e cortava as linhas. */
+  #view-specialty-detail .pl-scroll{ padding:0 max(16px, calc((100% - 640px) / 2)) 24px; }
+  #view-specialty-detail .pl-scroll > *{ flex-shrink:0; }
+  #view-specialty-detail .pl-scroll > .pl-topbar{ width:auto; max-width:none; margin-left:0; margin-right:0; padding-left:0; padding-right:0; }
   .sd-header{ display:flex; flex-direction:column; align-items:center; gap:12px; margin:6px 0 20px; text-align:center; }
   /* Redondo de propósito: a insígnia é um círculo, e a imagem que o clube envia
      quase sempre vem num quadrado de fundo branco. O recorte redondo tira esse
@@ -1962,6 +1971,15 @@
     display:flex; align-items:center; justify-content:center; color:rgba(245,239,225,0.4); overflow:hidden;
   }
   .sd-badge img{ width:100%; height:100%; object-fit:cover; transform:scale(1.08); }
+  .sd-insignia{
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px;
+    margin:0 0 16px; padding:12px 14px; border-radius:14px;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+  }
+  .sd-insignia-txt{ flex:1 1 150px; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .sd-insignia-txt b{ font-size:13.5px; font-weight:800; color:var(--cream); }
+  .sd-insignia-txt span{ font-size:12px; font-weight:600; color:var(--ink-dim); }
+  .sd-insignia-acoes{ display:flex; gap:6px; flex-shrink:0; }
   .sd-name{ margin:0; font-size:19px; font-weight:900; color:var(--cream); }
   .sd-table{
     border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.1);
@@ -13953,6 +13971,17 @@
           <h2 class="sd-name" id="sdName"></h2>
         </div>
 
+        <div class="sd-insignia" id="sdInsignia">
+          <div class="sd-insignia-txt">
+            <b>Insígnia</b>
+            <span id="sdInsigniaStatus">Nenhuma insígnia enviada.</span>
+          </div>
+          <div class="sd-insignia-acoes">
+            <button type="button" class="aut-btn-mini" id="sdInsigniaEnviar">Enviar insígnia</button>
+            <button type="button" class="aut-btn-mini aut-perigo" id="sdInsigniaRemover" style="display:none;">Remover</button>
+          </div>
+        </div>
+
         <div class="sd-table" id="sdTable">
           <div class="sd-table-row"><span>Área</span><span id="sdArea"></span></div>
           <div class="sd-table-row"><span>Código</span><span id="sdCodigo">—</span></div>
@@ -14024,6 +14053,13 @@
             <button type="button" class="aut-btn-mini aut-perigo" id="prvCapaRemover" style="display:none;">Remover</button>
           </div>
           <input type="file" id="prvCapaInput" accept="image/*" hidden>
+          </div>
+          <div id="prvBlocoIncluir" style="display:none;">
+            <label class="pl-field-label">Incluir itens de uma avaliação anterior</label>
+            <div class="aut-filtros">
+              <select class="pl-input" id="prvIncluirDe" aria-label="Avaliação anterior"></select>
+              <button type="button" class="aut-btn-mini" id="prvIncluirBtn">Incluir</button>
+            </div>
           </div>
           <div class="prv-titulo-itens">
             <label class="pl-field-label">Itens da avaliação</label>
@@ -38868,7 +38904,9 @@ const REQ_SUMMARIES = {
     let prvCapa = '';
     let prvAlterada = false;
 
-    const prvNovoItem = () => ({ tipo: 'escrita', texto: '', linhas: 4, alternativas: ['', '', '', ''], pontos: '', subitem: false, resposta: '', correta: null });
+    const prvNovoItem = () => ({ tipo: 'escrita', texto: '', linhas: 4, alternativas: ['', '', '', ''], pontos: '', subitem: false, resposta: '', correta: null, espaco: '', imagem: '' });
+    // Altura em mm do espaço para imagem na página impressa.
+    const PRV_ESPACOS = { pequeno: 35, medio: 60, grande: 95 };
     // O gabarito fica guardado junto: quem tem perfil de Desbravador não vê as avaliações.
     function prvPodeVer(){
       const u = window.__currentUsuario;
@@ -39012,6 +39050,49 @@ const REQ_SUMMARIES = {
         linhaCampos.appendChild(colPontos);
         card.appendChild(linhaCampos);
 
+        card.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Espaço para imagem' }));
+        const espaco = prvEl('select', 'pl-input');
+        espaco.setAttribute('aria-label', 'Espaço para imagem');
+        [['', 'Sem espaço'], ['pequeno', 'Pequeno (3,5 cm)'], ['medio', 'Médio (6 cm)'], ['grande', 'Grande (9,5 cm)']].forEach(([v, t]) => espaco.appendChild(prvEl('option', '', { value: v, textContent: t })));
+        espaco.value = item.espaco || '';
+        espaco.addEventListener('change', () => {
+          item.espaco = espaco.value;
+          if(!item.espaco) item.imagem = '';
+          card.classList.remove('prv-erro');
+          prvMarcarAlterada();
+          prvRenderItens();
+        });
+        card.appendChild(espaco);
+        if(item.espaco){
+          const areaImagem = prvEl('div', 'prv-imagem');
+          if(item.imagem) areaImagem.appendChild(prvEl('img', '', { src: item.imagem, alt: 'Imagem do item' }));
+          areaImagem.appendChild(prvEl('span', 'prv-imagem-txt', { textContent: item.imagem ? 'Esta imagem sai impressa.' : 'Sem imagem, sai um quadro em branco para colar ou desenhar.' }));
+          const arquivo = prvEl('input', '', { type: 'file', accept: 'image/*', hidden: true });
+          arquivo.addEventListener('change', () => {
+            const f = arquivo.files && arquivo.files[0];
+            if(!f) return;
+            const leitor = new FileReader();
+            leitor.onload = async () => {
+              const img = await prvImagem(String(leitor.result), 1000, 1000);
+              if(!img){ prvMsg('Não foi possível abrir esta imagem.', true); return; }
+              item.imagem = img.data;
+              prvMarcarAlterada();
+              prvRenderItens();
+            };
+            leitor.readAsDataURL(f);
+          });
+          areaImagem.appendChild(arquivo);
+          const escolher = prvEl('button', 'aut-btn-mini', { type: 'button', textContent: item.imagem ? 'Trocar' : 'Escolher imagem' });
+          escolher.addEventListener('click', () => arquivo.click());
+          areaImagem.appendChild(escolher);
+          if(item.imagem){
+            const tirar = prvEl('button', 'aut-btn-mini aut-perigo', { type: 'button', textContent: 'Remover' });
+            tirar.addEventListener('click', () => { item.imagem = ''; prvMarcarAlterada(); prvRenderItens(); });
+            areaImagem.appendChild(tirar);
+          }
+          card.appendChild(areaImagem);
+        }
+
         const opcao = prvEl('label', 'prv-sub-opcao');
         const caixa = prvEl('input', '', { type: 'checkbox', checked: item.subitem });
         caixa.addEventListener('change', () => { item.subitem = caixa.checked; prvMarcarAlterada(); prvRenderItens(); });
@@ -39031,21 +39112,46 @@ const REQ_SUMMARIES = {
       document.getElementById('prvCapaBtn').textContent = prvCapa ? 'Trocar' : 'Escolher';
       document.getElementById('prvCapaRemover').style.display = prvCapa ? '' : 'none';
     }
+    // Avaliações anteriores desta especialidade, para copiar os itens.
+    function prvRenderIncluir(){
+      const outras = provas.filter(x => x.id !== provaAtual);
+      document.getElementById('prvBlocoIncluir').style.display = outras.length ? '' : 'none';
+      const lista = document.getElementById('prvIncluirDe');
+      lista.innerHTML = '';
+      outras.forEach(x => {
+        const n = (x.itens || []).length;
+        lista.appendChild(prvEl('option', '', { value: x.id, textContent: x.titulo + ' (' + (n === 1 ? '1 item' : n + ' itens') + ')' }));
+      });
+    }
+    function prvIncluirItens(){
+      const origem = provas.find(x => String(x.id) === document.getElementById('prvIncluirDe').value);
+      if(!origem) return;
+      const copia = JSON.parse(JSON.stringify(origem.itens || [])).map(i => Object.assign(prvNovoItem(), i));
+      // O primeiro item em branco de uma avaliação nova sai para não sobrar vazio.
+      prvItens = prvItens.filter(i => i.texto.trim() || i.tipo !== 'escrita' || i.espaco).concat(copia);
+      prvMarcarAlterada();
+      prvRenderItens();
+      const n = copia.length;
+      prvMsg(n === 1 ? '1 item incluído. Revise e salve.' : n + ' itens incluídos. Revise e salve.');
+    }
     function prvAbrir(prova){
       provaAtual = prova ? prova.id : null;
+      // Avaliação nova parte do modelo gravado por último nesta especialidade.
+      const base = prova || provas[provas.length - 1] || null;
       let associacaoPadrao = 'Associação Paulistana – AP';
       try { associacaoPadrao = localStorage.getItem(PRV_MEMORIA) || associacaoPadrao; } catch(e){}
-      prvCampos.modelo.value = (prova && prova.modelo) || 'cedros';
+      prvCampos.modelo.value = (base && base.modelo) || 'cedros';
       prvCampos.nome.value = prova ? prova.titulo : 'Avaliação de ' + currentName;
-      prvCampos.associacao.value = prova ? (prova.associacao || '') : associacaoPadrao;
-      prvCampos.regiao.value = prova ? (prova.regiao || '') : '9ª Região';
-      prvCampos.abertura.value = (prova && prova.abertura) || '';
+      prvCampos.associacao.value = base ? (base.associacao || '') : associacaoPadrao;
+      prvCampos.regiao.value = base ? (base.regiao || '') : '9ª Região';
+      prvCampos.abertura.value = (base && base.abertura) || '';
       prvAjustarModelo();
-      prvCapa = (prova && prova.capa_data) || '';
+      prvCapa = (base && base.capa_data) || '';
       prvItens = prova ? JSON.parse(JSON.stringify(prova.itens || [])).map(i => Object.assign(prvNovoItem(), i)) : [prvNovoItem()];
       prvAlterada = false;
       document.getElementById('prvTitulo').textContent = prova ? 'Editar avaliação' : 'Criar avaliação';
       prvMsg('');
+      prvRenderIncluir();
       prvRenderCapa();
       prvRenderItens();
       prvOverlay.classList.add('show');
@@ -39069,7 +39175,7 @@ const REQ_SUMMARIES = {
           if(i.tipo === 'multipla' && i.correta === k) correta = alternativas.length;
           alternativas.push(a.trim());
         });
-        if(!i.texto.trim()){
+        if(!i.texto.trim() && !i.espaco){
           if(i.tipo === 'multipla' && alternativas.length){ cards[idx].classList.add('prv-erro'); incompleto = true; }
           return;
         }
@@ -39141,6 +39247,7 @@ const REQ_SUMMARIES = {
       provaAtual = data[0].id;
       prvAlterada = false;
       await prvCarregar();
+      prvRenderIncluir();
       document.getElementById('prvTitulo').textContent = 'Editar avaliação';
       prvMsg('Avaliação salva.');
     }
@@ -39218,12 +39325,26 @@ const REQ_SUMMARIES = {
         doc.setFont(e.fonte, estiloTexto);
         const linhas = doc.splitTextToSize(texto, e.dir - xTexto);
         const primeira = item.tipo === 'escrita' ? (item.linhas > 0 ? 7 : 0) : e.linha;
-        garantir(linhas.length * e.linha + primeira);
+        const altCaixa = PRV_ESPACOS[item.espaco] || 0;
+        garantir(linhas.length * e.linha + (altCaixa ? altCaixa + 3 : 0) + primeira);
         doc.setFont(e.fonte, 'bold');
         doc.text(rotulo, xRotulo, y);
         doc.setFont(e.fonte, estiloTexto);
         linhas.forEach(l => { doc.text(l, xTexto, y); y += e.linha; });
         doc.setFont(e.fonte, 'normal');
+        if(altCaixa){
+          const topo = y - 2.5, largura = e.dir - xRotulo;
+          if(item._img){
+            prvEncaixar(doc, item._img, xRotulo + 1, topo + 1, largura - 2, altCaixa - 2);
+          } else {
+            doc.setDrawColor(140, 140, 140);
+            doc.setLineWidth(0.25);
+            doc.setLineDashPattern([2, 1.5], 0);
+            doc.rect(xRotulo, topo, largura, altCaixa, 'S');
+            doc.setLineDashPattern([], 0);
+          }
+          y = topo + altCaixa + 6;
+        }
         if(item.tipo === 'escrita'){
           doc.setDrawColor(e.corLinha[0], e.corLinha[1], e.corLinha[2]);
           doc.setLineWidth(0.2);
@@ -39511,12 +39632,17 @@ const REQ_SUMMARIES = {
     function prvArquivo(texto){
       return String(texto).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     }
-    async function prvGerarPdf(p){
+    async function prvGerarPdf(prova){
       const jsPDFLib = window.jspdf && window.jspdf.jsPDF;
       if(!jsPDFLib){
         alert('Não foi possível carregar a biblioteca de PDF. Verifique sua conexão com a internet e tente novamente.');
         return;
       }
+      // Imagens dos itens: lidas antes, porque o desenho do PDF não espera.
+      const itens = await Promise.all(prova.itens.map(async i => i.imagem
+        ? Object.assign({}, i, { _img: await prvImagem(i.imagem, 1000, 1000) })
+        : i));
+      const p = Object.assign({}, prova, { itens });
       const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
       if(p.modelo === 'nota_gabarito') await prvPdfAzul(doc, p);
       else if(p.modelo === 'ficha_completa') await prvPdfFicha(doc, p);
@@ -39639,6 +39765,7 @@ const REQ_SUMMARIES = {
       };
       leitor.readAsDataURL(arquivo);
     });
+    document.getElementById('prvIncluirBtn').addEventListener('click', prvIncluirItens);
     document.getElementById('prvSalvar').addEventListener('click', prvSalvar);
     document.getElementById('prvGabarito').addEventListener('click', () => {
       const dados = prvColetar();
@@ -39654,20 +39781,65 @@ const REQ_SUMMARIES = {
       finally { botao.disabled = false; botao.textContent = 'Gerar PDF'; }
     });
 
+    // Área da insígnia: envio, troca e remoção, visíveis em toda especialidade.
+    function renderInsignia(){
+      const tem = !!(typeof spPhotoMap !== 'undefined' && spPhotoMap[currentName]);
+      badgeEl.innerHTML = badgeHTML();
+      document.getElementById('sdInsigniaStatus').textContent = tem ? 'Insígnia cadastrada.' : 'Nenhuma insígnia enviada.';
+      document.getElementById('sdInsigniaEnviar').textContent = tem ? 'Trocar' : 'Enviar insígnia';
+      document.getElementById('sdInsigniaRemover').style.display = tem ? '' : 'none';
+    }
+    // Mantém a miniatura do catálogo igual ao que acabou de mudar aqui.
+    function atualizarCardsDoCatalogo(nome, foto){
+      document.querySelectorAll('.sp-card').forEach(card => {
+        if(card.dataset.name !== nome) return;
+        card.dataset.foto = foto || '';
+        const thumb = card.querySelector('.am-thumb');
+        if(thumb) thumb.innerHTML = spThumbHTML(foto);
+      });
+    }
+    function enviarInsignia(){
+      if(!window.__spTriggerPhotoUpload) return;
+      const nome = currentName;
+      window.__spTriggerPhotoUpload(nome, (foto) => {
+        atualizarCardsDoCatalogo(nome, foto);
+        if(nome === currentName) renderInsignia();
+      });
+    }
+    document.getElementById('sdInsigniaEnviar').addEventListener('click', enviarInsignia);
+    document.getElementById('sdInsigniaRemover').addEventListener('click', async () => {
+      const nome = currentName;
+      if(!confirm('Remover a insígnia de "' + nome + '"?')) return;
+      if(supa){
+        const { error } = await supa.from('especialidade_fotos').delete().eq('nome', nome);
+        if(error){
+          alert('Não foi possível remover a insígnia.\n\nDetalhe: ' + (error.message || error.hint || error.code || 'erro desconhecido'));
+          return;
+        }
+      }
+      window.__spGuardarFoto(nome, '');
+      atualizarCardsDoCatalogo(nome, '');
+      if(nome === currentName) renderInsignia();
+    });
+
     window.__spOpenDetail = function(name, area){
       currentName = name;
       currentArea = area;
       nameEl.textContent = name;
       areaEl.textContent = area;
-      badgeEl.innerHTML = badgeHTML();
+      const u = window.__currentUsuario;
+      document.getElementById('sdInsignia').style.display = u && u.papel !== 'Desbravador' ? '' : 'none';
+      renderInsignia();
+      // A insígnia só vem do banco quando o card aparece no catálogo; quem
+      // chega por outro caminho veria a especialidade como se não tivesse.
+      if(window.__spFotoDe){
+        window.__spFotoDe(name).then(() => { if(name === currentName) renderInsignia(); });
+      }
       showView('view-specialty-detail');
       loadDetalhe();
     };
 
-    badgeEl.addEventListener('click', () => {
-      if(!window.__spTriggerPhotoUpload) return;
-      window.__spTriggerPhotoUpload(currentName, () => { badgeEl.innerHTML = badgeHTML(); });
-    });
+    badgeEl.addEventListener('click', enviarInsignia);
 
     backBtn.addEventListener('click', (e) => { e.preventDefault(); showView('view-specialties'); });
 
