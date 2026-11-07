@@ -3536,9 +3536,10 @@
   .cl-hub-row-age{ font-size:11.5px; color:rgba(245,239,225,0.45); }
 
   /* ---- Coordenação de Classes ---- */
-  .co-wrap{ padding:4px 16px calc(120px + env(safe-area-inset-bottom,0px)); max-width:760px; margin:0 auto; }
+  .co-wrap{ padding:4px 16px calc(120px + env(safe-area-inset-bottom,0px)); max-width:760px; margin:0 auto; box-sizing:border-box; }
+  .co-wrap *{ box-sizing:border-box; }
   .co-tabs{ display:flex; gap:6px; background:rgba(255,255,255,0.05); border-radius:12px; padding:4px; margin-bottom:14px; }
-  .co-tab{ flex:1; border:0; background:transparent; color:rgba(245,239,225,0.65); font:inherit; font-size:13px; font-weight:800; padding:9px 8px; border-radius:9px; cursor:pointer; }
+  .co-tab{ flex:1; min-width:0; border:0; background:transparent; color:rgba(245,239,225,0.65); font:inherit; font-size:12.5px; font-weight:800; padding:9px 4px; border-radius:9px; cursor:pointer; }
   .co-tab.active{ background:var(--accent); color:#0D130C; }
   .co-resumo{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
   .co-stat{ background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:10px 8px; text-align:center; }
@@ -3546,8 +3547,8 @@
   .co-stat span{ font-size:10.5px; font-weight:700; color:rgba(245,239,225,0.6); }
   .co-filtros{ display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
   .co-filtros .co-input{ flex:1 1 150px; margin:0; }
-  .co-input{ width:100%; box-sizing:border-box; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--cream); border-radius:10px; padding:11px 12px; font:inherit; font-size:14px; margin-bottom:8px; }
-  .co-input option{ color:#1B2420; }
+  .co-input{ width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--cream); border-radius:10px; padding:11px 12px; font:inherit; font-size:14px; margin-bottom:8px; color-scheme:dark; }
+  .co-input option, .co-input optgroup{ color:#1B2420; }
   .co-label{ display:block; font-size:11.5px; font-weight:800; color:rgba(245,239,225,0.6); margin:6px 2px 4px; }
   .co-lista{ display:flex; flex-direction:column; gap:8px; }
   .co-pessoa{ display:block; width:100%; text-align:left; font:inherit; color:var(--cream); cursor:pointer; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:12px 14px; }
@@ -3574,10 +3575,27 @@
   .co-req{ display:flex; gap:8px; font-size:12px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
   .co-req em{ font-style:normal; font-weight:800; flex-shrink:0; width:84px; }
   .co-req em.done{ color:var(--accent); } .co-req em.progress{ color:var(--gold); } .co-req em.todo{ color:rgba(245,239,225,0.4); }
-  .co-esp{ display:flex; justify-content:space-between; gap:8px; font-size:13px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .co-ano{ display:flex; justify-content:space-between; font-size:12px; font-weight:900; letter-spacing:.03em; color:var(--gold); margin:12px 0 2px; padding-top:2px; }
+  .co-ano:first-child{ margin-top:0; }
+  .co-esp{ display:flex; align-items:center; gap:8px; font-size:13px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .co-esp > span{ flex:1; min-width:0; }
   .co-esp small{ color:rgba(245,239,225,0.55); flex-shrink:0; }
+  .co-esp-del{ border:0; background:none; color:rgba(245,239,225,0.4); font-size:16px; line-height:1; cursor:pointer; padding:4px 6px; border-radius:6px; }
+  .co-esp-del:hover{ color:#ff7b7b; background:rgba(255,255,255,0.06); }
+  .co-novo{ display:grid; grid-template-columns:1fr; gap:0; margin-bottom:12px; }
+  .co-novo .co-input{ margin-bottom:6px; }
+  .co-evo-linha{ display:flex; justify-content:space-between; gap:8px; font-size:12.5px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .co-evo-linha small{ color:rgba(245,239,225,0.55); }
+  .co-evo-linha b{ color:var(--cream); }
   .co-acoes{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
   .co-acoes .co-input{ flex:1 1 180px; margin:0; }
+  .co-graf svg{ display:block; width:100%; height:auto; }
+  .co-graf .eixo{ fill:rgba(245,239,225,0.55); font-size:10px; font-family:inherit; }
+  .co-graf .grade{ stroke:rgba(245,239,225,0.1); stroke-width:1; }
+  .co-graf .valor{ fill:var(--cream); font-size:11px; font-weight:800; font-family:inherit; text-anchor:middle; }
+  .co-graf .barra{ transition:opacity .12s; }
+  .co-graf .barra.dim{ opacity:.45; }
+  .co-tip{ position:fixed; z-index:60; pointer-events:none; background:#101a14; color:var(--cream); border:1px solid rgba(255,255,255,0.18); border-radius:9px; padding:6px 10px; font-size:12px; font-weight:700; box-shadow:0 6px 18px rgba(0,0,0,0.45); }
 
   .cl-area-section{ margin-bottom:6px; }
   .cl-area-heading{
@@ -14162,8 +14180,9 @@
     </section>
 
     <!-- ===== VIEW: COORDENAÇÃO DE CLASSES (só Administrador e Coordenador de Classes) =====
-         Ficha de cada desbravador (classes e especialidades) e emissão de
-         relatórios e declarações em PDF. Lógica no módulo "Coordenação de Classes". -->
+         Ficha de cada desbravador (classes e especialidades por ano), cadastro de
+         especialidades por data, evolução anual em gráfico e emissão de relatórios
+         e declarações em PDF. Lógica no módulo "Coordenação de Classes". -->
     <section class="view view-planning" id="view-coord">
       <div class="pl-scroll">
 
@@ -14178,6 +14197,7 @@
         <div class="co-wrap">
           <div class="co-tabs" role="tablist">
             <button type="button" class="co-tab active" data-co-tab="lista" role="tab">Desbravadores</button>
+            <button type="button" class="co-tab" data-co-tab="evo" role="tab">Evolução</button>
             <button type="button" class="co-tab" data-co-tab="rel" role="tab">Relatórios</button>
           </div>
 
@@ -14192,6 +14212,23 @@
               <p class="co-vazio" id="coVazio" style="display:none;">Nenhum desbravador encontrado.</p>
             </div>
             <div id="coDetalhe" style="display:none;"></div>
+          </div>
+
+          <div id="coPaneEvo" style="display:none;">
+            <div class="co-card">
+              <h4 class="co-card-titulo">Especialidades concluídas por ano</h4>
+              <div id="coGrafEspec"></div>
+            </div>
+            <div class="co-card">
+              <h4 class="co-card-titulo">Classes concluídas por ano</h4>
+              <div id="coGrafClasses"></div>
+              <p class="co-nota">O ano da classe é o da última marcação de requisito concluído; é aproximado se a classe foi editada depois.</p>
+            </div>
+            <div class="co-card">
+              <h4 class="co-card-titulo">Resumo por ano</h4>
+              <div id="coTabEvo"></div>
+              <button type="button" class="co-btn" id="coEvoPdf" style="margin-top:10px;">Gerar PDF da evolução</button>
+            </div>
           </div>
 
           <div id="coPaneRel" style="display:none;">
@@ -14217,12 +14254,15 @@
             </div>
             <div class="co-card">
               <h4 class="co-card-titulo">Especialidades concluídas</h4>
-              <p class="co-nota">Quem concluiu o quê, no ano escolhido.</p>
+              <p class="co-nota">Quem concluiu o quê, no ano escolhido ou em todos os anos.</p>
               <select id="coRelAno" class="co-input"></select>
               <button type="button" class="co-btn" id="coRelEspecBtn">Gerar PDF</button>
             </div>
           </div>
         </div>
+
+        <div class="co-tip" id="coTip" style="display:none;" role="status"></div>
+        <datalist id="coCatalogo"></datalist>
 
       </div>
     </section>
@@ -37039,27 +37079,37 @@ const REQ_SUMMARIES = {
 
   // ---- Coordenação de Classes ----
   // Área só do Administrador e do Coordenador de Classes: a vida de cada
-  // desbravador (classes que tem e especialidades concluídas) e a emissão de
-  // ficha, declarações e relatórios em PDF. Lê os dados que Classes Regulares já
-  // carregou (window.__clFichaDados) e as especialidades concluídas por usuário.
+  // desbravador (classes que tem e especialidades concluídas, por ano), o
+  // cadastro de especialidades por data, a evolução anual em gráfico e a
+  // emissão de ficha, declarações e relatórios em PDF. Lê os dados que Classes
+  // Regulares já carregou (window.__clFichaDados) e as especialidades concluídas.
   (function(){
     const view = document.getElementById('view-coord');
     if(!view) return;
     const $ = id => document.getElementById(id);
-    const ORDEM = ['Amigo','Companheiro','Pesquisador','Pioneiro','Excursionista','Guia','Classe Agrupada','Cartão de Liderança','Líder Master','Líder Master Avançado'];
+    const REGULARES = ['Amigo','Companheiro','Pesquisador','Pioneiro','Excursionista','Guia'];
+    const LIDERANCA = ['Cartão de Liderança','Líder Master','Líder Master Avançado'];
+    const ORDEM = REGULARES.concat(['Classe Agrupada'], LIDERANCA);
     const norm = s => String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
     const ordemClasse = c => { const i = ORDEM.indexOf(c); return i === -1 ? 99 : i; };
     const dataBr = iso => iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '';
-    const porNome = (a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR', { sensitivity: 'base' });
+    const cmpNome = (a, b) => String(a).localeCompare(String(b), 'pt-BR', { sensitivity: 'base' });
     const slug = s => norm(s).replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'documento';
+    const anoDe = iso => iso ? parseInt(String(iso).slice(0, 4), 10) : 0;
+    const plural = (n, um, varios) => n + ' ' + (n === 1 ? um : varios);
     const STATUS_TXT = { done: 'Concluído', progress: 'Em andamento', todo: 'Pendente' };
 
     let pessoas = [];
-    let especPorUsuario = {};   // usuario_id -> [{ especialidade, categoria, ano, data_conclusao }]
+    let especPorUsuario = {};   // usuario_id -> [{ id, especialidade, categoria, ano, data_conclusao }]
     let todasEspec = [];
+    let feitosEm = {};          // desbravador_id -> { requisito_titulo: updated_at } (só os concluídos)
     let aberta = null;          // chave da pessoa com a ficha aberta
     let carregando = false;
+
+    // Nome -> área do catálogo de especialidades do app (SPECIALTY_DB).
+    const CATEGORIA_DO_NOME = {};
+    try { Object.keys(SPECIALTY_DB).forEach(area => SPECIALTY_DB[area].forEach(n => { CATEGORIA_DO_NOME[n] = area; })); } catch(e){}
 
     function podeAcessar(){
       const u = window.__currentUsuario;
@@ -37077,10 +37127,19 @@ const REQ_SUMMARIES = {
       if(r.feitos || r.andamento) return 'Em andamento';
       return 'Não iniciada';
     }
+    // Quando a classe foi concluída: a data da última marcação de requisito feito.
+    function concluidaEm(r){
+      if(!(r.total && r.pct === 100)) return '';
+      const m = feitosEm[r.id] || {};
+      let max = '';
+      r.reqs.forEach(q => { const d = m[q.titulo]; if(d && d > max) max = d; });
+      return max;
+    }
     function montarPessoas(){
       const linhas = window.__clFichaDados ? window.__clFichaDados() : [];
       const mapa = new Map();
       linhas.forEach(r => {
+        r.concluidaEm = concluidaEm(r);
         const chave = r.usuarioId || ('n:' + norm(r.nome));
         if(!mapa.has(chave)) mapa.set(chave, { chave: chave, nome: r.nome, usuarioId: r.usuarioId, nasc: r.nasc || '', classes: [], especs: [] });
         const p = mapa.get(chave);
@@ -37090,22 +37149,37 @@ const REQ_SUMMARIES = {
       pessoas = Array.from(mapa.values());
       pessoas.forEach(p => {
         p.classes.sort((a, b) => ordemClasse(a.classe) - ordemClasse(b.classe));
-        p.especs = p.usuarioId ? (especPorUsuario[p.usuarioId] || []) : [];
+        atualizarEspecDe(p);
       });
-      pessoas.sort(porNome);
+      pessoas.sort((a, b) => cmpNome(a.nome, b.nome));
+    }
+    function atualizarEspecDe(p){
+      p.especs = (p.usuarioId ? (especPorUsuario[p.usuarioId] || []) : []).slice()
+        .sort((a, b) => (b.data_conclusao || (b.ano + '-00')).localeCompare(a.data_conclusao || (a.ano + '-00')));
     }
     async function carregarEspecialidades(){
       especPorUsuario = {}; todasEspec = [];
       if(!supa) return;
       const { data, error } = await supa.from('especialidades_concluidas')
-        .select('usuario_id, especialidade, categoria, ano, data_conclusao')
+        .select('id, usuario_id, especialidade, categoria, ano, data_conclusao')
         .order('ano', { ascending: false });
       if(error){ console.error('Erro ao carregar especialidades concluídas:', error.message); return; }
       todasEspec = data || [];
-      todasEspec.forEach(e => {
-        if(!especPorUsuario[e.usuario_id]) especPorUsuario[e.usuario_id] = [];
-        especPorUsuario[e.usuario_id].push(e);
-      });
+      todasEspec.forEach(e => { (especPorUsuario[e.usuario_id] = especPorUsuario[e.usuario_id] || []).push(e); });
+    }
+    // Datas das marcações concluídas (pra saber em que ano cada classe fechou).
+    // Em páginas, porque o banco devolve no máximo ~1000 linhas por consulta.
+    async function carregarConclusoes(){
+      feitosEm = {};
+      if(!supa) return;
+      const passo = 1000;
+      for(let de = 0; ; de += passo){
+        const { data, error } = await supa.from('progresso_requisitos')
+          .select('desbravador_id, requisito_titulo, updated_at').eq('status', 'done').order('id').range(de, de + passo - 1);
+        if(error){ console.error('Erro ao carregar datas de conclusão:', error.message); break; }
+        (data || []).forEach(r => { (feitosEm[r.desbravador_id] = feitosEm[r.desbravador_id] || {})[r.requisito_titulo] = r.updated_at; });
+        if(!data || data.length < passo) break;
+      }
     }
     async function carregar(){
       if(carregando) return;
@@ -37113,7 +37187,7 @@ const REQ_SUMMARIES = {
       $('coLista').innerHTML = '<p class="co-vazio">Carregando…</p>';
       try {
         if(window.__clRecarregarDados) await window.__clRecarregarDados();
-        await carregarEspecialidades();
+        await Promise.all([carregarEspecialidades(), carregarConclusoes()]);
       } catch(e){ console.error('Coordenação de Classes:', e); }
       carregando = false;
       montarPessoas();
@@ -37121,16 +37195,110 @@ const REQ_SUMMARIES = {
       renderTudo();
     }
 
+    // ---- Evolução por ano ----
+    // [{ ano, especs, classes, porClasse:{classe:n}, pessoas:n }] — todos os anos
+    // entre o primeiro e o último com registro, inclusive os zerados.
+    function evolucao(){
+      const por = {};
+      const g = ano => por[ano] || (por[ano] = { ano: ano, especs: 0, classes: 0, porClasse: {}, quem: new Set() });
+      todasEspec.forEach(e => { if(!e.ano) return; const x = g(e.ano); x.especs++; x.quem.add(e.usuario_id); });
+      pessoas.forEach(p => p.classes.forEach(c => {
+        if(!c.concluidaEm) return;
+        const x = g(anoDe(c.concluidaEm)); x.classes++; x.porClasse[c.classe] = (x.porClasse[c.classe] || 0) + 1;
+      }));
+      const anos = Object.keys(por).map(Number);
+      if(!anos.length) return [];
+      const min = Math.min.apply(null, anos), max = Math.max.apply(null, anos);
+      const saida = [];
+      for(let a = min; a <= max; a++){ const x = por[a] || g(a); x.pessoas = x.quem.size; saida.push(x); }
+      return saida;
+    }
+    function textoPorClasse(x){
+      return Object.keys(x.porClasse).sort((a, b) => ordemClasse(a) - ordemClasse(b)).map(c => c + ' ' + x.porClasse[c]).join(' · ');
+    }
+
+    // ---- Gráfico de barras (SVG) ----
+    function escalaMax(max){
+      let passo = Math.max(1, Math.pow(10, Math.floor(Math.log10(Math.max(max, 1) / 4))));
+      [1, 2, 5, 10].some(m => { if(passo * m >= max / 4){ passo = passo * m; return true; } return false; });
+      passo = Math.max(1, passo);
+      return { passo: passo, topo: Math.ceil(max / passo) * passo };
+    }
+    function graficoBarras(el, serie, cor, unidade){
+      if(!serie.length || !serie.some(s => s.valor > 0)){ el.innerHTML = '<p class="co-vazio">Ainda não há registros para mostrar.</p>'; return; }
+      const W = 340, H = 176, mL = 30, mR = 8, mT = 16, mB = 26;
+      const max = Math.max.apply(null, serie.map(s => s.valor));
+      const esc2 = escalaMax(max);
+      const innerW = W - mL - mR, innerH = H - mT - mB, base = mT + innerH;
+      const slot = innerW / serie.length, bw = Math.min(30, slot * 0.58), r = 4;
+      const y = v => base - (v / esc2.topo) * innerH;
+      let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Gráfico de barras por ano">';
+      for(let v = 0; v <= esc2.topo; v += esc2.passo){
+        s += '<line class="grade" x1="' + mL + '" x2="' + (W - mR) + '" y1="' + y(v) + '" y2="' + y(v) + '"/>' +
+             '<text class="eixo" x="' + (mL - 5) + '" y="' + (y(v) + 3.5) + '" text-anchor="end">' + v + '</text>';
+      }
+      const iMax = serie.findIndex(q => q.valor === max), iUlt = serie.length - 1;
+      serie.forEach((q, i) => {
+        const x = mL + slot * i + (slot - bw) / 2, h = (q.valor / esc2.topo) * innerH, topo = base - h;
+        const rr = Math.min(r, h);
+        if(q.valor > 0){
+          s += '<path class="barra" fill="' + cor + '" d="M' + x + ',' + base + ' V' + (topo + rr) + ' Q' + x + ',' + topo + ' ' + (x + rr) + ',' + topo +
+               ' H' + (x + bw - rr) + ' Q' + (x + bw) + ',' + topo + ' ' + (x + bw) + ',' + (topo + rr) + ' V' + base + ' Z"/>';
+          if(i === iMax || i === iUlt) s += '<text class="valor" x="' + (x + bw / 2) + '" y="' + (topo - 4) + '">' + q.valor + '</text>';
+        }
+        if(serie.length <= 8 || i % 2 === iUlt % 2) s += '<text class="eixo" x="' + (x + bw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">' + q.ano + '</text>';
+        s += '<rect x="' + (mL + slot * i) + '" y="' + mT + '" width="' + slot + '" height="' + innerH + '" fill="transparent" data-tip="' +
+             esc(q.ano + ': ' + plural(q.valor, unidade[0], unidade[1])) + '" data-i="' + i + '"/>';
+      });
+      el.innerHTML = s + '</svg>';
+      el.classList.add('co-graf');
+    }
+    function ligarTooltip(el){
+      const tip = $('coTip');
+      el.addEventListener('pointermove', e => {
+        const t = e.target.closest('[data-tip]');
+        if(!t){ tip.style.display = 'none'; return; }
+        tip.textContent = t.getAttribute('data-tip');
+        tip.style.display = '';
+        tip.style.left = Math.min(window.innerWidth - tip.offsetWidth - 8, e.clientX + 12) + 'px';
+        tip.style.top = Math.max(8, e.clientY - 38) + 'px';
+      });
+      el.addEventListener('pointerleave', () => { tip.style.display = 'none'; });
+    }
+    function renderEvolucao(){
+      const ev = evolucao();
+      graficoBarras($('coGrafEspec'), ev.map(x => ({ ano: x.ano, valor: x.especs })), 'var(--gold)', ['especialidade', 'especialidades']);
+      graficoBarras($('coGrafClasses'), ev.map(x => ({ ano: x.ano, valor: x.classes })), 'var(--accent)', ['classe concluída', 'classes concluídas']);
+      $('coTabEvo').innerHTML = ev.length
+        ? ev.slice().reverse().map(x =>
+            '<div class="co-evo-linha"><b>' + x.ano + '</b><span>' + plural(x.classes, 'classe', 'classes') + ' · ' + plural(x.especs, 'especialidade', 'especialidades') +
+            ' <small>(' + plural(x.pessoas, 'desbravador', 'desbravadores') + ')</small></span></div>' +
+            (textoPorClasse(x) ? '<div class="co-evo-linha"><small>' + esc(textoPorClasse(x)) + '</small></div>' : '')).join('')
+        : '<p class="co-vazio">Sem registros ainda.</p>';
+    }
+
     // ---- Interface ----
+    function opcoesClasses(classes){
+      const grupo = (rot, lista) => { const l = classes.filter(c => lista.indexOf(c) !== -1); return l.length ? '<optgroup label="' + rot + '">' + l.map(c => '<option value="' + esc(c) + '">' + esc(c) + '</option>').join('') + '</optgroup>' : ''; };
+      const outras = classes.filter(c => REGULARES.indexOf(c) === -1 && LIDERANCA.indexOf(c) === -1);
+      return grupo('Classes Regulares', REGULARES) + grupo('Liderança', LIDERANCA) +
+        (outras.length ? '<optgroup label="Outras">' + outras.map(c => '<option value="' + esc(c) + '">' + esc(c) + '</option>').join('') + '</optgroup>' : '');
+    }
     function preencherSeletores(){
       const classes = Array.from(new Set(pessoas.flatMap(p => p.classes.map(c => c.classe)))).sort((a, b) => ordemClasse(a) - ordemClasse(b));
       const atual = $('coFiltroClasse').value;
-      $('coFiltroClasse').innerHTML = '<option value="">Todas as classes</option>' + classes.map(c => '<option value="' + esc(c) + '">' + esc(c) + '</option>').join('');
+      $('coFiltroClasse').innerHTML = '<option value="">Todas as classes</option>' + opcoesClasses(classes);
       $('coFiltroClasse').value = classes.indexOf(atual) !== -1 ? atual : '';
-      $('coRelClasse').innerHTML = classes.map(c => '<option value="' + esc(c) + '">' + esc(c) + '</option>').join('');
-      const anos = Array.from(new Set(todasEspec.map(e => e.ano))).sort((a, b) => b - a);
+      $('coRelClasse').innerHTML = opcoesClasses(classes);
+      const anos = Array.from(new Set(todasEspec.map(e => e.ano).filter(Boolean))).sort((a, b) => b - a);
       if(!anos.length) anos.push(new Date().getFullYear());
-      $('coRelAno').innerHTML = anos.map(a => '<option value="' + a + '">' + a + '</option>').join('');
+      $('coRelAno').innerHTML = '<option value="todos">Todos os anos</option>' + anos.map(a => '<option value="' + a + '">' + a + '</option>').join('');
+      const cat = $('coCatalogo');
+      if(cat && !cat.children.length){
+        const f = document.createDocumentFragment();
+        Object.keys(CATEGORIA_DO_NOME).forEach(n => { const o = document.createElement('option'); o.value = n; f.appendChild(o); });
+        cat.appendChild(f);
+      }
     }
     function renderResumo(){
       const concluidas = pessoas.reduce((n, p) => n + p.classes.filter(c => c.total && c.pct === 100).length, 0);
@@ -37149,7 +37317,7 @@ const REQ_SUMMARIES = {
           '<span class="co-pessoa-nome">' + esc(p.nome) + '</span>' +
           '<span class="co-chips">' +
             p.classes.map(c => '<span class="co-chip' + (c.total && c.pct === 100 ? ' ok' : '') + '">' + esc(c.classe) + ' · ' + c.pct + '%</span>').join('') +
-            (p.especs.length ? '<span class="co-chip esp">' + p.especs.length + ' especialidade' + (p.especs.length === 1 ? '' : 's') + '</span>' : '') +
+            (p.especs.length ? '<span class="co-chip esp">' + plural(p.especs.length, 'especialidade', 'especialidades') + '</span>' : '') +
           '</span>' +
         '</button>').join('');
       $('coVazio').style.display = lista.length ? 'none' : '';
@@ -37157,6 +37325,7 @@ const REQ_SUMMARIES = {
     function renderTudo(){
       renderResumo();
       renderLista();
+      renderEvolucao();
       if(aberta) abrirFicha(aberta); else mostrarLista();
     }
     function idadeDe(nasc){
@@ -37171,6 +37340,20 @@ const REQ_SUMMARIES = {
       $('coDetalhe').style.display = 'none';
       $('coListaWrap').style.display = '';
     }
+    // Especialidades de uma pessoa agrupadas por ano (mais recente primeiro).
+    function porAno(especs){
+      const g = {};
+      especs.forEach(e => { (g[e.ano || 0] = g[e.ano || 0] || []).push(e); });
+      return Object.keys(g).map(Number).sort((a, b) => b - a).map(a => ({ ano: a, itens: g[a] }));
+    }
+    // Resumo ano a ano de uma pessoa (classes concluídas + especialidades).
+    function evolucaoDe(p){
+      const g = {};
+      const x = a => g[a] || (g[a] = { ano: a, classes: [], especs: 0 });
+      p.especs.forEach(e => { if(e.ano) x(e.ano).especs++; });
+      p.classes.forEach(c => { if(c.concluidaEm) x(anoDe(c.concluidaEm)).classes.push(c.classe); });
+      return Object.keys(g).map(Number).sort((a, b) => b - a).map(a => g[a]);
+    }
     function abrirFicha(chave){
       const p = pessoas.find(x => x.chave === chave);
       if(!p){ mostrarLista(); return; }
@@ -37180,19 +37363,35 @@ const REQ_SUMMARIES = {
         '<div class="co-card co-det">' +
           '<div class="co-classe-top"><span>' + esc(c.classe) + '</span><span class="co-classe-pct">' + c.pct + '%</span></div>' +
           '<div class="co-barra"><i style="width:' + c.pct + '%"></i></div>' +
-          '<div class="co-classe-sub">' + esc(situacao(c)) + ' · ' + c.feitos + ' de ' + c.total + ' requisitos concluídos' + (c.andamento ? ' · ' + c.andamento + ' em andamento' : '') + '</div>' +
+          '<div class="co-classe-sub">' + esc(situacao(c)) + (c.concluidaEm ? ' em ' + dataBr(c.concluidaEm) : '') + ' · ' + c.feitos + ' de ' + c.total + ' requisitos concluídos' + (c.andamento ? ' · ' + c.andamento + ' em andamento' : '') + '</div>' +
           (c.reqs.length ? '<details><summary>Ver requisitos</summary>' + c.reqs.map(r =>
             '<div class="co-req"><em class="' + r.status + '">' + STATUS_TXT[r.status] + '</em><span>' + esc(r.titulo) + '</span></div>').join('') + '</details>' : '') +
         '</div>').join('') || '<p class="co-nota">Sem classe cadastrada.</p>';
       const especHtml = p.especs.length
-        ? p.especs.map(e => '<div class="co-esp"><span>' + esc(e.especialidade) + (e.categoria ? ' <small>· ' + esc(e.categoria) + '</small>' : '') + '</span><small>' + (e.data_conclusao ? dataBr(e.data_conclusao) : e.ano) + '</small></div>').join('')
-        : '<p class="co-nota">' + (p.usuarioId ? 'Nenhuma especialidade concluída registrada.' : 'Sem conta no app, então não há especialidades registradas.') + '</p>';
+        ? porAno(p.especs).map(g =>
+            '<div class="co-ano"><span>' + (g.ano || 'Sem ano') + '</span><span>' + plural(g.itens.length, 'especialidade', 'especialidades') + '</span></div>' +
+            g.itens.map(e => '<div class="co-esp"><span>' + esc(e.especialidade) + (e.categoria ? ' <small>· ' + esc(e.categoria) + '</small>' : '') + '</span><small>' + (e.data_conclusao ? dataBr(e.data_conclusao) : e.ano) + '</small>' +
+              '<button type="button" class="co-esp-del" data-del="' + esc(e.id) + '" aria-label="Remover ' + esc(e.especialidade) + '" title="Remover">×</button></div>').join('')).join('')
+        : '<p class="co-nota">' + (p.usuarioId ? 'Nenhuma especialidade concluída registrada.' : 'Sem conta no app, então não é possível registrar especialidades.') + '</p>';
+      const evo = evolucaoDe(p);
+      const evoHtml = evo.length
+        ? evo.map(e => '<div class="co-evo-linha"><b>' + e.ano + '</b><span>' + (e.classes.length ? esc(e.classes.join(', ')) + ' (concluída) · ' : '') + plural(e.especs, 'especialidade', 'especialidades') + '</span></div>').join('')
+        : '<p class="co-nota">Ainda sem conclusões registradas.</p>';
+      const hoje = new Date().toISOString().slice(0, 10);
+      const novoHtml = p.usuarioId
+        ? '<div class="co-card"><h4 class="co-card-titulo">Registrar especialidade</h4><div class="co-novo">' +
+            '<input type="text" id="coNovaNome" class="co-input" list="coCatalogo" placeholder="Nome da especialidade" autocomplete="off">' +
+            '<input type="date" id="coNovaData" class="co-input" value="' + hoje + '" max="' + hoje + '" aria-label="Data de conclusão">' +
+            '<button type="button" class="co-btn" id="coNovaSalvar">Registrar</button></div></div>'
+        : '';
       $('coDetalhe').innerHTML =
         '<button type="button" class="co-voltar" id="coFichaVoltar">‹ Voltar à lista</button>' +
         '<h3 class="co-det-nome">' + esc(p.nome) + '</h3><p class="co-det-sub">' + esc(sub) + '</p>' +
         '<h4 class="co-card-titulo">Classes</h4>' + classesHtml +
         '<h4 class="co-card-titulo" style="margin-top:14px;">Especialidades concluídas (' + p.especs.length + ')</h4>' +
+        novoHtml +
         '<div class="co-card">' + especHtml + '</div>' +
+        '<h4 class="co-card-titulo" style="margin-top:14px;">Evolução por ano</h4><div class="co-card">' + evoHtml + '</div>' +
         '<h4 class="co-card-titulo" style="margin-top:14px;">Documentos</h4>' +
         '<div class="co-card"><div class="co-acoes"><button type="button" class="co-btn" id="coFichaPdf">Ficha completa (PDF)</button></div>' +
         '<div class="co-acoes" style="margin-top:10px;"><select class="co-input" id="coDecTipo">' +
@@ -37205,7 +37404,45 @@ const REQ_SUMMARIES = {
       $('coFichaVoltar').addEventListener('click', mostrarLista);
       $('coFichaPdf').addEventListener('click', () => pdfFicha(p));
       $('coDecGerar').addEventListener('click', () => pdfDeclaracao(p, $('coDecTipo').value));
+      if($('coNovaSalvar')) $('coNovaSalvar').addEventListener('click', () => registrarEspec(p));
+      $('coDetalhe').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => removerEspec(p, b.getAttribute('data-del'))));
       $('coDetalhe').scrollIntoView({ block: 'start' });
+    }
+
+    // ---- Cadastro de especialidades (por data) ----
+    function depoisDeMudarEspec(p){
+      atualizarEspecDe(p);
+      renderResumo(); renderLista(); renderEvolucao(); preencherSeletores();
+      abrirFicha(p.chave);
+    }
+    async function registrarEspec(p){
+      const nome = $('coNovaNome').value.trim();
+      const data = $('coNovaData').value;
+      if(!nome){ alert('Escolha ou digite o nome da especialidade.'); return; }
+      if(!data){ alert('Informe a data de conclusão.'); return; }
+      if(!supa){ alert('Sem conexão com o banco de dados.'); return; }
+      if(!p.usuarioId) return;
+      if(CATEGORIA_DO_NOME[nome] === undefined && !confirm('"' + nome + '" não está no catálogo de especialidades. Registrar mesmo assim?')) return;
+      const ja = p.especs.find(e => norm(e.especialidade) === norm(nome));
+      if(ja && !confirm('"' + ja.especialidade + '" já está registrada para ' + p.nome + ' (' + (ja.data_conclusao ? dataBr(ja.data_conclusao) : ja.ano) + '). Registrar de novo?')) return;
+      const btn = $('coNovaSalvar'); btn.disabled = true;
+      const payload = { usuario_id: p.usuarioId, especialidade: nome, categoria: CATEGORIA_DO_NOME[nome] || null, ano: anoDe(data), data_conclusao: data };
+      const { data: linha, error } = await supa.from('especialidades_concluidas').insert(payload).select('id, usuario_id, especialidade, categoria, ano, data_conclusao').single();
+      btn.disabled = false;
+      if(error || !linha){ alert('Não foi possível registrar: ' + (error ? error.message : 'erro desconhecido')); return; }
+      todasEspec.push(linha);
+      (especPorUsuario[p.usuarioId] = especPorUsuario[p.usuarioId] || []).push(linha);
+      depoisDeMudarEspec(p);
+    }
+    async function removerEspec(p, id){
+      const e = p.especs.find(x => String(x.id) === String(id));
+      if(!e || !confirm('Remover "' + e.especialidade + '" (' + (e.data_conclusao ? dataBr(e.data_conclusao) : e.ano) + ') de ' + p.nome + '?')) return;
+      if(!supa) return;
+      const { error } = await supa.from('especialidades_concluidas').delete().eq('id', e.id);
+      if(error){ alert('Não foi possível remover: ' + error.message); return; }
+      todasEspec = todasEspec.filter(x => String(x.id) !== String(e.id));
+      especPorUsuario[p.usuarioId] = (especPorUsuario[p.usuarioId] || []).filter(x => String(x.id) !== String(e.id));
+      depoisDeMudarEspec(p);
     }
 
     // ---- Dados dos documentos (cidade, quem assina) ----
@@ -37215,19 +37452,19 @@ const REQ_SUMMARIES = {
       const c = { cidade: $('coCidade').value.trim(), assinante: $('coAssinante').value.trim(), cargo: $('coCargo').value.trim() };
       try { localStorage.setItem(CFG_KEY, JSON.stringify(c)); } catch(e){}
     }
+    function padraoCfg(){
+      const u = window.__currentUsuario || {};
+      return { assinante: u.nome || '', cargo: u.papel === 'Coordenador de Classes' ? 'Coordenação de Classes' : 'Administração' };
+    }
     function preencherCfg(){
-      const c = lerCfg(), u = window.__currentUsuario || {};
+      const c = lerCfg(), d = padraoCfg();
       $('coCidade').value = c.cidade || '';
-      $('coAssinante').value = c.assinante || u.nome || '';
-      $('coCargo').value = c.cargo || (u.papel === 'Coordenador de Classes' ? 'Coordenação de Classes' : 'Administração');
+      $('coAssinante').value = c.assinante || d.assinante;
+      $('coCargo').value = c.cargo || d.cargo;
     }
     function cfgDoc(){
-      const c = lerCfg(), u = window.__currentUsuario || {};
-      return {
-        cidade: c.cidade || '',
-        assinante: c.assinante || u.nome || '',
-        cargo: c.cargo || (u.papel === 'Coordenador de Classes' ? 'Coordenação de Classes' : 'Administração')
-      };
+      const c = lerCfg(), d = padraoCfg();
+      return { cidade: c.cidade || '', assinante: c.assinante || d.assinante, cargo: c.cargo || d.cargo };
     }
 
     // ---- PDF ----
@@ -37294,6 +37531,24 @@ const REQ_SUMMARIES = {
       doc.setTextColor(20, 24, 20);
       return y + 8;
     }
+    // Lista de especialidades de uma pessoa, com um título por ano.
+    function listaEspecPdf(doc, y, especs, titulo, x0){
+      doc.setFontSize(10);
+      porAno(especs).forEach(g => {
+        y = garantir(doc, y, 12, titulo);
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(150, 105, 10);
+        doc.text((g.ano || 'Sem ano') + '  ·  ' + plural(g.itens.length, 'especialidade', 'especialidades'), x0, y); y += 5.5;
+        g.itens.forEach(e => {
+          y = garantir(doc, y, 6, titulo);
+          doc.setFont('helvetica', 'normal'); doc.setTextColor(20, 24, 20);
+          doc.text(doc.splitTextToSize('•  ' + e.especialidade + (e.categoria ? ' (' + e.categoria + ')' : ''), 150)[0], x0 + 2, y);
+          doc.text(e.data_conclusao ? dataBr(e.data_conclusao) : String(e.ano), 194, y, { align: 'right' });
+          y += 5.6;
+        });
+        y += 2;
+      });
+      return y;
+    }
 
     function pdfFicha(p){
       const doc = novoDoc(); if(!doc) return;
@@ -37309,9 +37564,9 @@ const REQ_SUMMARIES = {
       p.classes.forEach(c => {
         y = garantir(doc, y, 20, tit);
         doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-        doc.text(c.classe + '  —  ' + situacao(c), 16, y);
+        doc.text(c.classe + '  —  ' + situacao(c) + (c.concluidaEm ? ' em ' + dataBr(c.concluidaEm) : ''), 16, y);
         doc.text(c.pct + '%', 194, y, { align: 'right' });
-        doc.setDrawColor(210, 214, 210); doc.setFillColor(225, 230, 226); doc.rect(16, y + 2, 178, 2.6, 'F');
+        doc.setFillColor(225, 230, 226); doc.rect(16, y + 2, 178, 2.6, 'F');
         doc.setFillColor(63, 203, 107); doc.rect(16, y + 2, 178 * c.pct / 100, 2.6, 'F');
         doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90, 100, 92);
         doc.text(c.feitos + ' de ' + c.total + ' requisitos concluídos' + (c.andamento ? ' · ' + c.andamento + ' em andamento' : ''), 16, y + 9);
@@ -37331,43 +37586,49 @@ const REQ_SUMMARIES = {
         y += 4;
       });
       y = secao(doc, y + 2, 'ESPECIALIDADES CONCLUÍDAS (' + p.especs.length + ')', tit);
-      doc.setFontSize(10);
-      if(!p.especs.length){ doc.setFont('helvetica', 'normal'); doc.text('Nenhuma especialidade concluída registrada.', 16, y); y += 7; }
-      p.especs.forEach(e => {
-        y = garantir(doc, y, 6, tit);
-        doc.setFont('helvetica', 'normal'); doc.setTextColor(20, 24, 20);
-        doc.text(doc.splitTextToSize('•  ' + e.especialidade + (e.categoria ? ' (' + e.categoria + ')' : ''), 150)[0], 16, y);
-        doc.text(e.data_conclusao ? dataBr(e.data_conclusao) : String(e.ano), 194, y, { align: 'right' });
-        y += 6;
-      });
+      if(!p.especs.length){ doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text('Nenhuma especialidade concluída registrada.', 16, y); y += 7; }
+      else y = listaEspecPdf(doc, y, p.especs, tit, 16);
+      const evo = evolucaoDe(p);
+      if(evo.length){
+        y = secao(doc, y + 2, 'EVOLUÇÃO POR ANO', tit);
+        doc.setFontSize(10);
+        evo.forEach(e => {
+          y = garantir(doc, y, 6, tit);
+          doc.setFont('helvetica', 'bold'); doc.text(String(e.ano), 16, y);
+          doc.setFont('helvetica', 'normal');
+          doc.text(doc.splitTextToSize((e.classes.length ? e.classes.join(', ') + ' (concluída)  ·  ' : '') + plural(e.especs, 'especialidade', 'especialidades'), 150)[0], 34, y);
+          y += 6;
+        });
+      }
       rodape(doc);
       salvarPDF(doc, 'ficha-' + slug(p.nome) + '.pdf');
     }
 
     function textoDeclaracao(p, tipo){
       const CFG = window.CLUBE_CONFIG || {};
-      const clube = CFG.nomeCompleto || 'Clube de Desbravadores' + (CFG.codigoClube ? '' : '');
+      const clube = CFG.nomeCompleto || 'Clube de Desbravadores';
       const sgc = CFG.codigoClube ? ' (código SGC ' + CFG.codigoClube + ')' : '';
       const nome = p.nome.toLocaleUpperCase('pt-BR');
       const nasc = p.nasc ? ', nascido(a) em ' + dataBr(p.nasc) + ',' : '';
       if(tipo === 'participacao'){
         const cls = p.classes.map(c => c.classe);
-        return { titulo: 'Declaração de participação', corpo: 'Declaramos, para os devidos fins, que ' + nome + nasc + ' é membro ativo do ' + clube + sgc + ', participando das atividades do clube' + (cls.length ? ' na classe regular de ' + cls.join(' e ') : '') + '.', itens: [] };
+        return { titulo: 'Declaração de participação', corpo: 'Declaramos, para os devidos fins, que ' + nome + nasc + ' é membro ativo do ' + clube + sgc + ', participando das atividades do clube' + (cls.length ? ' na classe de ' + cls.join(' e ') : '') + '.', itens: [] };
       }
       if(tipo === 'classe'){
         const feitas = p.classes.filter(c => c.total && c.pct === 100);
         const cursando = p.classes.filter(c => !(c.total && c.pct === 100));
         const partes = [];
-        if(feitas.length) partes.push('concluiu ' + (feitas.length === 1 ? 'a classe' : 'as classes') + ' de ' + feitas.map(c => c.classe).join(' e ') + ', cumprindo todos os requisitos');
+        if(feitas.length) partes.push('concluiu ' + (feitas.length === 1 ? 'a classe' : 'as classes') + ' de ' + feitas.map(c => c.classe + (c.concluidaEm ? ' (' + anoDe(c.concluidaEm) + ')' : '')).join(' e ') + ', cumprindo todos os requisitos');
         cursando.forEach(c => partes.push('está cursando a classe de ' + c.classe + ', tendo concluído ' + c.feitos + ' de ' + c.total + ' requisitos (' + c.pct + '%)'));
         return { titulo: 'Declaração de classe', corpo: 'Declaramos, para os devidos fins, que ' + nome + nasc + ' membro do ' + clube + sgc + ', ' + (partes.join('; e ') || 'não possui classe cadastrada') + '.', itens: [] };
       }
+      const ordenadas = p.especs.slice().sort((a, b) => (a.data_conclusao || (a.ano + '-00')).localeCompare(b.data_conclusao || (b.ano + '-00')));
       return {
         titulo: 'Declaração de especialidades',
         corpo: p.especs.length
-          ? 'Declaramos, para os devidos fins, que ' + nome + nasc + ' membro do ' + clube + sgc + ', concluiu ' + p.especs.length + (p.especs.length === 1 ? ' especialidade' : ' especialidades') + ', relacionadas abaixo:'
+          ? 'Declaramos, para os devidos fins, que ' + nome + nasc + ' membro do ' + clube + sgc + ', concluiu ' + plural(p.especs.length, 'especialidade', 'especialidades') + ', relacionadas abaixo:'
           : 'Declaramos, para os devidos fins, que ' + nome + nasc + ' membro do ' + clube + sgc + ', ainda não possui especialidades concluídas registradas.',
-        itens: p.especs.map(e => e.especialidade + (e.categoria ? ' (' + e.categoria + ')' : '') + ' — ' + (e.data_conclusao ? dataBr(e.data_conclusao) : e.ano))
+        itens: ordenadas.map(e => e.especialidade + (e.categoria ? ' (' + e.categoria + ')' : '') + ' — ' + (e.data_conclusao ? dataBr(e.data_conclusao) : e.ano))
       };
     }
     function pdfDeclaracao(p, tipo){
@@ -37442,7 +37703,7 @@ const REQ_SUMMARIES = {
       doc.setTextColor(20, 24, 20);
       const classes = Array.from(new Set(pessoas.flatMap(p => p.classes.map(c => c.classe)))).sort((a, b) => ordemClasse(a) - ordemClasse(b));
       classes.forEach(cl => {
-        const l = linhasRelatorio(cl).sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR', { sensitivity: 'base' }));
+        const l = linhasRelatorio(cl).sort((a, b) => cmpNome(a.nome, b.nome));
         const media = l.length ? Math.round(l.reduce((s, x) => s + x.pct, 0) / l.length) : 0;
         const concl = l.filter(x => x.total && x.pct === 100).length;
         y = garantir(doc, y, 30, tit);
@@ -37453,7 +37714,7 @@ const REQ_SUMMARIES = {
       salvarPDF(doc, 'relatorio-geral-classes.pdf');
     }
     function pdfRelatorioClasse(classe){
-      const l = linhasRelatorio(classe).sort((a, b) => b.pct - a.pct || String(a.nome).localeCompare(String(b.nome), 'pt-BR', { sensitivity: 'base' }));
+      const l = linhasRelatorio(classe).sort((a, b) => b.pct - a.pct || cmpNome(a.nome, b.nome));
       if(!l.length){ alert('Não há desbravadores nessa classe.'); return; }
       const doc = novoDoc(); if(!doc) return;
       const tit = 'Relatório da classe ' + classe;
@@ -37468,40 +37729,99 @@ const REQ_SUMMARIES = {
       salvarPDF(doc, 'relatorio-classe-' + slug(classe) + '.pdf');
     }
     function pdfRelatorioEspec(ano){
+      const todos = ano === 'todos';
       const nomes = {};
       pessoas.forEach(p => { if(p.usuarioId) nomes[p.usuarioId] = p.nome; });
-      const l = todasEspec.filter(e => String(e.ano) === String(ano));
-      if(!l.length){ alert('Nenhuma especialidade concluída registrada em ' + ano + '.'); return; }
+      const base = todasEspec.filter(e => todos || String(e.ano) === String(ano));
+      if(!base.length){ alert(todos ? 'Nenhuma especialidade concluída registrada.' : 'Nenhuma especialidade concluída registrada em ' + ano + '.'); return; }
       const doc = novoDoc(); if(!doc) return;
-      const tit = 'Especialidades concluídas ' + ano;
+      const tit = todos ? 'Especialidades concluídas' : 'Especialidades concluídas ' + ano;
       let y = cabecalho(doc, 'Especialidades concluídas');
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text('Especialidades concluídas em ' + ano, 16, y); y += 6;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text(todos ? 'Especialidades concluídas — todos os anos' : 'Especialidades concluídas em ' + ano, 16, y); y += 6;
       doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(80, 90, 82);
-      doc.text(l.length + ' conclusão(ões) · ' + hojeLongo(), 16, y); y += 10;
+      doc.text(plural(base.length, 'conclusão', 'conclusões') + ' · ' + hojeLongo(), 16, y); y += 10;
       doc.setTextColor(20, 24, 20);
-      const porPessoa = {};
-      l.forEach(e => { (porPessoa[e.usuario_id] = porPessoa[e.usuario_id] || []).push(e); });
-      Object.keys(porPessoa).sort((a, b) => String(nomes[a] || '').localeCompare(String(nomes[b] || ''), 'pt-BR', { sensitivity: 'base' })).forEach(id => {
-        y = secao(doc, y, (nomes[id] || 'Usuário sem ficha').toLocaleUpperCase('pt-BR') + '  (' + porPessoa[id].length + ')', tit);
-        doc.setFontSize(10);
-        porPessoa[id].forEach(e => {
-          y = garantir(doc, y, 6, tit);
-          doc.setFont('helvetica', 'normal');
-          doc.text(doc.splitTextToSize('•  ' + e.especialidade + (e.categoria ? ' (' + e.categoria + ')' : ''), 150)[0], 18, y);
-          if(e.data_conclusao) doc.text(dataBr(e.data_conclusao), 194, y, { align: 'right' });
-          y += 6;
+      const anos = Array.from(new Set(base.map(e => e.ano))).sort((a, b) => b - a);
+      anos.forEach(a => {
+        const doAno = base.filter(e => e.ano === a);
+        if(todos){ y = secao(doc, y, 'ANO ' + a + '  —  ' + plural(doAno.length, 'especialidade', 'especialidades'), tit); }
+        const porPessoa = {};
+        doAno.forEach(e => { (porPessoa[e.usuario_id] = porPessoa[e.usuario_id] || []).push(e); });
+        Object.keys(porPessoa).sort((x, z) => cmpNome(nomes[x] || '', nomes[z] || '')).forEach(id => {
+          y = garantir(doc, y, 16, tit);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(22, 120, 60);
+          doc.text((nomes[id] || 'Usuário sem ficha') + '  (' + porPessoa[id].length + ')', 16, y); y += 6;
+          doc.setFontSize(10);
+          porPessoa[id].sort((m, n) => (m.data_conclusao || '').localeCompare(n.data_conclusao || '')).forEach(e => {
+            y = garantir(doc, y, 6, tit);
+            doc.setFont('helvetica', 'normal'); doc.setTextColor(20, 24, 20);
+            doc.text(doc.splitTextToSize('•  ' + e.especialidade + (e.categoria ? ' (' + e.categoria + ')' : ''), 150)[0], 18, y);
+            if(e.data_conclusao) doc.text(dataBr(e.data_conclusao), 194, y, { align: 'right' });
+            y += 5.6;
+          });
+          y += 3;
         });
-        y += 3;
+        y += 2;
       });
       rodape(doc);
-      salvarPDF(doc, 'especialidades-' + ano + '.pdf');
+      salvarPDF(doc, 'especialidades-' + (todos ? 'todos-os-anos' : ano) + '.pdf');
+    }
+
+    // Gráfico de barras no PDF (retângulos), com o valor sobre cada barra.
+    function pdfBarras(doc, x, y, w, h, serie, rgb, titulo){
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(20, 24, 20);
+      doc.text(titulo, x, y); y += 4;
+      const max = Math.max(1, Math.max.apply(null, serie.map(s => s.valor)));
+      const esc2 = escalaMax(max), base = y + h, left = x + 8, n = Math.max(serie.length, 1);
+      const slot = (w - 8) / n, bw = Math.min(14, slot * 0.6);
+      doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+      for(let v = 0; v <= esc2.topo; v += esc2.passo){
+        const yy = base - (v / esc2.topo) * h;
+        doc.setDrawColor(225, 229, 226); doc.setLineWidth(0.2); doc.line(left, yy, x + w, yy);
+        doc.setTextColor(120, 128, 122); doc.text(String(v), left - 1.5, yy + 1, { align: 'right' });
+      }
+      serie.forEach((q, i) => {
+        const bx = left + slot * i + (slot - bw) / 2, bh = (q.valor / esc2.topo) * h;
+        if(q.valor > 0){ doc.setFillColor(rgb[0], rgb[1], rgb[2]); doc.rect(bx, base - bh, bw, bh, 'F'); doc.setTextColor(20, 24, 20); doc.setFont('helvetica', 'bold'); doc.text(String(q.valor), bx + bw / 2, base - bh - 1.2, { align: 'center' }); }
+        doc.setFont('helvetica', 'normal'); doc.setTextColor(90, 100, 92); doc.text(String(q.ano), bx + bw / 2, base + 4, { align: 'center' });
+      });
+      doc.setTextColor(20, 24, 20);
+      return base + 10;
+    }
+    function pdfEvolucao(){
+      const ev = evolucao();
+      if(!ev.length){ alert('Ainda não há registros para a evolução anual.'); return; }
+      const doc = novoDoc(); if(!doc) return;
+      const tit = 'Evolução anual';
+      let y = cabecalho(doc, tit);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text('Evolução de classes e especialidades por ano', 16, y); y += 6;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(80, 90, 82);
+      doc.text(ev[0].ano + ' a ' + ev[ev.length - 1].ano + ' · ' + hojeLongo(), 16, y); y += 12;
+      y = pdfBarras(doc, 16, y, 178, 42, ev.map(x => ({ ano: x.ano, valor: x.especs })), [216, 168, 62], 'Especialidades concluídas por ano') + 6;
+      y = pdfBarras(doc, 16, y, 178, 42, ev.map(x => ({ ano: x.ano, valor: x.classes })), [40, 170, 90], 'Classes concluídas por ano') + 8;
+      y = secao(doc, y, 'RESUMO POR ANO', tit);
+      ev.slice().reverse().forEach(x => {
+        y = garantir(doc, y, 12, tit);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.text(String(x.ano), 16, y);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+        doc.text(plural(x.classes, 'classe concluída', 'classes concluídas') + '  ·  ' + plural(x.especs, 'especialidade', 'especialidades') + '  ·  ' + plural(x.pessoas, 'desbravador', 'desbravadores') + ' com especialidade', 34, y);
+        y += 5.5;
+        const det = textoPorClasse(x);
+        if(det){ doc.setFontSize(8.5); doc.setTextColor(90, 100, 92); doc.text(doc.splitTextToSize('Classes: ' + det, 156), 34, y); doc.setTextColor(20, 24, 20); y += 5; }
+        y += 2;
+      });
+      doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(110, 120, 112);
+      y = garantir(doc, y + 2, 10, tit);
+      doc.text(doc.splitTextToSize('O ano de cada classe é o da última marcação de requisito concluído, então é aproximado se a classe foi editada depois.', 178), 16, y);
+      rodape(doc);
+      salvarPDF(doc, 'evolucao-anual.pdf');
     }
 
     // ---- Eventos ----
+    const ABAS = { lista: 'coPaneLista', evo: 'coPaneEvo', rel: 'coPaneRel' };
     function trocarAba(qual){
       view.querySelectorAll('.co-tab').forEach(b => b.classList.toggle('active', b.getAttribute('data-co-tab') === qual));
-      $('coPaneLista').style.display = qual === 'lista' ? '' : 'none';
-      $('coPaneRel').style.display = qual === 'rel' ? '' : 'none';
+      Object.keys(ABAS).forEach(k => { $(ABAS[k]).style.display = k === qual ? '' : 'none'; });
     }
     function abrir(){
       if(!podeAcessar()) return;
@@ -37527,6 +37847,8 @@ const REQ_SUMMARIES = {
     $('coRelGeral').addEventListener('click', pdfRelatorioGeral);
     $('coRelClasseBtn').addEventListener('click', () => { if($('coRelClasse').value) pdfRelatorioClasse($('coRelClasse').value); });
     $('coRelEspecBtn').addEventListener('click', () => pdfRelatorioEspec($('coRelAno').value));
+    $('coEvoPdf').addEventListener('click', pdfEvolucao);
+    ligarTooltip($('coGrafEspec')); ligarTooltip($('coGrafClasses'));
     document.addEventListener('cedros:loggedin', window.__coordAplicarVisibilidade);
     window.__coordAplicarVisibilidade();
   })();
