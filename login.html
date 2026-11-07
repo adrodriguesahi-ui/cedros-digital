@@ -3521,6 +3521,50 @@
   .cl-hub-row-pct{ font-size:12.5px; font-weight:800; color:var(--accent); flex-shrink:0; }
   .cl-hub-row-age{ font-size:11.5px; color:rgba(245,239,225,0.45); }
 
+  /* ---- Coordenação de Classes ---- */
+  .co-wrap{ padding:4px 16px calc(120px + env(safe-area-inset-bottom,0px)); max-width:760px; margin:0 auto; }
+  .co-tabs{ display:flex; gap:6px; background:rgba(255,255,255,0.05); border-radius:12px; padding:4px; margin-bottom:14px; }
+  .co-tab{ flex:1; border:0; background:transparent; color:rgba(245,239,225,0.65); font:inherit; font-size:13px; font-weight:800; padding:9px 8px; border-radius:9px; cursor:pointer; }
+  .co-tab.active{ background:var(--accent); color:#0D130C; }
+  .co-resumo{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+  .co-stat{ background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:10px 8px; text-align:center; }
+  .co-stat b{ display:block; font-size:20px; color:var(--gold); }
+  .co-stat span{ font-size:10.5px; font-weight:700; color:rgba(245,239,225,0.6); }
+  .co-filtros{ display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+  .co-filtros .co-input{ flex:1 1 150px; margin:0; }
+  .co-input{ width:100%; box-sizing:border-box; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--cream); border-radius:10px; padding:11px 12px; font:inherit; font-size:14px; margin-bottom:8px; }
+  .co-input option{ color:#1B2420; }
+  .co-label{ display:block; font-size:11.5px; font-weight:800; color:rgba(245,239,225,0.6); margin:6px 2px 4px; }
+  .co-lista{ display:flex; flex-direction:column; gap:8px; }
+  .co-pessoa{ display:block; width:100%; text-align:left; font:inherit; color:var(--cream); cursor:pointer; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:12px 14px; }
+  .co-pessoa:active{ background:rgba(255,255,255,0.08); }
+  .co-pessoa-nome{ font-size:14.5px; font-weight:800; }
+  .co-chips{ display:flex; flex-wrap:wrap; gap:5px; margin-top:6px; }
+  .co-chip{ font-size:10.5px; font-weight:800; padding:3px 8px; border-radius:20px; background:rgba(255,255,255,0.08); color:rgba(245,239,225,0.85); }
+  .co-chip.ok{ background:rgba(63,203,107,0.2); color:var(--accent); }
+  .co-chip.esp{ background:rgba(216,168,62,0.18); color:var(--gold); }
+  .co-vazio, .co-nota{ font-size:12px; color:rgba(245,239,225,0.55); margin:2px 2px 10px; }
+  .co-card{ background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:14px; margin-bottom:12px; }
+  .co-card-titulo{ margin:0 0 6px; font-size:14px; font-weight:900; color:var(--gold); }
+  .co-btn{ display:inline-block; border:0; cursor:pointer; font:inherit; font-size:13px; font-weight:800; padding:10px 16px; border-radius:10px; background:var(--accent); color:#0D130C; }
+  .co-btn.sec{ background:rgba(255,255,255,0.1); color:var(--cream); }
+  .co-voltar{ background:none; border:0; color:var(--accent); font:inherit; font-size:13px; font-weight:800; cursor:pointer; padding:4px 0 10px; }
+  .co-det-nome{ margin:0; font-size:19px; font-weight:900; }
+  .co-det-sub{ font-size:12px; color:rgba(245,239,225,0.6); margin:2px 0 12px; }
+  .co-classe-top{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; font-size:13.5px; font-weight:800; }
+  .co-classe-pct{ color:var(--accent); }
+  .co-barra{ height:6px; border-radius:4px; background:rgba(255,255,255,0.1); overflow:hidden; margin:6px 0 4px; }
+  .co-barra i{ display:block; height:100%; background:var(--accent); border-radius:4px; }
+  .co-classe-sub{ font-size:11.5px; color:rgba(245,239,225,0.55); }
+  .co-det summary{ font-size:12px; font-weight:800; color:var(--gold); cursor:pointer; margin-top:8px; }
+  .co-req{ display:flex; gap:8px; font-size:12px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+  .co-req em{ font-style:normal; font-weight:800; flex-shrink:0; width:84px; }
+  .co-req em.done{ color:var(--accent); } .co-req em.progress{ color:var(--gold); } .co-req em.todo{ color:rgba(245,239,225,0.4); }
+  .co-esp{ display:flex; justify-content:space-between; gap:8px; font-size:13px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .co-esp small{ color:rgba(245,239,225,0.55); flex-shrink:0; }
+  .co-acoes{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .co-acoes .co-input{ flex:1 1 180px; margin:0; }
+
   .cl-area-section{ margin-bottom:6px; }
   .cl-area-heading{
     width:100%; display:flex; align-items:center; gap:8px;
@@ -14078,6 +14122,72 @@
       </div>
     </section>
 
+    <!-- ===== VIEW: COORDENAÇÃO DE CLASSES (só Administrador e Coordenador de Classes) =====
+         Ficha de cada desbravador (classes e especialidades) e emissão de
+         relatórios e declarações em PDF. Lógica no módulo "Coordenação de Classes". -->
+    <section class="view view-planning" id="view-coord">
+      <div class="pl-scroll">
+
+        <div class="pl-topbar">
+          <button type="button" class="pl-back" id="coBackBtn" aria-label="Voltar">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <h3 class="pl-title" id="coTitle">Coordenação de Classes</h3>
+          <span class="pl-topbar-spacer" aria-hidden="true"></span>
+        </div>
+
+        <div class="co-wrap">
+          <div class="co-tabs" role="tablist">
+            <button type="button" class="co-tab active" data-co-tab="lista" role="tab">Desbravadores</button>
+            <button type="button" class="co-tab" data-co-tab="rel" role="tab">Relatórios</button>
+          </div>
+
+          <div id="coPaneLista">
+            <div id="coListaWrap">
+              <div class="co-resumo" id="coResumo"></div>
+              <div class="co-filtros">
+                <input type="search" id="coBusca" class="co-input" placeholder="Buscar desbravador…" autocomplete="off">
+                <select id="coFiltroClasse" class="co-input"><option value="">Todas as classes</option></select>
+              </div>
+              <div class="co-lista" id="coLista"></div>
+              <p class="co-vazio" id="coVazio" style="display:none;">Nenhum desbravador encontrado.</p>
+            </div>
+            <div id="coDetalhe" style="display:none;"></div>
+          </div>
+
+          <div id="coPaneRel" style="display:none;">
+            <div class="co-card">
+              <h4 class="co-card-titulo">Dados dos documentos</h4>
+              <p class="co-nota">Aparecem nas declarações e relatórios. Ficam salvos neste aparelho.</p>
+              <label class="co-label" for="coCidade">Cidade</label>
+              <input type="text" id="coCidade" class="co-input" placeholder="Ex.: Salvador">
+              <label class="co-label" for="coAssinante">Assinado por</label>
+              <input type="text" id="coAssinante" class="co-input" placeholder="Nome de quem assina">
+              <label class="co-label" for="coCargo">Cargo</label>
+              <input type="text" id="coCargo" class="co-input" placeholder="Ex.: Coordenação de Classes">
+            </div>
+            <div class="co-card">
+              <h4 class="co-card-titulo">Relatório geral do clube</h4>
+              <p class="co-nota">Todos os desbravadores, por classe: requisitos concluídos, porcentagem e especialidades.</p>
+              <button type="button" class="co-btn" id="coRelGeral">Gerar PDF</button>
+            </div>
+            <div class="co-card">
+              <h4 class="co-card-titulo">Relatório de uma classe</h4>
+              <select id="coRelClasse" class="co-input"></select>
+              <button type="button" class="co-btn" id="coRelClasseBtn">Gerar PDF</button>
+            </div>
+            <div class="co-card">
+              <h4 class="co-card-titulo">Especialidades concluídas</h4>
+              <p class="co-nota">Quem concluiu o quê, no ano escolhido.</p>
+              <select id="coRelAno" class="co-input"></select>
+              <button type="button" class="co-btn" id="coRelEspecBtn">Gerar PDF</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
     <!-- ===== VIEW: ORGANIZAÇÃO DE EVENTOS (tarefas, responsáveis e prazos) ===== -->
     <section class="view view-planning" id="view-event-org">
       <div class="pl-scroll">
@@ -14729,6 +14839,10 @@
             <span class="bd-qn-icon bd-qn-icon-img"><img src="icons/nav-event-org.png?v=2" alt=""></span>
             <span>Organização de Eventos</span>
           </a>
+          <a href="#" class="bd-qn-item" data-coord-open style="display:none;">
+            <span class="bd-qn-icon bd-qn-icon-img"><img src="icons/nav-coordenador.png?v=1" alt=""></span>
+            <span>Coordenação de Classes</span>
+          </a>
           <a href="#" class="bd-qn-item" data-goto="view-admin">
             <span class="bd-qn-icon bd-qn-icon-img"><img src="icons/nav-admin.png?v=2" alt=""></span>
             <span>Administração</span>
@@ -15192,6 +15306,10 @@
             <span class="bd-qn-icon bd-qn-icon-img"><img src="icons/nav-event-org.png?v=2" alt=""></span>
             <span>Organização de Eventos</span>
           </a>
+          <a href="#" class="bd-qn-item" data-coord-open style="display:none;">
+            <span class="bd-qn-icon bd-qn-icon-img"><img src="icons/nav-coordenador.png?v=1" alt=""></span>
+            <span>Coordenação de Classes</span>
+          </a>
           <a href="#" class="bd-qn-item" data-goto="view-admin">
             <span class="bd-qn-icon bd-qn-icon-img"><img src="icons/nav-admin.png?v=2" alt=""></span>
             <span>Administração</span>
@@ -15470,7 +15588,7 @@
   const APP_TABBAR_VIEWS = new Set([
     'view-dashboard', 'view-planning', 'view-classes', 'view-units', 'view-devotional',
     'view-treasury', 'view-secretary', 'view-storage', 'view-manuals', 'view-birthdays',
-    'view-specialties', 'view-event-org', 'view-admin'
+    'view-specialties', 'view-event-org', 'view-admin', 'view-coord'
   ]);
   // Só as 4 telas com aba própria acendem um item específico; o resto (acessadas
   // pelo menu "Mais") acende a aba "Mais" em vez de ficar tudo apagado.
@@ -15480,6 +15598,11 @@
   const tabMoreOverlay = document.getElementById('tabMoreOverlay');
 
   function showView(id){
+    // Coordenação de Classes: só Administrador e Coordenador de Classes entram
+    // (ver o módulo "Coordenação de Classes" mais abaixo). Reaplica também a
+    // visibilidade do atalho, que depende de quem está logado.
+    if(window.__coordAplicarVisibilidade) window.__coordAplicarVisibilidade();
+    if(id === 'view-coord' && !(window.__coordPodeAcessar && window.__coordPodeAcessar())) return;
     views.forEach(v => v.classList.toggle('active', v.id === id));
     // Card "Membros" do Início: entra direto na Chamada de Presença, sem as
     // outras abas da Secretaria à vista — window.__scAttendanceOnlyNextEntry é
@@ -19098,6 +19221,39 @@
     };
     window.__clCoresDasClasses = () => Object.assign({}, CLASS_COLORS);
 
+    // Ficha de cada desbravador (uma linha por cartão em que ele está), pra tela
+    // Coordenação de Classes: progresso nos requisitos do cartão, sem mexer em
+    // nada daqui. reqs[] guarda título, área e situação de cada requisito.
+    window.__clFichaDados = function(){
+      const saida = [];
+      Object.keys(CLASS_STUDENTS).forEach(classe => {
+        const group = findClassGroup(classe);
+        const cards = group ? Array.from(group.querySelectorAll('.cl-activity-card')).filter(c => c.dataset.title) : [];
+        (CLASS_STUDENTS[classe] || []).forEach(nome => {
+          const prog = (CLASS_PROGRESS[classe] || {})[nome] || {};
+          let feitos = 0, andamento = 0;
+          const reqs = cards.map(c => {
+            const st = prog[c.dataset.title] || 'todo';
+            if(st === 'done') feitos++; else if(st === 'progress') andamento++;
+            return { titulo: c.dataset.title, area: c.dataset.area || '', status: st };
+          });
+          saida.push({
+            id: (STUDENT_IDS[classe] || {})[nome] || null,
+            nome: nome,
+            classe: classe,
+            usuarioId: (STUDENT_USUARIOS[classe] || {})[nome] || null,
+            nasc: (STUDENT_NASC[classe] || {})[nome] || '',
+            total: cards.length,
+            feitos: feitos,
+            andamento: andamento,
+            pct: cards.length ? Math.round((feitos / cards.length) * 100) : 0,
+            reqs: reqs
+          });
+        });
+      });
+      return saida;
+    };
+
     function applyClassFilter(){
       content.querySelectorAll('.pl-month-group').forEach(group => {
         group.style.display = (group.dataset.class === currentClass) ? '' : 'none';
@@ -20469,6 +20625,7 @@
       await loadClassDataFromSupabase();
     }
     window.__syncDesbravadorFromUsuario = syncDesbravadorFromUsuario;
+    window.__clRecarregarDados = loadClassDataFromSupabase;
 
     // Espelha syncDesbravadorFromUsuario, mas pra quem NÃO é Desbravador (ver
     // adFieldClasseFuncao em Administração): em vez de virar aluno rastreado,
@@ -36621,6 +36778,500 @@ const REQ_SUMMARIES = {
     computador.addEventListener('change', aplicarVisibilidade);
     document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible' && ativo() && ligada) carregar(); });
     aplicarVisibilidade();
+  })();
+
+  // ---- Coordenação de Classes ----
+  // Área só do Administrador e do Coordenador de Classes: a vida de cada
+  // desbravador (classes que tem e especialidades concluídas) e a emissão de
+  // ficha, declarações e relatórios em PDF. Lê os dados que Classes Regulares já
+  // carregou (window.__clFichaDados) e as especialidades concluídas por usuário.
+  (function(){
+    const view = document.getElementById('view-coord');
+    if(!view) return;
+    const $ = id => document.getElementById(id);
+    const ORDEM = ['Amigo','Companheiro','Pesquisador','Pioneiro','Excursionista','Guia','Classe Agrupada','Cartão de Liderança','Líder Master','Líder Master Avançado'];
+    const norm = s => String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+    const ordemClasse = c => { const i = ORDEM.indexOf(c); return i === -1 ? 99 : i; };
+    const dataBr = iso => iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '';
+    const porNome = (a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR', { sensitivity: 'base' });
+    const slug = s => norm(s).replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'documento';
+    const STATUS_TXT = { done: 'Concluído', progress: 'Em andamento', todo: 'Pendente' };
+
+    let pessoas = [];
+    let especPorUsuario = {};   // usuario_id -> [{ especialidade, categoria, ano, data_conclusao }]
+    let todasEspec = [];
+    let aberta = null;          // chave da pessoa com a ficha aberta
+    let carregando = false;
+
+    function podeAcessar(){
+      const u = window.__currentUsuario;
+      return !!u && (u.papel === 'Administrador' || u.papel === 'Coordenador de Classes');
+    }
+    window.__coordPodeAcessar = podeAcessar;
+    window.__coordAplicarVisibilidade = function(){
+      const ok = podeAcessar();
+      document.querySelectorAll('[data-coord-open]').forEach(el => { el.style.display = ok ? '' : 'none'; });
+    };
+
+    // ---- Dados ----
+    function situacao(r){
+      if(r.total && r.pct === 100) return 'Classe concluída';
+      if(r.feitos || r.andamento) return 'Em andamento';
+      return 'Não iniciada';
+    }
+    function montarPessoas(){
+      const linhas = window.__clFichaDados ? window.__clFichaDados() : [];
+      const mapa = new Map();
+      linhas.forEach(r => {
+        const chave = r.usuarioId || ('n:' + norm(r.nome));
+        if(!mapa.has(chave)) mapa.set(chave, { chave: chave, nome: r.nome, usuarioId: r.usuarioId, nasc: r.nasc || '', classes: [], especs: [] });
+        const p = mapa.get(chave);
+        if(!p.nasc && r.nasc) p.nasc = r.nasc;
+        p.classes.push(r);
+      });
+      pessoas = Array.from(mapa.values());
+      pessoas.forEach(p => {
+        p.classes.sort((a, b) => ordemClasse(a.classe) - ordemClasse(b.classe));
+        p.especs = p.usuarioId ? (especPorUsuario[p.usuarioId] || []) : [];
+      });
+      pessoas.sort(porNome);
+    }
+    async function carregarEspecialidades(){
+      especPorUsuario = {}; todasEspec = [];
+      if(!supa) return;
+      const { data, error } = await supa.from('especialidades_concluidas')
+        .select('usuario_id, especialidade, categoria, ano, data_conclusao')
+        .order('ano', { ascending: false });
+      if(error){ console.error('Erro ao carregar especialidades concluídas:', error.message); return; }
+      todasEspec = data || [];
+      todasEspec.forEach(e => {
+        if(!especPorUsuario[e.usuario_id]) especPorUsuario[e.usuario_id] = [];
+        especPorUsuario[e.usuario_id].push(e);
+      });
+    }
+    async function carregar(){
+      if(carregando) return;
+      carregando = true;
+      $('coLista').innerHTML = '<p class="co-vazio">Carregando…</p>';
+      try {
+        if(window.__clRecarregarDados) await window.__clRecarregarDados();
+        await carregarEspecialidades();
+      } catch(e){ console.error('Coordenação de Classes:', e); }
+      carregando = false;
+      montarPessoas();
+      preencherSeletores();
+      renderTudo();
+    }
+
+    // ---- Interface ----
+    function preencherSeletores(){
+      const classes = Array.from(new Set(pessoas.flatMap(p => p.classes.map(c => c.classe)))).sort((a, b) => ordemClasse(a) - ordemClasse(b));
+      const atual = $('coFiltroClasse').value;
+      $('coFiltroClasse').innerHTML = '<option value="">Todas as classes</option>' + classes.map(c => '<option value="' + esc(c) + '">' + esc(c) + '</option>').join('');
+      $('coFiltroClasse').value = classes.indexOf(atual) !== -1 ? atual : '';
+      $('coRelClasse').innerHTML = classes.map(c => '<option value="' + esc(c) + '">' + esc(c) + '</option>').join('');
+      const anos = Array.from(new Set(todasEspec.map(e => e.ano))).sort((a, b) => b - a);
+      if(!anos.length) anos.push(new Date().getFullYear());
+      $('coRelAno').innerHTML = anos.map(a => '<option value="' + a + '">' + a + '</option>').join('');
+    }
+    function renderResumo(){
+      const concluidas = pessoas.reduce((n, p) => n + p.classes.filter(c => c.total && c.pct === 100).length, 0);
+      const espec = pessoas.reduce((n, p) => n + p.especs.length, 0);
+      $('coResumo').innerHTML =
+        '<div class="co-stat"><b>' + pessoas.length + '</b><span>Desbravadores</span></div>' +
+        '<div class="co-stat"><b>' + concluidas + '</b><span>Classes concluídas</span></div>' +
+        '<div class="co-stat"><b>' + espec + '</b><span>Especialidades</span></div>';
+    }
+    function renderLista(){
+      const termo = norm($('coBusca').value);
+      const classe = $('coFiltroClasse').value;
+      const lista = pessoas.filter(p => (!termo || norm(p.nome).indexOf(termo) !== -1) && (!classe || p.classes.some(c => c.classe === classe)));
+      $('coLista').innerHTML = lista.map(p =>
+        '<button type="button" class="co-pessoa" data-chave="' + esc(p.chave) + '">' +
+          '<span class="co-pessoa-nome">' + esc(p.nome) + '</span>' +
+          '<span class="co-chips">' +
+            p.classes.map(c => '<span class="co-chip' + (c.total && c.pct === 100 ? ' ok' : '') + '">' + esc(c.classe) + ' · ' + c.pct + '%</span>').join('') +
+            (p.especs.length ? '<span class="co-chip esp">' + p.especs.length + ' especialidade' + (p.especs.length === 1 ? '' : 's') + '</span>' : '') +
+          '</span>' +
+        '</button>').join('');
+      $('coVazio').style.display = lista.length ? 'none' : '';
+    }
+    function renderTudo(){
+      renderResumo();
+      renderLista();
+      if(aberta) abrirFicha(aberta); else mostrarLista();
+    }
+    function idadeDe(nasc){
+      if(!nasc) return '';
+      const n = new Date(nasc + 'T00:00:00'); if(isNaN(n)) return '';
+      const h = new Date(); let a = h.getFullYear() - n.getFullYear();
+      if(h.getMonth() < n.getMonth() || (h.getMonth() === n.getMonth() && h.getDate() < n.getDate())) a--;
+      return a + ' anos';
+    }
+    function mostrarLista(){
+      aberta = null;
+      $('coDetalhe').style.display = 'none';
+      $('coListaWrap').style.display = '';
+    }
+    function abrirFicha(chave){
+      const p = pessoas.find(x => x.chave === chave);
+      if(!p){ mostrarLista(); return; }
+      aberta = chave;
+      const sub = [p.nasc ? 'Nascimento: ' + dataBr(p.nasc) + (idadeDe(p.nasc) ? ' (' + idadeDe(p.nasc) + ')' : '') : '', p.usuarioId ? 'Tem conta no app' : 'Sem conta no app'].filter(Boolean).join(' · ');
+      const classesHtml = p.classes.map(c =>
+        '<div class="co-card co-det">' +
+          '<div class="co-classe-top"><span>' + esc(c.classe) + '</span><span class="co-classe-pct">' + c.pct + '%</span></div>' +
+          '<div class="co-barra"><i style="width:' + c.pct + '%"></i></div>' +
+          '<div class="co-classe-sub">' + esc(situacao(c)) + ' · ' + c.feitos + ' de ' + c.total + ' requisitos concluídos' + (c.andamento ? ' · ' + c.andamento + ' em andamento' : '') + '</div>' +
+          (c.reqs.length ? '<details><summary>Ver requisitos</summary>' + c.reqs.map(r =>
+            '<div class="co-req"><em class="' + r.status + '">' + STATUS_TXT[r.status] + '</em><span>' + esc(r.titulo) + '</span></div>').join('') + '</details>' : '') +
+        '</div>').join('') || '<p class="co-nota">Sem classe cadastrada.</p>';
+      const especHtml = p.especs.length
+        ? p.especs.map(e => '<div class="co-esp"><span>' + esc(e.especialidade) + (e.categoria ? ' <small>· ' + esc(e.categoria) + '</small>' : '') + '</span><small>' + (e.data_conclusao ? dataBr(e.data_conclusao) : e.ano) + '</small></div>').join('')
+        : '<p class="co-nota">' + (p.usuarioId ? 'Nenhuma especialidade concluída registrada.' : 'Sem conta no app, então não há especialidades registradas.') + '</p>';
+      $('coDetalhe').innerHTML =
+        '<button type="button" class="co-voltar" id="coFichaVoltar">‹ Voltar à lista</button>' +
+        '<h3 class="co-det-nome">' + esc(p.nome) + '</h3><p class="co-det-sub">' + esc(sub) + '</p>' +
+        '<h4 class="co-card-titulo">Classes</h4>' + classesHtml +
+        '<h4 class="co-card-titulo" style="margin-top:14px;">Especialidades concluídas (' + p.especs.length + ')</h4>' +
+        '<div class="co-card">' + especHtml + '</div>' +
+        '<h4 class="co-card-titulo" style="margin-top:14px;">Documentos</h4>' +
+        '<div class="co-card"><div class="co-acoes"><button type="button" class="co-btn" id="coFichaPdf">Ficha completa (PDF)</button></div>' +
+        '<div class="co-acoes" style="margin-top:10px;"><select class="co-input" id="coDecTipo">' +
+          '<option value="participacao">Declaração de participação no clube</option>' +
+          '<option value="classe">Declaração de classe</option>' +
+          '<option value="especialidades">Declaração de especialidades</option>' +
+        '</select><button type="button" class="co-btn sec" id="coDecGerar">Gerar declaração</button></div></div>';
+      $('coListaWrap').style.display = 'none';
+      $('coDetalhe').style.display = '';
+      $('coFichaVoltar').addEventListener('click', mostrarLista);
+      $('coFichaPdf').addEventListener('click', () => pdfFicha(p));
+      $('coDecGerar').addEventListener('click', () => pdfDeclaracao(p, $('coDecTipo').value));
+      $('coDetalhe').scrollIntoView({ block: 'start' });
+    }
+
+    // ---- Dados dos documentos (cidade, quem assina) ----
+    const CFG_KEY = 'cedros_coord_doc_cfg';
+    function lerCfg(){ try { return JSON.parse(localStorage.getItem(CFG_KEY) || '{}') || {}; } catch(e){ return {}; } }
+    function salvarCfg(){
+      const c = { cidade: $('coCidade').value.trim(), assinante: $('coAssinante').value.trim(), cargo: $('coCargo').value.trim() };
+      try { localStorage.setItem(CFG_KEY, JSON.stringify(c)); } catch(e){}
+    }
+    function preencherCfg(){
+      const c = lerCfg(), u = window.__currentUsuario || {};
+      $('coCidade').value = c.cidade || '';
+      $('coAssinante').value = c.assinante || u.nome || '';
+      $('coCargo').value = c.cargo || (u.papel === 'Coordenador de Classes' ? 'Coordenação de Classes' : 'Administração');
+    }
+    function cfgDoc(){
+      const c = lerCfg(), u = window.__currentUsuario || {};
+      return {
+        cidade: c.cidade || '',
+        assinante: c.assinante || u.nome || '',
+        cargo: c.cargo || (u.papel === 'Coordenador de Classes' ? 'Coordenação de Classes' : 'Administração')
+      };
+    }
+
+    // ---- PDF ----
+    const hojeLongo = () => new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+    let logoCache = null;
+    function logoDataUrl(){
+      if(logoCache !== null) return logoCache;
+      logoCache = '';
+      const img = document.querySelector('.bd-brand img');
+      if(img && img.complete && img.naturalWidth){
+        try {
+          const cv = document.createElement('canvas'); cv.width = 160; cv.height = 160;
+          cv.getContext('2d').drawImage(img, 0, 0, 160, 160);
+          logoCache = cv.toDataURL('image/png');
+        } catch(e){ logoCache = ''; }
+      }
+      return logoCache;
+    }
+    function novoDoc(){
+      const lib = window.jspdf && window.jspdf.jsPDF;
+      if(!lib){ alert('Não foi possível carregar a biblioteca de PDF. Verifique sua conexão com a internet e tente novamente.'); return null; }
+      return new lib({ unit: 'mm', format: 'a4' });
+    }
+    function cabecalho(doc, titulo){
+      const CFG = window.CLUBE_CONFIG || {};
+      const W = doc.internal.pageSize.getWidth();
+      doc.setFillColor(13, 19, 12); doc.rect(0, 0, W, 34, 'F');
+      doc.setFillColor(63, 203, 107); doc.rect(0, 34, W, 1.4, 'F');
+      let x = 16;
+      const logo = logoDataUrl();
+      if(logo){ try { doc.addImage(logo, 'PNG', 16, 7, 20, 20); x = 42; } catch(e){} }
+      doc.setTextColor(245, 239, 225); doc.setFont('helvetica', 'bold'); doc.setFontSize(12.5);
+      doc.text('CLUBE DE DESBRAVADORES', x, 15);
+      doc.text(String(CFG.nomeClube || '').toLocaleUpperCase('pt-BR') + (CFG.codigoClube ? '  ·  SGC ' + CFG.codigoClube : ''), x, 21.5);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(120, 220, 150);
+      doc.text(String(titulo || '').toLocaleUpperCase('pt-BR'), x, 28);
+      doc.setTextColor(20, 24, 20);
+      return 46;
+    }
+    function novaPagina(doc, titulo){
+      doc.addPage();
+      const W = doc.internal.pageSize.getWidth();
+      doc.setFillColor(13, 19, 12); doc.rect(0, 0, W, 12, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(245, 239, 225);
+      doc.text(String(titulo || ''), 16, 8);
+      doc.setTextColor(20, 24, 20);
+      return 22;
+    }
+    function garantir(doc, y, h, titulo){ return y + h > 280 ? novaPagina(doc, titulo) : y; }
+    function rodape(doc){
+      const CFG = window.CLUBE_CONFIG || {};
+      const W = doc.internal.pageSize.getWidth(), n = doc.getNumberOfPages();
+      for(let i = 1; i <= n; i++){
+        doc.setPage(i);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(130, 140, 132);
+        doc.text('Emitido em ' + new Date().toLocaleDateString('pt-BR') + ' pelo ' + (CFG.appNome || 'app do clube') + '  ·  página ' + i + ' de ' + n, W / 2, 291, { align: 'center' });
+      }
+    }
+    function secao(doc, y, texto, titulo){
+      y = garantir(doc, y, 14, titulo);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(11.5); doc.setTextColor(22, 120, 60);
+      doc.text(texto, 16, y);
+      doc.setDrawColor(63, 203, 107); doc.setLineWidth(0.4); doc.line(16, y + 1.8, 194, y + 1.8);
+      doc.setTextColor(20, 24, 20);
+      return y + 8;
+    }
+
+    function pdfFicha(p){
+      const doc = novoDoc(); if(!doc) return;
+      const tit = 'Ficha do desbravador — ' + p.nome;
+      let y = cabecalho(doc, 'Ficha do desbravador');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.text(p.nome, 16, y); y += 7;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(80, 90, 82);
+      const ident = [p.nasc ? 'Nascimento: ' + dataBr(p.nasc) + (idadeDe(p.nasc) ? ' (' + idadeDe(p.nasc) + ')' : '') : '', p.classes.length ? 'Classe atual: ' + p.classes[p.classes.length - 1].classe : ''].filter(Boolean).join('   ·   ');
+      if(ident){ doc.text(ident, 16, y); y += 8; }
+      doc.setTextColor(20, 24, 20);
+      y = secao(doc, y + 2, 'CLASSES', tit);
+      if(!p.classes.length){ doc.setFontSize(10); doc.text('Sem classe cadastrada.', 16, y); y += 8; }
+      p.classes.forEach(c => {
+        y = garantir(doc, y, 20, tit);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+        doc.text(c.classe + '  —  ' + situacao(c), 16, y);
+        doc.text(c.pct + '%', 194, y, { align: 'right' });
+        doc.setDrawColor(210, 214, 210); doc.setFillColor(225, 230, 226); doc.rect(16, y + 2, 178, 2.6, 'F');
+        doc.setFillColor(63, 203, 107); doc.rect(16, y + 2, 178 * c.pct / 100, 2.6, 'F');
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90, 100, 92);
+        doc.text(c.feitos + ' de ' + c.total + ' requisitos concluídos' + (c.andamento ? ' · ' + c.andamento + ' em andamento' : ''), 16, y + 9);
+        doc.setTextColor(20, 24, 20);
+        y += 15;
+        doc.setFontSize(9);
+        c.reqs.forEach(r => {
+          const linhas = doc.splitTextToSize(r.titulo, 135);
+          y = garantir(doc, y, linhas.length * 4.2 + 1.5, tit);
+          doc.setFont('helvetica', 'bold');
+          if(r.status === 'done') doc.setTextColor(22, 140, 70); else if(r.status === 'progress') doc.setTextColor(190, 130, 10); else doc.setTextColor(150, 156, 152);
+          doc.text(STATUS_TXT[r.status], 20, y);
+          doc.setFont('helvetica', 'normal'); doc.setTextColor(30, 36, 32);
+          doc.text(linhas, 52, y);
+          y += linhas.length * 4.2 + 1.5;
+        });
+        y += 4;
+      });
+      y = secao(doc, y + 2, 'ESPECIALIDADES CONCLUÍDAS (' + p.especs.length + ')', tit);
+      doc.setFontSize(10);
+      if(!p.especs.length){ doc.setFont('helvetica', 'normal'); doc.text('Nenhuma especialidade concluída registrada.', 16, y); y += 7; }
+      p.especs.forEach(e => {
+        y = garantir(doc, y, 6, tit);
+        doc.setFont('helvetica', 'normal'); doc.setTextColor(20, 24, 20);
+        doc.text(doc.splitTextToSize('•  ' + e.especialidade + (e.categoria ? ' (' + e.categoria + ')' : ''), 150)[0], 16, y);
+        doc.text(e.data_conclusao ? dataBr(e.data_conclusao) : String(e.ano), 194, y, { align: 'right' });
+        y += 6;
+      });
+      rodape(doc);
+      salvarPDF(doc, 'ficha-' + slug(p.nome) + '.pdf');
+    }
+
+    function textoDeclaracao(p, tipo){
+      const CFG = window.CLUBE_CONFIG || {};
+      const clube = CFG.nomeCompleto || 'Clube de Desbravadores' + (CFG.codigoClube ? '' : '');
+      const sgc = CFG.codigoClube ? ' (código SGC ' + CFG.codigoClube + ')' : '';
+      const nome = p.nome.toLocaleUpperCase('pt-BR');
+      const nasc = p.nasc ? ', nascido(a) em ' + dataBr(p.nasc) + ',' : '';
+      if(tipo === 'participacao'){
+        const cls = p.classes.map(c => c.classe);
+        return { titulo: 'Declaração de participação', corpo: 'Declaramos, para os devidos fins, que ' + nome + nasc + ' é membro ativo do ' + clube + sgc + ', participando das atividades do clube' + (cls.length ? ' na classe regular de ' + cls.join(' e ') : '') + '.', itens: [] };
+      }
+      if(tipo === 'classe'){
+        const feitas = p.classes.filter(c => c.total && c.pct === 100);
+        const cursando = p.classes.filter(c => !(c.total && c.pct === 100));
+        const partes = [];
+        if(feitas.length) partes.push('concluiu ' + (feitas.length === 1 ? 'a classe' : 'as classes') + ' de ' + feitas.map(c => c.classe).join(' e ') + ', cumprindo todos os requisitos');
+        cursando.forEach(c => partes.push('está cursando a classe de ' + c.classe + ', tendo concluído ' + c.feitos + ' de ' + c.total + ' requisitos (' + c.pct + '%)'));
+        return { titulo: 'Declaração de classe', corpo: 'Declaramos, para os devidos fins, que ' + nome + nasc + ' membro do ' + clube + sgc + ', ' + (partes.join('; e ') || 'não possui classe cadastrada') + '.', itens: [] };
+      }
+      return {
+        titulo: 'Declaração de especialidades',
+        corpo: p.especs.length
+          ? 'Declaramos, para os devidos fins, que ' + nome + nasc + ' membro do ' + clube + sgc + ', concluiu ' + p.especs.length + (p.especs.length === 1 ? ' especialidade' : ' especialidades') + ', relacionadas abaixo:'
+          : 'Declaramos, para os devidos fins, que ' + nome + nasc + ' membro do ' + clube + sgc + ', ainda não possui especialidades concluídas registradas.',
+        itens: p.especs.map(e => e.especialidade + (e.categoria ? ' (' + e.categoria + ')' : '') + ' — ' + (e.data_conclusao ? dataBr(e.data_conclusao) : e.ano))
+      };
+    }
+    function pdfDeclaracao(p, tipo){
+      const doc = novoDoc(); if(!doc) return;
+      const t = textoDeclaracao(p, tipo), cfg = cfgDoc();
+      const W = doc.internal.pageSize.getWidth();
+      let y = cabecalho(doc, t.titulo) + 14;
+      doc.setFont('times', 'bold'); doc.setFontSize(20); doc.text('DECLARAÇÃO', W / 2, y, { align: 'center' }); y += 16;
+      doc.setFont('times', 'normal'); doc.setFontSize(13);
+      const linhas = doc.splitTextToSize(t.corpo, W - 44);
+      doc.text(linhas, 22, y, { lineHeightFactor: 1.7 });
+      y += linhas.length * 8.4 + 4;
+      t.itens.forEach(it => {
+        y = garantir(doc, y, 8, t.titulo);
+        doc.setFont('times', 'normal'); doc.setFontSize(12.5);
+        doc.text(doc.splitTextToSize('•  ' + it, W - 52), 28, y);
+        y += 7;
+      });
+      y = Math.max(y + 18, 200);
+      y = garantir(doc, y, 50, t.titulo);
+      doc.setFont('times', 'normal'); doc.setFontSize(13);
+      doc.text((cfg.cidade ? cfg.cidade + ', ' : '') + hojeLongo() + '.', W / 2, y, { align: 'center' });
+      y += 30;
+      doc.setDrawColor(90); doc.setLineWidth(0.3); doc.line(W / 2 - 40, y, W / 2 + 40, y);
+      doc.setFont('times', 'bold'); doc.setFontSize(12);
+      if(cfg.assinante) doc.text(cfg.assinante, W / 2, y + 6, { align: 'center' });
+      doc.setFont('times', 'normal'); doc.setFontSize(11);
+      if(cfg.cargo) doc.text(cfg.cargo, W / 2, y + (cfg.assinante ? 12 : 6), { align: 'center' });
+      rodape(doc);
+      salvarPDF(doc, 'declaracao-' + tipo + '-' + slug(p.nome) + '.pdf');
+    }
+
+    // Tabela de turma: Nome | Classe | Requisitos | % | Especialidades
+    function tabelaTurma(doc, y, linhas, titulo){
+      const cols = { nome: 16, classe: 92, req: 130, pct: 158, esp: 194 };
+      const cab = () => {
+        doc.setFillColor(232, 240, 234); doc.rect(16, y - 5, 178, 7, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(30, 80, 50);
+        doc.text('Desbravador', cols.nome + 1, y); doc.text('Classe', cols.classe, y); doc.text('Requisitos', cols.req, y); doc.text('%', cols.pct, y, { align: 'right' }); doc.text('Espec.', cols.esp - 1, y, { align: 'right' });
+        y += 6; doc.setTextColor(20, 24, 20);
+      };
+      cab();
+      linhas.forEach((l, i) => {
+        if(y > 278){ y = novaPagina(doc, titulo) + 4; cab(); }
+        if(i % 2){ doc.setFillColor(246, 248, 246); doc.rect(16, y - 4.2, 178, 6, 'F'); }
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+        doc.text(doc.splitTextToSize(l.nome, 72)[0], cols.nome + 1, y);
+        doc.text(l.classe, cols.classe, y);
+        doc.text(l.feitos + ' / ' + l.total, cols.req, y);
+        doc.text(l.pct + '%', cols.pct, y, { align: 'right' });
+        doc.text(String(l.espec), cols.esp - 1, y, { align: 'right' });
+        y += 6;
+      });
+      return y + 4;
+    }
+    function linhasRelatorio(filtroClasse){
+      const l = [];
+      pessoas.forEach(p => p.classes.forEach(c => {
+        if(filtroClasse && c.classe !== filtroClasse) return;
+        l.push({ nome: p.nome, classe: c.classe, feitos: c.feitos, total: c.total, pct: c.pct, espec: p.especs.length });
+      }));
+      return l;
+    }
+    function pdfRelatorioGeral(){
+      if(!pessoas.length){ alert('Não há desbravadores cadastrados.'); return; }
+      const doc = novoDoc(); if(!doc) return;
+      const tit = 'Relatório geral';
+      let y = cabecalho(doc, tit);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.text('Relatório geral de classes e especialidades', 16, y); y += 6;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(80, 90, 82);
+      doc.text(pessoas.length + ' desbravadores · ' + todasEspec.length + ' especialidades concluídas · ' + hojeLongo(), 16, y); y += 10;
+      doc.setTextColor(20, 24, 20);
+      const classes = Array.from(new Set(pessoas.flatMap(p => p.classes.map(c => c.classe)))).sort((a, b) => ordemClasse(a) - ordemClasse(b));
+      classes.forEach(cl => {
+        const l = linhasRelatorio(cl).sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR', { sensitivity: 'base' }));
+        const media = l.length ? Math.round(l.reduce((s, x) => s + x.pct, 0) / l.length) : 0;
+        const concl = l.filter(x => x.total && x.pct === 100).length;
+        y = garantir(doc, y, 30, tit);
+        y = secao(doc, y, cl.toLocaleUpperCase('pt-BR') + '  —  ' + l.length + ' aluno(s) · média ' + media + '% · ' + concl + ' concluíram', tit);
+        y = tabelaTurma(doc, y, l, tit);
+      });
+      rodape(doc);
+      salvarPDF(doc, 'relatorio-geral-classes.pdf');
+    }
+    function pdfRelatorioClasse(classe){
+      const l = linhasRelatorio(classe).sort((a, b) => b.pct - a.pct || String(a.nome).localeCompare(String(b.nome), 'pt-BR', { sensitivity: 'base' }));
+      if(!l.length){ alert('Não há desbravadores nessa classe.'); return; }
+      const doc = novoDoc(); if(!doc) return;
+      const tit = 'Relatório da classe ' + classe;
+      let y = cabecalho(doc, 'Relatório de classe');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text('Classe ' + classe, 16, y); y += 6;
+      const media = Math.round(l.reduce((s, x) => s + x.pct, 0) / l.length);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(80, 90, 82);
+      doc.text(l.length + ' aluno(s) · média de conclusão ' + media + '% · ' + l.filter(x => x.total && x.pct === 100).length + ' concluíram a classe · ' + hojeLongo(), 16, y); y += 10;
+      doc.setTextColor(20, 24, 20);
+      tabelaTurma(doc, y, l, tit);
+      rodape(doc);
+      salvarPDF(doc, 'relatorio-classe-' + slug(classe) + '.pdf');
+    }
+    function pdfRelatorioEspec(ano){
+      const nomes = {};
+      pessoas.forEach(p => { if(p.usuarioId) nomes[p.usuarioId] = p.nome; });
+      const l = todasEspec.filter(e => String(e.ano) === String(ano));
+      if(!l.length){ alert('Nenhuma especialidade concluída registrada em ' + ano + '.'); return; }
+      const doc = novoDoc(); if(!doc) return;
+      const tit = 'Especialidades concluídas ' + ano;
+      let y = cabecalho(doc, 'Especialidades concluídas');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text('Especialidades concluídas em ' + ano, 16, y); y += 6;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(80, 90, 82);
+      doc.text(l.length + ' conclusão(ões) · ' + hojeLongo(), 16, y); y += 10;
+      doc.setTextColor(20, 24, 20);
+      const porPessoa = {};
+      l.forEach(e => { (porPessoa[e.usuario_id] = porPessoa[e.usuario_id] || []).push(e); });
+      Object.keys(porPessoa).sort((a, b) => String(nomes[a] || '').localeCompare(String(nomes[b] || ''), 'pt-BR', { sensitivity: 'base' })).forEach(id => {
+        y = secao(doc, y, (nomes[id] || 'Usuário sem ficha').toLocaleUpperCase('pt-BR') + '  (' + porPessoa[id].length + ')', tit);
+        doc.setFontSize(10);
+        porPessoa[id].forEach(e => {
+          y = garantir(doc, y, 6, tit);
+          doc.setFont('helvetica', 'normal');
+          doc.text(doc.splitTextToSize('•  ' + e.especialidade + (e.categoria ? ' (' + e.categoria + ')' : ''), 150)[0], 18, y);
+          if(e.data_conclusao) doc.text(dataBr(e.data_conclusao), 194, y, { align: 'right' });
+          y += 6;
+        });
+        y += 3;
+      });
+      rodape(doc);
+      salvarPDF(doc, 'especialidades-' + ano + '.pdf');
+    }
+
+    // ---- Eventos ----
+    function trocarAba(qual){
+      view.querySelectorAll('.co-tab').forEach(b => b.classList.toggle('active', b.getAttribute('data-co-tab') === qual));
+      $('coPaneLista').style.display = qual === 'lista' ? '' : 'none';
+      $('coPaneRel').style.display = qual === 'rel' ? '' : 'none';
+    }
+    function abrir(){
+      if(!podeAcessar()) return;
+      aberta = null;
+      trocarAba('lista');
+      preencherCfg();
+      showView('view-coord');
+      carregar();
+    }
+    document.querySelectorAll('[data-coord-open]').forEach(el => el.addEventListener('click', e => { e.preventDefault(); abrir(); }));
+    view.querySelectorAll('.co-tab').forEach(b => b.addEventListener('click', () => trocarAba(b.getAttribute('data-co-tab'))));
+    $('coBackBtn').addEventListener('click', () => {
+      if(aberta && $('coPaneLista').style.display !== 'none'){ mostrarLista(); return; }
+      showView('view-dashboard');
+    });
+    $('coBusca').addEventListener('input', renderLista);
+    $('coFiltroClasse').addEventListener('change', renderLista);
+    $('coLista').addEventListener('click', e => {
+      const b = e.target.closest('.co-pessoa');
+      if(b) abrirFicha(b.getAttribute('data-chave'));
+    });
+    ['coCidade', 'coAssinante', 'coCargo'].forEach(id => $(id).addEventListener('input', salvarCfg));
+    $('coRelGeral').addEventListener('click', pdfRelatorioGeral);
+    $('coRelClasseBtn').addEventListener('click', () => { if($('coRelClasse').value) pdfRelatorioClasse($('coRelClasse').value); });
+    $('coRelEspecBtn').addEventListener('click', () => pdfRelatorioEspec($('coRelAno').value));
+    document.addEventListener('cedros:loggedin', window.__coordAplicarVisibilidade);
+    window.__coordAplicarVisibilidade();
   })();
 
   document.querySelectorAll('[data-back]').forEach(btn => {
