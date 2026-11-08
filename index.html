@@ -3596,6 +3596,13 @@
   .co-graf .barra{ transition:opacity .12s; }
   .co-graf .barra.dim{ opacity:.45; }
   .co-tip{ position:fixed; z-index:60; pointer-events:none; background:#101a14; color:var(--cream); border:1px solid rgba(255,255,255,0.18); border-radius:9px; padding:6px 10px; font-size:12px; font-weight:700; box-shadow:0 6px 18px rgba(0,0,0,0.45); }
+  .co-graf svg{ display:block; width:100%; height:auto; }
+  .co-graf .eixo{ fill:rgba(245,239,225,0.55); font-size:10px; font-family:inherit; }
+  .co-graf .grade{ stroke:rgba(245,239,225,0.1); stroke-width:1; }
+  .co-graf .valor{ fill:var(--cream); font-size:11px; font-weight:800; font-family:inherit; text-anchor:middle; }
+  .co-graf .barra{ transition:opacity .12s; }
+  .co-graf .barra.dim{ opacity:.45; }
+  .co-tip{ position:fixed; z-index:60; pointer-events:none; background:#101a14; color:var(--cream); border:1px solid rgba(255,255,255,0.18); border-radius:9px; padding:6px 10px; font-size:12px; font-weight:700; box-shadow:0 6px 18px rgba(0,0,0,0.45); }
 
   .cl-area-section{ margin-bottom:6px; }
   .cl-area-heading{
@@ -14241,6 +14248,12 @@
               <input type="text" id="coAssinante" class="co-input" placeholder="Nome de quem assina">
               <label class="co-label" for="coCargo">Cargo</label>
               <input type="text" id="coCargo" class="co-input" placeholder="Ex.: Coordenação de Classes">
+            </div>
+            <div class="co-card">
+              <h4 class="co-card-titulo">Classes e especialidades por ano</h4>
+              <p class="co-nota">Só o histórico: o que cada desbravador concluiu em cada ano, sem os requisitos.</p>
+              <select id="coHistAno" class="co-input"></select>
+              <button type="button" class="co-btn" id="coHistBtn">Gerar PDF</button>
             </div>
             <div class="co-card">
               <h4 class="co-card-titulo">Relatório geral do clube</h4>
@@ -37090,6 +37103,9 @@ const REQ_SUMMARIES = {
     const REGULARES = ['Amigo','Companheiro','Pesquisador','Pioneiro','Excursionista','Guia'];
     const LIDERANCA = ['Cartão de Liderança','Líder Master','Líder Master Avançado'];
     const ORDEM = REGULARES.concat(['Classe Agrupada'], LIDERANCA);
+    // Classe Avançada de cada cartão regular.
+    const AVANCADAS = { 'Amigo': 'Amigo da Natureza', 'Companheiro': 'Companheiro de Excursionismo', 'Pesquisador': 'Pesquisador de Campo e Bosque', 'Pioneiro': 'Pioneiro de Novos Caminhos', 'Excursionista': 'Excursionista na Mata', 'Guia': 'Guia de Exploração' };
+    const rotuloClasse = (classe, nivel) => nivel === 'avancada' ? (AVANCADAS[classe] || classe) + ' (Avançada)' : classe;
     const norm = s => String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
     const ordemClasse = c => { const i = ORDEM.indexOf(c); return i === -1 ? 99 : i; };
@@ -37104,6 +37120,8 @@ const REQ_SUMMARIES = {
     let especPorUsuario = {};   // usuario_id -> [{ id, especialidade, categoria, ano, data_conclusao }]
     let todasEspec = [];
     let feitosEm = {};          // desbravador_id -> { requisito_titulo: updated_at } (só os concluídos)
+    let registradas = [];       // classes registradas à mão (tabela classes_registradas)
+    let semTabelaClasses = false; // true enquanto a tabela ainda não existir no banco
     let aberta = null;          // chave da pessoa com a ficha aberta
     let carregando = false;
 
@@ -37150,8 +37168,24 @@ const REQ_SUMMARIES = {
       pessoas.forEach(p => {
         p.classes.sort((a, b) => ordemClasse(a.classe) - ordemClasse(b.classe));
         atualizarEspecDe(p);
+        atualizarRegistradasDe(p);
       });
       pessoas.sort((a, b) => cmpNome(a.nome, b.nome));
+    }
+    function atualizarRegistradasDe(p){
+      p.registradas = registradas.filter(r => p.usuarioId ? r.usuario_id === p.usuarioId : (!r.usuario_id && norm(r.nome_aluno) === norm(p.nome)));
+    }
+    // Classes concluídas de uma pessoa: as registradas à mão + as que fecharam
+    // 100% pelos requisitos (sem repetir a mesma classe/nível).
+    function classesDe(p){
+      const lista = (p.registradas || []).map(r => ({ classe: r.classe, nivel: r.nivel, ano: r.ano, data: r.data_conclusao || '', id: r.id, origem: 'registro' }));
+      p.classes.forEach(c => {
+        if(!c.concluidaEm) return;
+        const nivel = LIDERANCA.indexOf(c.classe) !== -1 ? 'lideranca' : 'regular';
+        if(lista.some(x => x.classe === c.classe && x.nivel === nivel)) return;
+        lista.push({ classe: c.classe, nivel: nivel, ano: anoDe(c.concluidaEm), data: String(c.concluidaEm).slice(0, 10), origem: 'requisitos' });
+      });
+      return lista.sort((a, b) => (b.ano - a.ano) || (ordemClasse(a.classe) - ordemClasse(b.classe)));
     }
     function atualizarEspecDe(p){
       p.especs = (p.usuarioId ? (especPorUsuario[p.usuarioId] || []) : []).slice()
@@ -37181,13 +37215,21 @@ const REQ_SUMMARIES = {
         if(!data || data.length < passo) break;
       }
     }
+    async function carregarRegistradas(){
+      registradas = []; semTabelaClasses = false;
+      if(!supa) return;
+      const { data, error } = await supa.from('classes_registradas')
+        .select('id, usuario_id, nome_aluno, classe, nivel, ano, data_conclusao').order('ano', { ascending: false });
+      if(error){ semTabelaClasses = true; console.error('Classes registradas indisponíveis (rode supabase/classes-registradas.sql):', error.message); return; }
+      registradas = data || [];
+    }
     async function carregar(){
       if(carregando) return;
       carregando = true;
       $('coLista').innerHTML = '<p class="co-vazio">Carregando…</p>';
       try {
         if(window.__clRecarregarDados) await window.__clRecarregarDados();
-        await Promise.all([carregarEspecialidades(), carregarConclusoes()]);
+        await Promise.all([carregarEspecialidades(), carregarConclusoes(), carregarRegistradas()]);
       } catch(e){ console.error('Coordenação de Classes:', e); }
       carregando = false;
       montarPessoas();
@@ -37202,9 +37244,9 @@ const REQ_SUMMARIES = {
       const por = {};
       const g = ano => por[ano] || (por[ano] = { ano: ano, especs: 0, classes: 0, porClasse: {}, quem: new Set() });
       todasEspec.forEach(e => { if(!e.ano) return; const x = g(e.ano); x.especs++; x.quem.add(e.usuario_id); });
-      pessoas.forEach(p => p.classes.forEach(c => {
-        if(!c.concluidaEm) return;
-        const x = g(anoDe(c.concluidaEm)); x.classes++; x.porClasse[c.classe] = (x.porClasse[c.classe] || 0) + 1;
+      pessoas.forEach(p => classesDe(p).forEach(c => {
+        if(!c.ano) return;
+        const x = g(c.ano), r = rotuloClasse(c.classe, c.nivel); x.classes++; x.porClasse[r] = (x.porClasse[r] || 0) + 1;
       }));
       const anos = Object.keys(por).map(Number);
       if(!anos.length) return [];
@@ -37293,6 +37335,8 @@ const REQ_SUMMARIES = {
       const anos = Array.from(new Set(todasEspec.map(e => e.ano).filter(Boolean))).sort((a, b) => b - a);
       if(!anos.length) anos.push(new Date().getFullYear());
       $('coRelAno').innerHTML = '<option value="todos">Todos os anos</option>' + anos.map(a => '<option value="' + a + '">' + a + '</option>').join('');
+      const anosHist = Array.from(new Set(todasEspec.map(e => e.ano).concat(pessoas.flatMap(p => classesDe(p).map(c => c.ano))).filter(Boolean))).sort((a, b) => b - a);
+      $('coHistAno').innerHTML = '<option value="todos">Todos os anos</option>' + anosHist.map(a => '<option value="' + a + '">' + a + '</option>').join('');
       const cat = $('coCatalogo');
       if(cat && !cat.children.length){
         const f = document.createDocumentFragment();
@@ -37301,7 +37345,7 @@ const REQ_SUMMARIES = {
       }
     }
     function renderResumo(){
-      const concluidas = pessoas.reduce((n, p) => n + p.classes.filter(c => c.total && c.pct === 100).length, 0);
+      const concluidas = pessoas.reduce((n, p) => n + classesDe(p).length, 0);
       const espec = pessoas.reduce((n, p) => n + p.especs.length, 0);
       $('coResumo').innerHTML =
         '<div class="co-stat"><b>' + pessoas.length + '</b><span>Desbravadores</span></div>' +
@@ -37317,6 +37361,7 @@ const REQ_SUMMARIES = {
           '<span class="co-pessoa-nome">' + esc(p.nome) + '</span>' +
           '<span class="co-chips">' +
             p.classes.map(c => '<span class="co-chip' + (c.total && c.pct === 100 ? ' ok' : '') + '">' + esc(c.classe) + ' · ' + c.pct + '%</span>').join('') +
+            (p.registradas || []).map(r => '<span class="co-chip ok">' + esc(rotuloClasse(r.classe, r.nivel)) + ' · ' + r.ano + '</span>').join('') +
             (p.especs.length ? '<span class="co-chip esp">' + plural(p.especs.length, 'especialidade', 'especialidades') + '</span>' : '') +
           '</span>' +
         '</button>').join('');
@@ -37351,7 +37396,7 @@ const REQ_SUMMARIES = {
       const g = {};
       const x = a => g[a] || (g[a] = { ano: a, classes: [], especs: 0 });
       p.especs.forEach(e => { if(e.ano) x(e.ano).especs++; });
-      p.classes.forEach(c => { if(c.concluidaEm) x(anoDe(c.concluidaEm)).classes.push(c.classe); });
+      classesDe(p).forEach(c => { if(c.ano) x(c.ano).classes.push(rotuloClasse(c.classe, c.nivel)); });
       return Object.keys(g).map(Number).sort((a, b) => b - a).map(a => g[a]);
     }
     function abrirFicha(chave){
@@ -37367,6 +37412,25 @@ const REQ_SUMMARIES = {
           (c.reqs.length ? '<details><summary>Ver requisitos</summary>' + c.reqs.map(r =>
             '<div class="co-req"><em class="' + r.status + '">' + STATUS_TXT[r.status] + '</em><span>' + esc(r.titulo) + '</span></div>').join('') + '</details>' : '') +
         '</div>').join('') || '<p class="co-nota">Sem classe cadastrada.</p>';
+      const conc = classesDe(p);
+      const concHtml = conc.length
+        ? porAno(conc).map(g =>
+            '<div class="co-ano"><span>' + (g.ano || 'Sem ano') + '</span><span>' + plural(g.itens.length, 'classe', 'classes') + '</span></div>' +
+            g.itens.map(c => '<div class="co-esp"><span>' + esc(rotuloClasse(c.classe, c.nivel)) + (c.origem === 'requisitos' ? ' <small>· pelos requisitos</small>' : '') + '</span><small>' + (c.data ? dataBr(c.data) : c.ano) + '</small>' +
+              (c.id ? '<button type="button" class="co-esp-del" data-delc="' + esc(c.id) + '" aria-label="Remover ' + esc(rotuloClasse(c.classe, c.nivel)) + '" title="Remover">×</button>' : '') + '</div>').join('')).join('')
+        : '<p class="co-nota">Nenhuma classe concluída registrada.</p>';
+      const hojeIso = new Date().toISOString().slice(0, 10);
+      const o = (v, t) => '<option value="' + esc(v) + '">' + esc(t) + '</option>';
+      const novaClasseHtml = semTabelaClasses
+        ? '<p class="co-nota">Para registrar classes, falta criar a tabela no banco: rode o arquivo supabase/classes-registradas.sql no SQL Editor do Supabase.</p>'
+        : '<div class="co-card"><h4 class="co-card-titulo">Registrar classe</h4><div class="co-novo">' +
+            '<select id="coNovaClasse" class="co-input" aria-label="Classe">' +
+              '<optgroup label="Classes Regulares">' + REGULARES.map(c => o(c + '|regular', c)).join('') + '</optgroup>' +
+              '<optgroup label="Classes Avançadas">' + REGULARES.map(c => o(c + '|avancada', AVANCADAS[c])).join('') + '</optgroup>' +
+              '<optgroup label="Liderança">' + LIDERANCA.map(c => o(c + '|lideranca', c)).join('') + '</optgroup>' +
+            '</select>' +
+            '<input type="date" id="coNovaClasseData" class="co-input" value="' + hojeIso + '" max="' + hojeIso + '" aria-label="Data de conclusão">' +
+            '<button type="button" class="co-btn" id="coNovaClasseSalvar">Registrar classe</button></div></div>';
       const especHtml = p.especs.length
         ? porAno(p.especs).map(g =>
             '<div class="co-ano"><span>' + (g.ano || 'Sem ano') + '</span><span>' + plural(g.itens.length, 'especialidade', 'especialidades') + '</span></div>' +
@@ -37387,13 +37451,16 @@ const REQ_SUMMARIES = {
       $('coDetalhe').innerHTML =
         '<button type="button" class="co-voltar" id="coFichaVoltar">‹ Voltar à lista</button>' +
         '<h3 class="co-det-nome">' + esc(p.nome) + '</h3><p class="co-det-sub">' + esc(sub) + '</p>' +
-        '<h4 class="co-card-titulo">Classes</h4>' + classesHtml +
+        '<h4 class="co-card-titulo">Classes (requisitos)</h4>' + classesHtml +
+        '<h4 class="co-card-titulo" style="margin-top:14px;">Classes concluídas (' + conc.length + ')</h4>' +
+        novaClasseHtml +
+        '<div class="co-card">' + concHtml + '</div>' +
         '<h4 class="co-card-titulo" style="margin-top:14px;">Especialidades concluídas (' + p.especs.length + ')</h4>' +
         novoHtml +
         '<div class="co-card">' + especHtml + '</div>' +
         '<h4 class="co-card-titulo" style="margin-top:14px;">Evolução por ano</h4><div class="co-card">' + evoHtml + '</div>' +
         '<h4 class="co-card-titulo" style="margin-top:14px;">Documentos</h4>' +
-        '<div class="co-card"><div class="co-acoes"><button type="button" class="co-btn" id="coFichaPdf">Ficha completa (PDF)</button></div>' +
+        '<div class="co-card"><div class="co-acoes"><button type="button" class="co-btn" id="coHistPdf">Histórico por ano (PDF)</button><button type="button" class="co-btn sec" id="coFichaPdf">Ficha completa (PDF)</button></div>' +
         '<div class="co-acoes" style="margin-top:10px;"><select class="co-input" id="coDecTipo">' +
           '<option value="participacao">Declaração de participação no clube</option>' +
           '<option value="classe">Declaração de classe</option>' +
@@ -37403,6 +37470,9 @@ const REQ_SUMMARIES = {
       $('coDetalhe').style.display = '';
       $('coFichaVoltar').addEventListener('click', mostrarLista);
       $('coFichaPdf').addEventListener('click', () => pdfFicha(p));
+      $('coHistPdf').addEventListener('click', () => pdfHistoricoPessoa(p));
+      if($('coNovaClasseSalvar')) $('coNovaClasseSalvar').addEventListener('click', () => registrarClasse(p));
+      $('coDetalhe').querySelectorAll('[data-delc]').forEach(b => b.addEventListener('click', () => removerClasse(p, b.getAttribute('data-delc'))));
       $('coDecGerar').addEventListener('click', () => pdfDeclaracao(p, $('coDecTipo').value));
       if($('coNovaSalvar')) $('coNovaSalvar').addEventListener('click', () => registrarEspec(p));
       $('coDetalhe').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => removerEspec(p, b.getAttribute('data-del'))));
@@ -37410,8 +37480,35 @@ const REQ_SUMMARIES = {
     }
 
     // ---- Cadastro de especialidades (por data) ----
+    async function registrarClasse(p){
+      const [classe, nivel] = String($('coNovaClasse').value).split('|');
+      const data = $('coNovaClasseData').value;
+      if(!classe || !nivel){ alert('Escolha a classe.'); return; }
+      if(!data){ alert('Informe a data de conclusão.'); return; }
+      if(!supa){ alert('Sem conexão com o banco de dados.'); return; }
+      const ja = classesDe(p).find(c => c.classe === classe && c.nivel === nivel);
+      if(ja && !confirm('"' + rotuloClasse(classe, nivel) + '" já consta para ' + p.nome + ' (' + (ja.data ? dataBr(ja.data) : ja.ano) + '). Registrar de novo?')) return;
+      const btn = $('coNovaClasseSalvar'); btn.disabled = true;
+      const u = window.__currentUsuario || {};
+      const payload = { usuario_id: p.usuarioId || null, nome_aluno: p.usuarioId ? null : p.nome, classe: classe, nivel: nivel, ano: anoDe(data), data_conclusao: data, registrado_por: u.nome || null };
+      const { data: linha, error } = await supa.from('classes_registradas').insert(payload).select('id, usuario_id, nome_aluno, classe, nivel, ano, data_conclusao').single();
+      btn.disabled = false;
+      if(error || !linha){ alert('Não foi possível registrar a classe: ' + (error ? error.message : 'erro desconhecido')); return; }
+      registradas.push(linha);
+      depoisDeMudarEspec(p);
+    }
+    async function removerClasse(p, id){
+      const r = (p.registradas || []).find(x => String(x.id) === String(id));
+      if(!r || !confirm('Remover "' + rotuloClasse(r.classe, r.nivel) + '" (' + (r.data_conclusao ? dataBr(r.data_conclusao) : r.ano) + ') de ' + p.nome + '?')) return;
+      if(!supa) return;
+      const { error } = await supa.from('classes_registradas').delete().eq('id', r.id);
+      if(error){ alert('Não foi possível remover: ' + error.message); return; }
+      registradas = registradas.filter(x => String(x.id) !== String(r.id));
+      depoisDeMudarEspec(p);
+    }
     function depoisDeMudarEspec(p){
       atualizarEspecDe(p);
+      atualizarRegistradasDe(p);
       renderResumo(); renderLista(); renderEvolucao(); preencherSeletores();
       abrirFicha(p.chave);
     }
@@ -37615,10 +37712,10 @@ const REQ_SUMMARIES = {
         return { titulo: 'Declaração de participação', corpo: 'Declaramos, para os devidos fins, que ' + nome + nasc + ' é membro ativo do ' + clube + sgc + ', participando das atividades do clube' + (cls.length ? ' na classe de ' + cls.join(' e ') : '') + '.', itens: [] };
       }
       if(tipo === 'classe'){
-        const feitas = p.classes.filter(c => c.total && c.pct === 100);
-        const cursando = p.classes.filter(c => !(c.total && c.pct === 100));
+        const feitas = classesDe(p);
+        const cursando = p.classes.filter(c => !(c.total && c.pct === 100) && !feitas.some(f => f.classe === c.classe && f.nivel !== 'avancada'));
         const partes = [];
-        if(feitas.length) partes.push('concluiu ' + (feitas.length === 1 ? 'a classe' : 'as classes') + ' de ' + feitas.map(c => c.classe + (c.concluidaEm ? ' (' + anoDe(c.concluidaEm) + ')' : '')).join(' e ') + ', cumprindo todos os requisitos');
+        if(feitas.length) partes.push('concluiu ' + (feitas.length === 1 ? 'a classe' : 'as classes') + ' de ' + feitas.slice().reverse().map(c => rotuloClasse(c.classe, c.nivel) + (c.ano ? ' (' + c.ano + ')' : '')).join(', '));
         cursando.forEach(c => partes.push('está cursando a classe de ' + c.classe + ', tendo concluído ' + c.feitos + ' de ' + c.total + ' requisitos (' + c.pct + '%)'));
         return { titulo: 'Declaração de classe', corpo: 'Declaramos, para os devidos fins, que ' + nome + nasc + ' membro do ' + clube + sgc + ', ' + (partes.join('; e ') || 'não possui classe cadastrada') + '.', itens: [] };
       }
@@ -37767,6 +37864,78 @@ const REQ_SUMMARIES = {
       salvarPDF(doc, 'especialidades-' + (todos ? 'todos-os-anos' : ano) + '.pdf');
     }
 
+    // ---- Histórico por ano: só classes e especialidades, sem requisitos ----
+    const dataOuAno = (data, ano) => data ? dataBr(data) : String(ano);
+    function pdfHistoricoPessoa(p){
+      const cls = classesDe(p), esp = p.especs;
+      const anos = Array.from(new Set(cls.map(c => c.ano).concat(esp.map(e => e.ano)).filter(Boolean))).sort((a, b) => b - a);
+      if(!anos.length){ alert('Ainda não há classes ou especialidades registradas para ' + p.nome + '.'); return; }
+      const doc = novoDoc(); if(!doc) return;
+      const tit = 'Histórico por ano — ' + p.nome;
+      let y = cabecalho(doc, 'Histórico por ano');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.text(p.nome, 16, y); y += 7;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(80, 90, 82);
+      doc.text(plural(cls.length, 'classe concluída', 'classes concluídas') + '  ·  ' + plural(esp.length, 'especialidade', 'especialidades') + '  ·  ' + hojeLongo(), 16, y); y += 8;
+      doc.setTextColor(20, 24, 20);
+      anos.forEach(a => {
+        const cs = cls.filter(c => c.ano === a), es = esp.filter(e => e.ano === a);
+        y = secao(doc, y + 2, String(a) + '  —  ' + plural(cs.length, 'classe', 'classes') + ' · ' + plural(es.length, 'especialidade', 'especialidades'), tit);
+        doc.setFontSize(10);
+        if(cs.length){
+          y = garantir(doc, y, 6, tit); doc.setFont('helvetica', 'bold'); doc.setTextColor(150, 105, 10); doc.text('Classes', 16, y); y += 5.5;
+          cs.forEach(c => { y = garantir(doc, y, 6, tit); doc.setFont('helvetica', 'normal'); doc.setTextColor(20, 24, 20); doc.text('•  ' + rotuloClasse(c.classe, c.nivel), 18, y); doc.text(dataOuAno(c.data, c.ano), 194, y, { align: 'right' }); y += 5.6; });
+          y += 2;
+        }
+        if(es.length){
+          y = garantir(doc, y, 6, tit); doc.setFont('helvetica', 'bold'); doc.setTextColor(150, 105, 10); doc.text('Especialidades', 16, y); y += 5.5;
+          es.slice().sort((m, n) => (m.data_conclusao || '').localeCompare(n.data_conclusao || '')).forEach(e => {
+            y = garantir(doc, y, 6, tit); doc.setFont('helvetica', 'normal'); doc.setTextColor(20, 24, 20);
+            doc.text(doc.splitTextToSize('•  ' + e.especialidade + (e.categoria ? ' (' + e.categoria + ')' : ''), 150)[0], 18, y);
+            doc.text(dataOuAno(e.data_conclusao, e.ano), 194, y, { align: 'right' }); y += 5.6;
+          });
+          y += 2;
+        }
+      });
+      rodape(doc);
+      salvarPDF(doc, 'historico-' + slug(p.nome) + '.pdf');
+    }
+    function pdfHistoricoClube(ano){
+      const todos = ano === 'todos';
+      const itens = [];
+      pessoas.forEach(p => {
+        classesDe(p).forEach(c => itens.push({ ano: c.ano, nome: p.nome, tipo: 'c', texto: rotuloClasse(c.classe, c.nivel), data: c.data }));
+        p.especs.forEach(e => itens.push({ ano: e.ano, nome: p.nome, tipo: 'e', texto: e.especialidade, data: e.data_conclusao || '' }));
+      });
+      const base = itens.filter(i => i.ano && (todos || String(i.ano) === String(ano)));
+      if(!base.length){ alert(todos ? 'Ainda não há classes ou especialidades registradas.' : 'Nada registrado em ' + ano + '.'); return; }
+      const doc = novoDoc(); if(!doc) return;
+      const tit = todos ? 'Histórico por ano' : 'Histórico de ' + ano;
+      let y = cabecalho(doc, 'Classes e especialidades por ano');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text(todos ? 'Classes e especialidades — todos os anos' : 'Classes e especialidades em ' + ano, 16, y); y += 6;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(80, 90, 82);
+      doc.text(plural(base.filter(i => i.tipo === 'c').length, 'classe concluída', 'classes concluídas') + ' · ' + plural(base.filter(i => i.tipo === 'e').length, 'especialidade', 'especialidades') + ' · ' + hojeLongo(), 16, y); y += 10;
+      doc.setTextColor(20, 24, 20);
+      Array.from(new Set(base.map(i => i.ano))).sort((a, b) => b - a).forEach(a => {
+        const doAno = base.filter(i => i.ano === a);
+        y = secao(doc, y, 'ANO ' + a + '  —  ' + plural(doAno.filter(i => i.tipo === 'c').length, 'classe', 'classes') + ' · ' + plural(doAno.filter(i => i.tipo === 'e').length, 'especialidade', 'especialidades'), tit);
+        Array.from(new Set(doAno.map(i => i.nome))).sort(cmpNome).forEach(nome => {
+          const meus = doAno.filter(i => i.nome === nome).sort((m, n) => (m.tipo === n.tipo ? (m.data || '').localeCompare(n.data || '') : (m.tipo === 'c' ? -1 : 1)));
+          y = garantir(doc, y, 14, tit);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(22, 120, 60); doc.text(nome, 16, y); y += 5.6;
+          doc.setFontSize(10);
+          meus.forEach(i => {
+            y = garantir(doc, y, 6, tit); doc.setFont('helvetica', 'normal'); doc.setTextColor(20, 24, 20);
+            doc.text(doc.splitTextToSize('•  ' + (i.tipo === 'c' ? 'Classe: ' : 'Especialidade: ') + i.texto, 150)[0], 18, y);
+            doc.text(dataOuAno(i.data, i.ano), 194, y, { align: 'right' }); y += 5.4;
+          });
+          y += 2.5;
+        });
+        y += 2;
+      });
+      rodape(doc);
+      salvarPDF(doc, 'historico-' + (todos ? 'todos-os-anos' : ano) + '.pdf');
+    }
+
     // Gráfico de barras no PDF (retângulos), com o valor sobre cada barra.
     function pdfBarras(doc, x, y, w, h, serie, rgb, titulo){
       doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(20, 24, 20);
@@ -37848,6 +38017,7 @@ const REQ_SUMMARIES = {
     $('coRelClasseBtn').addEventListener('click', () => { if($('coRelClasse').value) pdfRelatorioClasse($('coRelClasse').value); });
     $('coRelEspecBtn').addEventListener('click', () => pdfRelatorioEspec($('coRelAno').value));
     $('coEvoPdf').addEventListener('click', pdfEvolucao);
+    $('coHistBtn').addEventListener('click', () => pdfHistoricoClube($('coHistAno').value));
     ligarTooltip($('coGrafEspec')); ligarTooltip($('coGrafClasses'));
     document.addEventListener('cedros:loggedin', window.__coordAplicarVisibilidade);
     window.__coordAplicarVisibilidade();
