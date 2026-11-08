@@ -1638,12 +1638,13 @@ create policy p_classes_registradas on classes_registradas for all using(true) w
 
 
 -- ---------------------------------------------------------------------
--- Coordenação de Classes: quem assinou a especialidade concluída.
--- Guarda o nível da assinatura de cada especialidade registrada: Instrutor,
--- Regional, Associação ou Missão (vazio = ainda sem assinatura).
--- Rode uma vez no SQL Editor do Supabase (é seguro rodar de novo).
+-- Coordenação de Classes: quem já assinou a especialidade concluída.
+-- Guarda, numa lista separada por vírgula, as assinaturas já cumpridas:
+-- instrutor, regional, associacao, missao (vazio = nenhuma ainda).
+-- Ex.: 'instrutor,regional'. Rode no SQL Editor do Supabase; é seguro rodar
+-- de novo (também atualiza quem já tinha a versão de uma assinatura só).
 -- ---------------------------------------------------------------------
 alter table especialidades_concluidas add column if not exists assinatura text;
 alter table especialidades_concluidas drop constraint if exists especialidades_concluidas_assinatura_chk;
 alter table especialidades_concluidas add constraint especialidades_concluidas_assinatura_chk
-  check (assinatura is null or assinatura in ('instrutor', 'regional', 'associacao', 'missao'));
+  check (assinatura is null or assinatura ~ '^(instrutor|regional|associacao|missao)(,(instrutor|regional|associacao|missao))*$');
