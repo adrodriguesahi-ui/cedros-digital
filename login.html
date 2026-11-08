@@ -3582,8 +3582,11 @@
   .co-graf .barra{ transition:opacity .12s; }
   .co-graf .barra.dim{ opacity:.45; }
   .co-tip{ position:fixed; z-index:60; pointer-events:none; background:#101a14; color:var(--cream); border:1px solid rgba(255,255,255,0.18); border-radius:9px; padding:6px 10px; font-size:12px; font-weight:700; box-shadow:0 6px 18px rgba(0,0,0,0.45); }
-  .co-assin{ flex-shrink:0; max-width:112px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--cream); border-radius:8px; padding:4px 6px; font:inherit; font-size:11px; font-weight:700; color-scheme:dark; }
-  .co-assin option{ color:#1B2420; }
+  .co-esp{ flex-wrap:wrap; }
+  .co-assins{ flex:0 0 100%; display:flex; flex-wrap:wrap; gap:6px 16px; padding:2px 0 4px; }
+  .co-novo .co-assins{ padding:6px 2px 10px; }
+  .co-assin-op{ display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:rgba(245,239,225,0.85); cursor:pointer; }
+  .co-assin-op input{ width:18px; height:18px; margin:0; accent-color:var(--accent); cursor:pointer; }
 
   .cl-area-section{ margin-bottom:6px; }
   .cl-area-heading{
@@ -36845,8 +36848,12 @@ const REQ_SUMMARIES = {
     const AVANCADAS = { 'Amigo': 'Amigo da Natureza', 'Companheiro': 'Companheiro de Excursionismo', 'Pesquisador': 'Pesquisador de Campo e Bosque', 'Pioneiro': 'Pioneiro de Novos Caminhos', 'Excursionista': 'Excursionista na Mata', 'Guia': 'Guia de Exploração' };
     // Quem assinou a especialidade (coluna assinatura de especialidades_concluidas).
     const ASSIN = { instrutor: 'Instrutor', regional: 'Regional', associacao: 'Associação', missao: 'Missão' };
-    const etiquetaAssin = e => (e && ASSIN[e.assinatura]) ? ' · assinatura: ' + ASSIN[e.assinatura] : '';
-    const opcoesAssin = atual => '<option value="">Sem assinatura</option>' + Object.keys(ASSIN).map(k => '<option value="' + k + '"' + (atual === k ? ' selected' : '') + '>' + ASSIN[k] + '</option>').join('');
+    // A assinatura é uma lista (ex.: "instrutor,regional") das que já foram cumpridas.
+    const listaAssin = e => String((e && e.assinatura) || '').split(',').filter(k => ASSIN[k]);
+    const etiquetaAssin = e => { const l = listaAssin(e); return l.length ? ' · assinaturas: ' + l.map(k => ASSIN[k]).join(', ') : ''; };
+    const caixasAssin = (atual, attr) => '<div class="co-assins" ' + attr + '>' + Object.keys(ASSIN).map(k =>
+      '<label class="co-assin-op"><input type="checkbox" value="' + k + '"' + (atual.indexOf(k) !== -1 ? ' checked' : '') + '><span>' + ASSIN[k] + '</span></label>').join('') + '</div>';
+    const valorAssin = cont => Object.keys(ASSIN).filter(k => { const c = cont.querySelector('input[value="' + k + '"]'); return c && c.checked; }).join(',');
     const rotuloClasse = (classe, nivel) => nivel === 'avancada' ? (AVANCADAS[classe] || classe) + ' (Avançada)' : classe;
     const norm = s => String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
@@ -37184,8 +37191,8 @@ const REQ_SUMMARIES = {
         ? porAno(p.especs).map(g =>
             '<div class="co-ano"><span>' + (g.ano || 'Sem ano') + '</span><span>' + plural(g.itens.length, 'especialidade', 'especialidades') + '</span></div>' +
             g.itens.map(e => '<div class="co-esp"><span>' + esc(e.especialidade) + (e.categoria ? ' <small>· ' + esc(e.categoria) + '</small>' : '') + '</span><small>' + (e.data_conclusao ? dataBr(e.data_conclusao) : e.ano) + '</small>' +
-              (semColunaAssinatura ? '' : '<select class="co-assin" data-assin="' + esc(e.id) + '" aria-label="Assinatura de ' + esc(e.especialidade) + '">' + opcoesAssin(e.assinatura) + '</select>') +
-              '<button type="button" class="co-esp-del" data-del="' + esc(e.id) + '" aria-label="Remover ' + esc(e.especialidade) + '" title="Remover">×</button></div>').join('')).join('')
+              '<button type="button" class="co-esp-del" data-del="' + esc(e.id) + '" aria-label="Remover ' + esc(e.especialidade) + '" title="Remover">×</button>' +
+              (semColunaAssinatura ? '' : caixasAssin(listaAssin(e), 'data-assin="' + esc(e.id) + '"')) + '</div>').join('')).join('')
         : '<p class="co-nota">' + (p.usuarioId ? 'Nenhuma especialidade concluída registrada.' : 'Sem conta no app, então não é possível registrar especialidades.') + '</p>';
       const evo = evolucaoDe(p);
       const evoHtml = evo.length
@@ -37198,7 +37205,7 @@ const REQ_SUMMARIES = {
             '<input type="date" id="coNovaData" class="co-input" value="' + hoje + '" max="' + hoje + '" aria-label="Data de conclusão">' +
             (semColunaAssinatura
               ? '<p class="co-nota">Para sinalizar a assinatura (Instrutor, Regional, Associação ou Missão), falta adicionar a coluna no banco: rode o arquivo supabase/especialidade-assinatura.sql no SQL Editor do Supabase.</p>'
-              : '<select id="coNovaAssin" class="co-input" aria-label="Assinatura">' + opcoesAssin('') + '</select>') +
+              : '<p class="co-nota" style="margin:2px 2px 0;">Assinaturas já cumpridas:</p>' + caixasAssin([], 'id="coNovaAssin"')) +
             '<button type="button" class="co-btn" id="coNovaSalvar">Registrar</button></div></div>'
         : '';
       $('coDetalhe').innerHTML =
@@ -37228,7 +37235,7 @@ const REQ_SUMMARIES = {
       $('coDetalhe').querySelectorAll('[data-delc]').forEach(b => b.addEventListener('click', () => removerClasse(p, b.getAttribute('data-delc'))));
       $('coDecGerar').addEventListener('click', () => pdfDeclaracao(p, $('coDecTipo').value));
       if($('coNovaSalvar')) $('coNovaSalvar').addEventListener('click', () => registrarEspec(p));
-      $('coDetalhe').querySelectorAll('[data-assin]').forEach(s => s.addEventListener('change', () => mudarAssinatura(p, s.getAttribute('data-assin'), s.value)));
+      $('coDetalhe').querySelectorAll('.co-assins[data-assin]').forEach(c => c.addEventListener('change', () => mudarAssinatura(p, c.getAttribute('data-assin'), valorAssin(c))));
       $('coDetalhe').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => removerEspec(p, b.getAttribute('data-del'))));
       $('coDetalhe').scrollIntoView({ block: 'start' });
     }
@@ -37278,11 +37285,16 @@ const REQ_SUMMARIES = {
       if(ja && !confirm('"' + ja.especialidade + '" já está registrada para ' + p.nome + ' (' + (ja.data_conclusao ? dataBr(ja.data_conclusao) : ja.ano) + '). Registrar de novo?')) return;
       const btn = $('coNovaSalvar'); btn.disabled = true;
       const payload = { usuario_id: p.usuarioId, especialidade: nome, categoria: CATEGORIA_DO_NOME[nome] || null, ano: anoDe(data), data_conclusao: data };
-      const assin = (!semColunaAssinatura && $('coNovaAssin')) ? $('coNovaAssin').value : '';
+      const assin = (!semColunaAssinatura && $('coNovaAssin')) ? valorAssin($('coNovaAssin')) : '';
       if(assin) payload.assinatura = assin;
       const { data: linha, error } = await supa.from('especialidades_concluidas').insert(payload).select(semColunaAssinatura ? COLS_ESPEC : COLS_ESPEC + ', assinatura').single();
       btn.disabled = false;
-      if(error || !linha){ alert('Não foi possível registrar: ' + (error ? error.message : 'erro desconhecido')); return; }
+      if(error || !linha){
+        alert(error && error.code === '23514' && assin.indexOf(',') !== -1
+          ? 'O banco ainda aceita só uma assinatura por especialidade. Rode de novo o arquivo supabase/especialidade-assinatura.sql no SQL Editor do Supabase para liberar várias.'
+          : 'Não foi possível registrar: ' + (error ? error.message : 'erro desconhecido'));
+        return;
+      }
       todasEspec.push(linha);
       (especPorUsuario[p.usuarioId] = especPorUsuario[p.usuarioId] || []).push(linha);
       depoisDeMudarEspec(p);
@@ -37291,7 +37303,12 @@ const REQ_SUMMARIES = {
       const e = p.especs.find(x => String(x.id) === String(id));
       if(!e || !supa) return;
       const { error } = await supa.from('especialidades_concluidas').update({ assinatura: valor || null }).eq('id', e.id);
-      if(error){ alert('Não foi possível salvar a assinatura: ' + error.message); abrirFicha(p.chave); return; }
+      if(error){
+        alert(error.code === '23514'
+          ? 'O banco ainda aceita só uma assinatura por especialidade. Rode de novo o arquivo supabase/especialidade-assinatura.sql no SQL Editor do Supabase para liberar várias.'
+          : 'Não foi possível salvar a assinatura: ' + error.message);
+        abrirFicha(p.chave); return;
+      }
       e.assinatura = valor || null;
       const t = todasEspec.find(x => String(x.id) === String(e.id)); if(t) t.assinatura = e.assinatura;
     }
