@@ -3525,7 +3525,7 @@
   .co-wrap{ padding:4px 16px calc(120px + env(safe-area-inset-bottom,0px)); max-width:760px; margin:0 auto; box-sizing:border-box; }
   .co-wrap *{ box-sizing:border-box; }
   .co-tabs{ display:flex; gap:6px; background:rgba(255,255,255,0.05); border-radius:12px; padding:4px; margin-bottom:14px; }
-  .co-tab{ flex:1; min-width:0; border:0; background:transparent; color:rgba(245,239,225,0.65); font:inherit; font-size:12.5px; font-weight:800; padding:9px 4px; border-radius:9px; cursor:pointer; }
+  .co-tab{ flex:1; min-width:0; border:0; background:transparent; color:rgba(245,239,225,0.65); font:inherit; font-size:12px; font-weight:800; padding:9px 2px; border-radius:9px; cursor:pointer; }
   .co-tab.active{ background:var(--accent); color:#0D130C; }
   .co-resumo{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
   .co-stat{ background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:10px 8px; text-align:center; }
@@ -3587,6 +3587,21 @@
   .co-novo .co-assins{ padding:6px 2px 10px; }
   .co-assin-op{ display:flex; align-items:center; gap:6px; font-size:12px; font-weight:700; color:rgba(245,239,225,0.85); cursor:pointer; }
   .co-assin-op input{ width:18px; height:18px; margin:0; accent-color:var(--accent); cursor:pointer; }
+  .co-extra{ flex:0 0 100%; display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; padding:2px 0 4px; }
+  .co-extra small{ color:rgba(245,239,225,0.5); font-size:11.5px; }
+  .co-campo{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px; font-weight:700; color:rgba(245,239,225,0.85); }
+  .co-campo input[type=date], .co-ent-linha input[type=date]{ background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--cream); border-radius:8px; padding:5px 8px; font:inherit; font-size:12.5px; color-scheme:dark; }
+  .co-comp{ border-top:1px dashed rgba(255,255,255,0.08); padding-top:6px; }
+  .co-comp-link{ display:inline-flex; align-items:center; gap:8px; color:var(--accent); font-weight:800; font-size:12.5px; text-decoration:none; }
+  .co-comp-link img{ width:44px; height:44px; object-fit:cover; border-radius:6px; border:1px solid rgba(255,255,255,0.15); }
+  .co-comp-nome{ font-size:11.5px; color:rgba(245,239,225,0.55); flex:1 1 120px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .co-comp-acoes{ display:flex; flex-wrap:wrap; gap:6px; }
+  .co-mini{ display:inline-block; border:0; cursor:pointer; font:inherit; font-size:12px; font-weight:800; padding:7px 11px; border-radius:8px; background:rgba(255,255,255,0.1); color:var(--cream); }
+  .co-mini.perigo{ color:#ff9b9b; }
+  .co-ent-linha{ display:flex; align-items:center; justify-content:space-between; gap:8px 12px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.06); flex-wrap:wrap; }
+  .co-ent-linha > div{ min-width:0; flex:1 1 180px; }
+  .co-ent-linha b{ display:block; font-size:13px; }
+  .co-ent-linha small{ color:rgba(245,239,225,0.55); font-size:11.5px; }
 
   .cl-area-section{ margin-bottom:6px; }
   .cl-area-heading{
@@ -14164,6 +14179,7 @@
           <div class="co-tabs" role="tablist">
             <button type="button" class="co-tab active" data-co-tab="lista" role="tab">Desbravadores</button>
             <button type="button" class="co-tab" data-co-tab="evo" role="tab">Evolução</button>
+            <button type="button" class="co-tab" data-co-tab="ent" role="tab">Entregas</button>
             <button type="button" class="co-tab" data-co-tab="rel" role="tab">Relatórios</button>
           </div>
 
@@ -14195,6 +14211,20 @@
               <div id="coTabEvo"></div>
               <button type="button" class="co-btn" id="coEvoPdf" style="margin-top:10px;">Gerar PDF da evolução</button>
             </div>
+          </div>
+
+          <div id="coPaneEnt" style="display:none;">
+            <div class="co-card">
+              <h4 class="co-card-titulo">Investiduras e condecorações</h4>
+              <p class="co-nota">Marque a data em que a investidura de cada classe foi realizada e a data em que a condecoração de cada especialidade foi entregue.</p>
+              <div class="co-filtros">
+                <input type="search" id="coEntBusca" class="co-input" placeholder="Buscar desbravador…" autocomplete="off">
+                <select id="coEntStatus" class="co-input"><option value="pend">Pendentes</option><option value="ok">Entregues</option><option value="todos">Todas</option></select>
+              </div>
+              <button type="button" class="co-btn sec" id="coEntPdf">Gerar PDF desta lista</button>
+            </div>
+            <div class="co-card"><h4 class="co-card-titulo" id="coEntClassesTit">Investiduras de classe</h4><div id="coEntClasses"></div></div>
+            <div class="co-card"><h4 class="co-card-titulo" id="coEntEspecTit">Condecorações de especialidades</h4><div id="coEntEspec"></div></div>
           </div>
 
           <div id="coPaneRel" style="display:none;">
@@ -36850,11 +36880,20 @@ const REQ_SUMMARIES = {
     const ASSIN = { instrutor: 'Instrutor', regional: 'Regional', associacao: 'Associação', missao: 'Missão' };
     // A assinatura é uma lista (ex.: "instrutor,regional") das que já foram cumpridas.
     const listaAssin = e => String((e && e.assinatura) || '').split(',').filter(k => ASSIN[k]);
-    const etiquetaAssin = e => { const l = listaAssin(e); return l.length ? ' · assinaturas: ' + l.map(k => ASSIN[k]).join(', ') : ''; };
+    const etiquetaAssin = e => { const l = listaAssin(e); return (l.length ? ' · assinaturas: ' + l.map(k => ASSIN[k]).join(', ') : '') + (e && e.data_entrega ? ' · condecoração entregue em ' + dataBr(e.data_entrega) : ''); };
+    const etiquetaInvest = c => c && c.investidura ? ' · investidura em ' + dataBr(c.investidura) : '';
     const caixasAssin = (atual, attr) => '<div class="co-assins" ' + attr + '>' + Object.keys(ASSIN).map(k =>
       '<label class="co-assin-op"><input type="checkbox" value="' + k + '"' + (atual.indexOf(k) !== -1 ? ' checked' : '') + '><span>' + ASSIN[k] + '</span></label>').join('') + '</div>';
     const valorAssin = cont => Object.keys(ASSIN).filter(k => { const c = cont.querySelector('input[value="' + k + '"]'); return c && c.checked; }).join(',');
-    const rotuloClasse = (classe, nivel) => nivel === 'avancada' ? (AVANCADAS[classe] || classe) + ' (Avançada)' : classe;
+    // Amigo -> "Amigo (Regular)" / "Amigo da Natureza (Avançada)"; Liderança fica como está.
+    const rotuloClasse = (classe, nivel) => nivel === 'avancada' ? (AVANCADAS[classe] || classe) + ' (Avançada)' : (REGULARES.indexOf(classe) !== -1 ? classe + ' (Regular)' : classe);
+    // Posição de um rótulo na ordem Amigo, Amigo da Natureza, Companheiro, ... (pra ordenar o resumo).
+    const ordemRotulo = r => {
+      const i = ORDEM.findIndex(c => r === c || r.indexOf(c + ' (') === 0);
+      if(i !== -1) return i * 2;
+      const j = REGULARES.findIndex(c => r.indexOf(AVANCADAS[c]) === 0);
+      return j !== -1 ? j * 2 + 1 : 99;
+    };
     const norm = s => String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
     const ordemClasse = c => { const i = ORDEM.indexOf(c); return i === -1 ? 99 : i; };
@@ -36865,6 +36904,52 @@ const REQ_SUMMARIES = {
     const plural = (n, um, varios) => n + ' ' + (n === 1 ? um : varios);
     const STATUS_TXT = { done: 'Concluído', progress: 'Em andamento', todo: 'Pendente' };
 
+    // ---- Comprovante da classe (um único arquivo por classe) ----
+    // Foto do cartão da classe ou arquivo digitalizado, no bucket "comprovantes"
+    // (o mesmo dos comprovantes de requisito); a tabela guarda só o caminho.
+    const BUCKET = 'comprovantes';
+    const LIMITE_MB = 10;
+    const novoId = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(36).slice(2);
+    function urlComprovante(caminho){
+      try { const r = supa.storage.from(BUCKET).getPublicUrl(caminho); return (r && r.data && r.data.publicUrl) || ''; } catch(e){ return ''; }
+    }
+    const ehImagem = nome => /\.(jpg|jpeg|png|webp|gif)$/i.test(String(nome || ''));
+    // Foto de celular chega com 5-10 MB: reduz pra no máximo 1600 px de lado (JPEG).
+    function reduzirImagem(arquivo){
+      return new Promise(resolve => {
+        if(!/^image\//.test(arquivo.type) || arquivo.type === 'image/gif'){ resolve(arquivo); return; }
+        const url = URL.createObjectURL(arquivo);
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const max = 1600, f = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+            const cv = document.createElement('canvas');
+            cv.width = Math.round(img.naturalWidth * f); cv.height = Math.round(img.naturalHeight * f);
+            cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+            cv.toBlob(b => { URL.revokeObjectURL(url); resolve(b || arquivo); }, 'image/jpeg', 0.85);
+          } catch(e){ URL.revokeObjectURL(url); resolve(arquivo); }
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); resolve(arquivo); };
+        img.src = url;
+      });
+    }
+    // Devolve { path, nome } ou lança erro com texto pronto pra mostrar.
+    async function enviarComprovanteClasse(arquivo){
+      if(!supa) throw new Error('Sem conexão com o banco de dados.');
+      if(arquivo.size > LIMITE_MB * 1024 * 1024) throw new Error('O arquivo tem mais de ' + LIMITE_MB + ' MB. Escolha um menor.');
+      const blob = await reduzirImagem(arquivo);
+      const ext = blob.type === 'image/jpeg' ? 'jpg' : (blob.type === 'application/pdf' ? 'pdf' : ((String(arquivo.name).match(/\.([a-zA-Z0-9]{1,5})$/) || [])[1] || 'bin').toLowerCase());
+      const caminho = 'classes/' + novoId() + '.' + ext;
+      const { error } = await supa.storage.from(BUCKET).upload(caminho, blob, { contentType: blob.type || arquivo.type || 'application/octet-stream', upsert: false });
+      if(error) throw new Error(error.message);
+      return { path: caminho, nome: arquivo.name || ('comprovante.' + ext) };
+    }
+    async function apagarComprovante(caminho){
+      if(!supa || !caminho) return;
+      const { error } = await supa.storage.from(BUCKET).remove([caminho]);
+      if(error) console.error('Erro ao apagar comprovante:', error.message);
+    }
+
     let pessoas = [];
     let especPorUsuario = {};   // usuario_id -> [{ id, especialidade, categoria, ano, data_conclusao }]
     let todasEspec = [];
@@ -36872,7 +36957,12 @@ const REQ_SUMMARIES = {
     let registradas = [];       // classes registradas à mão (tabela classes_registradas)
     let semTabelaClasses = false; // true enquanto a tabela ainda não existir no banco
     let semColunaAssinatura = false; // true enquanto a coluna assinatura ainda não existir no banco
+    let semColunaEntrega = false;    // true enquanto a coluna data_entrega ainda não existir no banco
+    let semColunasClasse = false;    // true enquanto investidura/comprovante ainda não existirem no banco
     const COLS_ESPEC = 'id, usuario_id, especialidade, categoria, ano, data_conclusao';
+    const COLS_REG = 'id, usuario_id, nome_aluno, classe, nivel, ano, data_conclusao';
+    const colsEspec = () => COLS_ESPEC + (semColunaAssinatura ? '' : ', assinatura') + (semColunaEntrega ? '' : ', data_entrega');
+    const colsReg = () => COLS_REG + (semColunasClasse ? '' : ', data_investidura, comprovante_path, comprovante_nome');
     let aberta = null;          // chave da pessoa com a ficha aberta
     let carregando = false;
 
@@ -36929,7 +37019,7 @@ const REQ_SUMMARIES = {
     // Classes concluídas de uma pessoa: as registradas à mão + as que fecharam
     // 100% pelos requisitos (sem repetir a mesma classe/nível).
     function classesDe(p){
-      const lista = (p.registradas || []).map(r => ({ classe: r.classe, nivel: r.nivel, ano: r.ano, data: r.data_conclusao || '', id: r.id, origem: 'registro' }));
+      const lista = (p.registradas || []).map(r => ({ classe: r.classe, nivel: r.nivel, ano: r.ano, data: r.data_conclusao || '', id: r.id, origem: 'registro', investidura: r.data_investidura || '', compPath: r.comprovante_path || '', compNome: r.comprovante_nome || '' }));
       p.classes.forEach(c => {
         if(!c.concluidaEm) return;
         const nivel = LIDERANCA.indexOf(c.classe) !== -1 ? 'lideranca' : 'regular';
@@ -36945,12 +37035,14 @@ const REQ_SUMMARIES = {
     async function carregarEspecialidades(){
       especPorUsuario = {}; todasEspec = [];
       if(!supa) return;
-      // Tenta com a coluna assinatura; se o banco ainda não a tem, lê sem ela.
-      semColunaAssinatura = false;
-      let r = await supa.from('especialidades_concluidas').select(COLS_ESPEC + ', assinatura').order('ano', { ascending: false });
-      if(r.error){
-        semColunaAssinatura = true;
-        r = await supa.from('especialidades_concluidas').select(COLS_ESPEC).order('ano', { ascending: false });
+      // Tenta com assinatura e data de entrega; se o banco ainda não tem as
+      // colunas novas, lê só as que existem.
+      const camadas = [[false, false], [false, true], [true, true]]; // [semAssinatura, semEntrega]
+      let r = null;
+      for(const [semA, semE] of camadas){
+        semColunaAssinatura = semA; semColunaEntrega = semE;
+        r = await supa.from('especialidades_concluidas').select(colsEspec()).order('ano', { ascending: false });
+        if(!r.error) break;
       }
       const { data, error } = r;
       if(error){ console.error('Erro ao carregar especialidades concluídas:', error.message); return; }
@@ -36972,12 +37064,16 @@ const REQ_SUMMARIES = {
       }
     }
     async function carregarRegistradas(){
-      registradas = []; semTabelaClasses = false;
+      registradas = []; semTabelaClasses = false; semColunasClasse = false;
       if(!supa) return;
-      const { data, error } = await supa.from('classes_registradas')
-        .select('id, usuario_id, nome_aluno, classe, nivel, ano, data_conclusao').order('ano', { ascending: false });
-      if(error){ semTabelaClasses = true; console.error('Classes registradas indisponíveis (rode supabase/classes-registradas.sql):', error.message); return; }
-      registradas = data || [];
+      let r = await supa.from('classes_registradas').select(colsReg()).order('ano', { ascending: false });
+      if(r.error){
+        // Sem as colunas novas (investidura/comprovante)? Lê só as antigas.
+        semColunasClasse = true;
+        r = await supa.from('classes_registradas').select(colsReg()).order('ano', { ascending: false });
+      }
+      if(r.error){ semTabelaClasses = true; semColunasClasse = false; console.error('Classes registradas indisponíveis (rode supabase/coordenacao-classes.sql):', r.error.message); return; }
+      registradas = r.data || [];
     }
     async function carregar(){
       if(carregando) return;
@@ -37012,7 +37108,7 @@ const REQ_SUMMARIES = {
       return saida;
     }
     function textoPorClasse(x){
-      return Object.keys(x.porClasse).sort((a, b) => ordemClasse(a) - ordemClasse(b)).map(c => c + ' ' + x.porClasse[c]).join(' · ');
+      return Object.keys(x.porClasse).sort((a, b) => ordemRotulo(a) - ordemRotulo(b)).map(c => c + ' ' + x.porClasse[c]).join(' · ');
     }
 
     // ---- Gráfico de barras (SVG) ----
@@ -37075,6 +37171,107 @@ const REQ_SUMMARIES = {
         : '<p class="co-vazio">Sem registros ainda.</p>';
     }
 
+    // ---- Entregas: investidura das classes e condecoração das especialidades ----
+    // st: 'pend' (sem data), 'ok' (com data) ou 'todos'.
+    function dadosEntregas(st, termo){
+      const passa = feito => st === 'todos' || (st === 'ok' ? feito : !feito);
+      const classes = [], espec = [];
+      pessoas.forEach(p => {
+        if(termo && norm(p.nome).indexOf(termo) === -1) return;
+        classesDe(p).forEach(c => { const f = !!c.investidura; if(passa(f)) classes.push({ p: p, c: c, feito: f }); });
+        p.especs.forEach(e => { const f = !!e.data_entrega; if(passa(f)) espec.push({ p: p, e: e, feito: f }); });
+      });
+      classes.sort((a, b) => (b.c.ano - a.c.ano) || cmpNome(a.p.nome, b.p.nome));
+      espec.sort((a, b) => (b.e.ano - a.e.ano) || cmpNome(a.p.nome, b.p.nome) || String(a.e.especialidade).localeCompare(String(b.e.especialidade), 'pt-BR'));
+      return { classes: classes, espec: espec };
+    }
+    const LIMITE_LINHAS = 150;
+    function renderEntregas(){
+      const boxC = $('coEntClasses'), boxE = $('coEntEspec');
+      if(!boxC || !boxE) return;
+      const st = $('coEntStatus').value, termo = norm($('coEntBusca').value);
+      const d = dadosEntregas(st, termo), todos = dadosEntregas('todos', termo);
+      const pendC = todos.classes.filter(x => !x.feito).length, pendE = todos.espec.filter(x => !x.feito).length;
+      $('coEntClassesTit').textContent = 'Investiduras de classe — ' + pendC + ' pendente' + (pendC === 1 ? '' : 's') + ' de ' + todos.classes.length;
+      $('coEntEspecTit').textContent = 'Condecorações de especialidades — ' + pendE + ' pendente' + (pendE === 1 ? '' : 's') + ' de ' + todos.espec.length;
+      const corte = (lista, tit) => lista.length > LIMITE_LINHAS ? '<p class="co-nota">Mostrando ' + LIMITE_LINHAS + ' de ' + lista.length + ' ' + tit + '. Use a busca para achar o resto.</p>' : '';
+      boxC.innerHTML = d.classes.length
+        ? d.classes.slice(0, LIMITE_LINHAS).map(({ p, c }) =>
+            '<div class="co-ent-linha"><div><b>' + esc(p.nome) + '</b><small>' + esc(rotuloClasse(c.classe, c.nivel)) + ' · concluída em ' + (c.data ? dataBr(c.data) : c.ano) + '</small></div>' +
+            (semTabelaClasses || semColunasClasse
+              ? '<small>indisponível: falta atualizar o banco</small>'
+              : (c.id
+                  ? '<label class="co-campo">Investidura <input type="date" data-ent-inv="' + esc(p.chave + '|' + c.id) + '" value="' + esc(c.investidura) + '"></label>'
+                  : '<button type="button" class="co-mini" data-ent-reg="' + esc(p.chave + '|' + c.classe + '|' + c.nivel + '|' + c.data) + '">Registrar</button>')) +
+            '</div>').join('') + corte(d.classes, 'classes')
+        : '<p class="co-nota">Nada por aqui com este filtro.</p>';
+      boxE.innerHTML = d.espec.length
+        ? d.espec.slice(0, LIMITE_LINHAS).map(({ p, e }) =>
+            '<div class="co-ent-linha"><div><b>' + esc(p.nome) + '</b><small>' + esc(e.especialidade) + ' · concluída em ' + (e.data_conclusao ? dataBr(e.data_conclusao) : e.ano) + '</small></div>' +
+            (semColunaEntrega
+              ? '<small>indisponível: falta atualizar o banco</small>'
+              : '<label class="co-campo">Entrega <input type="date" data-ent-esp="' + esc(p.chave + '|' + e.id) + '" value="' + esc(e.data_entrega || '') + '"></label>') +
+            '</div>').join('') + corte(d.espec, 'especialidades')
+        : '<p class="co-nota">Nada por aqui com este filtro.</p>';
+    }
+    function pessoaDaChave(chave){ return pessoas.find(x => x.chave === chave); }
+    function aoMudarEntrega(e){
+      const t = e.target;
+      const inv = t.getAttribute && t.getAttribute('data-ent-inv'), esp = t.getAttribute && t.getAttribute('data-ent-esp');
+      const chaveId = inv || esp; if(!chaveId) return;
+      const i = chaveId.lastIndexOf('|'), p = pessoaDaChave(chaveId.slice(0, i)); if(!p) return;
+      if(inv) mudarInvestidura(p, chaveId.slice(i + 1), t.value); else mudarEntrega(p, chaveId.slice(i + 1), t.value);
+    }
+    function aoClicarEntrega(e){
+      const b = e.target.closest && e.target.closest('[data-ent-reg]'); if(!b) return;
+      const [chave, classe, nivel, data] = b.getAttribute('data-ent-reg').split('|');
+      const p = pessoaDaChave(chave); if(p) registrarDeRequisitos(p, classe, nivel, data);
+    }
+    function tabelaEntregas(doc, y, linhas, titulo, rotData){
+      const cols = { nome: 16, item: 70, conc: 146, ent: 194 };
+      const cab = () => {
+        doc.setFillColor(232, 240, 234); doc.rect(16, y - 5, 178, 7, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(30, 80, 50);
+        doc.text('Desbravador', cols.nome + 1, y); doc.text('Item', cols.item, y); doc.text('Concluída', cols.conc, y); doc.text(rotData, cols.ent - 1, y, { align: 'right' });
+        y += 6; doc.setTextColor(20, 24, 20);
+      };
+      cab();
+      linhas.forEach((l, i) => {
+        if(y > 278){ y = novaPagina(doc, titulo) + 4; cab(); }
+        if(i % 2){ doc.setFillColor(246, 248, 246); doc.rect(16, y - 4.2, 178, 6, 'F'); }
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+        doc.text(doc.splitTextToSize(l.nome, 50)[0], cols.nome + 1, y);
+        doc.text(doc.splitTextToSize(l.item, 74)[0], cols.item, y);
+        doc.text(l.conc, cols.conc, y);
+        if(l.ent){ doc.setTextColor(22, 120, 60); doc.text(l.ent, cols.ent - 1, y, { align: 'right' }); doc.setTextColor(20, 24, 20); }
+        else { doc.setTextColor(170, 110, 10); doc.text('pendente', cols.ent - 1, y, { align: 'right' }); doc.setTextColor(20, 24, 20); }
+        y += 6;
+      });
+      return y + 4;
+    }
+    function pdfEntregas(){
+      const st = $('coEntStatus').value, termo = norm($('coEntBusca').value);
+      const d = dadosEntregas(st, termo);
+      if(!d.classes.length && !d.espec.length){ alert('Nada para listar com este filtro.'); return; }
+      const doc = novoDoc(); if(!doc) return;
+      const tit = 'Investiduras e condecorações';
+      let y = cabecalho(doc, tit);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.text('Investiduras e entrega de condecorações', 16, y); y += 6;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(80, 90, 82);
+      doc.text({ pend: 'Somente pendentes', ok: 'Somente entregues', todos: 'Pendentes e entregues' }[st] + (termo ? ' · busca: ' + $('coEntBusca').value.trim() : '') + ' · ' + hojeLongo(), 16, y); y += 10;
+      doc.setTextColor(20, 24, 20);
+      if(d.classes.length){
+        y = secao(doc, y, 'INVESTIDURAS DE CLASSE  (' + d.classes.length + ')', tit);
+        y = tabelaEntregas(doc, y, d.classes.map(x => ({ nome: x.p.nome, item: rotuloClasse(x.c.classe, x.c.nivel), conc: x.c.data ? dataBr(x.c.data) : String(x.c.ano), ent: x.c.investidura ? dataBr(x.c.investidura) : '' })), tit, 'Investidura');
+      }
+      if(d.espec.length){
+        y = secao(doc, y + 2, 'CONDECORAÇÕES DE ESPECIALIDADES  (' + d.espec.length + ')', tit);
+        y = tabelaEntregas(doc, y, d.espec.map(x => ({ nome: x.p.nome, item: x.e.especialidade, conc: x.e.data_conclusao ? dataBr(x.e.data_conclusao) : String(x.e.ano), ent: x.e.data_entrega ? dataBr(x.e.data_entrega) : '' })), tit, 'Entrega');
+      }
+      rodape(doc);
+      salvarPDF(doc, 'entregas-' + st + '.pdf');
+    }
+
     // ---- Interface ----
     function opcoesClasses(classes){
       const grupo = (rot, lista) => { const l = classes.filter(c => lista.indexOf(c) !== -1); return l.length ? '<optgroup label="' + rot + '">' + l.map(c => '<option value="' + esc(c) + '">' + esc(c) + '</option>').join('') + '</optgroup>' : ''; };
@@ -37127,6 +37324,7 @@ const REQ_SUMMARIES = {
       renderResumo();
       renderLista();
       renderEvolucao();
+      renderEntregas();
       if(aberta) abrirFicha(aberta); else mostrarLista();
     }
     function idadeDe(nasc){
@@ -37172,8 +37370,29 @@ const REQ_SUMMARIES = {
       const concHtml = conc.length
         ? porAno(conc).map(g =>
             '<div class="co-ano"><span>' + (g.ano || 'Sem ano') + '</span><span>' + plural(g.itens.length, 'classe', 'classes') + '</span></div>' +
-            g.itens.map(c => '<div class="co-esp"><span>' + esc(rotuloClasse(c.classe, c.nivel)) + (c.origem === 'requisitos' ? ' <small>· pelos requisitos</small>' : '') + '</span><small>' + (c.data ? dataBr(c.data) : c.ano) + '</small>' +
-              (c.id ? '<button type="button" class="co-esp-del" data-delc="' + esc(c.id) + '" aria-label="Remover ' + esc(rotuloClasse(c.classe, c.nivel)) + '" title="Remover">×</button>' : '') + '</div>').join('')).join('')
+            g.itens.map(c => {
+              const rot = rotuloClasse(c.classe, c.nivel);
+              let extra = '';
+              if(c.id && !semColunasClasse){
+                const url = c.compPath ? urlComprovante(c.compPath) : '';
+                extra =
+                  '<div class="co-extra"><label class="co-campo">Data da investidura <input type="date" data-invest="' + esc(c.id) + '" value="' + esc(c.investidura) + '"></label></div>' +
+                  '<div class="co-extra co-comp">' +
+                    (c.compPath
+                      ? '<a class="co-comp-link" href="' + esc(url) + '" target="_blank" rel="noopener">' + (ehImagem(c.compNome || c.compPath) ? '<img src="' + esc(url) + '" alt="Comprovante da classe">' : '') + '<span>Ver comprovante</span></a>' +
+                        '<span class="co-comp-nome">' + esc(c.compNome || '') + '</span>'
+                      : '<span class="co-comp-nome">Sem comprovante</span>') +
+                    '<span class="co-comp-acoes">' +
+                      '<label class="co-mini">' + (c.compPath ? 'Trocar por foto' : 'Tirar foto') + '<input type="file" accept="image/*" capture="environment" hidden data-cfoto="' + esc(c.id) + '"></label>' +
+                      '<label class="co-mini">' + (c.compPath ? 'Trocar por arquivo' : 'Enviar arquivo') + '<input type="file" accept="image/*,application/pdf" hidden data-carq="' + esc(c.id) + '"></label>' +
+                      (c.compPath ? '<button type="button" class="co-mini perigo" data-cdelcomp="' + esc(c.id) + '">Remover</button>' : '') +
+                    '</span></div>';
+              } else if(!c.id){
+                extra = '<div class="co-extra"><button type="button" class="co-mini" data-cregder="' + esc(c.classe + '|' + c.nivel + '|' + c.data) + '">Registrar para anexar comprovante e investidura</button></div>';
+              }
+              return '<div class="co-esp"><span>' + esc(rot) + (c.origem === 'requisitos' ? ' <small>· pelos requisitos</small>' : '') + '</span><small>' + (c.data ? dataBr(c.data) : c.ano) + '</small>' +
+                (c.id ? '<button type="button" class="co-esp-del" data-delc="' + esc(c.id) + '" aria-label="Remover ' + esc(rot) + '" title="Remover">×</button>' : '') + extra + '</div>';
+            }).join('')).join('')
         : '<p class="co-nota">Nenhuma classe concluída registrada.</p>';
       const hojeIso = new Date().toISOString().slice(0, 10);
       const o = (v, t) => '<option value="' + esc(v) + '">' + esc(t) + '</option>';
@@ -37181,18 +37400,30 @@ const REQ_SUMMARIES = {
         ? '<p class="co-nota">Para registrar classes, falta criar a tabela no banco: rode o arquivo supabase/classes-registradas.sql no SQL Editor do Supabase.</p>'
         : '<div class="co-card"><h4 class="co-card-titulo">Registrar classe</h4><div class="co-novo">' +
             '<select id="coNovaClasse" class="co-input" aria-label="Classe">' +
-              '<optgroup label="Classes Regulares">' + REGULARES.map(c => o(c + '|regular', c)).join('') + '</optgroup>' +
-              '<optgroup label="Classes Avançadas">' + REGULARES.map(c => o(c + '|avancada', AVANCADAS[c])).join('') + '</optgroup>' +
+              '<optgroup label="Classes Regulares">' + REGULARES.map(c => o(c + '|regular', rotuloClasse(c, 'regular'))).join('') + '</optgroup>' +
+              '<optgroup label="Classes Avançadas">' + REGULARES.map(c => o(c + '|avancada', rotuloClasse(c, 'avancada'))).join('') + '</optgroup>' +
               '<optgroup label="Liderança">' + LIDERANCA.map(c => o(c + '|lideranca', c)).join('') + '</optgroup>' +
             '</select>' +
-            '<input type="date" id="coNovaClasseData" class="co-input" value="' + hojeIso + '" max="' + hojeIso + '" aria-label="Data de conclusão">' +
+            '<label class="co-label" for="coNovaClasseData">Data de conclusão</label>' +
+            '<input type="date" id="coNovaClasseData" class="co-input" value="' + hojeIso + '" max="' + hojeIso + '">' +
+            (semColunasClasse
+              ? '<p class="co-nota">Para registrar a investidura e anexar o comprovante, falta atualizar o banco: rode o arquivo supabase/coordenacao-classes.sql no SQL Editor do Supabase.</p>'
+              : '<label class="co-label" for="coNovaInvest">Data da investidura (opcional)</label>' +
+                '<input type="date" id="coNovaInvest" class="co-input">' +
+                '<label class="co-label">Comprovante da classe (opcional): foto do cartão ou arquivo digitalizado</label>' +
+                '<div class="co-comp-acoes" style="margin-bottom:8px;">' +
+                  '<label class="co-mini">Tirar foto<input type="file" accept="image/*" capture="environment" hidden id="coNovaCompFoto"></label>' +
+                  '<label class="co-mini">Enviar arquivo<input type="file" accept="image/*,application/pdf" hidden id="coNovaCompArq"></label>' +
+                '</div><p class="co-nota" id="coNovaCompNome" style="margin-top:0;"></p>') +
             '<button type="button" class="co-btn" id="coNovaClasseSalvar">Registrar classe</button></div></div>';
       const especHtml = p.especs.length
         ? porAno(p.especs).map(g =>
             '<div class="co-ano"><span>' + (g.ano || 'Sem ano') + '</span><span>' + plural(g.itens.length, 'especialidade', 'especialidades') + '</span></div>' +
             g.itens.map(e => '<div class="co-esp"><span>' + esc(e.especialidade) + (e.categoria ? ' <small>· ' + esc(e.categoria) + '</small>' : '') + '</span><small>' + (e.data_conclusao ? dataBr(e.data_conclusao) : e.ano) + '</small>' +
               '<button type="button" class="co-esp-del" data-del="' + esc(e.id) + '" aria-label="Remover ' + esc(e.especialidade) + '" title="Remover">×</button>' +
-              (semColunaAssinatura ? '' : caixasAssin(listaAssin(e), 'data-assin="' + esc(e.id) + '"')) + '</div>').join('')).join('')
+              (semColunaAssinatura ? '' : caixasAssin(listaAssin(e), 'data-assin="' + esc(e.id) + '"')) +
+              (semColunaEntrega ? '' : '<div class="co-extra"><label class="co-campo">Condecoração entregue em <input type="date" data-entrega="' + esc(e.id) + '" value="' + esc(e.data_entrega || '') + '"></label><small>' + (e.data_entrega ? '' : 'ainda não entregue') + '</small></div>') +
+              '</div>').join('')).join('')
         : '<p class="co-nota">' + (p.usuarioId ? 'Nenhuma especialidade concluída registrada.' : 'Sem conta no app, então não é possível registrar especialidades.') + '</p>';
       const evo = evolucaoDe(p);
       const evoHtml = evo.length
@@ -37206,6 +37437,9 @@ const REQ_SUMMARIES = {
             (semColunaAssinatura
               ? '<p class="co-nota">Para sinalizar a assinatura (Instrutor, Regional, Associação ou Missão), falta adicionar a coluna no banco: rode o arquivo supabase/especialidade-assinatura.sql no SQL Editor do Supabase.</p>'
               : '<p class="co-nota" style="margin:2px 2px 0;">Assinaturas já cumpridas:</p>' + caixasAssin([], 'id="coNovaAssin"')) +
+            (semColunaEntrega
+              ? '<p class="co-nota">Para registrar a entrega da condecoração, falta atualizar o banco: rode o arquivo supabase/coordenacao-classes.sql no SQL Editor do Supabase.</p>'
+              : '<label class="co-label" for="coNovaEntrega">Data da entrega da condecoração (opcional)</label><input type="date" id="coNovaEntrega" class="co-input">') +
             '<button type="button" class="co-btn" id="coNovaSalvar">Registrar</button></div></div>'
         : '';
       $('coDetalhe').innerHTML =
@@ -37233,6 +37467,22 @@ const REQ_SUMMARIES = {
       $('coHistPdf').addEventListener('click', () => pdfHistoricoPessoa(p));
       if($('coNovaClasseSalvar')) $('coNovaClasseSalvar').addEventListener('click', () => registrarClasse(p));
       $('coDetalhe').querySelectorAll('[data-delc]').forEach(b => b.addEventListener('click', () => removerClasse(p, b.getAttribute('data-delc'))));
+      $('coDetalhe').querySelectorAll('[data-invest]').forEach(i => i.addEventListener('change', () => mudarInvestidura(p, i.getAttribute('data-invest'), i.value)));
+      $('coDetalhe').querySelectorAll('[data-cfoto],[data-carq]').forEach(i => i.addEventListener('change', () => {
+        const f = i.files && i.files[0]; if(f) anexarComprovante(p, i.getAttribute('data-cfoto') || i.getAttribute('data-carq'), f);
+      }));
+      $('coDetalhe').querySelectorAll('[data-cdelcomp]').forEach(b => b.addEventListener('click', () => removerComprovante(p, b.getAttribute('data-cdelcomp'))));
+      $('coDetalhe').querySelectorAll('[data-cregder]').forEach(b => b.addEventListener('click', () => {
+        const [classe, nivel, data] = b.getAttribute('data-cregder').split('|'); registrarDeRequisitos(p, classe, nivel, data);
+      }));
+      $('coDetalhe').querySelectorAll('[data-entrega]').forEach(i => i.addEventListener('change', () => mudarEntrega(p, i.getAttribute('data-entrega'), i.value)));
+      [['coNovaCompFoto', 'coNovaCompArq'], ['coNovaCompArq', 'coNovaCompFoto']].forEach(([a, b]) => {
+        const x = $(a); if(!x) return;
+        x.addEventListener('change', () => {
+          const f = x.files && x.files[0]; const o = $(b); if(o) o.value = '';
+          $('coNovaCompNome').textContent = f ? 'Arquivo escolhido: ' + f.name : '';
+        });
+      });
       $('coDecGerar').addEventListener('click', () => pdfDeclaracao(p, $('coDecTipo').value));
       if($('coNovaSalvar')) $('coNovaSalvar').addEventListener('click', () => registrarEspec(p));
       $('coDetalhe').querySelectorAll('.co-assins[data-assin]').forEach(c => c.addEventListener('change', () => mudarAssinatura(p, c.getAttribute('data-assin'), valorAssin(c))));
@@ -37241,6 +37491,11 @@ const REQ_SUMMARIES = {
     }
 
     // ---- Cadastro de especialidades (por data) ----
+    // Um único comprovante por classe: o arquivo escolhido no cadastro ou o último anexado.
+    function arquivoEscolhido(){
+      const a = $('coNovaCompFoto'), b = $('coNovaCompArq');
+      return (a && a.files && a.files[0]) || (b && b.files && b.files[0]) || null;
+    }
     async function registrarClasse(p){
       const [classe, nivel] = String($('coNovaClasse').value).split('|');
       const data = $('coNovaClasseData').value;
@@ -37249,29 +37504,91 @@ const REQ_SUMMARIES = {
       if(!supa){ alert('Sem conexão com o banco de dados.'); return; }
       const ja = classesDe(p).find(c => c.classe === classe && c.nivel === nivel);
       if(ja && !confirm('"' + rotuloClasse(classe, nivel) + '" já consta para ' + p.nome + ' (' + (ja.data ? dataBr(ja.data) : ja.ano) + '). Registrar de novo?')) return;
+      const arquivo = semColunasClasse ? null : arquivoEscolhido();
+      const invest = (!semColunasClasse && $('coNovaInvest')) ? $('coNovaInvest').value : '';
       const btn = $('coNovaClasseSalvar'); btn.disabled = true;
       const u = window.__currentUsuario || {};
       const payload = { usuario_id: p.usuarioId || null, nome_aluno: p.usuarioId ? null : p.nome, classe: classe, nivel: nivel, ano: anoDe(data), data_conclusao: data, registrado_por: u.nome || null };
-      const { data: linha, error } = await supa.from('classes_registradas').insert(payload).select('id, usuario_id, nome_aluno, classe, nivel, ano, data_conclusao').single();
+      if(invest) payload.data_investidura = invest;
+      const { data: linha, error } = await supa.from('classes_registradas').insert(payload).select(colsReg()).single();
+      if(error || !linha){ btn.disabled = false; alert('Não foi possível registrar a classe: ' + (error ? error.message : 'erro desconhecido')); return; }
+      registradas.push(linha);
+      if(arquivo){
+        try {
+          const env = await enviarComprovanteClasse(arquivo);
+          const { error: e2 } = await supa.from('classes_registradas').update({ comprovante_path: env.path, comprovante_nome: env.nome }).eq('id', linha.id);
+          if(e2){ await apagarComprovante(env.path); throw new Error(e2.message); }
+          linha.comprovante_path = env.path; linha.comprovante_nome = env.nome;
+        } catch(e){ alert('A classe foi registrada, mas o comprovante não foi enviado: ' + e.message + '\nVocê pode anexá-lo de novo na lista abaixo.'); }
+      }
       btn.disabled = false;
+      depoisDeMudarEspec(p);
+    }
+    // Classe que fechou pelos requisitos vira um registro, pra poder ter investidura e comprovante.
+    async function registrarDeRequisitos(p, classe, nivel, data){
+      if(!supa) return;
+      const u = window.__currentUsuario || {};
+      const d = data || new Date().toISOString().slice(0, 10);
+      const payload = { usuario_id: p.usuarioId || null, nome_aluno: p.usuarioId ? null : p.nome, classe: classe, nivel: nivel, ano: anoDe(d), data_conclusao: d, registrado_por: u.nome || null };
+      const { data: linha, error } = await supa.from('classes_registradas').insert(payload).select(colsReg()).single();
       if(error || !linha){ alert('Não foi possível registrar a classe: ' + (error ? error.message : 'erro desconhecido')); return; }
       registradas.push(linha);
       depoisDeMudarEspec(p);
     }
+    function registroDe(p, id){ return (p.registradas || []).find(x => String(x.id) === String(id)); }
+    async function mudarInvestidura(p, id, valor){
+      const r = registroDe(p, id); if(!r || !supa) return;
+      const { error } = await supa.from('classes_registradas').update({ data_investidura: valor || null }).eq('id', r.id);
+      if(error){ alert('Não foi possível salvar a data da investidura: ' + error.message); if(aberta === p.chave) abrirFicha(p.chave); return; }
+      r.data_investidura = valor || null;
+      renderEntregas();
+    }
+    async function anexarComprovante(p, id, arquivo){
+      const r = registroDe(p, id); if(!r || !supa) return;
+      if(r.comprovante_path && !confirm('Já existe um comprovante para esta classe. Substituir pelo novo arquivo?')){ abrirFicha(p.chave); return; }
+      try {
+        const env = await enviarComprovanteClasse(arquivo);
+        const antigo = r.comprovante_path;
+        const { error } = await supa.from('classes_registradas').update({ comprovante_path: env.path, comprovante_nome: env.nome }).eq('id', r.id);
+        if(error){ await apagarComprovante(env.path); throw new Error(error.message); }
+        r.comprovante_path = env.path; r.comprovante_nome = env.nome;
+        if(antigo) await apagarComprovante(antigo);
+      } catch(e){ alert('Não foi possível anexar o comprovante: ' + e.message); }
+      abrirFicha(p.chave);
+    }
+    async function removerComprovante(p, id){
+      const r = registroDe(p, id); if(!r || !r.comprovante_path || !supa) return;
+      if(!confirm('Remover o comprovante desta classe?')) return;
+      const { error } = await supa.from('classes_registradas').update({ comprovante_path: null, comprovante_nome: null }).eq('id', r.id);
+      if(error){ alert('Não foi possível remover: ' + error.message); return; }
+      await apagarComprovante(r.comprovante_path);
+      r.comprovante_path = null; r.comprovante_nome = null;
+      abrirFicha(p.chave);
+    }
     async function removerClasse(p, id){
-      const r = (p.registradas || []).find(x => String(x.id) === String(id));
-      if(!r || !confirm('Remover "' + rotuloClasse(r.classe, r.nivel) + '" (' + (r.data_conclusao ? dataBr(r.data_conclusao) : r.ano) + ') de ' + p.nome + '?')) return;
+      const r = registroDe(p, id);
+      if(!r || !confirm('Remover "' + rotuloClasse(r.classe, r.nivel) + '" (' + (r.data_conclusao ? dataBr(r.data_conclusao) : r.ano) + ') de ' + p.nome + '?' + (r.comprovante_path ? '\nO comprovante anexado também será apagado.' : ''))) return;
       if(!supa) return;
       const { error } = await supa.from('classes_registradas').delete().eq('id', r.id);
       if(error){ alert('Não foi possível remover: ' + error.message); return; }
+      if(r.comprovante_path) await apagarComprovante(r.comprovante_path);
       registradas = registradas.filter(x => String(x.id) !== String(r.id));
       depoisDeMudarEspec(p);
+    }
+    async function mudarEntrega(p, id, valor){
+      const e = p.especs.find(x => String(x.id) === String(id)); if(!e || !supa) return;
+      const { error } = await supa.from('especialidades_concluidas').update({ data_entrega: valor || null }).eq('id', e.id);
+      if(error){ alert('Não foi possível salvar a data de entrega: ' + error.message); if(aberta === p.chave) abrirFicha(p.chave); return; }
+      e.data_entrega = valor || null;
+      const t = todasEspec.find(x => String(x.id) === String(e.id)); if(t) t.data_entrega = e.data_entrega;
+      renderEntregas();
+      if(aberta === p.chave) abrirFicha(p.chave);
     }
     function depoisDeMudarEspec(p){
       atualizarEspecDe(p);
       atualizarRegistradasDe(p);
-      renderResumo(); renderLista(); renderEvolucao(); preencherSeletores();
-      abrirFicha(p.chave);
+      renderResumo(); renderLista(); renderEvolucao(); renderEntregas(); preencherSeletores();
+      if(aberta === p.chave) abrirFicha(p.chave);
     }
     async function registrarEspec(p){
       const nome = $('coNovaNome').value.trim();
@@ -37287,7 +37604,9 @@ const REQ_SUMMARIES = {
       const payload = { usuario_id: p.usuarioId, especialidade: nome, categoria: CATEGORIA_DO_NOME[nome] || null, ano: anoDe(data), data_conclusao: data };
       const assin = (!semColunaAssinatura && $('coNovaAssin')) ? valorAssin($('coNovaAssin')) : '';
       if(assin) payload.assinatura = assin;
-      const { data: linha, error } = await supa.from('especialidades_concluidas').insert(payload).select(semColunaAssinatura ? COLS_ESPEC : COLS_ESPEC + ', assinatura').single();
+      const entrega = (!semColunaEntrega && $('coNovaEntrega')) ? $('coNovaEntrega').value : '';
+      if(entrega) payload.data_entrega = entrega;
+      const { data: linha, error } = await supa.from('especialidades_concluidas').insert(payload).select(colsEspec()).single();
       btn.disabled = false;
       if(error || !linha){
         alert(error && error.code === '23514' && assin.indexOf(',') !== -1
@@ -37497,7 +37816,7 @@ const REQ_SUMMARIES = {
         const cursando = p.classes.filter(c => !(c.total && c.pct === 100) && !feitas.some(f => f.classe === c.classe && f.nivel !== 'avancada'));
         const partes = [];
         if(feitas.length) partes.push('concluiu ' + (feitas.length === 1 ? 'a classe' : 'as classes') + ' de ' + feitas.slice().reverse().map(c => rotuloClasse(c.classe, c.nivel) + (c.ano ? ' (' + c.ano + ')' : '')).join(', '));
-        cursando.forEach(c => partes.push('está cursando a classe de ' + c.classe + ', tendo concluído ' + c.feitos + ' de ' + c.total + ' requisitos (' + c.pct + '%)'));
+        cursando.forEach(c => partes.push('está cursando a classe de ' + rotuloClasse(c.classe, 'regular') + ', tendo concluído ' + c.feitos + ' de ' + c.total + ' requisitos (' + c.pct + '%)'));
         return { titulo: 'Declaração de classe', corpo: 'Declaramos, para os devidos fins, que ' + nome + nasc + ' membro do ' + clube + sgc + ', ' + (partes.join('; e ') || 'não possui classe cadastrada') + '.', itens: [] };
       }
       const ordenadas = p.especs.slice().sort((a, b) => (a.data_conclusao || (a.ano + '-00')).localeCompare(b.data_conclusao || (b.ano + '-00')));
@@ -37664,7 +37983,7 @@ const REQ_SUMMARIES = {
         doc.setFontSize(10);
         if(cs.length){
           y = garantir(doc, y, 6, tit); doc.setFont('helvetica', 'bold'); doc.setTextColor(150, 105, 10); doc.text('Classes', 16, y); y += 5.5;
-          cs.forEach(c => { y = garantir(doc, y, 6, tit); doc.setFont('helvetica', 'normal'); doc.setTextColor(20, 24, 20); doc.text('•  ' + rotuloClasse(c.classe, c.nivel), 18, y); doc.text(dataOuAno(c.data, c.ano), 194, y, { align: 'right' }); y += 5.6; });
+          cs.forEach(c => { y = garantir(doc, y, 6, tit); doc.setFont('helvetica', 'normal'); doc.setTextColor(20, 24, 20); doc.text(doc.splitTextToSize('•  ' + rotuloClasse(c.classe, c.nivel) + etiquetaInvest(c), 150)[0], 18, y); doc.text(dataOuAno(c.data, c.ano), 194, y, { align: 'right' }); y += 5.6; });
           y += 2;
         }
         if(es.length){
@@ -37684,7 +38003,7 @@ const REQ_SUMMARIES = {
       const todos = ano === 'todos';
       const itens = [];
       pessoas.forEach(p => {
-        classesDe(p).forEach(c => itens.push({ ano: c.ano, nome: p.nome, tipo: 'c', texto: rotuloClasse(c.classe, c.nivel), data: c.data }));
+        classesDe(p).forEach(c => itens.push({ ano: c.ano, nome: p.nome, tipo: 'c', texto: rotuloClasse(c.classe, c.nivel) + etiquetaInvest(c), data: c.data }));
         p.especs.forEach(e => itens.push({ ano: e.ano, nome: p.nome, tipo: 'e', texto: e.especialidade + etiquetaAssin(e), data: e.data_conclusao || '' }));
       });
       const base = itens.filter(i => i.ano && (todos || String(i.ano) === String(ano)));
@@ -37768,7 +38087,7 @@ const REQ_SUMMARIES = {
     }
 
     // ---- Eventos ----
-    const ABAS = { lista: 'coPaneLista', evo: 'coPaneEvo', rel: 'coPaneRel' };
+    const ABAS = { lista: 'coPaneLista', evo: 'coPaneEvo', ent: 'coPaneEnt', rel: 'coPaneRel' };
     function trocarAba(qual){
       view.querySelectorAll('.co-tab').forEach(b => b.classList.toggle('active', b.getAttribute('data-co-tab') === qual));
       Object.keys(ABAS).forEach(k => { $(ABAS[k]).style.display = k === qual ? '' : 'none'; });
@@ -37798,6 +38117,11 @@ const REQ_SUMMARIES = {
     $('coRelClasseBtn').addEventListener('click', () => { if($('coRelClasse').value) pdfRelatorioClasse($('coRelClasse').value); });
     $('coRelEspecBtn').addEventListener('click', () => pdfRelatorioEspec($('coRelAno').value));
     $('coEvoPdf').addEventListener('click', pdfEvolucao);
+    $('coEntBusca').addEventListener('input', renderEntregas);
+    $('coEntStatus').addEventListener('change', renderEntregas);
+    $('coEntPdf').addEventListener('click', pdfEntregas);
+    $('coPaneEnt').addEventListener('change', aoMudarEntrega);
+    $('coPaneEnt').addEventListener('click', aoClicarEntrega);
     $('coHistBtn').addEventListener('click', () => pdfHistoricoClube($('coHistAno').value));
     ligarTooltip($('coGrafEspec')); ligarTooltip($('coGrafClasses'));
     document.addEventListener('cedros:loggedin', window.__coordAplicarVisibilidade);

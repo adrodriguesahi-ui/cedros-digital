@@ -1648,3 +1648,9 @@ alter table especialidades_concluidas add column if not exists assinatura text;
 alter table especialidades_concluidas drop constraint if exists especialidades_concluidas_assinatura_chk;
 alter table especialidades_concluidas add constraint especialidades_concluidas_assinatura_chk
   check (assinatura is null or assinatura ~ '^(instrutor|regional|associacao|missao)(,(instrutor|regional|associacao|missao))*$');
+
+-- Coordenação de Classes: investidura, comprovante da classe e entrega da condecoração.
+alter table classes_registradas add column if not exists data_investidura date;
+alter table classes_registradas add column if not exists comprovante_path text;
+alter table classes_registradas add column if not exists comprovante_nome text;
+alter table especialidades_concluidas add column if not exists data_entrega date;
