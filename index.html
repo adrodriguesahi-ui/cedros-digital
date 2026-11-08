@@ -3596,13 +3596,8 @@
   .co-graf .barra{ transition:opacity .12s; }
   .co-graf .barra.dim{ opacity:.45; }
   .co-tip{ position:fixed; z-index:60; pointer-events:none; background:#101a14; color:var(--cream); border:1px solid rgba(255,255,255,0.18); border-radius:9px; padding:6px 10px; font-size:12px; font-weight:700; box-shadow:0 6px 18px rgba(0,0,0,0.45); }
-  .co-graf svg{ display:block; width:100%; height:auto; }
-  .co-graf .eixo{ fill:rgba(245,239,225,0.55); font-size:10px; font-family:inherit; }
-  .co-graf .grade{ stroke:rgba(245,239,225,0.1); stroke-width:1; }
-  .co-graf .valor{ fill:var(--cream); font-size:11px; font-weight:800; font-family:inherit; text-anchor:middle; }
-  .co-graf .barra{ transition:opacity .12s; }
-  .co-graf .barra.dim{ opacity:.45; }
-  .co-tip{ position:fixed; z-index:60; pointer-events:none; background:#101a14; color:var(--cream); border:1px solid rgba(255,255,255,0.18); border-radius:9px; padding:6px 10px; font-size:12px; font-weight:700; box-shadow:0 6px 18px rgba(0,0,0,0.45); }
+  .co-assin{ flex-shrink:0; max-width:112px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--cream); border-radius:8px; padding:4px 6px; font:inherit; font-size:11px; font-weight:700; color-scheme:dark; }
+  .co-assin option{ color:#1B2420; }
 
   .cl-area-section{ margin-bottom:6px; }
   .cl-area-heading{
@@ -37105,6 +37100,10 @@ const REQ_SUMMARIES = {
     const ORDEM = REGULARES.concat(['Classe Agrupada'], LIDERANCA);
     // Classe Avançada de cada cartão regular.
     const AVANCADAS = { 'Amigo': 'Amigo da Natureza', 'Companheiro': 'Companheiro de Excursionismo', 'Pesquisador': 'Pesquisador de Campo e Bosque', 'Pioneiro': 'Pioneiro de Novos Caminhos', 'Excursionista': 'Excursionista na Mata', 'Guia': 'Guia de Exploração' };
+    // Quem assinou a especialidade (coluna assinatura de especialidades_concluidas).
+    const ASSIN = { instrutor: 'Instrutor', regional: 'Regional', associacao: 'Associação', missao: 'Missão' };
+    const etiquetaAssin = e => (e && ASSIN[e.assinatura]) ? ' · assinatura: ' + ASSIN[e.assinatura] : '';
+    const opcoesAssin = atual => '<option value="">Sem assinatura</option>' + Object.keys(ASSIN).map(k => '<option value="' + k + '"' + (atual === k ? ' selected' : '') + '>' + ASSIN[k] + '</option>').join('');
     const rotuloClasse = (classe, nivel) => nivel === 'avancada' ? (AVANCADAS[classe] || classe) + ' (Avançada)' : classe;
     const norm = s => String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
@@ -37122,6 +37121,8 @@ const REQ_SUMMARIES = {
     let feitosEm = {};          // desbravador_id -> { requisito_titulo: updated_at } (só os concluídos)
     let registradas = [];       // classes registradas à mão (tabela classes_registradas)
     let semTabelaClasses = false; // true enquanto a tabela ainda não existir no banco
+    let semColunaAssinatura = false; // true enquanto a coluna assinatura ainda não existir no banco
+    const COLS_ESPEC = 'id, usuario_id, especialidade, categoria, ano, data_conclusao';
     let aberta = null;          // chave da pessoa com a ficha aberta
     let carregando = false;
 
@@ -37194,9 +37195,14 @@ const REQ_SUMMARIES = {
     async function carregarEspecialidades(){
       especPorUsuario = {}; todasEspec = [];
       if(!supa) return;
-      const { data, error } = await supa.from('especialidades_concluidas')
-        .select('id, usuario_id, especialidade, categoria, ano, data_conclusao')
-        .order('ano', { ascending: false });
+      // Tenta com a coluna assinatura; se o banco ainda não a tem, lê sem ela.
+      semColunaAssinatura = false;
+      let r = await supa.from('especialidades_concluidas').select(COLS_ESPEC + ', assinatura').order('ano', { ascending: false });
+      if(r.error){
+        semColunaAssinatura = true;
+        r = await supa.from('especialidades_concluidas').select(COLS_ESPEC).order('ano', { ascending: false });
+      }
+      const { data, error } = r;
       if(error){ console.error('Erro ao carregar especialidades concluídas:', error.message); return; }
       todasEspec = data || [];
       todasEspec.forEach(e => { (especPorUsuario[e.usuario_id] = especPorUsuario[e.usuario_id] || []).push(e); });
@@ -37435,6 +37441,7 @@ const REQ_SUMMARIES = {
         ? porAno(p.especs).map(g =>
             '<div class="co-ano"><span>' + (g.ano || 'Sem ano') + '</span><span>' + plural(g.itens.length, 'especialidade', 'especialidades') + '</span></div>' +
             g.itens.map(e => '<div class="co-esp"><span>' + esc(e.especialidade) + (e.categoria ? ' <small>· ' + esc(e.categoria) + '</small>' : '') + '</span><small>' + (e.data_conclusao ? dataBr(e.data_conclusao) : e.ano) + '</small>' +
+              (semColunaAssinatura ? '' : '<select class="co-assin" data-assin="' + esc(e.id) + '" aria-label="Assinatura de ' + esc(e.especialidade) + '">' + opcoesAssin(e.assinatura) + '</select>') +
               '<button type="button" class="co-esp-del" data-del="' + esc(e.id) + '" aria-label="Remover ' + esc(e.especialidade) + '" title="Remover">×</button></div>').join('')).join('')
         : '<p class="co-nota">' + (p.usuarioId ? 'Nenhuma especialidade concluída registrada.' : 'Sem conta no app, então não é possível registrar especialidades.') + '</p>';
       const evo = evolucaoDe(p);
@@ -37446,6 +37453,9 @@ const REQ_SUMMARIES = {
         ? '<div class="co-card"><h4 class="co-card-titulo">Registrar especialidade</h4><div class="co-novo">' +
             '<input type="text" id="coNovaNome" class="co-input" list="coCatalogo" placeholder="Nome da especialidade" autocomplete="off">' +
             '<input type="date" id="coNovaData" class="co-input" value="' + hoje + '" max="' + hoje + '" aria-label="Data de conclusão">' +
+            (semColunaAssinatura
+              ? '<p class="co-nota">Para sinalizar a assinatura (Instrutor, Regional, Associação ou Missão), falta adicionar a coluna no banco: rode o arquivo supabase/especialidade-assinatura.sql no SQL Editor do Supabase.</p>'
+              : '<select id="coNovaAssin" class="co-input" aria-label="Assinatura">' + opcoesAssin('') + '</select>') +
             '<button type="button" class="co-btn" id="coNovaSalvar">Registrar</button></div></div>'
         : '';
       $('coDetalhe').innerHTML =
@@ -37475,6 +37485,7 @@ const REQ_SUMMARIES = {
       $('coDetalhe').querySelectorAll('[data-delc]').forEach(b => b.addEventListener('click', () => removerClasse(p, b.getAttribute('data-delc'))));
       $('coDecGerar').addEventListener('click', () => pdfDeclaracao(p, $('coDecTipo').value));
       if($('coNovaSalvar')) $('coNovaSalvar').addEventListener('click', () => registrarEspec(p));
+      $('coDetalhe').querySelectorAll('[data-assin]').forEach(s => s.addEventListener('change', () => mudarAssinatura(p, s.getAttribute('data-assin'), s.value)));
       $('coDetalhe').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => removerEspec(p, b.getAttribute('data-del'))));
       $('coDetalhe').scrollIntoView({ block: 'start' });
     }
@@ -37524,12 +37535,22 @@ const REQ_SUMMARIES = {
       if(ja && !confirm('"' + ja.especialidade + '" já está registrada para ' + p.nome + ' (' + (ja.data_conclusao ? dataBr(ja.data_conclusao) : ja.ano) + '). Registrar de novo?')) return;
       const btn = $('coNovaSalvar'); btn.disabled = true;
       const payload = { usuario_id: p.usuarioId, especialidade: nome, categoria: CATEGORIA_DO_NOME[nome] || null, ano: anoDe(data), data_conclusao: data };
-      const { data: linha, error } = await supa.from('especialidades_concluidas').insert(payload).select('id, usuario_id, especialidade, categoria, ano, data_conclusao').single();
+      const assin = (!semColunaAssinatura && $('coNovaAssin')) ? $('coNovaAssin').value : '';
+      if(assin) payload.assinatura = assin;
+      const { data: linha, error } = await supa.from('especialidades_concluidas').insert(payload).select(semColunaAssinatura ? COLS_ESPEC : COLS_ESPEC + ', assinatura').single();
       btn.disabled = false;
       if(error || !linha){ alert('Não foi possível registrar: ' + (error ? error.message : 'erro desconhecido')); return; }
       todasEspec.push(linha);
       (especPorUsuario[p.usuarioId] = especPorUsuario[p.usuarioId] || []).push(linha);
       depoisDeMudarEspec(p);
+    }
+    async function mudarAssinatura(p, id, valor){
+      const e = p.especs.find(x => String(x.id) === String(id));
+      if(!e || !supa) return;
+      const { error } = await supa.from('especialidades_concluidas').update({ assinatura: valor || null }).eq('id', e.id);
+      if(error){ alert('Não foi possível salvar a assinatura: ' + error.message); abrirFicha(p.chave); return; }
+      e.assinatura = valor || null;
+      const t = todasEspec.find(x => String(x.id) === String(e.id)); if(t) t.assinatura = e.assinatura;
     }
     async function removerEspec(p, id){
       const e = p.especs.find(x => String(x.id) === String(id));
@@ -37638,7 +37659,7 @@ const REQ_SUMMARIES = {
         g.itens.forEach(e => {
           y = garantir(doc, y, 6, titulo);
           doc.setFont('helvetica', 'normal'); doc.setTextColor(20, 24, 20);
-          doc.text(doc.splitTextToSize('•  ' + e.especialidade + (e.categoria ? ' (' + e.categoria + ')' : ''), 150)[0], x0 + 2, y);
+          doc.text(doc.splitTextToSize('•  ' + e.especialidade + (e.categoria ? ' (' + e.categoria + ')' : '') + etiquetaAssin(e), 150)[0], x0 + 2, y);
           doc.text(e.data_conclusao ? dataBr(e.data_conclusao) : String(e.ano), 194, y, { align: 'right' });
           y += 5.6;
         });
@@ -37725,7 +37746,7 @@ const REQ_SUMMARIES = {
         corpo: p.especs.length
           ? 'Declaramos, para os devidos fins, que ' + nome + nasc + ' membro do ' + clube + sgc + ', concluiu ' + plural(p.especs.length, 'especialidade', 'especialidades') + ', relacionadas abaixo:'
           : 'Declaramos, para os devidos fins, que ' + nome + nasc + ' membro do ' + clube + sgc + ', ainda não possui especialidades concluídas registradas.',
-        itens: ordenadas.map(e => e.especialidade + (e.categoria ? ' (' + e.categoria + ')' : '') + ' — ' + (e.data_conclusao ? dataBr(e.data_conclusao) : e.ano))
+        itens: ordenadas.map(e => e.especialidade + (e.categoria ? ' (' + e.categoria + ')' : '') + etiquetaAssin(e) + ' — ' + (e.data_conclusao ? dataBr(e.data_conclusao) : e.ano))
       };
     }
     function pdfDeclaracao(p, tipo){
@@ -37852,7 +37873,7 @@ const REQ_SUMMARIES = {
           porPessoa[id].sort((m, n) => (m.data_conclusao || '').localeCompare(n.data_conclusao || '')).forEach(e => {
             y = garantir(doc, y, 6, tit);
             doc.setFont('helvetica', 'normal'); doc.setTextColor(20, 24, 20);
-            doc.text(doc.splitTextToSize('•  ' + e.especialidade + (e.categoria ? ' (' + e.categoria + ')' : ''), 150)[0], 18, y);
+            doc.text(doc.splitTextToSize('•  ' + e.especialidade + (e.categoria ? ' (' + e.categoria + ')' : '') + etiquetaAssin(e), 150)[0], 18, y);
             if(e.data_conclusao) doc.text(dataBr(e.data_conclusao), 194, y, { align: 'right' });
             y += 5.6;
           });
@@ -37890,7 +37911,7 @@ const REQ_SUMMARIES = {
           y = garantir(doc, y, 6, tit); doc.setFont('helvetica', 'bold'); doc.setTextColor(150, 105, 10); doc.text('Especialidades', 16, y); y += 5.5;
           es.slice().sort((m, n) => (m.data_conclusao || '').localeCompare(n.data_conclusao || '')).forEach(e => {
             y = garantir(doc, y, 6, tit); doc.setFont('helvetica', 'normal'); doc.setTextColor(20, 24, 20);
-            doc.text(doc.splitTextToSize('•  ' + e.especialidade + (e.categoria ? ' (' + e.categoria + ')' : ''), 150)[0], 18, y);
+            doc.text(doc.splitTextToSize('•  ' + e.especialidade + (e.categoria ? ' (' + e.categoria + ')' : '') + etiquetaAssin(e), 150)[0], 18, y);
             doc.text(dataOuAno(e.data_conclusao, e.ano), 194, y, { align: 'right' }); y += 5.6;
           });
           y += 2;
@@ -37904,7 +37925,7 @@ const REQ_SUMMARIES = {
       const itens = [];
       pessoas.forEach(p => {
         classesDe(p).forEach(c => itens.push({ ano: c.ano, nome: p.nome, tipo: 'c', texto: rotuloClasse(c.classe, c.nivel), data: c.data }));
-        p.especs.forEach(e => itens.push({ ano: e.ano, nome: p.nome, tipo: 'e', texto: e.especialidade, data: e.data_conclusao || '' }));
+        p.especs.forEach(e => itens.push({ ano: e.ano, nome: p.nome, tipo: 'e', texto: e.especialidade + etiquetaAssin(e), data: e.data_conclusao || '' }));
       });
       const base = itens.filter(i => i.ano && (todos || String(i.ano) === String(ano)));
       if(!base.length){ alert(todos ? 'Ainda não há classes ou especialidades registradas.' : 'Nada registrado em ' + ano + '.'); return; }

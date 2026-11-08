@@ -1635,3 +1635,15 @@ create index if not exists classes_registradas_ano_idx on classes_registradas(an
 alter table classes_registradas enable row level security;
 drop policy if exists p_classes_registradas on classes_registradas;
 create policy p_classes_registradas on classes_registradas for all using(true) with check(true);
+
+
+-- ---------------------------------------------------------------------
+-- Coordenação de Classes: quem assinou a especialidade concluída.
+-- Guarda o nível da assinatura de cada especialidade registrada: Instrutor,
+-- Regional, Associação ou Missão (vazio = ainda sem assinatura).
+-- Rode uma vez no SQL Editor do Supabase (é seguro rodar de novo).
+-- ---------------------------------------------------------------------
+alter table especialidades_concluidas add column if not exists assinatura text;
+alter table especialidades_concluidas drop constraint if exists especialidades_concluidas_assinatura_chk;
+alter table especialidades_concluidas add constraint especialidades_concluidas_assinatura_chk
+  check (assinatura is null or assinatura in ('instrutor', 'regional', 'associacao', 'missao'));
