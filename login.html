@@ -36854,7 +36854,15 @@ const REQ_SUMMARIES = {
     const caixasAssin = (atual, attr) => '<div class="co-assins" ' + attr + '>' + Object.keys(ASSIN).map(k =>
       '<label class="co-assin-op"><input type="checkbox" value="' + k + '"' + (atual.indexOf(k) !== -1 ? ' checked' : '') + '><span>' + ASSIN[k] + '</span></label>').join('') + '</div>';
     const valorAssin = cont => Object.keys(ASSIN).filter(k => { const c = cont.querySelector('input[value="' + k + '"]'); return c && c.checked; }).join(',');
-    const rotuloClasse = (classe, nivel) => nivel === 'avancada' ? (AVANCADAS[classe] || classe) + ' (Avançada)' : classe;
+    // Amigo -> "Amigo (Regular)" / "Amigo da Natureza (Avançada)"; Liderança fica como está.
+    const rotuloClasse = (classe, nivel) => nivel === 'avancada' ? (AVANCADAS[classe] || classe) + ' (Avançada)' : (REGULARES.indexOf(classe) !== -1 ? classe + ' (Regular)' : classe);
+    // Posição de um rótulo na ordem Amigo, Amigo da Natureza, Companheiro, ... (pra ordenar o resumo).
+    const ordemRotulo = r => {
+      const i = ORDEM.findIndex(c => r === c || r.indexOf(c + ' (') === 0);
+      if(i !== -1) return i * 2;
+      const j = REGULARES.findIndex(c => r.indexOf(AVANCADAS[c]) === 0);
+      return j !== -1 ? j * 2 + 1 : 99;
+    };
     const norm = s => String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
     const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
     const ordemClasse = c => { const i = ORDEM.indexOf(c); return i === -1 ? 99 : i; };
@@ -37012,7 +37020,7 @@ const REQ_SUMMARIES = {
       return saida;
     }
     function textoPorClasse(x){
-      return Object.keys(x.porClasse).sort((a, b) => ordemClasse(a) - ordemClasse(b)).map(c => c + ' ' + x.porClasse[c]).join(' · ');
+      return Object.keys(x.porClasse).sort((a, b) => ordemRotulo(a) - ordemRotulo(b)).map(c => c + ' ' + x.porClasse[c]).join(' · ');
     }
 
     // ---- Gráfico de barras (SVG) ----
@@ -37181,8 +37189,8 @@ const REQ_SUMMARIES = {
         ? '<p class="co-nota">Para registrar classes, falta criar a tabela no banco: rode o arquivo supabase/classes-registradas.sql no SQL Editor do Supabase.</p>'
         : '<div class="co-card"><h4 class="co-card-titulo">Registrar classe</h4><div class="co-novo">' +
             '<select id="coNovaClasse" class="co-input" aria-label="Classe">' +
-              '<optgroup label="Classes Regulares">' + REGULARES.map(c => o(c + '|regular', c)).join('') + '</optgroup>' +
-              '<optgroup label="Classes Avançadas">' + REGULARES.map(c => o(c + '|avancada', AVANCADAS[c])).join('') + '</optgroup>' +
+              '<optgroup label="Classes Regulares">' + REGULARES.map(c => o(c + '|regular', rotuloClasse(c, 'regular'))).join('') + '</optgroup>' +
+              '<optgroup label="Classes Avançadas">' + REGULARES.map(c => o(c + '|avancada', rotuloClasse(c, 'avancada'))).join('') + '</optgroup>' +
               '<optgroup label="Liderança">' + LIDERANCA.map(c => o(c + '|lideranca', c)).join('') + '</optgroup>' +
             '</select>' +
             '<input type="date" id="coNovaClasseData" class="co-input" value="' + hojeIso + '" max="' + hojeIso + '" aria-label="Data de conclusão">' +
@@ -37497,7 +37505,7 @@ const REQ_SUMMARIES = {
         const cursando = p.classes.filter(c => !(c.total && c.pct === 100) && !feitas.some(f => f.classe === c.classe && f.nivel !== 'avancada'));
         const partes = [];
         if(feitas.length) partes.push('concluiu ' + (feitas.length === 1 ? 'a classe' : 'as classes') + ' de ' + feitas.slice().reverse().map(c => rotuloClasse(c.classe, c.nivel) + (c.ano ? ' (' + c.ano + ')' : '')).join(', '));
-        cursando.forEach(c => partes.push('está cursando a classe de ' + c.classe + ', tendo concluído ' + c.feitos + ' de ' + c.total + ' requisitos (' + c.pct + '%)'));
+        cursando.forEach(c => partes.push('está cursando a classe de ' + rotuloClasse(c.classe, 'regular') + ', tendo concluído ' + c.feitos + ' de ' + c.total + ' requisitos (' + c.pct + '%)'));
         return { titulo: 'Declaração de classe', corpo: 'Declaramos, para os devidos fins, que ' + nome + nasc + ' membro do ' + clube + sgc + ', ' + (partes.join('; e ') || 'não possui classe cadastrada') + '.', itens: [] };
       }
       const ordenadas = p.especs.slice().sort((a, b) => (a.data_conclusao || (a.ano + '-00')).localeCompare(b.data_conclusao || (b.ano + '-00')));
