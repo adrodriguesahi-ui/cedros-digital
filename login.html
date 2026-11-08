@@ -10888,6 +10888,7 @@
           </div>
           <div class="pl-modal-actions">
             <button type="button" class="pl-btn pl-btn-danger" id="clStudentDeleteBtn" style="display:none;">Excluir</button>
+            <button type="button" class="pl-btn" id="clStudentConcluirBtn" style="display:none;">Concluir classe</button>
             <button type="button" class="pl-btn pl-btn-primary" id="clStudentSaveBtn">Adicionar</button>
           </div>
         </div>
@@ -20030,6 +20031,7 @@
     const studentNameInput = document.getElementById('clStudentNameInput');
     const studentSaveBtn = document.getElementById('clStudentSaveBtn');
     const studentDeleteBtn = document.getElementById('clStudentDeleteBtn');
+    const studentConcluirBtn = document.getElementById('clStudentConcluirBtn');
     let editingStudentName = null;
 
     // Regra de negócio: Administrador cadastra/renomeia/exclui desbravadores em
@@ -20876,9 +20878,29 @@
       }
       studentSaveBtn.textContent = 'Salvar';
       studentDeleteBtn.style.display = '';
+      // Concluir classe: só nas classes regulares (Amigo a Guia); quem conclui o Guia sai da lista.
+      if(studentConcluirBtn){
+        const ordem = ['Amigo', 'Companheiro', 'Pesquisador', 'Pioneiro', 'Excursionista', 'Guia'], i = ordem.indexOf(currentClass);
+        studentConcluirBtn.style.display = (i !== -1 && window.__coordConcluirClasse) ? '' : 'none';
+        studentConcluirBtn.textContent = i === -1 ? 'Concluir classe' : (ordem[i + 1] ? 'Concluir e passar para ' + ordem[i + 1] : 'Concluir classe (Guia)');
+      }
       studentModalOverlay.classList.add('show');
       setTimeout(() => studentNameInput.focus(), 150);
     }
+
+    if(studentConcluirBtn) studentConcluirBtn.addEventListener('click', async () => {
+      const nome = editingStudentName, classe = currentClass;
+      if(!nome || !classe || !window.__coordConcluirClasse) return;
+      const eraSelecionado = selectedStudent;
+      studentConcluirBtn.disabled = true;
+      const ok = await window.__coordConcluirClasse({ classe: classe, nome: nome, id: (STUDENT_IDS[classe] || {})[nome], usuarioId: (STUDENT_USUARIOS[classe] || {})[nome] || null });
+      studentConcluirBtn.disabled = false;
+      if(ok){
+        studentModalOverlay.classList.remove('show');
+        if(eraSelecionado === nome) selectedStudent = null;
+        if(currentClass){ renderStudentBar(currentClass); applyStudentProgressToCards(); }
+      }
+    });
 
     async function selectStudent(name){
       selectedStudent = name;
@@ -21026,6 +21048,7 @@
       if(studentWhatsInput){ studentWhatsInput.value = ''; studentWhatsInput.style.borderColor = ''; }
       studentSaveBtn.textContent = 'Adicionar';
       studentDeleteBtn.style.display = 'none';
+      if(studentConcluirBtn) studentConcluirBtn.style.display = 'none';
       studentModalOverlay.classList.add('show');
       setTimeout(() => studentNameInput.focus(), 150);
     });
@@ -36874,6 +36897,11 @@ const REQ_SUMMARIES = {
     const REGULARES = ['Amigo','Companheiro','Pesquisador','Pioneiro','Excursionista','Guia'];
     const LIDERANCA = ['Cartão de Liderança','Líder Master','Líder Master Avançado'];
     const ORDEM = REGULARES.concat(['Classe Agrupada'], LIDERANCA);
+    // Quem conclui o Guia sai das classes regulares e espera a definição da função
+    // na diretoria. Fica no cadastro (desbravadores.classe) com este nome, que não
+    // é um cartão de classe, então some das listas de Classes Regulares.
+    const PENDENTE_DIRETORIA = 'Aguardando função na diretoria';
+    const PENDENTE_HTML = '<div class="co-card co-det"><div class="co-classe-top"><span>' + PENDENTE_DIRETORIA + '</span></div><div class="co-classe-sub">Concluiu as classes regulares. A função que assumirá na diretoria ainda será definida.</div></div>';
     // Classe Avançada de cada cartão regular.
     const AVANCADAS = { 'Amigo': 'Amigo da Natureza', 'Companheiro': 'Companheiro de Excursionismo', 'Pesquisador': 'Pesquisador de Campo e Bosque', 'Pioneiro': 'Pioneiro de Novos Caminhos', 'Excursionista': 'Excursionista na Mata', 'Guia': 'Guia de Exploração' };
     // Quem assinou a especialidade (coluna assinatura de especialidades_concluidas).
@@ -37027,6 +37055,17 @@ const REQ_SUMMARIES = {
         lista.push({ classe: c.classe, nivel: nivel, ano: anoDe(c.concluidaEm), data: String(c.concluidaEm).slice(0, 10), origem: 'requisitos' });
       });
       return lista.sort((a, b) => (b.ano - a.ano) || (ordemClasse(a.classe) - ordemClasse(b.classe)));
+    }
+    // Registro (feito à mão) da classe concluída que corresponde a este cartão de requisitos.
+    function registroRegular(p, c){
+      const nivel = LIDERANCA.indexOf(c.classe) !== -1 ? 'lideranca' : 'regular';
+      return (p.registradas || []).find(r => r.classe === c.classe && r.nivel === nivel) || null;
+    }
+    // "Classe concluída em ..." usa a data REGISTRADA; sem registro, a da última marcação de requisito.
+    function textoSituacao(p, c){
+      const reg = registroRegular(p, c);
+      if(reg) return 'Classe concluída em ' + (reg.data_conclusao ? dataBr(reg.data_conclusao) : reg.ano);
+      return situacao(c) + (c.concluidaEm ? ' em ' + dataBr(c.concluidaEm) : '');
     }
     function atualizarEspecDe(p){
       p.especs = (p.usuarioId ? (especPorUsuario[p.usuarioId] || []) : []).slice()
@@ -37275,8 +37314,8 @@ const REQ_SUMMARIES = {
     // ---- Interface ----
     function opcoesClasses(classes){
       const grupo = (rot, lista) => { const l = classes.filter(c => lista.indexOf(c) !== -1); return l.length ? '<optgroup label="' + rot + '">' + l.map(c => '<option value="' + esc(c) + '">' + esc(c) + '</option>').join('') + '</optgroup>' : ''; };
-      const outras = classes.filter(c => REGULARES.indexOf(c) === -1 && LIDERANCA.indexOf(c) === -1);
-      return grupo('Classes Regulares', REGULARES) + grupo('Liderança', LIDERANCA) +
+      const outras = classes.filter(c => REGULARES.indexOf(c) === -1 && LIDERANCA.indexOf(c) === -1 && c !== PENDENTE_DIRETORIA);
+      return grupo('Classes Regulares', REGULARES) + grupo('Liderança', LIDERANCA) + grupo('Situação', [PENDENTE_DIRETORIA]) +
         (outras.length ? '<optgroup label="Outras">' + outras.map(c => '<option value="' + esc(c) + '">' + esc(c) + '</option>').join('') + '</optgroup>' : '');
     }
     function preencherSeletores(){
@@ -37284,7 +37323,7 @@ const REQ_SUMMARIES = {
       const atual = $('coFiltroClasse').value;
       $('coFiltroClasse').innerHTML = '<option value="">Todas as classes</option>' + opcoesClasses(classes);
       $('coFiltroClasse').value = classes.indexOf(atual) !== -1 ? atual : '';
-      $('coRelClasse').innerHTML = opcoesClasses(classes);
+      $('coRelClasse').innerHTML = opcoesClasses(classes.filter(c => c !== PENDENTE_DIRETORIA));
       const anos = Array.from(new Set(todasEspec.map(e => e.ano).filter(Boolean))).sort((a, b) => b - a);
       if(!anos.length) anos.push(new Date().getFullYear());
       $('coRelAno').innerHTML = '<option value="todos">Todos os anos</option>' + anos.map(a => '<option value="' + a + '">' + a + '</option>').join('');
@@ -37313,7 +37352,9 @@ const REQ_SUMMARIES = {
         '<button type="button" class="co-pessoa" data-chave="' + esc(p.chave) + '">' +
           '<span class="co-pessoa-nome">' + esc(p.nome) + '</span>' +
           '<span class="co-chips">' +
-            p.classes.map(c => '<span class="co-chip' + (c.total && c.pct === 100 ? ' ok' : '') + '">' + esc(c.classe) + ' · ' + c.pct + '%</span>').join('') +
+            p.classes.map(c => c.classe === PENDENTE_DIRETORIA
+              ? '<span class="co-chip esp">' + PENDENTE_DIRETORIA + '</span>'
+              : '<span class="co-chip' + (c.total && c.pct === 100 ? ' ok' : '') + '">' + esc(c.classe) + ' · ' + c.pct + '%</span>').join('') +
             (p.registradas || []).map(r => '<span class="co-chip ok">' + esc(rotuloClasse(r.classe, r.nivel)) + ' · ' + r.ano + '</span>').join('') +
             (p.especs.length ? '<span class="co-chip esp">' + plural(p.especs.length, 'especialidade', 'especialidades') + '</span>' : '') +
           '</span>' +
@@ -37358,11 +37399,14 @@ const REQ_SUMMARIES = {
       if(!p){ mostrarLista(); return; }
       aberta = chave;
       const sub = [p.nasc ? 'Nascimento: ' + dataBr(p.nasc) + (idadeDe(p.nasc) ? ' (' + idadeDe(p.nasc) + ')' : '') : '', p.usuarioId ? 'Tem conta no app' : 'Sem conta no app'].filter(Boolean).join(' · ');
-      const classesHtml = p.classes.map(c =>
+      const classesHtml = p.classes.map(c => c.classe === PENDENTE_DIRETORIA ? PENDENTE_HTML :
         '<div class="co-card co-det">' +
           '<div class="co-classe-top"><span>' + esc(c.classe) + '</span><span class="co-classe-pct">' + c.pct + '%</span></div>' +
           '<div class="co-barra"><i style="width:' + c.pct + '%"></i></div>' +
-          '<div class="co-classe-sub">' + esc(situacao(c)) + (c.concluidaEm ? ' em ' + dataBr(c.concluidaEm) : '') + ' · ' + c.feitos + ' de ' + c.total + ' requisitos concluídos' + (c.andamento ? ' · ' + c.andamento + ' em andamento' : '') + '</div>' +
+          '<div class="co-classe-sub">' + esc(textoSituacao(p, c)) + ' · ' + c.feitos + ' de ' + c.total + ' requisitos concluídos' + (c.andamento ? ' · ' + c.andamento + ' em andamento' : '') + '</div>' +
+          (podeConcluirClasse(c.classe) && c.id
+            ? '<div class="co-extra"><button type="button" class="co-mini" data-concluir="' + esc(c.id) + '">' + (proximaClasse(c.classe) ? 'Concluir classe e passar para ' + proximaClasse(c.classe) : 'Concluir classe (Guia)') + '</button></div>'
+            : '') +
           (c.reqs.length ? '<details><summary>Ver requisitos</summary>' + c.reqs.map(r =>
             '<div class="co-req"><em class="' + r.status + '">' + STATUS_TXT[r.status] + '</em><span>' + esc(r.titulo) + '</span></div>').join('') + '</details>' : '') +
         '</div>').join('') || '<p class="co-nota">Sem classe cadastrada.</p>';
@@ -37390,6 +37434,7 @@ const REQ_SUMMARIES = {
               } else if(!c.id){
                 extra = '<div class="co-extra"><button type="button" class="co-mini" data-cregder="' + esc(c.classe + '|' + c.nivel + '|' + c.data) + '">Registrar para anexar comprovante e investidura</button></div>';
               }
+              if(c.id) extra = '<div class="co-extra"><label class="co-campo">Concluída em <input type="date" data-conc="' + esc(c.id) + '" value="' + esc(c.data) + '"></label></div>' + extra;
               return '<div class="co-esp"><span>' + esc(rot) + (c.origem === 'requisitos' ? ' <small>· pelos requisitos</small>' : '') + '</span><small>' + (c.data ? dataBr(c.data) : c.ano) + '</small>' +
                 (c.id ? '<button type="button" class="co-esp-del" data-delc="' + esc(c.id) + '" aria-label="Remover ' + esc(rot) + '" title="Remover">×</button>' : '') + extra + '</div>';
             }).join('')).join('')
@@ -37466,7 +37511,14 @@ const REQ_SUMMARIES = {
       $('coFichaPdf').addEventListener('click', () => pdfFicha(p));
       $('coHistPdf').addEventListener('click', () => pdfHistoricoPessoa(p));
       if($('coNovaClasseSalvar')) $('coNovaClasseSalvar').addEventListener('click', () => registrarClasse(p));
+      $('coDetalhe').querySelectorAll('[data-concluir]').forEach(b => b.addEventListener('click', async () => {
+        const c = p.classes.find(x => String(x.id) === b.getAttribute('data-concluir')); if(!c) return;
+        b.disabled = true;
+        const ok = await concluirClasseDoAluno({ classe: c.classe, nome: p.nome, id: c.id, usuarioId: p.usuarioId });
+        if(ok) carregar(); else b.disabled = false;
+      }));
       $('coDetalhe').querySelectorAll('[data-delc]').forEach(b => b.addEventListener('click', () => removerClasse(p, b.getAttribute('data-delc'))));
+      $('coDetalhe').querySelectorAll('[data-conc]').forEach(i => i.addEventListener('change', () => mudarConclusao(p, i.getAttribute('data-conc'), i.value)));
       $('coDetalhe').querySelectorAll('[data-invest]').forEach(i => i.addEventListener('change', () => mudarInvestidura(p, i.getAttribute('data-invest'), i.value)));
       $('coDetalhe').querySelectorAll('[data-cfoto],[data-carq]').forEach(i => i.addEventListener('change', () => {
         const f = i.files && i.files[0]; if(f) anexarComprovante(p, i.getAttribute('data-cfoto') || i.getAttribute('data-carq'), f);
@@ -37489,6 +37541,63 @@ const REQ_SUMMARIES = {
       $('coDetalhe').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => removerEspec(p, b.getAttribute('data-del'))));
       $('coDetalhe').scrollIntoView({ block: 'start' });
     }
+
+    // ---- Concluir classe e passar para a seguinte ----
+    const proximaClasse = classe => { const i = REGULARES.indexOf(classe); return i === -1 ? null : (REGULARES[i + 1] || null); };
+    // Administrador conclui qualquer classe; Coordenador de Classes, só a do cartão dele.
+    function podeConcluirClasse(classe){
+      const u = window.__currentUsuario;
+      if(!u || REGULARES.indexOf(classe) === -1) return false;
+      return u.papel === 'Administrador' || (u.papel === 'Coordenador de Classes' && u.classeCoordenada === classe);
+    }
+    // a: { classe, nome, id (desbravadores.id), usuarioId }. Devolve true se concluiu.
+    // 1) registra a classe como concluída (hoje), 2) zera os requisitos que se repetem
+    // na classe seguinte, 3) move o aluno (Guia: "Aguardando função na diretoria").
+    async function concluirClasseDoAluno(a){
+      if(!supa || !a || !a.id){ alert('Não foi possível identificar o aluno.'); return false; }
+      if(!podeConcluirClasse(a.classe)){ alert('Só o Administrador ou o Coordenador desta classe pode concluí-la.'); return false; }
+      const proxima = proximaClasse(a.classe);
+      const rotulo = rotuloClasse(a.classe, 'regular');
+      const aviso = proxima
+        ? 'Concluir a classe ' + rotulo + ' de ' + a.nome + ' e passar para ' + proxima + '?\n\nA classe concluída fica registrada com a data de hoje. Os requisitos que também existem em ' + proxima + ' recomeçam do zero.'
+        : 'Concluir a classe ' + rotulo + ' de ' + a.nome + '?\n\nEle(a) sai das Classes Regulares e passa a constar como "' + PENDENTE_DIRETORIA + '". A classe concluída fica registrada com a data de hoje.';
+      if(!confirm(aviso)) return false;
+      const hoje = new Date().toISOString().slice(0, 10);
+      const u = window.__currentUsuario || {};
+      try {
+        // 1) classe concluída (sem repetir se já estiver registrada)
+        let q = supa.from('classes_registradas').select('id').eq('classe', a.classe).eq('nivel', 'regular');
+        q = a.usuarioId ? q.eq('usuario_id', a.usuarioId) : q.is('usuario_id', null).eq('nome_aluno', a.nome);
+        const ja = await q;
+        if(ja.error) throw new Error('A tabela de classes registradas ainda não existe no banco (rode supabase/coordenacao-classes.sql no SQL Editor do Supabase). Nada foi alterado.');
+        if(!(ja.data || []).length){
+          const ins = await supa.from('classes_registradas').insert({ usuario_id: a.usuarioId || null, nome_aluno: a.usuarioId ? null : a.nome, classe: a.classe, nivel: 'regular', ano: anoDe(hoje), data_conclusao: hoje, registrado_por: u.nome || null });
+          if(ins.error) throw new Error(ins.error.message);
+        }
+        // 2) requisitos com o mesmo título na classe seguinte recomeçam
+        if(proxima){
+          const grupo = document.querySelector('#view-classes .pl-month-group[data-class="' + proxima + '"]');
+          const titulos = grupo ? Array.from(grupo.querySelectorAll('.cl-activity-card')).map(c => c.dataset.title).filter(Boolean) : [];
+          if(titulos.length){
+            const del = await supa.from('progresso_requisitos').delete().eq('desbravador_id', a.id).in('requisito_titulo', titulos);
+            if(del.error) throw new Error(del.error.message);
+          }
+        }
+        // 3) mover o aluno (e o cadastro do usuário, pra não voltar na próxima sincronização)
+        const mov = await supa.from('desbravadores').update({ classe: proxima || PENDENTE_DIRETORIA }).eq('id', a.id);
+        if(mov.error) throw new Error(mov.error.message);
+        if(a.usuarioId){
+          const us = await supa.from('usuarios').update({ classe: proxima || null }).eq('id', a.usuarioId);
+          if(us.error) console.error('Não foi possível atualizar a classe no cadastro do usuário:', us.error.message);
+        }
+      } catch(e){
+        alert('Não foi possível concluir a classe: ' + e.message);
+        return false;
+      }
+      if(window.__clRecarregarDados) { try { await window.__clRecarregarDados(); } catch(e){} }
+      return true;
+    }
+    window.__coordConcluirClasse = concluirClasseDoAluno;
 
     // ---- Cadastro de especialidades (por data) ----
     // Um único comprovante por classe: o arquivo escolhido no cadastro ou o último anexado.
@@ -37536,6 +37645,15 @@ const REQ_SUMMARIES = {
       depoisDeMudarEspec(p);
     }
     function registroDe(p, id){ return (p.registradas || []).find(x => String(x.id) === String(id)); }
+    // Corrige a data em que a classe foi concluída (e o ano em que ela conta nos relatórios).
+    async function mudarConclusao(p, id, valor){
+      const r = registroDe(p, id); if(!r || !supa) return;
+      if(!valor){ alert('Informe a data de conclusão.'); abrirFicha(p.chave); return; }
+      const { error } = await supa.from('classes_registradas').update({ data_conclusao: valor, ano: anoDe(valor) }).eq('id', r.id);
+      if(error){ alert('Não foi possível salvar a data de conclusão: ' + error.message); abrirFicha(p.chave); return; }
+      r.data_conclusao = valor; r.ano = anoDe(valor);
+      depoisDeMudarEspec(p);
+    }
     async function mudarInvestidura(p, id, valor){
       const r = registroDe(p, id); if(!r || !supa) return;
       const { error } = await supa.from('classes_registradas').update({ data_investidura: valor || null }).eq('id', r.id);
@@ -37761,7 +37879,7 @@ const REQ_SUMMARIES = {
       p.classes.forEach(c => {
         y = garantir(doc, y, 20, tit);
         doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-        doc.text(c.classe + '  —  ' + situacao(c) + (c.concluidaEm ? ' em ' + dataBr(c.concluidaEm) : ''), 16, y);
+        doc.text(c.classe + '  —  ' + textoSituacao(p, c), 16, y);
         doc.text(c.pct + '%', 194, y, { align: 'right' });
         doc.setFillColor(225, 230, 226); doc.rect(16, y + 2, 178, 2.6, 'F');
         doc.setFillColor(63, 203, 107); doc.rect(16, y + 2, 178 * c.pct / 100, 2.6, 'F');
@@ -37808,7 +37926,7 @@ const REQ_SUMMARIES = {
       const nome = p.nome.toLocaleUpperCase('pt-BR');
       const nasc = p.nasc ? ', nascido(a) em ' + dataBr(p.nasc) + ',' : '';
       if(tipo === 'participacao'){
-        const cls = p.classes.map(c => c.classe);
+        const cls = p.classes.filter(c => c.classe !== PENDENTE_DIRETORIA).map(c => c.classe);
         return { titulo: 'Declaração de participação', corpo: 'Declaramos, para os devidos fins, que ' + nome + nasc + ' é membro ativo do ' + clube + sgc + ', participando das atividades do clube' + (cls.length ? ' na classe de ' + cls.join(' e ') : '') + '.', itens: [] };
       }
       if(tipo === 'classe'){
@@ -37884,6 +38002,7 @@ const REQ_SUMMARIES = {
     function linhasRelatorio(filtroClasse){
       const l = [];
       pessoas.forEach(p => p.classes.forEach(c => {
+        if(c.classe === PENDENTE_DIRETORIA) return;
         if(filtroClasse && c.classe !== filtroClasse) return;
         l.push({ nome: p.nome, classe: c.classe, feitos: c.feitos, total: c.total, pct: c.pct, espec: p.especs.length });
       }));
@@ -37898,7 +38017,7 @@ const REQ_SUMMARIES = {
       doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(80, 90, 82);
       doc.text(pessoas.length + ' desbravadores · ' + todasEspec.length + ' especialidades concluídas · ' + hojeLongo(), 16, y); y += 10;
       doc.setTextColor(20, 24, 20);
-      const classes = Array.from(new Set(pessoas.flatMap(p => p.classes.map(c => c.classe)))).sort((a, b) => ordemClasse(a) - ordemClasse(b));
+      const classes = Array.from(new Set(pessoas.flatMap(p => p.classes.map(c => c.classe)))).filter(c => c !== PENDENTE_DIRETORIA).sort((a, b) => ordemClasse(a) - ordemClasse(b));
       classes.forEach(cl => {
         const l = linhasRelatorio(cl).sort((a, b) => cmpNome(a.nome, b.nome));
         const media = l.length ? Math.round(l.reduce((s, x) => s + x.pct, 0) / l.length) : 0;
