@@ -1654,3 +1654,4 @@ alter table classes_registradas add column if not exists data_investidura date;
 alter table classes_registradas add column if not exists comprovante_path text;
 alter table classes_registradas add column if not exists comprovante_nome text;
 alter table especialidades_concluidas add column if not exists data_entrega date;
+alter table especialidades_concluidas add column if not exists pagina_registro text;
