@@ -14198,6 +14198,13 @@
           <div id="coPaneLista">
             <div id="coListaWrap">
               <div class="co-resumo" id="coResumo"></div>
+              <details class="co-card co-det" id="coInstBox">
+                <summary>+ Incluir instrutor ou membro que está fazendo uma classe</summary>
+                <p class="co-nota" style="margin-top:8px;">Escolha a conta e a classe. A pessoa passa a aparecer na lista para acompanhar requisitos, classes e especialidades.</p>
+                <select id="coInstConta" class="co-input"></select>
+                <select id="coInstClasse" class="co-input"></select>
+                <button type="button" class="co-btn" id="coInstBtn">Incluir para acompanhamento</button>
+              </details>
               <div class="co-filtros">
                 <input type="search" id="coBusca" class="co-input" placeholder="Buscar desbravador…" autocomplete="off">
                 <select id="coFiltroClasse" class="co-input"><option value="">Todas as classes</option></select>
@@ -37187,7 +37194,7 @@ const REQ_SUMMARIES = {
     async function carregarUsuariosApp(){
       usuariosApp = [];
       if(!supa) return;
-      const { data, error } = await supa.from('usuarios').select('id, nome');
+      const { data, error } = await supa.from('usuarios').select('id, nome, papel');
       if(error){ console.error('Erro ao carregar contas do app:', error.message); return; }
       usuariosApp = data || [];
     }
@@ -37428,6 +37435,11 @@ const REQ_SUMMARIES = {
         '<div class="co-stat"><b>' + concluidas + '</b><span>Classes concluídas</span></div>' +
         '<div class="co-stat"><b>' + espec + '</b><span>Especialidades</span></div>';
     }
+    // Papel da conta quando não é de desbravador (ex.: Diretoria), pra distinguir instrutores na lista.
+    function papelNaoDesb(p){
+      const u = p.usuarioId ? usuariosApp.find(x => x.id === p.usuarioId) : null;
+      return u && u.papel && norm(u.papel) !== 'desbravador' ? u.papel : '';
+    }
     function renderLista(){
       const termo = norm($('coBusca').value);
       const classe = $('coFiltroClasse').value;
@@ -37436,6 +37448,7 @@ const REQ_SUMMARIES = {
         '<button type="button" class="co-pessoa" data-chave="' + esc(p.chave) + '">' +
           '<span class="co-pessoa-nome">' + esc(p.nome) + '</span>' +
           '<span class="co-chips">' +
+            (papelNaoDesb(p) ? '<span class="co-chip">' + esc(papelNaoDesb(p)) + '</span>' : '') +
             p.classes.map(c => c.classe === PENDENTE_DIRETORIA
               ? '<span class="co-chip esp">' + PENDENTE_DIRETORIA + '</span>'
               : '<span class="co-chip' + (c.total && c.pct === 100 ? ' ok' : '') + '">' + esc(c.classe) + ' · ' + c.pct + '%</span>').join('') +
@@ -37446,6 +37459,7 @@ const REQ_SUMMARIES = {
       $('coVazio').style.display = lista.length ? 'none' : '';
     }
     function renderTudo(){
+      renderIncluir();
       renderResumo();
       renderLista();
       renderEvolucao();
@@ -38382,6 +38396,47 @@ const REQ_SUMMARIES = {
       if(aberta && $('coPaneLista').style.display !== 'none'){ mostrarLista(); return; }
       showView('view-dashboard');
     });
+
+    // ---- Incluir instrutor/membro (conta do app) para acompanhamento de classe ----
+    function renderIncluir(){
+      if(!$('coInstConta')) return;
+      const usados = new Set(pessoas.map(x => x.usuarioId).filter(Boolean));
+      const livres = usuariosApp.filter(u => !usados.has(u.id)).sort((a, b) => cmpNome(a.nome, b.nome));
+      const atual = $('coInstConta').value;
+      $('coInstConta').innerHTML = livres.length
+        ? '<option value="">Escolha a conta…</option>' + livres.map(u => '<option value="' + esc(u.id) + '">' + esc(u.nome) + (u.papel ? ' (' + esc(u.papel) + ')' : '') + '</option>').join('')
+        : '<option value="">Todas as contas já estão na lista</option>';
+      if(atual) $('coInstConta').value = atual;
+      if(!$('coInstClasse').options.length) $('coInstClasse').innerHTML = REGULARES.map(c => '<option value="' + esc(c) + '">' + esc(c) + '</option>').join('');
+    }
+    async function incluirInstrutor(){
+      const id = $('coInstConta').value, classe = $('coInstClasse').value;
+      if(!id){ alert('Escolha a conta.'); return; }
+      const u = usuariosApp.find(x => x.id === id);
+      if(!u || !supa) return;
+      if(!confirm('Incluir ' + u.nome + ' na classe ' + classe + ' para acompanhamento?')) return;
+      const btn = $('coInstBtn'); btn.disabled = true;
+      try {
+        const ja = await supa.from('desbravadores').select('id').eq('usuario_id', id).maybeSingle();
+        if(ja.error) throw new Error(ja.error.message);
+        const r = ja.data
+          ? await supa.from('desbravadores').update({ nome: u.nome, classe: classe }).eq('id', ja.data.id)
+          : await supa.from('desbravadores').insert({ nome: u.nome, classe: classe, usuario_id: id });
+        if(r.error) throw new Error(r.error.message);
+        const us = await supa.from('usuarios').update({ classe: classe }).eq('id', id);
+        if(us.error) console.error('Não foi possível atualizar a classe no cadastro do usuário:', us.error.message);
+      } catch(e){
+        btn.disabled = false;
+        alert('Não foi possível incluir: ' + e.message);
+        return;
+      }
+      btn.disabled = false;
+      $('coInstConta').value = '';
+      $('coInstBox').open = false;
+      await carregar();
+      alert(u.nome + ' foi incluído(a) em ' + classe + '.');
+    }
+    $('coInstBtn').addEventListener('click', incluirInstrutor);
     $('coBusca').addEventListener('input', renderLista);
     $('coFiltroClasse').addEventListener('change', renderLista);
     $('coLista').addEventListener('click', e => {
