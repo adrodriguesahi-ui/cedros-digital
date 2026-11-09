@@ -14313,8 +14313,12 @@
             </div>
             <div class="co-card">
               <h4 class="co-card-titulo">Folha A4 dividida (impressão)</h4>
-              <p class="co-nota">Imprime as especialidades de vários desbravadores na folha de 6 divisórias, um por divisória. Você vê a prévia antes de imprimir e pode salvar em PDF.</p>
+              <p class="co-nota">Imprime as especialidades ou as classes de vários desbravadores na folha de 6 divisórias, um por divisória. Você vê a prévia antes de imprimir e pode salvar em PDF.</p>
               <div class="co-filtros">
+                <select id="coFolhaTipo" class="co-input">
+                  <option value="espec">Imprimir: Especialidades</option>
+                  <option value="classes">Imprimir: Classes</option>
+                </select>
                 <select id="coFolhaAno" class="co-input"></select>
                 <select id="coFolhaCols" class="co-input">
                   <option value="todas">Usar as 6 divisórias</option>
@@ -37655,9 +37659,9 @@ const REQ_SUMMARIES = {
       const anos = Array.from(new Set(todasEspec.map(e => e.ano).filter(Boolean))).sort((a, b) => b - a);
       if(!anos.length) anos.push(new Date().getFullYear());
       $('coRelAno').innerHTML = '<option value="todos">Todos os anos</option>' + anos.map(a => '<option value="' + a + '">' + a + '</option>').join('');
-      $('coFolhaAno').innerHTML = $('coRelAno').innerHTML; renderFolha();
       const anosHist = Array.from(new Set(todasEspec.map(e => e.ano).concat(pessoas.flatMap(p => classesDe(p).map(c => c.ano))).filter(Boolean))).sort((a, b) => b - a);
       $('coHistAno').innerHTML = '<option value="todos">Todos os anos</option>' + anosHist.map(a => '<option value="' + a + '">' + a + '</option>').join('');
+      { const at = $('coFolhaAno').value; $('coFolhaAno').innerHTML = $('coHistAno').innerHTML; if(at) $('coFolhaAno').value = at; renderFolha(); }
       const cat = $('coCatalogo');
       if(cat && !cat.children.length){
         const f = document.createDocumentFragment();
@@ -38642,12 +38646,27 @@ const REQ_SUMMARIES = {
       const todas = [0, 1, 2, 3, 4, 5]; // ordem: linha a linha, esquerda -> direita
       return modo === 'direita' ? [1, 3, 5] : modo === 'esquerda' ? [0, 2, 4] : todas;
     }
-    function folhaEspecs(p, ano){
+    // Itens a imprimir de uma pessoa. tipo 'classes': relação das classes concluídas.
+    function folhaEspecs(p, ano, tipo){
+      if(tipo === 'classes'){
+        return classesDe(p).filter(c => ano === 'todos' || String(c.ano) === String(ano))
+          .map(c => ({ especialidade: rotuloClasse(c.classe, c.nivel), data_conclusao: c.data || '', ano: c.ano,
+            sub: c.investidura ? 'Investidura: ' + dataBr(c.investidura) : '', _ord: ordemRotulo(rotuloClasse(c.classe, c.nivel)) }))
+          .sort((a, b) => (a._ord - b._ord) || String(a.ano).localeCompare(String(b.ano)));
+      }
       return p.especs.filter(e => ano === 'todos' || String(e.ano) === String(ano))
-        .slice().sort((a, b) => (a.data_conclusao || (a.ano + '-00')).localeCompare(b.data_conclusao || (b.ano + '-00')));
+        .slice().sort((a, b) => {
+          // Ordem da folha: página do registro (numérica, crescente); sem página vão ao fim, por data.
+          const pa = parseInt(a.pagina_registro, 10), pb = parseInt(b.pagina_registro, 10);
+          const ta = isNaN(pa) ? 1 : 0, tb = isNaN(pb) ? 1 : 0;
+          if(ta !== tb) return ta - tb;
+          if(!ta && pa !== pb) return pa - pb;
+          return (a.data_conclusao || (a.ano + '-00')).localeCompare(b.data_conclusao || (b.ano + '-00'));
+        });
     }
     // Segunda linha de cada especialidade na folha: área e página do registro.
     function folhaSub(e){
+      if(e.sub !== undefined) return e.sub;
       const area = e.categoria || CATEGORIA_DO_NOME[e.especialidade] || '';
       const pag = e.pagina_registro ? 'Pág. ' + e.pagina_registro : '';
       return [area, pag].filter(Boolean).join('  ·  ');
@@ -38657,10 +38676,11 @@ const REQ_SUMMARIES = {
       const ano = $('coFolhaAno').value || 'todos';
       const q = norm($('coFolhaBusca').value);
       const marcados = new Set(Array.from($('coFolhaLista').querySelectorAll('input:checked')).map(i => i.value));
-      const itens = pessoas.map(p => ({ p: p, n: folhaEspecs(p, ano).length })).filter(x => x.n && (!q || norm(x.p.nome).indexOf(q) !== -1));
+      const tipo = $('coFolhaTipo').value;
+      const itens = pessoas.map(p => ({ p: p, n: folhaEspecs(p, ano, tipo).length })).filter(x => x.n && (!q || norm(x.p.nome).indexOf(q) !== -1));
       $('coFolhaLista').innerHTML = itens.length
-        ? itens.map(x => '<label class="co-folha-item"><input type="checkbox" value="' + esc(x.p.chave) + '"' + (marcados.has(String(x.p.chave)) ? ' checked' : '') + '><span>' + esc(x.p.nome) + '</span><small>' + plural(x.n, 'especialidade', 'especialidades') + '</small></label>').join('')
-        : '<p class="co-vazio">Nenhum desbravador com especialidades neste filtro.</p>';
+        ? itens.map(x => '<label class="co-folha-item"><input type="checkbox" value="' + esc(x.p.chave) + '"' + (marcados.has(String(x.p.chave)) ? ' checked' : '') + '><span>' + esc(x.p.nome) + '</span><small>' + (tipo === 'classes' ? plural(x.n, 'classe', 'classes') : plural(x.n, 'especialidade', 'especialidades')) + '</small></label>').join('')
+        : '<p class="co-vazio">Nenhum desbravador com ' + (tipo === 'classes' ? 'classes' : 'especialidades') + ' neste filtro.</p>';
       folhaContagem();
     }
     function folhaContagem(){
@@ -38673,7 +38693,7 @@ const REQ_SUMMARIES = {
       if(atual && Number(atual) < cel.length) $('coFolhaInicio').value = atual;
     }
     // Monta o PDF. guias = true desenha as divisórias (só para a prévia).
-    function montarFolha(pessoasSel, ano, modo, inicio, guias){
+    function montarFolha(pessoasSel, ano, modo, inicio, guias, tipo){
       const doc = novoDoc(); if(!doc) return null;
       const cel = folhaCelulas(modo), pad = FOLHA.pad;
       let slot = inicio;
@@ -38689,7 +38709,7 @@ const REQ_SUMMARIES = {
       const proximo = () => { slot++; };
       const garantirPagina = () => { if(slot >= cel.length){ doc.addPage(); desenhaGuias(); slot = 0; } };
       pessoasSel.forEach(p => {
-        const itens = folhaEspecs(p, ano);
+        const itens = folhaEspecs(p, ano, tipo);
         let i = 0, parte = 0;
         for(;;){
           garantirPagina();
@@ -38708,10 +38728,10 @@ const REQ_SUMMARIES = {
           doc.setFont('helvetica', 'bold'); doc.setFontSize(m.estreita ? 9 : 10.5); doc.setTextColor(20, 24, 20);
           doc.text(doc.splitTextToSize(p.nome, m.w)[0], m.x, m.y + 3.5);
           doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(90, 100, 92);
-          doc.text('Especialidades' + (ano === 'todos' ? '' : ' de ' + ano) + (parte ? ' (continuação)' : ''), m.x, m.y + 8);
+          doc.text((tipo === 'classes' ? 'Classes' : 'Especialidades') + (ano === 'todos' ? '' : ' de ' + ano) + (parte ? ' (continuação)' : ''), m.x, m.y + 8);
           doc.setDrawColor(63, 203, 107); doc.setLineWidth(0.3); doc.line(m.x, m.y + 10, m.x + m.w, m.y + 10);
           let y = m.y + topo - 1;
-          if(!itens.length){ doc.setFontSize(8.5); doc.text('Nenhuma especialidade registrada.', m.x, y + 2); }
+          if(!itens.length){ doc.setFontSize(8.5); doc.text(tipo === 'classes' ? 'Nenhuma classe registrada.' : 'Nenhuma especialidade registrada.', m.x, y + 2); }
           let usados = 0;
           for(const l of linhas){
             const h = hl(l);
@@ -38740,7 +38760,7 @@ const REQ_SUMMARIES = {
     let folhaUrl = null, folhaParams = null;
     function folhaPrevia(){
       if(!folhaParams) return;
-      const doc = montarFolha(folhaParams.sel, folhaParams.ano, folhaParams.modo, folhaParams.inicio, $('coPrevGuias').checked);
+      const doc = montarFolha(folhaParams.sel, folhaParams.ano, folhaParams.modo, folhaParams.inicio, $('coPrevGuias').checked, folhaParams.tipo);
       if(!doc) return;
       if(folhaUrl) URL.revokeObjectURL(folhaUrl);
       folhaUrl = URL.createObjectURL(doc.output('blob'));
@@ -38752,7 +38772,7 @@ const REQ_SUMMARIES = {
     function abrirPrevia(){
       const sel = folhaSelecionados();
       if(!sel.length){ alert('Marque pelo menos um desbravador.'); return; }
-      folhaParams = { sel: sel, ano: $('coFolhaAno').value || 'todos', modo: $('coFolhaCols').value, inicio: Number($('coFolhaInicio').value) || 0 };
+      folhaParams = { tipo: $('coFolhaTipo').value, sel: sel, ano: $('coFolhaAno').value || 'todos', modo: $('coFolhaCols').value, inicio: Number($('coFolhaInicio').value) || 0 };
       $('coPrev').style.display = 'flex';
       folhaPrevia();
     }
@@ -38761,7 +38781,7 @@ const REQ_SUMMARIES = {
       $('coPrevFrame').removeAttribute('src');
       if(folhaUrl){ URL.revokeObjectURL(folhaUrl); folhaUrl = null; }
     }
-    function folhaLimpa(){ const p = folhaParams; return p ? montarFolha(p.sel, p.ano, p.modo, p.inicio, false) : null; }
+    function folhaLimpa(){ const p = folhaParams; return p ? montarFolha(p.sel, p.ano, p.modo, p.inicio, false, p.tipo) : null; }
     function folhaImprimir(){
       const doc = folhaLimpa(); if(!doc) return;
       const url = URL.createObjectURL(doc.output('blob'));
@@ -38777,6 +38797,7 @@ const REQ_SUMMARIES = {
     }
     function folhaBaixar(){ const doc = folhaLimpa(); if(doc) salvarPDF(doc, 'folha-especialidades.pdf'); }
     $('coFolhaAno').addEventListener('change', renderFolha);
+    $('coFolhaTipo').addEventListener('change', renderFolha);
     $('coFolhaBusca').addEventListener('input', renderFolha);
     $('coFolhaCols').addEventListener('change', folhaInicioOpcoes);
     $('coFolhaLista').addEventListener('change', folhaContagem);
