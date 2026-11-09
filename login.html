@@ -33300,6 +33300,11 @@ const REQ_SUMMARIES = {
         data_conclusao: dataConclusao
       };
       if(supa){
+        // não repetir a mesma especialidade para o mesmo membro
+        const nomeNorm = especialidade.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+        const jaLocal = achievements.some(a => a.usuario_id === memberSelect.value && String(a.especialidade || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim() === nomeNorm);
+        const dup = jaLocal ? { data: [1] } : await supa.from('especialidades_concluidas').select('id').eq('usuario_id', memberSelect.value).eq('especialidade', especialidade).limit(1);
+        if(dup.data && dup.data.length){ alert('"' + especialidade + '" já está registrada para este membro. Não é possível registrar a mesma especialidade duas vezes.'); return; }
         const { data, error } = await supa.from('especialidades_concluidas').insert(payload).select().single();
         if(!error && data) achievements.push(data);
       }
@@ -37886,7 +37891,10 @@ const REQ_SUMMARIES = {
       if(!p.usuarioId) return;
       if(CATEGORIA_DO_NOME[nome] === undefined && !confirm('"' + nome + '" não está no catálogo de especialidades. Registrar mesmo assim?')) return;
       const ja = p.especs.find(e => norm(e.especialidade) === norm(nome));
-      if(ja && !confirm('"' + ja.especialidade + '" já está registrada para ' + p.nome + ' (' + (ja.data_conclusao ? dataBr(ja.data_conclusao) : ja.ano) + '). Registrar de novo?')) return;
+      if(ja){ alert('"' + ja.especialidade + '" já está registrada para ' + p.nome + ' (' + (ja.data_conclusao ? dataBr(ja.data_conclusao) : ja.ano) + '). Não é possível registrar a mesma especialidade duas vezes.'); return; }
+      // confere também no banco (a lista aberta pode estar desatualizada)
+      { const dup = await supa.from('especialidades_concluidas').select('id, data_conclusao, ano').eq('usuario_id', p.usuarioId).eq('especialidade', nome).limit(1);
+        if(!dup.error && dup.data && dup.data.length){ alert('"' + nome + '" já está registrada para ' + p.nome + ' (' + (dup.data[0].data_conclusao ? dataBr(dup.data[0].data_conclusao) : dup.data[0].ano) + '). Não é possível registrar a mesma especialidade duas vezes.'); carregar(); return; } }
       const btn = $('coNovaSalvar'); btn.disabled = true;
       const payload = { usuario_id: p.usuarioId, especialidade: nome, categoria: CATEGORIA_DO_NOME[nome] || null, ano: anoDe(data), data_conclusao: data };
       const assin = (!semColunaAssinatura && $('coNovaAssin')) ? valorAssin($('coNovaAssin')) : '';
