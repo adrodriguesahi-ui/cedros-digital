@@ -38684,7 +38684,8 @@ const REQ_SUMMARIES = {
         doc.line(0, FOLHA.ys[1], 210, FOLHA.ys[1]); doc.line(0, FOLHA.ys[2], 210, FOLHA.ys[2]);
       };
       desenhaGuias();
-      const medida = idx => { const c = cel[idx], col = c % 2, lin = Math.floor(c / 2); return { x: FOLHA.xs[col] + pad, y: FOLHA.ys[lin] + pad, w: FOLHA.xs[col + 1] - FOLHA.xs[col] - 2 * pad, h: FOLHA.ys[lin + 1] - FOLHA.ys[lin] - 2 * pad }; };
+      // Coluna estreita (esquerda): margem maior e letra menor, pois fica perto do corte.
+      const medida = idx => { const c = cel[idx], col = c % 2, lin = Math.floor(c / 2), px = col === 0 ? 11 : pad; return { x: FOLHA.xs[col] + px, y: FOLHA.ys[lin] + pad, w: FOLHA.xs[col + 1] - FOLHA.xs[col] - 2 * px, h: FOLHA.ys[lin + 1] - FOLHA.ys[lin] - 2 * pad, estreita: col === 0 }; };
       const proximo = () => { slot++; };
       const garantirPagina = () => { if(slot >= cel.length){ doc.addPage(); desenhaGuias(); slot = 0; } };
       pessoasSel.forEach(p => {
@@ -38693,18 +38694,18 @@ const REQ_SUMMARIES = {
         for(;;){
           garantirPagina();
           const m = medida(slot);
-          let fs = 9, linhas;
+          const dw = m.estreita ? 15 : 19; let fs = m.estreita ? 7 : 9, linhas;
           const quebra = tam => {
             doc.setFont('helvetica', 'normal'); doc.setFontSize(tam);
-            return itens.slice(i).map(e => ({ d: e.data_conclusao ? dataBr(e.data_conclusao) : String(e.ano), t: doc.splitTextToSize(e.especialidade, m.w - 19), sub: folhaSub(e) }));
+            return itens.slice(i).map(e => ({ d: e.data_conclusao ? dataBr(e.data_conclusao) : String(e.ano), t: doc.splitTextToSize(e.especialidade, m.w - dw), sub: folhaSub(e) }));
           };
           const lh = tam => tam * 0.3528 * 1.3;
           const topo = 14;
           const hl = l => l.t.length * lh(fs) + (l.sub ? lh(fs) * 0.85 : 0) + 0.8;
           const altura = ls => ls.reduce((s, l) => s + hl(l), 0);
           linhas = quebra(fs);
-          while(fs > 6.5 && altura(linhas) > m.h - topo){ fs -= 0.5; linhas = quebra(fs); }
-          doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(20, 24, 20);
+          while(fs > (m.estreita ? 5.5 : 6.5) && altura(linhas) > m.h - topo){ fs -= 0.5; linhas = quebra(fs); }
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(m.estreita ? 9 : 10.5); doc.setTextColor(20, 24, 20);
           doc.text(doc.splitTextToSize(p.nome, m.w)[0], m.x, m.y + 3.5);
           doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(90, 100, 92);
           doc.text('Especialidades' + (ano === 'todos' ? '' : ' de ' + ano) + (parte ? ' (continuação)' : ''), m.x, m.y + 8);
@@ -38718,10 +38719,10 @@ const REQ_SUMMARIES = {
             doc.setFont('helvetica', 'bold'); doc.setFontSize(fs); doc.setTextColor(150, 105, 10);
             doc.text(l.d, m.x, y + fs * 0.3528);
             doc.setFont('helvetica', 'normal'); doc.setTextColor(20, 24, 20);
-            doc.text(l.t, m.x + 19, y + fs * 0.3528);
+            doc.text(l.t, m.x + dw, y + fs * 0.3528);
             if(l.sub){
               doc.setFontSize(fs - 1.5); doc.setTextColor(90, 100, 92);
-              doc.text(l.sub, m.x + 19, y + fs * 0.3528 + l.t.length * lh(fs) - 0.4);
+              doc.text(l.sub, m.x + dw, y + fs * 0.3528 + l.t.length * lh(fs) - 0.4);
             }
             y += h; usados++;
           }
