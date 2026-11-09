@@ -37240,6 +37240,7 @@ const REQ_SUMMARIES = {
     let todasEspec = [];
     let feitosEm = {};          // desbravador_id -> { requisito_titulo: updated_at } (só os concluídos)
     let registradas = [];       // classes registradas à mão (tabela classes_registradas)
+    let usuariosApp = [];       // contas do app (id, nome), pra ligar desbravadores sem conta
     let semTabelaClasses = false; // true enquanto a tabela ainda não existir no banco
     let semColunaAssinatura = false; // true enquanto a coluna assinatura ainda não existir no banco
     let semColunaEntrega = false;    // true enquanto a coluna data_entrega ainda não existir no banco
@@ -37371,13 +37372,26 @@ const REQ_SUMMARIES = {
       if(r.error){ semTabelaClasses = true; semColunasClasse = false; console.error('Classes registradas indisponíveis (rode supabase/coordenacao-classes.sql):', r.error.message); return; }
       registradas = r.data || [];
     }
+    async function carregarUsuariosApp(){
+      usuariosApp = [];
+      if(!supa) return;
+      const { data, error } = await supa.from('usuarios').select('id, nome');
+      if(error){ console.error('Erro ao carregar contas do app:', error.message); return; }
+      usuariosApp = data || [];
+    }
+    // Contas do app com o mesmo nome (e ainda não ligadas a outro desbravador).
+    function contasParaVincular(p){
+      if(p.usuarioId) return [];
+      const usados = new Set(pessoas.map(x => x.usuarioId).filter(Boolean));
+      return usuariosApp.filter(u => !usados.has(u.id) && norm(u.nome) === norm(p.nome));
+    }
     async function carregar(){
       if(carregando) return;
       carregando = true;
       $('coLista').innerHTML = '<p class="co-vazio">Carregando…</p>';
       try {
         if(window.__clRecarregarDados) await window.__clRecarregarDados();
-        await Promise.all([carregarEspecialidades(), carregarConclusoes(), carregarRegistradas()]);
+        await Promise.all([carregarEspecialidades(), carregarConclusoes(), carregarRegistradas(), carregarUsuariosApp()]);
       } catch(e){ console.error('Coordenação de Classes:', e); }
       carregando = false;
       montarPessoas();
@@ -37732,6 +37746,13 @@ const REQ_SUMMARIES = {
         ? evo.map(e => '<div class="co-evo-linha"><b>' + e.ano + '</b><span>' + (e.classes.length ? esc(e.classes.join(', ')) + ' (concluída) · ' : '') + plural(e.especs, 'especialidade', 'especialidades') + '</span></div>').join('')
         : '<p class="co-nota">Ainda sem conclusões registradas.</p>';
       const hoje = new Date().toISOString().slice(0, 10);
+      const contas = contasParaVincular(p);
+      const vincularHtml = p.usuarioId ? '' : (contas.length
+        ? '<div class="co-card"><h4 class="co-card-titulo">Ligar à conta do app</h4>' +
+            '<p class="co-nota">Este desbravador foi cadastrado em Classes Regulares, mas ainda não está ligado à conta dele no app, por isso não dá para registrar especialidades. Ligue para liberar o cadastro.</p>' +
+            '<select id="coVincSel" class="co-input" aria-label="Conta do app">' + contas.map(u => '<option value="' + esc(u.id) + '">' + esc(u.nome) + '</option>').join('') + '</select>' +
+            '<button type="button" class="co-btn" id="coVincBtn">Ligar conta e liberar especialidades</button></div>'
+        : '<div class="co-card"><p class="co-nota" style="margin:0;">Não encontrei uma conta do app com este nome. Crie o usuário em Administração → Usuários (com o mesmo nome) para registrar especialidades.</p></div>');
       const novoHtml = p.usuarioId
         ? '<div class="co-card"><h4 class="co-card-titulo">Registrar especialidade</h4><div class="co-novo">' +
             '<input type="text" id="coNovaNome" class="co-input" list="coCatalogo" placeholder="Nome da especialidade" autocomplete="off">' +
@@ -37752,7 +37773,7 @@ const REQ_SUMMARIES = {
         novaClasseHtml +
         '<div class="co-card">' + concHtml + '</div>' +
         '<h4 class="co-card-titulo" style="margin-top:14px;">Especialidades concluídas (' + p.especs.length + ')</h4>' +
-        novoHtml +
+        novoHtml + vincularHtml +
         '<div class="co-card">' + especHtml + '</div>' +
         '<h4 class="co-card-titulo" style="margin-top:14px;">Evolução por ano</h4><div class="co-card">' + evoHtml + '</div>' +
         '<h4 class="co-card-titulo" style="margin-top:14px;">Documentos</h4>' +
@@ -37794,9 +37815,32 @@ const REQ_SUMMARIES = {
       });
       $('coDecGerar').addEventListener('click', () => pdfDeclaracao(p, $('coDecTipo').value));
       if($('coNovaSalvar')) $('coNovaSalvar').addEventListener('click', () => registrarEspec(p));
+      if($('coVincBtn')) $('coVincBtn').addEventListener('click', () => vincularConta(p, $('coVincSel').value));
       $('coDetalhe').querySelectorAll('.co-assins[data-assin]').forEach(c => c.addEventListener('change', () => mudarAssinatura(p, c.getAttribute('data-assin'), valorAssin(c))));
       $('coDetalhe').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => removerEspec(p, b.getAttribute('data-del'))));
       $('coDetalhe').scrollIntoView({ block: 'start' });
+    }
+
+    // Liga o desbravador (cadastrado direto em Classes Regulares) à conta do app,
+    // sem criar um cadastro duplicado. O banco só aceita um desbravador por conta.
+    async function vincularConta(p, usuarioId){
+      const conta = usuariosApp.find(u => u.id === usuarioId);
+      if(!conta || !supa) return;
+      const linha = p.classes.filter(c => c.classe !== PENDENTE_DIRETORIA).slice(-1)[0] || p.classes.slice(-1)[0];
+      if(!linha){ alert('Este desbravador não tem classe cadastrada.'); return; }
+      if(!confirm('Ligar "' + p.nome + '" (' + linha.classe + ') à conta do app de "' + conta.nome + '"?' + String.fromCharCode(10, 10) + 'Isso libera o cadastro de especialidades. Nenhum dado é apagado.')) return;
+      try {
+        const v = await supa.from('desbravadores').update({ usuario_id: conta.id }).eq('id', linha.id);
+        if(v.error) throw new Error(/duplicate|unique/i.test(v.error.message) ? 'essa conta já está ligada a outro desbravador.' : v.error.message);
+        // mantém o cadastro do usuário coerente (evita voltar de classe numa sincronização)
+        if(REGULARES.indexOf(linha.classe) !== -1){
+          const us = await supa.from('usuarios').update({ classe: linha.classe }).eq('id', conta.id);
+          if(us.error) console.error('Não foi possível atualizar a classe no cadastro do usuário:', us.error.message);
+        }
+        // classes já registradas pelo nome passam a seguir a conta
+        await supa.from('classes_registradas').update({ usuario_id: conta.id, nome_aluno: null }).is('usuario_id', null).eq('nome_aluno', p.nome);
+      } catch(e){ alert('Não foi possível ligar a conta: ' + e.message); return; }
+      carregar();
     }
 
     // ---- Concluir classe e passar para a seguinte ----
