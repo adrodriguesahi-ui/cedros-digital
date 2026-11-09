@@ -3603,6 +3603,16 @@
   .co-ent-linha b{ display:block; font-size:13px; }
   .co-ent-linha small{ color:rgba(245,239,225,0.55); font-size:11.5px; }
   a.co-mini{ text-decoration:none; }
+  .co-folha-lista{ max-height:260px; overflow:auto; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:4px 10px; margin-bottom:10px; }
+  .co-folha-item{ display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:13px; cursor:pointer; }
+  .co-folha-item:last-child{ border-bottom:0; }
+  .co-folha-item input{ width:18px; height:18px; margin:0; accent-color:var(--accent); flex-shrink:0; }
+  .co-folha-item span{ flex:1; min-width:0; }
+  .co-folha-item small{ color:rgba(245,239,225,0.55); flex-shrink:0; }
+  .co-prev{ position:fixed; inset:0; z-index:80; background:rgba(0,0,0,0.7); display:flex; align-items:stretch; justify-content:center; padding:calc(10px + env(safe-area-inset-top,0px)) 10px calc(10px + env(safe-area-inset-bottom,0px)); }
+  .co-prev-box{ width:100%; max-width:760px; background:#101a14; border:1px solid rgba(255,255,255,0.15); border-radius:14px; padding:12px; display:flex; flex-direction:column; min-height:0; }
+  .co-prev-topo{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:6px; color:var(--cream); }
+  #coPrevFrame{ flex:1; min-height:0; width:100%; border:0; border-radius:8px; background:#fff; }
 
   .cl-area-section{ margin-bottom:6px; }
   .cl-area-heading{
@@ -14262,10 +14272,47 @@
               <select id="coRelAno" class="co-input"></select>
               <button type="button" class="co-btn" id="coRelEspecBtn">Gerar PDF</button>
             </div>
+            <div class="co-card">
+              <h4 class="co-card-titulo">Folha A4 dividida (impressão)</h4>
+              <p class="co-nota">Imprime as especialidades de vários desbravadores na folha de 6 divisórias, um por divisória. Você vê a prévia antes de imprimir e pode salvar em PDF.</p>
+              <div class="co-filtros">
+                <select id="coFolhaAno" class="co-input"></select>
+                <select id="coFolhaCols" class="co-input">
+                  <option value="todas">Usar as 6 divisórias</option>
+                  <option value="direita">Só as 3 largas (direita)</option>
+                  <option value="esquerda">Só as 3 estreitas (esquerda)</option>
+                </select>
+                <select id="coFolhaInicio" class="co-input"></select>
+              </div>
+              <input type="search" id="coFolhaBusca" class="co-input" placeholder="Buscar desbravador">
+              <div class="co-acoes" style="margin-bottom:8px;">
+                <button type="button" class="co-mini" id="coFolhaTodos">Marcar todos</button>
+                <button type="button" class="co-mini" id="coFolhaNenhum">Limpar</button>
+                <small id="coFolhaContagem" class="co-nota" style="margin:0;"></small>
+              </div>
+              <div id="coFolhaLista" class="co-folha-lista"></div>
+              <button type="button" class="co-btn" id="coFolhaVer">Visualizar folha</button>
+            </div>
           </div>
         </div>
 
         <div class="co-tip" id="coTip" style="display:none;" role="status"></div>
+
+        <div class="co-prev" id="coPrev" style="display:none;" role="dialog" aria-modal="true" aria-label="Prévia da folha">
+          <div class="co-prev-box">
+            <div class="co-prev-topo">
+              <b>Prévia da folha</b>
+              <label class="co-assin-op"><input type="checkbox" id="coPrevGuias" checked> Mostrar divisórias na prévia</label>
+              <button type="button" class="co-mini" id="coPrevFechar">Fechar</button>
+            </div>
+            <p class="co-nota" id="coPrevAviso" style="margin:0 0 6px;"></p>
+            <iframe id="coPrevFrame" title="Prévia do PDF"></iframe>
+            <div class="co-acoes" style="padding-top:8px;">
+              <button type="button" class="co-btn" id="coPrevImprimir">Imprimir</button>
+              <button type="button" class="co-btn sec" id="coPrevBaixar">Baixar PDF</button>
+            </div>
+          </div>
+        </div>
         <datalist id="coCatalogo"></datalist>
 
       </div>
@@ -37350,6 +37397,7 @@ const REQ_SUMMARIES = {
       const anos = Array.from(new Set(todasEspec.map(e => e.ano).filter(Boolean))).sort((a, b) => b - a);
       if(!anos.length) anos.push(new Date().getFullYear());
       $('coRelAno').innerHTML = '<option value="todos">Todos os anos</option>' + anos.map(a => '<option value="' + a + '">' + a + '</option>').join('');
+      $('coFolhaAno').innerHTML = $('coRelAno').innerHTML; renderFolha();
       const anosHist = Array.from(new Set(todasEspec.map(e => e.ano).concat(pessoas.flatMap(p => classesDe(p).map(c => c.ano))).filter(Boolean))).sort((a, b) => b - a);
       $('coHistAno').innerHTML = '<option value="todos">Todos os anos</option>' + anosHist.map(a => '<option value="' + a + '">' + a + '</option>').join('');
       const cat = $('coCatalogo');
@@ -38313,6 +38361,149 @@ const REQ_SUMMARIES = {
       if(b) abrirFicha(b.getAttribute('data-chave'));
     });
     ['coCidade', 'coAssinante', 'coCargo'].forEach(id => $(id).addEventListener('input', salvarCfg));
+
+    // ---- Folha A4 dividida: prévia, impressão e PDF ----
+    // Medidas da folha (mm): coluna estreita à esquerda, larga à direita, 3 linhas.
+    const FOLHA = { xs: [0, 72.7, 210], ys: [0, 98.5, 197.9, 297], pad: 6 };
+    function folhaCelulas(modo){
+      const todas = [0, 1, 2, 3, 4, 5]; // ordem: linha a linha, esquerda -> direita
+      return modo === 'direita' ? [1, 3, 5] : modo === 'esquerda' ? [0, 2, 4] : todas;
+    }
+    function folhaEspecs(p, ano){
+      return p.especs.filter(e => ano === 'todos' || String(e.ano) === String(ano))
+        .slice().sort((a, b) => (a.data_conclusao || (a.ano + '-00')).localeCompare(b.data_conclusao || (b.ano + '-00')));
+    }
+    function renderFolha(){
+      if(!$('coFolhaLista')) return;
+      const ano = $('coFolhaAno').value || 'todos';
+      const q = norm($('coFolhaBusca').value);
+      const marcados = new Set(Array.from($('coFolhaLista').querySelectorAll('input:checked')).map(i => i.value));
+      const itens = pessoas.map(p => ({ p: p, n: folhaEspecs(p, ano).length })).filter(x => x.n && (!q || norm(x.p.nome).indexOf(q) !== -1));
+      $('coFolhaLista').innerHTML = itens.length
+        ? itens.map(x => '<label class="co-folha-item"><input type="checkbox" value="' + esc(x.p.chave) + '"' + (marcados.has(String(x.p.chave)) ? ' checked' : '') + '><span>' + esc(x.p.nome) + '</span><small>' + plural(x.n, 'especialidade', 'especialidades') + '</small></label>').join('')
+        : '<p class="co-vazio">Nenhum desbravador com especialidades neste filtro.</p>';
+      folhaContagem();
+    }
+    function folhaContagem(){
+      const n = $('coFolhaLista').querySelectorAll('input:checked').length;
+      $('coFolhaContagem').textContent = n ? n + (n === 1 ? ' selecionado' : ' selecionados') : '';
+    }
+    function folhaInicioOpcoes(){
+      const cel = folhaCelulas($('coFolhaCols').value), atual = $('coFolhaInicio').value;
+      $('coFolhaInicio').innerHTML = cel.map((c, i) => '<option value="' + i + '">Começar na ' + (i + 1) + 'ª divisória</option>').join('');
+      if(atual && Number(atual) < cel.length) $('coFolhaInicio').value = atual;
+    }
+    // Monta o PDF. guias = true desenha as divisórias (só para a prévia).
+    function montarFolha(pessoasSel, ano, modo, inicio, guias){
+      const doc = novoDoc(); if(!doc) return null;
+      const cel = folhaCelulas(modo), pad = FOLHA.pad;
+      let slot = inicio;
+      const desenhaGuias = () => {
+        if(!guias) return;
+        doc.setDrawColor(190, 190, 190); doc.setLineWidth(0.2);
+        doc.line(FOLHA.xs[1], 0, FOLHA.xs[1], 297);
+        doc.line(0, FOLHA.ys[1], 210, FOLHA.ys[1]); doc.line(0, FOLHA.ys[2], 210, FOLHA.ys[2]);
+      };
+      desenhaGuias();
+      const medida = idx => { const c = cel[idx], col = c % 2, lin = Math.floor(c / 2); return { x: FOLHA.xs[col] + pad, y: FOLHA.ys[lin] + pad, w: FOLHA.xs[col + 1] - FOLHA.xs[col] - 2 * pad, h: FOLHA.ys[lin + 1] - FOLHA.ys[lin] - 2 * pad }; };
+      const proximo = () => { slot++; };
+      const garantirPagina = () => { if(slot >= cel.length){ doc.addPage(); desenhaGuias(); slot = 0; } };
+      pessoasSel.forEach(p => {
+        const itens = folhaEspecs(p, ano);
+        let i = 0, parte = 0;
+        for(;;){
+          garantirPagina();
+          const m = medida(slot);
+          let fs = 9, linhas;
+          const quebra = tam => {
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(tam);
+            return itens.slice(i).map(e => ({ d: e.data_conclusao ? dataBr(e.data_conclusao) : String(e.ano), t: doc.splitTextToSize(e.especialidade, m.w - 19) }));
+          };
+          const lh = tam => tam * 0.3528 * 1.3;
+          const topo = 14;
+          const altura = ls => ls.reduce((s, l) => s + l.t.length * lh(fs) + 0.8, 0);
+          linhas = quebra(fs);
+          while(fs > 6.5 && altura(linhas) > m.h - topo){ fs -= 0.5; linhas = quebra(fs); }
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(20, 24, 20);
+          doc.text(doc.splitTextToSize(p.nome, m.w)[0], m.x, m.y + 3.5);
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(90, 100, 92);
+          doc.text('Especialidades' + (ano === 'todos' ? '' : ' de ' + ano) + (parte ? ' (continuação)' : ''), m.x, m.y + 8);
+          doc.setDrawColor(63, 203, 107); doc.setLineWidth(0.3); doc.line(m.x, m.y + 10, m.x + m.w, m.y + 10);
+          let y = m.y + topo - 1;
+          if(!itens.length){ doc.setFontSize(8.5); doc.text('Nenhuma especialidade registrada.', m.x, y + 2); }
+          let usados = 0;
+          for(const l of linhas){
+            const h = l.t.length * lh(fs) + 0.8;
+            if(y + h > m.y + m.h + 0.5 && usados > 0) break;
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(fs); doc.setTextColor(150, 105, 10);
+            doc.text(l.d, m.x, y + fs * 0.3528);
+            doc.setFont('helvetica', 'normal'); doc.setTextColor(20, 24, 20);
+            doc.text(l.t, m.x + 19, y + fs * 0.3528);
+            y += h; usados++;
+          }
+          i += usados; parte++;
+          if(i < itens.length) proximo(); else break;
+        }
+        proximo();
+      });
+      return doc;
+    }
+    function folhaSelecionados(){
+      const ids = new Set(Array.from($('coFolhaLista').querySelectorAll('input:checked')).map(i => i.value));
+      return pessoas.filter(p => ids.has(String(p.chave)));
+    }
+    let folhaUrl = null, folhaParams = null;
+    function folhaPrevia(){
+      if(!folhaParams) return;
+      const doc = montarFolha(folhaParams.sel, folhaParams.ano, folhaParams.modo, folhaParams.inicio, $('coPrevGuias').checked);
+      if(!doc) return;
+      if(folhaUrl) URL.revokeObjectURL(folhaUrl);
+      folhaUrl = URL.createObjectURL(doc.output('blob'));
+      $('coPrevFrame').src = folhaUrl;
+      // a última página pode ter ficado vazia se o último aluno completou a folha
+      const pags = doc.getNumberOfPages();
+      $('coPrevAviso').textContent = folhaParams.sel.length + (folhaParams.sel.length === 1 ? ' desbravador' : ' desbravadores') + ' · ' + pags + (pags === 1 ? ' folha' : ' folhas') + '. As linhas cinza das divisórias aparecem só aqui, não saem na impressão.';
+    }
+    function abrirPrevia(){
+      const sel = folhaSelecionados();
+      if(!sel.length){ alert('Marque pelo menos um desbravador.'); return; }
+      folhaParams = { sel: sel, ano: $('coFolhaAno').value || 'todos', modo: $('coFolhaCols').value, inicio: Number($('coFolhaInicio').value) || 0 };
+      $('coPrev').style.display = 'flex';
+      folhaPrevia();
+    }
+    function fecharPrevia(){
+      $('coPrev').style.display = 'none';
+      $('coPrevFrame').removeAttribute('src');
+      if(folhaUrl){ URL.revokeObjectURL(folhaUrl); folhaUrl = null; }
+    }
+    function folhaLimpa(){ const p = folhaParams; return p ? montarFolha(p.sel, p.ano, p.modo, p.inicio, false) : null; }
+    function folhaImprimir(){
+      const doc = folhaLimpa(); if(!doc) return;
+      const url = URL.createObjectURL(doc.output('blob'));
+      const f = document.createElement('iframe');
+      f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+      f.src = url;
+      f.onload = () => {
+        try { f.contentWindow.focus(); f.contentWindow.print(); }
+        catch(e){ window.open(url, '_blank'); }
+        setTimeout(() => { URL.revokeObjectURL(url); f.remove(); }, 60000);
+      };
+      document.body.appendChild(f);
+    }
+    function folhaBaixar(){ const doc = folhaLimpa(); if(doc) salvarPDF(doc, 'folha-especialidades.pdf'); }
+    $('coFolhaAno').addEventListener('change', renderFolha);
+    $('coFolhaBusca').addEventListener('input', renderFolha);
+    $('coFolhaCols').addEventListener('change', folhaInicioOpcoes);
+    $('coFolhaLista').addEventListener('change', folhaContagem);
+    $('coFolhaTodos').addEventListener('click', () => { $('coFolhaLista').querySelectorAll('input').forEach(i => { i.checked = true; }); folhaContagem(); });
+    $('coFolhaNenhum').addEventListener('click', () => { $('coFolhaLista').querySelectorAll('input').forEach(i => { i.checked = false; }); folhaContagem(); });
+    $('coFolhaVer').addEventListener('click', abrirPrevia);
+    $('coPrevGuias').addEventListener('change', folhaPrevia);
+    $('coPrevFechar').addEventListener('click', fecharPrevia);
+    $('coPrevImprimir').addEventListener('click', folhaImprimir);
+    $('coPrevBaixar').addEventListener('click', folhaBaixar);
+    folhaInicioOpcoes();
+
     $('coRelGeral').addEventListener('click', pdfRelatorioGeral);
     $('coRelClasseBtn').addEventListener('click', () => { if($('coRelClasse').value) pdfRelatorioClasse($('coRelClasse').value); });
     $('coRelEspecBtn').addEventListener('click', () => pdfRelatorioEspec($('coRelAno').value));
