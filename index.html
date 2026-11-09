@@ -38644,7 +38644,14 @@ const REQ_SUMMARIES = {
     }
     function folhaEspecs(p, ano){
       return p.especs.filter(e => ano === 'todos' || String(e.ano) === String(ano))
-        .slice().sort((a, b) => (a.data_conclusao || (a.ano + '-00')).localeCompare(b.data_conclusao || (b.ano + '-00')));
+        .slice().sort((a, b) => {
+          // Ordem da folha: página do registro (numérica, crescente); sem página vão ao fim, por data.
+          const pa = parseInt(a.pagina_registro, 10), pb = parseInt(b.pagina_registro, 10);
+          const ta = isNaN(pa) ? 1 : 0, tb = isNaN(pb) ? 1 : 0;
+          if(ta !== tb) return ta - tb;
+          if(!ta && pa !== pb) return pa - pb;
+          return (a.data_conclusao || (a.ano + '-00')).localeCompare(b.data_conclusao || (b.ano + '-00'));
+        });
     }
     // Segunda linha de cada especialidade na folha: área e página do registro.
     function folhaSub(e){
