@@ -37042,11 +37042,12 @@ const REQ_SUMMARIES = {
     let usuariosApp = [];       // contas do app (id, nome), pra ligar desbravadores sem conta
     let semTabelaClasses = false; // true enquanto a tabela ainda não existir no banco
     let semColunaAssinatura = false; // true enquanto a coluna assinatura ainda não existir no banco
+    let semColunaPagina = false;     // true enquanto a coluna pagina_registro ainda não existir no banco
     let semColunaEntrega = false;    // true enquanto a coluna data_entrega ainda não existir no banco
     let semColunasClasse = false;    // true enquanto investidura/comprovante ainda não existirem no banco
     const COLS_ESPEC = 'id, usuario_id, especialidade, categoria, ano, data_conclusao';
     const COLS_REG = 'id, usuario_id, nome_aluno, classe, nivel, ano, data_conclusao';
-    const colsEspec = () => COLS_ESPEC + (semColunaAssinatura ? '' : ', assinatura') + (semColunaEntrega ? '' : ', data_entrega');
+    const colsEspec = () => COLS_ESPEC + (semColunaAssinatura ? '' : ', assinatura') + (semColunaEntrega ? '' : ', data_entrega') + (semColunaPagina ? '' : ', pagina_registro');
     const colsReg = () => COLS_REG + (semColunasClasse ? '' : ', data_investidura, comprovante_path, comprovante_nome');
     let aberta = null;          // chave da pessoa com a ficha aberta
     let carregando = false;
@@ -37133,10 +37134,10 @@ const REQ_SUMMARIES = {
       if(!supa) return;
       // Tenta com assinatura e data de entrega; se o banco ainda não tem as
       // colunas novas, lê só as que existem.
-      const camadas = [[false, false], [false, true], [true, true]]; // [semAssinatura, semEntrega]
+      const camadas = [[false, false, false], [false, false, true], [false, true, true], [true, true, true]]; // [semAssinatura, semEntrega, semPagina]
       let r = null;
-      for(const [semA, semE] of camadas){
-        semColunaAssinatura = semA; semColunaEntrega = semE;
+      for(const [semA, semE, semP] of camadas){
+        semColunaAssinatura = semA; semColunaEntrega = semE; semColunaPagina = semP;
         r = await supa.from('especialidades_concluidas').select(colsEspec()).order('ano', { ascending: false });
         if(!r.error) break;
       }
@@ -37543,6 +37544,7 @@ const REQ_SUMMARIES = {
             g.itens.map(e => '<div class="co-esp"><span>' + esc(e.especialidade) + (e.categoria ? ' <small>· ' + esc(e.categoria) + '</small>' : '') + '</span><small>' + (e.data_conclusao ? dataBr(e.data_conclusao) : e.ano) + '</small>' +
               '<button type="button" class="co-esp-del" data-del="' + esc(e.id) + '" aria-label="Remover ' + esc(e.especialidade) + '" title="Remover">×</button>' +
               (semColunaAssinatura ? '' : caixasAssin(listaAssin(e), 'data-assin="' + esc(e.id) + '"')) +
+              (semColunaPagina ? '' : '<div class="co-extra"><label class="co-campo">Página do registro <input type="text" inputmode="numeric" maxlength="12" size="6" data-pagina="' + esc(e.id) + '" value="' + esc(e.pagina_registro || '') + '" placeholder="nº"></label></div>') +
               (semColunaEntrega ? '' : '<div class="co-extra"><label class="co-campo">Condecoração entregue em <input type="date" data-entrega="' + esc(e.id) + '" value="' + esc(e.data_entrega || '') + '"></label><small>' + (e.data_entrega ? '' : 'ainda não entregue') + '</small></div>') +
               '</div>').join('')).join('')
         : '<p class="co-nota">' + (p.usuarioId ? 'Nenhuma especialidade concluída registrada.' : 'Sem conta no app, então não é possível registrar especialidades.') + '</p>';
@@ -37565,6 +37567,9 @@ const REQ_SUMMARIES = {
             (semColunaAssinatura
               ? '<p class="co-nota">Para sinalizar a assinatura (Instrutor, Regional, Associação ou Missão), falta adicionar a coluna no banco: rode o arquivo supabase/especialidade-assinatura.sql no SQL Editor do Supabase.</p>'
               : '<p class="co-nota" style="margin:2px 2px 0;">Assinaturas já cumpridas:</p>' + caixasAssin([], 'id="coNovaAssin"')) +
+            (semColunaPagina
+              ? '<p class="co-nota">Para registrar a página do registro de especialidades, falta atualizar o banco: rode o arquivo supabase/especialidade-pagina.sql no SQL Editor do Supabase.</p>'
+              : '<label class="co-label" for="coNovaPagina">Página do registro de especialidades (opcional)</label><input type="text" id="coNovaPagina" class="co-input" inputmode="numeric" maxlength="12" placeholder="Ex.: 12">') +
             (semColunaEntrega
               ? '<p class="co-nota">Para registrar a entrega da condecoração, falta atualizar o banco: rode o arquivo supabase/coordenacao-classes.sql no SQL Editor do Supabase.</p>'
               : '<label class="co-label" for="coNovaEntrega">Data da entrega da condecoração (opcional)</label><input type="date" id="coNovaEntrega" class="co-input">') +
@@ -37620,6 +37625,7 @@ const REQ_SUMMARIES = {
       $('coDetalhe').querySelectorAll('[data-cregder]').forEach(b => b.addEventListener('click', () => {
         const [classe, nivel, data] = b.getAttribute('data-cregder').split('|'); registrarDeRequisitos(p, classe, nivel, data);
       }));
+      $('coDetalhe').querySelectorAll('[data-pagina]').forEach(i => i.addEventListener('change', () => mudarPagina(p, i.getAttribute('data-pagina'), i.value)));
       $('coDetalhe').querySelectorAll('[data-entrega]').forEach(i => i.addEventListener('change', () => mudarEntrega(p, i.getAttribute('data-entrega'), i.value)));
       [['coNovaCompFoto', 'coNovaCompArq'], ['coNovaCompArq', 'coNovaCompFoto']].forEach(([a, b]) => {
         const x = $(a); if(!x) return;
@@ -37822,6 +37828,14 @@ const REQ_SUMMARIES = {
       registradas = registradas.filter(x => String(x.id) !== String(r.id));
       depoisDeMudarEspec(p);
     }
+    async function mudarPagina(p, id, valor){
+      const e = p.especs.find(x => String(x.id) === String(id)); if(!e || !supa) return;
+      valor = String(valor || '').trim();
+      const { error } = await supa.from('especialidades_concluidas').update({ pagina_registro: valor || null }).eq('id', e.id);
+      if(error){ alert('Não foi possível salvar a página: ' + error.message); if(aberta === p.chave) abrirFicha(p.chave); return; }
+      e.pagina_registro = valor || null;
+      const t = todasEspec.find(x => String(x.id) === String(e.id)); if(t) t.pagina_registro = e.pagina_registro;
+    }
     async function mudarEntrega(p, id, valor){
       const e = p.especs.find(x => String(x.id) === String(id)); if(!e || !supa) return;
       const { error } = await supa.from('especialidades_concluidas').update({ data_entrega: valor || null }).eq('id', e.id);
@@ -37853,6 +37867,8 @@ const REQ_SUMMARIES = {
       if(assin) payload.assinatura = assin;
       const entrega = (!semColunaEntrega && $('coNovaEntrega')) ? $('coNovaEntrega').value : '';
       if(entrega) payload.data_entrega = entrega;
+      const pagina = (!semColunaPagina && $('coNovaPagina')) ? $('coNovaPagina').value.trim() : '';
+      if(pagina) payload.pagina_registro = pagina;
       const { data: linha, error } = await supa.from('especialidades_concluidas').insert(payload).select(colsEspec()).single();
       btn.disabled = false;
       if(error || !linha){
@@ -38373,6 +38389,12 @@ const REQ_SUMMARIES = {
       return p.especs.filter(e => ano === 'todos' || String(e.ano) === String(ano))
         .slice().sort((a, b) => (a.data_conclusao || (a.ano + '-00')).localeCompare(b.data_conclusao || (b.ano + '-00')));
     }
+    // Segunda linha de cada especialidade na folha: área e página do registro.
+    function folhaSub(e){
+      const area = e.categoria || CATEGORIA_DO_NOME[e.especialidade] || '';
+      const pag = e.pagina_registro ? 'Pág. ' + e.pagina_registro : '';
+      return [area, pag].filter(Boolean).join('  ·  ');
+    }
     function renderFolha(){
       if(!$('coFolhaLista')) return;
       const ano = $('coFolhaAno').value || 'todos';
@@ -38417,11 +38439,12 @@ const REQ_SUMMARIES = {
           let fs = 9, linhas;
           const quebra = tam => {
             doc.setFont('helvetica', 'normal'); doc.setFontSize(tam);
-            return itens.slice(i).map(e => ({ d: e.data_conclusao ? dataBr(e.data_conclusao) : String(e.ano), t: doc.splitTextToSize(e.especialidade, m.w - 19) }));
+            return itens.slice(i).map(e => ({ d: e.data_conclusao ? dataBr(e.data_conclusao) : String(e.ano), t: doc.splitTextToSize(e.especialidade, m.w - 19), sub: folhaSub(e) }));
           };
           const lh = tam => tam * 0.3528 * 1.3;
           const topo = 14;
-          const altura = ls => ls.reduce((s, l) => s + l.t.length * lh(fs) + 0.8, 0);
+          const hl = l => l.t.length * lh(fs) + (l.sub ? lh(fs) * 0.85 : 0) + 0.8;
+          const altura = ls => ls.reduce((s, l) => s + hl(l), 0);
           linhas = quebra(fs);
           while(fs > 6.5 && altura(linhas) > m.h - topo){ fs -= 0.5; linhas = quebra(fs); }
           doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(20, 24, 20);
@@ -38433,12 +38456,16 @@ const REQ_SUMMARIES = {
           if(!itens.length){ doc.setFontSize(8.5); doc.text('Nenhuma especialidade registrada.', m.x, y + 2); }
           let usados = 0;
           for(const l of linhas){
-            const h = l.t.length * lh(fs) + 0.8;
+            const h = hl(l);
             if(y + h > m.y + m.h + 0.5 && usados > 0) break;
             doc.setFont('helvetica', 'bold'); doc.setFontSize(fs); doc.setTextColor(150, 105, 10);
             doc.text(l.d, m.x, y + fs * 0.3528);
             doc.setFont('helvetica', 'normal'); doc.setTextColor(20, 24, 20);
             doc.text(l.t, m.x + 19, y + fs * 0.3528);
+            if(l.sub){
+              doc.setFontSize(fs - 1.5); doc.setTextColor(90, 100, 92);
+              doc.text(l.sub, m.x + 19, y + fs * 0.3528 + l.t.length * lh(fs) - 0.4);
+            }
             y += h; usados++;
           }
           i += usados; parte++;

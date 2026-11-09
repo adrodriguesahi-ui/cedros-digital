@@ -39,3 +39,4 @@ alter table especialidades_concluidas add constraint especialidades_concluidas_a
   check (assinatura is null or assinatura ~ '^(instrutor|regional|associacao|missao)(,(instrutor|regional|associacao|missao))*$');
 
 alter table especialidades_concluidas add column if not exists data_entrega date;
+alter table especialidades_concluidas add column if not exists pagina_registro text;
