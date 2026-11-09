@@ -3594,7 +3594,7 @@
   .co-comp{ border-top:1px dashed rgba(255,255,255,0.08); padding-top:6px; }
   .co-comp-link{ display:inline-flex; align-items:center; gap:8px; color:var(--accent); font-weight:800; font-size:12.5px; text-decoration:none; }
   .co-comp-link img{ width:44px; height:44px; object-fit:cover; border-radius:6px; border:1px solid rgba(255,255,255,0.15); }
-  .co-comp-nome{ font-size:11.5px; color:rgba(245,239,225,0.55); flex:1 1 120px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .co-comp-nome{ font-size:11.5px; color:rgba(245,239,225,0.55); flex:1 1 120px; min-width:0; word-break:break-word; }
   .co-comp-acoes{ display:flex; flex-wrap:wrap; gap:6px; }
   .co-mini{ display:inline-block; border:0; cursor:pointer; font:inherit; font-size:12px; font-weight:800; padding:7px 11px; border-radius:8px; background:rgba(255,255,255,0.1); color:var(--cream); }
   .co-mini.perigo{ color:#ff9b9b; }
@@ -3602,6 +3602,7 @@
   .co-ent-linha > div{ min-width:0; flex:1 1 180px; }
   .co-ent-linha b{ display:block; font-size:13px; }
   .co-ent-linha small{ color:rgba(245,239,225,0.55); font-size:11.5px; }
+  a.co-mini{ text-decoration:none; }
 
   .cl-area-section{ margin-bottom:6px; }
   .cl-area-heading{
@@ -36941,6 +36942,14 @@ const REQ_SUMMARIES = {
     function urlComprovante(caminho){
       try { const r = supa.storage.from(BUCKET).getPublicUrl(caminho); return (r && r.data && r.data.publicUrl) || ''; } catch(e){ return ''; }
     }
+    // Nome do comprovante: "<Desbravador> - Registro de Classe de <Classe> (Regular)".
+    const nomeSeguro = t => String(t).replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
+    const extDoCaminho = c => ((String(c || '').match(/\.([a-zA-Z0-9]{1,5})$/) || [])[1] || '').toLowerCase();
+    const baseNomeComprovante = (nome, classe, nivel) => nomeSeguro(nome + ' - Registro de Classe de ' + rotuloClasse(classe, nivel));
+    // Link que baixa o arquivo já com o nome padrão (o Storage aceita ?download=nome).
+    function urlBaixar(caminho, nomeArquivo){
+      try { const r = supa.storage.from(BUCKET).getPublicUrl(caminho, { download: nomeArquivo }); return (r && r.data && r.data.publicUrl) || ''; } catch(e){ return ''; }
+    }
     const ehImagem = nome => /\.(jpg|jpeg|png|webp|gif)$/i.test(String(nome || ''));
     // Foto de celular chega com 5-10 MB: reduz pra no máximo 1600 px de lado (JPEG).
     function reduzirImagem(arquivo){
@@ -36962,7 +36971,7 @@ const REQ_SUMMARIES = {
       });
     }
     // Devolve { path, nome } ou lança erro com texto pronto pra mostrar.
-    async function enviarComprovanteClasse(arquivo){
+    async function enviarComprovanteClasse(arquivo, nomeBase){
       if(!supa) throw new Error('Sem conexão com o banco de dados.');
       if(arquivo.size > LIMITE_MB * 1024 * 1024) throw new Error('O arquivo tem mais de ' + LIMITE_MB + ' MB. Escolha um menor.');
       const blob = await reduzirImagem(arquivo);
@@ -36970,7 +36979,7 @@ const REQ_SUMMARIES = {
       const caminho = 'classes/' + novoId() + '.' + ext;
       const { error } = await supa.storage.from(BUCKET).upload(caminho, blob, { contentType: blob.type || arquivo.type || 'application/octet-stream', upsert: false });
       if(error) throw new Error(error.message);
-      return { path: caminho, nome: arquivo.name || ('comprovante.' + ext) };
+      return { path: caminho, nome: nomeBase ? nomeSeguro(nomeBase) + '.' + ext : (arquivo.name || ('comprovante.' + ext)) };
     }
     async function apagarComprovante(caminho){
       if(!supa || !caminho) return;
@@ -37438,11 +37447,12 @@ const REQ_SUMMARIES = {
                   '<div class="co-extra co-comp">' +
                     (c.compPath
                       ? '<a class="co-comp-link" href="' + esc(url) + '" target="_blank" rel="noopener">' + (ehImagem(c.compNome || c.compPath) ? '<img src="' + esc(url) + '" alt="Comprovante da classe">' : '') + '<span>Ver comprovante</span></a>' +
-                        '<span class="co-comp-nome">' + esc(c.compNome || '') + '</span>'
+                        '<span class="co-comp-nome">' + esc(baseNomeComprovante(p.nome, c.classe, c.nivel) + (extDoCaminho(c.compPath) ? '.' + extDoCaminho(c.compPath) : '')) + '</span>'
                       : '<span class="co-comp-nome">Sem comprovante</span>') +
                     '<span class="co-comp-acoes">' +
                       '<label class="co-mini">' + (c.compPath ? 'Trocar por foto' : 'Tirar foto') + '<input type="file" accept="image/*" capture="environment" hidden data-cfoto="' + esc(c.id) + '"></label>' +
                       '<label class="co-mini">' + (c.compPath ? 'Trocar por arquivo' : 'Enviar arquivo') + '<input type="file" accept="image/*,application/pdf" hidden data-carq="' + esc(c.id) + '"></label>' +
+                      (c.compPath ? '<a class="co-mini" href="' + esc(urlBaixar(c.compPath, baseNomeComprovante(p.nome, c.classe, c.nivel) + (extDoCaminho(c.compPath) ? '.' + extDoCaminho(c.compPath) : ''))) + '">Baixar</a>' : '') +
                       (c.compPath ? '<button type="button" class="co-mini perigo" data-cdelcomp="' + esc(c.id) + '">Remover</button>' : '') +
                     '</span></div>';
               } else if(!c.id){
@@ -37668,7 +37678,7 @@ const REQ_SUMMARIES = {
       registradas.push(linha);
       if(arquivo){
         try {
-          const env = await enviarComprovanteClasse(arquivo);
+          const env = await enviarComprovanteClasse(arquivo, p.nome + ' - Registro de Classe de ' + rotuloClasse(classe, nivel));
           const { error: e2 } = await supa.from('classes_registradas').update({ comprovante_path: env.path, comprovante_nome: env.nome }).eq('id', linha.id);
           if(e2){ await apagarComprovante(env.path); throw new Error(e2.message); }
           linha.comprovante_path = env.path; linha.comprovante_nome = env.nome;
@@ -37709,7 +37719,7 @@ const REQ_SUMMARIES = {
       const r = registroDe(p, id); if(!r || !supa) return;
       if(r.comprovante_path && !confirm('Já existe um comprovante para esta classe. Substituir pelo novo arquivo?')){ abrirFicha(p.chave); return; }
       try {
-        const env = await enviarComprovanteClasse(arquivo);
+        const env = await enviarComprovanteClasse(arquivo, p.nome + ' - Registro de Classe de ' + rotuloClasse(r.classe, r.nivel));
         const antigo = r.comprovante_path;
         const { error } = await supa.from('classes_registradas').update({ comprovante_path: env.path, comprovante_nome: env.nome }).eq('id', r.id);
         if(error){ await apagarComprovante(env.path); throw new Error(error.message); }
