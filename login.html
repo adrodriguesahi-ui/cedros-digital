@@ -14298,6 +14298,12 @@
               <div id="coFolhaLista" class="co-folha-lista"></div>
               <button type="button" class="co-btn" id="coFolhaVer">Visualizar folha</button>
             </div>
+            <div class="co-card">
+              <h4 class="co-card-titulo">Relação de alunos e classes (1 página)</h4>
+              <p class="co-nota">Todos os desbravadores numa página só: classe atual e classes concluídas. A letra se ajusta para caber. Mostra a prévia antes de imprimir.</p>
+              <label class="co-assin-op" style="margin-bottom:10px;"><input type="checkbox" id="coRelacaoEsp" checked> Incluir quantidade de especialidades</label>
+              <button type="button" class="co-btn" id="coRelacaoVer">Visualizar relação</button>
+            </div>
           </div>
         </div>
 
@@ -38517,13 +38523,14 @@ const REQ_SUMMARIES = {
     let folhaUrl = null, folhaParams = null;
     function folhaPrevia(){
       if(!folhaParams) return;
-      const doc = montarFolha(folhaParams.sel, folhaParams.ano, folhaParams.modo, folhaParams.inicio, $('coPrevGuias').checked, folhaParams.tipo);
+      const doc = folhaParams.relacao ? montarRelacao(folhaParams.comEsp) : montarFolha(folhaParams.sel, folhaParams.ano, folhaParams.modo, folhaParams.inicio, $('coPrevGuias').checked, folhaParams.tipo);
       if(!doc) return;
       if(folhaUrl) URL.revokeObjectURL(folhaUrl);
       folhaUrl = URL.createObjectURL(doc.output('blob'));
       $('coPrevFrame').src = folhaUrl;
       // a última página pode ter ficado vazia se o último aluno completou a folha
       const pags = doc.getNumberOfPages();
+      if(folhaParams.relacao){ $('coPrevAviso').textContent = pessoas.length + ' desbravadores · ' + pags + (pags === 1 ? ' página' : ' páginas') + '.'; return; }
       $('coPrevAviso').textContent = folhaParams.sel.length + (folhaParams.sel.length === 1 ? ' desbravador' : ' desbravadores') + ' · ' + pags + (pags === 1 ? ' folha' : ' folhas') + '. As linhas cinza das divisórias aparecem só aqui, não saem na impressão.';
     }
     function abrirPrevia(){
@@ -38538,7 +38545,7 @@ const REQ_SUMMARIES = {
       $('coPrevFrame').removeAttribute('src');
       if(folhaUrl){ URL.revokeObjectURL(folhaUrl); folhaUrl = null; }
     }
-    function folhaLimpa(){ const p = folhaParams; return p ? montarFolha(p.sel, p.ano, p.modo, p.inicio, false, p.tipo) : null; }
+    function folhaLimpa(){ const p = folhaParams; if(p && p.relacao) return montarRelacao(p.comEsp); return p ? montarFolha(p.sel, p.ano, p.modo, p.inicio, false, p.tipo) : null; }
     function folhaImprimir(){
       const doc = folhaLimpa(); if(!doc) return;
       const url = URL.createObjectURL(doc.output('blob'));
@@ -38552,7 +38559,59 @@ const REQ_SUMMARIES = {
       };
       document.body.appendChild(f);
     }
-    function folhaBaixar(){ const doc = folhaLimpa(); if(doc) salvarPDF(doc, 'folha-especialidades.pdf'); }
+    function folhaBaixar(){ const doc = folhaLimpa(); if(doc) salvarPDF(doc, (folhaParams && folhaParams.relacao ? 'relacao-alunos-classes.pdf' : 'folha-especialidades.pdf')); }
+
+    // ---- Relação de alunos e classes, numa página só ----
+    function montarRelacao(comEsp){
+      const doc = novoDoc(); if(!doc) return null;
+      const tit = 'Relação de alunos e classes';
+      let y0 = cabecalho(doc, tit);
+      const lista = pessoas.map(p => {
+        const cur = p.classes.length ? p.classes[p.classes.length - 1].classe : '';
+        const conc = classesDe(p).map(c => rotuloClasse(c.classe, c.nivel)).sort((a, b) => ordemRotulo(a) - ordemRotulo(b));
+        return { nome: p.nome, cur: cur, conc: conc, esp: p.especs.length };
+      }).sort((a, b) => (ordemClasse(a.cur) - ordemClasse(b.cur)) || cmpNome(a.nome, b.nome));
+      const X = comEsp ? { n: 16, cur: 74, conc: 108, esp: 194 } : { n: 16, cur: 84, conc: 122, esp: 194 };
+      const wNome = X.cur - X.n - 3, wCur = X.conc - X.cur - 3, wConc = (comEsp ? X.esp - 12 : 194) - X.conc;
+      const medir = fs => {
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(fs);
+        const lh = fs * 0.3528 * 1.25;
+        return lista.map(l => {
+          const n = Math.max(doc.splitTextToSize(l.nome, wNome).length, doc.splitTextToSize(l.cur || '—', wCur).length, doc.splitTextToSize(l.conc.join(', ') || '—', wConc).length);
+          return n * lh + 1.6;
+        });
+      };
+      let fs = 9.5, alt = medir(fs);
+      const livre = 284 - y0 - 8;
+      while(fs > 5.5 && alt.reduce((s, h) => s + h, 0) > livre){ fs -= 0.5; alt = medir(fs); }
+      const lh = fs * 0.3528 * 1.25;
+      const cab = y => {
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(Math.min(fs, 9)); doc.setTextColor(22, 120, 60);
+        doc.text('ALUNO', X.n, y); doc.text('CLASSE ATUAL', X.cur, y); doc.text('CLASSES CONCLUÍDAS', X.conc, y);
+        if(comEsp) doc.text('ESPEC.', X.esp, y, { align: 'right' });
+        doc.setDrawColor(63, 203, 107); doc.setLineWidth(0.4); doc.line(16, y + 1.8, 194, y + 1.8);
+        return y + 6;
+      };
+      let y = cab(y0);
+      lista.forEach((l, i) => {
+        if(y + alt[i] > 286){ y = cab(novaPagina(doc, tit) - 2); }
+        doc.setFontSize(fs);
+        const a = doc.splitTextToSize(l.nome, wNome), b = doc.splitTextToSize(l.cur || '—', wCur), c = doc.splitTextToSize(l.conc.join(', ') || '—', wConc);
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(20, 24, 20); doc.text(a, X.n, y);
+        doc.setFont('helvetica', 'normal'); doc.text(b, X.cur, y); doc.text(c, X.conc, y);
+        if(comEsp) doc.text(String(l.esp), X.esp, y, { align: 'right' });
+        doc.setDrawColor(225, 230, 226); doc.setLineWidth(0.15); doc.line(16, y + alt[i] - lh + 0.2, 194, y + alt[i] - lh + 0.2);
+        y += alt[i];
+      });
+      rodape(doc);
+      return doc;
+    }
+    function abrirPreviaRelacao(){
+      folhaParams = { relacao: true, comEsp: $('coRelacaoEsp').checked };
+      $('coPrev').style.display = 'flex';
+      folhaPrevia();
+    }
+    $('coRelacaoVer').addEventListener('click', abrirPreviaRelacao);
     $('coFolhaAno').addEventListener('change', renderFolha);
     $('coFolhaTipo').addEventListener('change', renderFolha);
     $('coFolhaBusca').addEventListener('input', renderFolha);
