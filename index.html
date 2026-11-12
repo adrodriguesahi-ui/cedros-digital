@@ -4027,7 +4027,7 @@
   .aut-msg.aut-msg-erro{ color:#FF8A7C; }
   .pl-reminder-hint.dcl-alerta{ color:var(--gold); font-weight:800; }
   @media (min-width:900px){
-    #dclOverlay .pl-modal.dcl-modal{ max-width:860px; }
+    #dclOverlay .pl-modal.dcl-modal, #clbOverlay .pl-modal.dcl-modal{ max-width:860px; }
     .dcl-corpo{ flex-direction:row; align-items:flex-start; }
     .dcl-campos{ flex:1 1 auto; }
     .dcl-previa-wrap{ flex:0 0 340px; position:sticky; top:0; }
@@ -12933,7 +12933,8 @@
               <input type="text" class="pl-input" id="clbCargoClube" maxlength="60">
               <label class="pl-field-label" for="clbSimbolo">Símbolo do clube no cabeçalho</label>
               <select class="pl-input" id="clbSimbolo">
-                <option value="brasao">Brasão Cedros do Líbano</option>
+                <option value="original">Logo original do Cedros (cedro)</option>
+                <option value="brasao">Brasão Cedros do Líbano (verde)</option>
                 <option value="selo">Selo dos Desbravadores</option>
               </select>
               <p class="pl-reminder-hint">Localidade, nome, papel e cargo no clube ficam neste aparelho para a próxima carta. O documento (CTPS, CPF ou RG) não é guardado.</p>
@@ -29793,7 +29794,7 @@
     };
     const previa = $('clbPrevia');
     const MEMORIA = 'clube:carta-liberacao';
-    const imgs = { brasao: null, selo: null, iasd: null };
+    const imgs = { original: null, brasao: null, selo: null, iasd: null };
     const FONTE = 'Arial, Helvetica, "Liberation Sans", sans-serif';
     const AZUL = '#1F4272', VERDE = '#6AA02B', TINTA = '#222222', CINZA = '#6B7280';
     const W = 1654, H = 2339, S = W / 921;   // o desenho usa o espaço 921 x 1303 do modelo
@@ -29811,6 +29812,7 @@
       return new Promise(resolve => { const i = new Image(); i.onload = () => resolve(i); i.onerror = () => resolve(null); i.src = src; });
     }
     async function carregarImagens(){
+      if(!imgs.original) imgs.original = await carregar('logo-original.png');
       if(!imgs.brasao) imgs.brasao = await carregar((window.CLUBE_CONFIG && window.CLUBE_CONFIG.logo) || 'logo.png');
       if(!imgs.selo) imgs.selo = await carregar('selo-desbravadores.png');
       if(!imgs.iasd) imgs.iasd = await carregar('iasd-logo.png');
@@ -29877,7 +29879,7 @@
       const ESQ = 106, DIR = 818;
 
       // Cabeçalho: símbolo do clube | nome | IASD, e a linha verde.
-      contain(x, d.simbolo === 'selo' ? imgs.selo : imgs.brasao, 128, 72, 114, 122);
+      contain(x, d.simbolo === 'selo' ? imgs.selo : (d.simbolo === 'brasao' ? imgs.brasao : imgs.original), 128, 72, 114, 122);
       x.textAlign = 'center'; x.font = 'bold 17px ' + FONTE; x.fillStyle = '#5E9B30';
       x.fillText('CLUBE DE DESBRAVADORES', 460, 114);
       x.fillText('CEDROS DO LÍBANO', 460, 138);
@@ -29973,7 +29975,7 @@
       campos.nome.value = mem.nome || '';
       campos.papel.value = mem.papel || 'líder';
       campos.cargoClube.value = mem.cargoClube || '';
-      campos.simbolo.value = mem.simbolo || 'brasao';
+      campos.simbolo.value = mem.simbolo || 'original';
       campos.docNum.value = ''; campos.compensa.checked = false;
       overlay.classList.add('show');
       carregarImagens().then(atualizarPrevia);
