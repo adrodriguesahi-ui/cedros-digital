@@ -12934,13 +12934,25 @@
 
               <label class="pl-field-label" for="clbCargoClube">Cargo/função abaixo da assinatura (opcional)</label>
               <input type="text" class="pl-input" id="clbCargoClube" maxlength="60">
+              <label class="pl-field-label" for="clbDiretor">Diretor(a) do clube que também assina (opcional)</label>
+              <div class="pl-field-row">
+                <div class="pl-field-col pl-field-col-wide">
+                  <input type="text" class="pl-input" id="clbDiretor" list="clbMembros" placeholder="Nome de quem assina como diretor(a)" maxlength="80" autocomplete="off">
+                </div>
+                <div class="pl-field-col">
+                  <select class="pl-input" id="clbDiretorTipo" aria-label="Título do diretor">
+                    <option value="Diretora do Clube">Diretora</option>
+                    <option value="Diretor do Clube">Diretor</option>
+                  </select>
+                </div>
+              </div>
               <label class="pl-field-label" for="clbSimbolo">Símbolo do clube no cabeçalho</label>
               <select class="pl-input" id="clbSimbolo">
                 <option value="original">Logo original do Cedros (cedro)</option>
                 <option value="brasao">Brasão Cedros do Líbano (verde)</option>
                 <option value="selo">Selo dos Desbravadores</option>
               </select>
-              <p class="pl-reminder-hint">Localidade, nome, papel e cargo no clube ficam neste aparelho para a próxima carta. O documento (CTPS, CPF ou RG) não é guardado.</p>
+              <p class="pl-reminder-hint">Localidade, nome, função, diretor(a) e cargo no clube ficam neste aparelho para a próxima carta. O documento (CTPS, CPF ou RG) não é guardado.</p>
             </div>
             <div class="dcl-previa-wrap">
               <span class="dcl-previa-rotulo">Prévia</span>
@@ -29793,7 +29805,7 @@
       localidade: $('clbLocalidade'), data: $('clbData'), empresa: $('clbEmpresa'), ac: $('clbAc'), depto: $('clbDepto'),
       nome: $('clbNome'), docTipo: $('clbDocTipo'), docNum: $('clbDocNum'), cargo: $('clbCargo'), inicio: $('clbInicio'),
       fim: $('clbFim'), campori: $('clbCampori'), papel: $('clbPapel'), compensa: $('clbCompensa'),
-      forma: $('clbCompensaForma'), cargoClube: $('clbCargoClube'), simbolo: $('clbSimbolo'), genero: $('clbGenero')
+      forma: $('clbCompensaForma'), cargoClube: $('clbCargoClube'), simbolo: $('clbSimbolo'), genero: $('clbGenero'), diretor: $('clbDiretor'), diretorTipo: $('clbDiretorTipo')
     };
     const previa = $('clbPrevia');
     const MEMORIA = 'clube:carta-liberacao';
@@ -29807,7 +29819,8 @@
       try {
         localStorage.setItem(MEMORIA, JSON.stringify({
           localidade: campos.localidade.value.trim(), nome: campos.nome.value.trim(), papel: campos.papel.value,
-          cargoClube: campos.cargoClube.value.trim(), simbolo: campos.simbolo.value, genero: campos.genero.value
+          cargoClube: campos.cargoClube.value.trim(), simbolo: campos.simbolo.value, genero: campos.genero.value,
+          diretor: campos.diretor.value.trim(), diretorTipo: campos.diretorTipo.value
         }));
       } catch(e){}
     }
@@ -29950,10 +29963,17 @@
 
       // Assinatura (ancorada no pé da página, para não "dançar" com o tamanho do texto).
       const ya = Math.max(y + 80, 1040);
-      x.strokeStyle = '#444'; x.lineWidth = 1; x.beginPath(); x.moveTo(262, ya); x.lineTo(658, ya); x.stroke();
-      x.textAlign = 'center'; x.fillStyle = TINTA; x.font = 'bold 14.5px ' + FONTE; x.fillText(val(d.nome, 'Seu nome completo'), 460, ya + 28);
-      if(d.cargoClube){ x.fillStyle = CINZA; x.font = '12px ' + FONTE; x.fillText(d.cargoClube, 460, ya + 50); }
-      else if(!d.cargoClube){ /* opcional: sem texto */ }
+      const dois = !!d.diretor;
+      const assin = [{ cx: dois ? 275 : 460, nome: val(d.nome, 'Seu nome completo'), papel: d.cargoClube }];
+      if(dois) assin.push({ cx: 645, nome: d.diretor, papel: d.diretorTipo });
+      const meia = dois ? 150 : 198;
+      assin.forEach(a => {
+        x.strokeStyle = '#444'; x.lineWidth = 1; x.beginPath(); x.moveTo(a.cx - meia, ya); x.lineTo(a.cx + meia, ya); x.stroke();
+        let tam = 14.5; x.font = 'bold ' + tam + 'px ' + FONTE;
+        while(tam > 9 && x.measureText(a.nome).width > meia * 2){ tam -= 0.5; x.font = 'bold ' + tam + 'px ' + FONTE; }
+        x.textAlign = 'center'; x.fillStyle = TINTA; x.fillText(a.nome, a.cx, ya + 28);
+        if(a.papel){ x.fillStyle = CINZA; x.font = '12px ' + FONTE; x.fillText(a.papel, a.cx, ya + 50); }
+      });
 
       // Rodapé.
       x.fillStyle = AZUL; x.font = 'bold 10.5px ' + FONTE; x.fillText('CLUBE DE DESBRAVADORES CEDROS DO LÍBANO | IGREJA ADVENTISTA DO SÉTIMO DIA', 460, 1203);
@@ -29969,7 +29989,8 @@
         docTipo: campos.docTipo.value, docNum: campos.docNum.value.trim(), cargo: campos.cargo.value.trim(),
         inicio: campos.inicio.value, fim: campos.fim.value, campori: campos.campori.value.trim(),
         papel: campos.papel.value, compensa: campos.compensa.checked, forma: campos.forma.value.trim(),
-        cargoClube: campos.cargoClube.value.trim(), simbolo: campos.simbolo.value, genero: campos.genero.value
+        cargoClube: campos.cargoClube.value.trim(), simbolo: campos.simbolo.value, genero: campos.genero.value,
+        diretor: campos.diretor.value.trim(), diretorTipo: campos.diretorTipo.value
       };
     }
     let previaTimer = null;
@@ -29993,6 +30014,8 @@
       campos.cargoClube.value = mem.cargoClube || '';
       campos.simbolo.value = mem.simbolo || 'original';
       campos.genero.value = mem.genero || 'n';
+      campos.diretor.value = mem.diretor || '';
+      campos.diretorTipo.value = mem.diretorTipo || 'Diretora do Clube';
       campos.docNum.value = ''; campos.compensa.checked = false;
       overlay.classList.add('show');
       carregarImagens().then(atualizarPrevia);
