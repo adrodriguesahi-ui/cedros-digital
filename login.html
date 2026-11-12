@@ -38662,7 +38662,7 @@ const REQ_SUMMARIES = {
           p.itens.map(i => '<div class="co-ent-linha"><div><b>' + esc(i.nome) + '</b><small>' + esc(i.especialidade) + ' · ' + dataBr(i.data) + (i.instrutor ? ' · ' + esc(i.instrutor) : '') + '</small><small>' + esc(SIT_ROTULO[i.situacao] || i.situacao) + (i.obs ? ' — ' + esc(i.obs) : '') + '</small></div>' +
             (i.situacao === 'preenchido' && !i.decisao ? '<div class="co-comp-acoes"><button type="button" class="co-mini" data-pdec="salvar|' + esc(i.id) + '">Salvar no SGC</button><button type="button" class="co-mini perigo" data-pdec="pular|' + esc(i.id) + '">Pular</button></div>' : (i.situacao === 'preenchido' ? '<small>enviando…</small>' : '')) +
             '</div>').join('') +
-          (ativo ? '<div class="co-acoes" style="margin-top:8px;">' + (!p.simular && p.itens.some(i => !i.decisao && (i.situacao === 'pendente' || i.situacao === 'preenchido')) ? '<button type="button" class="co-btn" data-ptodas="' + esc(p.id) + '">Salvar todas (' + p.itens.filter(i => !i.decisao && (i.situacao === 'pendente' || i.situacao === 'preenchido')).length + ')</button>' : '') + '<button type="button" class="co-mini perigo" data-pcancel="' + esc(p.id) + '">Cancelar pedido</button></div>' : '') + '</div>';
+          (ativo ? '<div class="co-acoes" style="margin-top:8px;">' + (!p.simular && !p.itens.some(i => i.situacao === 'pendente') && p.itens.some(i => !i.decisao && i.situacao === 'preenchido') ? '<button type="button" class="co-btn" data-ptodas="' + esc(p.id) + '">Salvar todas (' + p.itens.filter(i => !i.decisao && i.situacao === 'preenchido').length + ')</button>' : (!p.simular && p.itens.some(i => i.situacao === 'pendente') ? '<small class="co-nota" style="margin:0;">O robô está conferindo no SGC; a confirmação aparece quando terminar.</small>' : '')) + '<button type="button" class="co-mini perigo" data-pcancel="' + esc(p.id) + '">Cancelar pedido</button></div>' : '') + '</div>';
       }).join('') : '<p class="co-vazio">Nenhum pedido ainda.</p>';
     }
     async function atualizarRobo(){ await carregarPedidos(); renderRobo(); }
@@ -38705,12 +38705,12 @@ const REQ_SUMMARIES = {
     }
     async function salvarTodas(id){
       const p = pedidosSgc.find(x => x.id === id); if(!p) return;
-      const alvo = p.itens.filter(i => !i.decisao && (i.situacao === 'pendente' || i.situacao === 'preenchido'));
+      const alvo = p.itens.filter(i => !i.decisao && i.situacao === 'preenchido');
       if(!alvo.length) return;
       const nl = String.fromCharCode(10);
       const lista = alvo.slice(0, 12).map(i => '• ' + i.nome + ' — ' + i.especialidade + ' (' + dataBr(i.data) + ')').join(nl) + (alvo.length > 12 ? nl + '… e mais ' + (alvo.length - 12) : '');
-      if(!confirm('Salvar no SGC, sem perguntar de novo, ' + plural(alvo.length, 'especialidade', 'especialidades') + '?' + nl + nl + lista + nl + nl + 'O robô ainda pula o que já existe no SGC e confere se cada uma entrou.')) return;
-      const { error } = await supa.from('pedidos_sgc_itens').update({ decisao: 'salvar' }).eq('pedido_id', id).is('decisao', null).in('situacao', ['pendente', 'preenchido']);
+      if(!confirm('Salvar no SGC, sem perguntar de novo, ' + plural(alvo.length, 'especialidade', 'especialidades') + '?' + nl + nl + lista + nl + nl + 'Elas já foram conferidas no SGC e ainda não estão salvas. O robô confere de novo antes de salvar e verifica se cada uma entrou.')) return;
+      const { error } = await supa.from('pedidos_sgc_itens').update({ decisao: 'salvar' }).eq('pedido_id', id).is('decisao', null).eq('situacao', 'preenchido');
       if(error){ alert('Não foi possível confirmar: ' + error.message); return; }
       await atualizarRobo();
     }
