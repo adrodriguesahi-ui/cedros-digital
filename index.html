@@ -14329,6 +14329,7 @@
               <h4 class="co-card-titulo">Robô do SGC</h4>
               <p class="co-nota" id="coRoboStatus">Verificando o robô…</p>
               <label class="co-assin-op" style="margin-bottom:10px;"><input type="checkbox" id="coSgcSimular"> Só simular (preenche no SGC, mas não salva)</label>
+              <label class="co-assin-op" style="margin-bottom:10px;"><input type="checkbox" id="coSgcDireto"> Salvar direto no SGC, sem pedir confirmação (o robô ainda pula o que já existe e confere cada lançamento)</label>
               <div id="coPedidos"></div>
               <div class="co-acoes" id="coPedidosLimparBox" style="display:none;margin-top:6px;"><button type="button" class="co-mini perigo" id="coPedidosLimpar">Limpar histórico</button><small class="co-nota" style="margin:0;">Apaga só os pedidos já concluídos, com erro ou cancelados. O que está na fila ou em andamento fica.</small></div>
             </div>
@@ -38947,12 +38948,13 @@ const REQ_SUMMARIES = {
       if(semTabelaPedidos){ alert('Falta criar as tabelas do robô no banco (supabase/robo-sgc.sql).'); return; }
       const registros = registrosSelecionadosSgc(); if(!registros) return;
       const simular = $('coSgcSimular').checked;
-      if(!confirm((simular ? '[SIMULAÇÃO] ' : '') + 'Enviar ' + plural(registros.length, 'especialidade', 'especialidades') + ' ao robô do SGC?' + String.fromCharCode(10, 10) + 'O robô confere o que já existe no SGC e só salva depois da sua confirmação aqui.')) return;
+      const direto = !simular && $('coSgcDireto').checked;
+      if(!confirm((simular ? '[SIMULAÇÃO] ' : '') + 'Enviar ' + plural(registros.length, 'especialidade', 'especialidades') + ' ao robô do SGC?' + String.fromCharCode(10, 10) + (direto ? 'ATENÇÃO: elas serão SALVAS NO SGC direto, sem nova confirmação. O lançamento no SGC não pode ser desfeito por aqui. O robô pula o que já existe e confere cada lançamento.' : 'O robô confere o que já existe no SGC e só salva depois da sua confirmação aqui.'))) return;
       const u = window.__currentUsuario || {};
       const btn = $('coSgcEnviar'); btn.disabled = true;
       const ped = await supa.from('pedidos_sgc').insert({ criado_por: u.nome || null, simular: simular }).select('id').single();
       if(ped.error || !ped.data){ btn.disabled = false; alert('Não foi possível criar o pedido: ' + (ped.error ? ped.error.message : '')); return; }
-      const it = await supa.from('pedidos_sgc_itens').insert(registros.map((r, i) => ({ pedido_id: ped.data.id, ordem: i, nome: r.nome, especialidade: r.especialidade, data: r.data, instrutor: r.instrutor })));
+      const it = await supa.from('pedidos_sgc_itens').insert(registros.map((r, i) => ({ pedido_id: ped.data.id, ordem: i, nome: r.nome, especialidade: r.especialidade, data: r.data, instrutor: r.instrutor, decisao: direto ? 'salvar' : null })));
       btn.disabled = false;
       if(it.error){ await supa.from('pedidos_sgc').delete().eq('id', ped.data.id); alert('Não foi possível criar os itens do pedido: ' + it.error.message); return; }
       await atualizarRobo();
