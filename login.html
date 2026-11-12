@@ -14279,9 +14279,16 @@
               <div id="coSgcLista" class="co-folha-lista" style="max-height:420px;"></div>
               <div class="co-acoes">
                 <button type="button" class="co-btn sec" id="coSgcAplicar">Definir instrutor nas marcadas</button>
-                <button type="button" class="co-btn" id="coSgcBtn">Baixar arquivo para o robô</button>
+                <button type="button" class="co-btn" id="coSgcEnviar">Enviar ao SGC</button>
+                <button type="button" class="co-btn sec" id="coSgcBtn">Baixar arquivo (uso manual)</button>
                 <small id="coSgcContagem" class="co-nota" style="margin:0;"></small>
               </div>
+            </div>
+            <div class="co-card">
+              <h4 class="co-card-titulo">Robô do SGC</h4>
+              <p class="co-nota" id="coRoboStatus">Verificando o robô…</p>
+              <label class="co-assin-op" style="margin-bottom:10px;"><input type="checkbox" id="coSgcSimular"> Só simular (preenche no SGC, mas não salva)</label>
+              <div id="coPedidos"></div>
             </div>
           </div>
 
@@ -38448,6 +38455,7 @@ const REQ_SUMMARIES = {
     function trocarAba(qual){
       view.querySelectorAll('.co-tab').forEach(b => b.classList.toggle('active', b.getAttribute('data-co-tab') === qual));
       Object.keys(ABAS).forEach(k => { $(ABAS[k]).style.display = k === qual ? '' : 'none'; });
+      if(qual === 'sgc') iniciarRoboTimer(); else pararRoboTimer();
     }
     function abrir(){
       if(!podeAcessar()) return;
@@ -38614,6 +38622,96 @@ const REQ_SUMMARIES = {
       alert('Instrutor definido em ' + plural(alvo.length, 'especialidade', 'especialidades') + '.');
     }
     $('coSgcAplicar').addEventListener('click', aplicarInstrutor);
+
+    // ---- Fila de pedidos ao robô do SGC ----
+    const SIT_ROTULO = { pendente: 'Na fila', preenchido: 'Aguardando a sua confirmação', enviado: 'Enviado ao SGC ✓', pulado: 'Pulado', ja_existe: 'Já existe no SGC', erro: 'Erro', simulado: 'Simulado (não salvo)' };
+    const STATUS_PEDIDO = { pendente: 'Aguardando o robô', em_andamento: 'Em andamento', concluido: 'Concluído', cancelado: 'Cancelado', erro: 'Erro' };
+    let pedidosSgc = [], semTabelaPedidos = false, robosSgc = [], sgcTimer = null;
+    async function carregarPedidos(){
+      if(!supa) return;
+      const p = await supa.from('pedidos_sgc').select('id, criado_em, criado_por, simular, status, robo, mensagem').order('criado_em', { ascending: false }).limit(6);
+      if(p.error){ semTabelaPedidos = true; pedidosSgc = []; return; }
+      semTabelaPedidos = false;
+      const ids = (p.data || []).map(x => x.id);
+      let itens = [];
+      if(ids.length){
+        const i = await supa.from('pedidos_sgc_itens').select('id, pedido_id, ordem, nome, especialidade, data, instrutor, situacao, decisao, obs').in('pedido_id', ids).order('ordem');
+        itens = i.data || [];
+      }
+      pedidosSgc = (p.data || []).map(x => Object.assign({}, x, { itens: itens.filter(i => i.pedido_id === x.id) }));
+      const r = await supa.from('robos_sgc').select('nome, visto_em, sessao_ok, detalhe');
+      robosSgc = r.error ? [] : (r.data || []);
+    }
+    function renderRobo(){
+      if(!$('coRoboStatus')) return;
+      if(semTabelaPedidos){
+        $('coRoboStatus').textContent = 'Falta criar as tabelas do robô no banco: rode o arquivo supabase/robo-sgc.sql no SQL Editor do Supabase.';
+        $('coPedidos').innerHTML = ''; return;
+      }
+      const agora = Date.now();
+      const on = robosSgc.filter(r => agora - new Date(r.visto_em).getTime() < 60000);
+      $('coRoboStatus').innerHTML = on.length
+        ? on.map(r => '<b>' + esc(r.nome) + '</b>: ligado' + (r.sessao_ok ? ', sessão do SGC ativa' : ' — <b style="color:#ff9b9b">precisa entrar no SGC</b> (' + esc(r.detalhe || 'rode entrar-no-sgc.bat no computador do robô') + ')')).join('<br>')
+        : 'Nenhum robô ligado agora. Abra o <b>iniciar-robo.bat</b> no computador do robô: os pedidos ficam na fila até ele ligar.';
+      $('coPedidos').innerHTML = pedidosSgc.length ? pedidosSgc.map(p => {
+        const ativo = p.status === 'pendente' || p.status === 'em_andamento';
+        return '<div class="co-card" style="margin:0 0 8px;"><div class="co-classe-top"><span>' + new Date(p.criado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + (p.simular ? ' · simulação' : '') + '</span><span class="co-classe-pct">' + (STATUS_PEDIDO[p.status] || p.status) + '</span></div>' +
+          (p.mensagem ? '<p class="co-nota" style="color:#ff9b9b;">' + esc(p.mensagem) + '</p>' : '') +
+          p.itens.map(i => '<div class="co-ent-linha"><div><b>' + esc(i.nome) + '</b><small>' + esc(i.especialidade) + ' · ' + dataBr(i.data) + (i.instrutor ? ' · ' + esc(i.instrutor) : '') + '</small><small>' + esc(SIT_ROTULO[i.situacao] || i.situacao) + (i.obs ? ' — ' + esc(i.obs) : '') + '</small></div>' +
+            (i.situacao === 'preenchido' && !i.decisao ? '<div class="co-comp-acoes"><button type="button" class="co-mini" data-pdec="salvar|' + esc(i.id) + '">Salvar no SGC</button><button type="button" class="co-mini perigo" data-pdec="pular|' + esc(i.id) + '">Pular</button></div>' : (i.situacao === 'preenchido' ? '<small>enviando…</small>' : '')) +
+            '</div>').join('') +
+          (ativo ? '<div class="co-acoes" style="margin-top:8px;"><button type="button" class="co-mini perigo" data-pcancel="' + esc(p.id) + '">Cancelar pedido</button></div>' : '') + '</div>';
+      }).join('') : '<p class="co-vazio">Nenhum pedido ainda.</p>';
+    }
+    async function atualizarRobo(){ await carregarPedidos(); renderRobo(); }
+    function iniciarRoboTimer(){
+      pararRoboTimer(); atualizarRobo();
+      sgcTimer = setInterval(() => { if($('coPaneSgc').style.display === 'none' || !view.classList.contains('active')){ pararRoboTimer(); return; } atualizarRobo(); }, 4000);
+    }
+    function pararRoboTimer(){ if(sgcTimer){ clearInterval(sgcTimer); sgcTimer = null; } }
+    function registrosSelecionadosSgc(){
+      const instrutor = $('coSgcInstrutor').value;
+      const sel = new Set(Array.from($('coSgcLista').querySelectorAll('input:checked')).map(i => i.value));
+      if(!sel.size){ alert('Marque pelo menos uma especialidade.'); return null; }
+      const registros = [];
+      pessoas.forEach(p => sgcEspecs(p).forEach(e => {
+        if(sel.has(p.chave + '|' + e.id)) registros.push({ nome: p.nome, especialidade: e.especialidade, data: String(e.data_conclusao).slice(0, 10), instrutor: e.instrutor || instrutor });
+      }));
+      registros.sort((a, b) => cmpNome(a.nome, b.nome) || a.data.localeCompare(b.data));
+      const semInstr = registros.filter(r => !r.instrutor).length;
+      if(semInstr){ alert(plural(semInstr, 'especialidade marcada está', 'especialidades marcadas estão') + ' sem instrutor. Preencha o instrutor na ficha do aluno ou escolha o instrutor padrão.'); return null; }
+      return registros;
+    }
+    async function enviarAoSgc(){
+      if(semTabelaPedidos){ alert('Falta criar as tabelas do robô no banco (supabase/robo-sgc.sql).'); return; }
+      const registros = registrosSelecionadosSgc(); if(!registros) return;
+      const simular = $('coSgcSimular').checked;
+      if(!confirm((simular ? '[SIMULAÇÃO] ' : '') + 'Enviar ' + plural(registros.length, 'especialidade', 'especialidades') + ' ao robô do SGC?' + String.fromCharCode(10, 10) + 'O robô confere o que já existe no SGC e só salva depois da sua confirmação aqui.')) return;
+      const u = window.__currentUsuario || {};
+      const btn = $('coSgcEnviar'); btn.disabled = true;
+      const ped = await supa.from('pedidos_sgc').insert({ criado_por: u.nome || null, simular: simular }).select('id').single();
+      if(ped.error || !ped.data){ btn.disabled = false; alert('Não foi possível criar o pedido: ' + (ped.error ? ped.error.message : '')); return; }
+      const it = await supa.from('pedidos_sgc_itens').insert(registros.map((r, i) => ({ pedido_id: ped.data.id, ordem: i, nome: r.nome, especialidade: r.especialidade, data: r.data, instrutor: r.instrutor })));
+      btn.disabled = false;
+      if(it.error){ await supa.from('pedidos_sgc').delete().eq('id', ped.data.id); alert('Não foi possível criar os itens do pedido: ' + it.error.message); return; }
+      await atualizarRobo();
+    }
+    async function decidirItem(valor, id){
+      const { error } = await supa.from('pedidos_sgc_itens').update({ decisao: valor }).eq('id', id);
+      if(error){ alert('Não foi possível registrar a sua resposta: ' + error.message); return; }
+      await atualizarRobo();
+    }
+    async function cancelarPedido(id){
+      if(!confirm('Cancelar este pedido? O que ainda não foi salvo no SGC não será enviado.')) return;
+      const { error } = await supa.from('pedidos_sgc').update({ status: 'cancelado' }).eq('id', id);
+      if(error){ alert('Não foi possível cancelar: ' + error.message); return; }
+      await atualizarRobo();
+    }
+    $('coSgcEnviar').addEventListener('click', enviarAoSgc);
+    $('coPedidos').addEventListener('click', e => {
+      const d = e.target.closest('[data-pdec]'); if(d){ const [v, id] = d.getAttribute('data-pdec').split('|'); decidirItem(v, id); return; }
+      const c = e.target.closest('[data-pcancel]'); if(c) cancelarPedido(c.getAttribute('data-pcancel'));
+    });
     $('coSgcBtn').addEventListener('click', exportarSgc);
     $('coBusca').addEventListener('input', renderLista);
     $('coFiltroClasse').addEventListener('change', renderLista);
