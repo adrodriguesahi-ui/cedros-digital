@@ -3539,7 +3539,7 @@
   .co-wrap{ padding:4px 16px calc(120px + env(safe-area-inset-bottom,0px)); max-width:760px; margin:0 auto; box-sizing:border-box; }
   .co-wrap *{ box-sizing:border-box; }
   .co-tabs{ display:flex; gap:6px; background:rgba(255,255,255,0.05); border-radius:12px; padding:4px; margin-bottom:14px; }
-  .co-tab{ flex:1; min-width:0; border:0; background:transparent; color:rgba(245,239,225,0.65); font:inherit; font-size:12px; font-weight:800; padding:9px 2px; border-radius:9px; cursor:pointer; }
+  .co-tab{ flex:1; min-width:0; border:0; background:transparent; color:rgba(245,239,225,0.65); font:inherit; font-size:11.5px; font-weight:800; padding:9px 1px; border-radius:9px; cursor:pointer; }
   .co-tab.active{ background:var(--accent); color:#0D130C; }
   .co-resumo{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
   .co-stat{ background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:10px 8px; text-align:center; }
@@ -3617,6 +3617,10 @@
   .co-ent-linha b{ display:block; font-size:13px; }
   .co-ent-linha small{ color:rgba(245,239,225,0.55); font-size:11.5px; }
   a.co-mini{ text-decoration:none; }
+  .co-sgc-p{ border-bottom:1px solid rgba(255,255,255,0.06); padding:2px 0; }
+  .co-sgc-p > summary{ display:flex; justify-content:space-between; gap:8px; font-size:13px; font-weight:800; color:var(--cream); cursor:pointer; padding:8px 0; list-style:none; }
+  .co-sgc-p > summary small{ color:rgba(245,239,225,0.55); font-weight:700; }
+  .co-instr-linha{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06); font-size:13px; }
   .co-folha-lista{ max-height:260px; overflow:auto; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:4px 10px; margin-bottom:10px; }
   .co-folha-item{ display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:13px; cursor:pointer; }
   .co-folha-item:last-child{ border-bottom:0; }
@@ -14232,6 +14236,7 @@
             <button type="button" class="co-tab" data-co-tab="evo" role="tab">Evolução</button>
             <button type="button" class="co-tab" data-co-tab="ent" role="tab">Entregas</button>
             <button type="button" class="co-tab" data-co-tab="rel" role="tab">Relatórios</button>
+            <button type="button" class="co-tab" data-co-tab="sgc" role="tab">SGC</button>
           </div>
 
           <div id="coPaneLista">
@@ -14283,6 +14288,35 @@
             </div>
             <div class="co-card"><h4 class="co-card-titulo" id="coEntClassesTit">Investiduras de classe</h4><div id="coEntClasses"></div></div>
             <div class="co-card"><h4 class="co-card-titulo" id="coEntEspecTit">Condecorações de especialidades</h4><div id="coEntEspec"></div></div>
+          </div>
+
+          <div id="coPaneSgc" style="display:none;">
+            <div class="co-card">
+              <h4 class="co-card-titulo">Instrutores</h4>
+              <p class="co-nota">Nomes dos instrutores que assinam as especialidades. Aparecem no cadastro do SGC.</p>
+              <div id="coSgcInstrutores"></div>
+              <div class="co-acoes" style="margin-top:6px;">
+                <input type="text" id="coSgcNovo" class="co-input" placeholder="Nome do instrutor" maxlength="80" autocomplete="off">
+                <button type="button" class="co-btn" id="coSgcAdd">Adicionar</button>
+              </div>
+            </div>
+            <div class="co-card">
+              <h4 class="co-card-titulo">Cadastro no SGC</h4>
+              <p class="co-nota">Marque as especialidades que devem ser lançadas no SGC e baixe o arquivo para o robô. Ele confere no SGC e <b>não registra o que já existe lá</b>; cada lançamento ainda pede a sua confirmação.</p>
+              <label class="co-label" for="coSgcInstrutor">Instrutor padrão (usado nas que não têm instrutor)</label>
+              <select id="coSgcInstrutor" class="co-input"></select>
+              <div class="co-filtros">
+                <input type="search" id="coSgcBusca" class="co-input" placeholder="Buscar desbravador…" autocomplete="off">
+                <input type="date" id="coSgcDesde" class="co-input" aria-label="A partir de">
+              </div>
+              <p class="co-nota" style="margin-top:-2px;">O campo de data mostra só as especialidades concluídas a partir dela.</p>
+              <div id="coSgcLista" class="co-folha-lista" style="max-height:420px;"></div>
+              <div class="co-acoes">
+                <button type="button" class="co-btn sec" id="coSgcAplicar">Definir instrutor nas marcadas</button>
+                <button type="button" class="co-btn" id="coSgcBtn">Baixar arquivo para o robô</button>
+                <small id="coSgcContagem" class="co-nota" style="margin:0;"></small>
+              </div>
+            </div>
           </div>
 
           <div id="coPaneRel" style="display:none;">
@@ -14372,6 +14406,7 @@
           </div>
         </div>
         <datalist id="coCatalogo"></datalist>
+        <datalist id="coInstrList"></datalist>
 
       </div>
     </section>
@@ -37323,12 +37358,13 @@ const REQ_SUMMARIES = {
     let usuariosApp = [];       // contas do app (id, nome), pra ligar desbravadores sem conta
     let semTabelaClasses = false; // true enquanto a tabela ainda não existir no banco
     let semColunaAssinatura = false; // true enquanto a coluna assinatura ainda não existir no banco
+    let semColunaInstrutor = false;  // true enquanto a coluna instrutor ainda não existir no banco
     let semColunaPagina = false;     // true enquanto a coluna pagina_registro ainda não existir no banco
     let semColunaEntrega = false;    // true enquanto a coluna data_entrega ainda não existir no banco
     let semColunasClasse = false;    // true enquanto investidura/comprovante ainda não existirem no banco
     const COLS_ESPEC = 'id, usuario_id, especialidade, categoria, ano, data_conclusao';
     const COLS_REG = 'id, usuario_id, nome_aluno, classe, nivel, ano, data_conclusao';
-    const colsEspec = () => COLS_ESPEC + (semColunaAssinatura ? '' : ', assinatura') + (semColunaEntrega ? '' : ', data_entrega') + (semColunaPagina ? '' : ', pagina_registro');
+    const colsEspec = () => COLS_ESPEC + (semColunaAssinatura ? '' : ', assinatura') + (semColunaEntrega ? '' : ', data_entrega') + (semColunaPagina ? '' : ', pagina_registro') + (semColunaInstrutor ? '' : ', instrutor');
     const colsReg = () => COLS_REG + (semColunasClasse ? '' : ', data_investidura, comprovante_path, comprovante_nome');
     let aberta = null;          // chave da pessoa com a ficha aberta
     let carregando = false;
@@ -37415,10 +37451,10 @@ const REQ_SUMMARIES = {
       if(!supa) return;
       // Tenta com assinatura e data de entrega; se o banco ainda não tem as
       // colunas novas, lê só as que existem.
-      const camadas = [[false, false, false], [false, false, true], [false, true, true], [true, true, true]]; // [semAssinatura, semEntrega, semPagina]
+      const camadas = [[false, false, false, false], [false, false, false, true], [false, false, true, true], [false, true, true, true], [true, true, true, true]]; // [semAssinatura, semEntrega, semPagina, semInstrutor]
       let r = null;
-      for(const [semA, semE, semP] of camadas){
-        semColunaAssinatura = semA; semColunaEntrega = semE; semColunaPagina = semP;
+      for(const [semA, semE, semP, semI] of camadas){
+        semColunaAssinatura = semA; semColunaEntrega = semE; semColunaPagina = semP; semColunaInstrutor = semI;
         r = await supa.from('especialidades_concluidas').select(colsEspec()).order('ano', { ascending: false });
         if(!r.error) break;
       }
@@ -37472,7 +37508,7 @@ const REQ_SUMMARIES = {
       $('coLista').innerHTML = '<p class="co-vazio">Carregando…</p>';
       try {
         if(window.__clRecarregarDados) await window.__clRecarregarDados();
-        await Promise.all([carregarEspecialidades(), carregarConclusoes(), carregarRegistradas(), carregarUsuariosApp()]);
+        await Promise.all([carregarEspecialidades(), carregarConclusoes(), carregarRegistradas(), carregarUsuariosApp(), carregarInstrutores()]);
       } catch(e){ console.error('Coordenação de Classes:', e); }
       carregando = false;
       montarPessoas();
@@ -37721,6 +37757,7 @@ const REQ_SUMMARIES = {
       $('coVazio').style.display = lista.length ? 'none' : '';
     }
     function renderTudo(){
+      renderInstrutores(); renderSgcLista();
       renderIncluir();
       renderResumo();
       renderLista();
@@ -37832,6 +37869,7 @@ const REQ_SUMMARIES = {
             g.itens.map(e => '<div class="co-esp"><span>' + esc(e.especialidade) + (e.categoria ? ' <small>· ' + esc(e.categoria) + '</small>' : '') + '</span><small>' + (e.data_conclusao ? dataBr(e.data_conclusao) : e.ano) + '</small>' +
               '<button type="button" class="co-esp-del" data-del="' + esc(e.id) + '" aria-label="Remover ' + esc(e.especialidade) + '" title="Remover">×</button>' +
               (semColunaAssinatura ? '' : caixasAssin(listaAssin(e), 'data-assin="' + esc(e.id) + '"')) +
+              (semColunaInstrutor ? '' : '<div class="co-extra"><label class="co-campo">Instrutor <input type="text" list="coInstrList" maxlength="80" size="22" data-instrutor="' + esc(e.id) + '" value="' + esc(e.instrutor || '') + '" placeholder="Nome do instrutor"></label></div>') +
               (semColunaPagina ? '' : '<div class="co-extra"><label class="co-campo">Página do registro <input type="text" inputmode="numeric" maxlength="12" size="6" data-pagina="' + esc(e.id) + '" value="' + esc(e.pagina_registro || '') + '" placeholder="nº"></label></div>') +
               (semColunaEntrega ? '' : '<div class="co-extra"><label class="co-campo">Condecoração entregue em <input type="date" data-entrega="' + esc(e.id) + '" value="' + esc(e.data_entrega || '') + '"></label><small>' + (e.data_entrega ? '' : 'ainda não entregue') + '</small></div>') +
               '</div>').join('')).join('')
@@ -37855,6 +37893,9 @@ const REQ_SUMMARIES = {
             (semColunaAssinatura
               ? '<p class="co-nota">Para sinalizar a assinatura (Instrutor, Regional, Associação ou Missão), falta adicionar a coluna no banco: rode o arquivo supabase/especialidade-assinatura.sql no SQL Editor do Supabase.</p>'
               : '<p class="co-nota" style="margin:2px 2px 0;">Assinaturas já cumpridas:</p>' + caixasAssin([], 'id="coNovaAssin"')) +
+            (semColunaInstrutor
+              ? '<p class="co-nota">Para registrar o instrutor, falta atualizar o banco: rode o arquivo supabase/instrutores-sgc.sql no SQL Editor do Supabase.</p>'
+              : '<label class="co-label" for="coNovoInstrutor">Instrutor que assina (para o cadastro no SGC)</label><input type="text" id="coNovoInstrutor" class="co-input" list="coInstrList" maxlength="80" placeholder="Nome do instrutor" autocomplete="off" value="' + esc((function(){ try { return localStorage.getItem('co_instrutor_ult') || ''; } catch(err){ return ''; } })()) + '">') +
             (semColunaPagina
               ? '<p class="co-nota">Para registrar a página do registro de especialidades, falta atualizar o banco: rode o arquivo supabase/especialidade-pagina.sql no SQL Editor do Supabase.</p>'
               : '<label class="co-label" for="coNovaPagina">Página do registro de especialidades (opcional)</label><input type="text" id="coNovaPagina" class="co-input" inputmode="numeric" maxlength="12" placeholder="Ex.: 12">') +
@@ -37913,6 +37954,7 @@ const REQ_SUMMARIES = {
       $('coDetalhe').querySelectorAll('[data-cregder]').forEach(b => b.addEventListener('click', () => {
         const [classe, nivel, data] = b.getAttribute('data-cregder').split('|'); registrarDeRequisitos(p, classe, nivel, data);
       }));
+      $('coDetalhe').querySelectorAll('[data-instrutor]').forEach(i => i.addEventListener('change', () => mudarInstrutor(p, i.getAttribute('data-instrutor'), i.value)));
       $('coDetalhe').querySelectorAll('[data-pagina]').forEach(i => i.addEventListener('change', () => mudarPagina(p, i.getAttribute('data-pagina'), i.value)));
       $('coDetalhe').querySelectorAll('[data-entrega]').forEach(i => i.addEventListener('change', () => mudarEntrega(p, i.getAttribute('data-entrega'), i.value)));
       [['coNovaCompFoto', 'coNovaCompArq'], ['coNovaCompArq', 'coNovaCompFoto']].forEach(([a, b]) => {
@@ -38116,6 +38158,16 @@ const REQ_SUMMARIES = {
       registradas = registradas.filter(x => String(x.id) !== String(r.id));
       depoisDeMudarEspec(p);
     }
+    async function mudarInstrutor(p, id, valor){
+      const e = p.especs.find(x => String(x.id) === String(id)); if(!e || !supa) return;
+      valor = String(valor || '').trim().replace(/\s+/g, ' ');
+      const { error } = await supa.from('especialidades_concluidas').update({ instrutor: valor || null }).eq('id', e.id);
+      if(error){ alert('Não foi possível salvar o instrutor: ' + error.message); if(aberta === p.chave) abrirFicha(p.chave); return; }
+      e.instrutor = valor || null;
+      const t = todasEspec.find(x => String(x.id) === String(e.id)); if(t) t.instrutor = e.instrutor;
+      try { if(valor) localStorage.setItem('co_instrutor_ult', valor); } catch(err){}
+      renderSgcLista();
+    }
     async function mudarPagina(p, id, valor){
       const e = p.especs.find(x => String(x.id) === String(id)); if(!e || !supa) return;
       valor = String(valor || '').trim();
@@ -38160,6 +38212,8 @@ const REQ_SUMMARIES = {
       if(entrega) payload.data_entrega = entrega;
       const pagina = (!semColunaPagina && $('coNovaPagina')) ? $('coNovaPagina').value.trim() : '';
       if(pagina) payload.pagina_registro = pagina;
+      const instr = (!semColunaInstrutor && $('coNovoInstrutor')) ? $('coNovoInstrutor').value.trim().replace(/\s+/g, ' ') : '';
+      if(instr){ payload.instrutor = instr; try { localStorage.setItem('co_instrutor_ult', instr); } catch(err){} }
       const { data: linha, error } = await supa.from('especialidades_concluidas').insert(payload).select(colsEspec()).single();
       btn.disabled = false;
       if(error || !linha){
@@ -38642,7 +38696,7 @@ const REQ_SUMMARIES = {
     }
 
     // ---- Eventos ----
-    const ABAS = { lista: 'coPaneLista', evo: 'coPaneEvo', ent: 'coPaneEnt', rel: 'coPaneRel' };
+    const ABAS = { lista: 'coPaneLista', evo: 'coPaneEvo', ent: 'coPaneEnt', rel: 'coPaneRel', sgc: 'coPaneSgc' };
     function trocarAba(qual){
       view.querySelectorAll('.co-tab').forEach(b => b.classList.toggle('active', b.getAttribute('data-co-tab') === qual));
       Object.keys(ABAS).forEach(k => { $(ABAS[k]).style.display = k === qual ? '' : 'none'; });
@@ -38702,6 +38756,117 @@ const REQ_SUMMARIES = {
       alert(u.nome + ' foi incluído(a) em ' + classe + '.');
     }
     $('coInstBtn').addEventListener('click', incluirInstrutor);
+
+    // ---- Cadastro no SGC: instrutores + seleção do que lançar ----
+    let instrutores = [], semTabelaInstrutores = false;
+    async function carregarInstrutores(){
+      instrutores = []; semTabelaInstrutores = false;
+      if(!supa) return;
+      const { data, error } = await supa.from('instrutores').select('id, nome').order('nome');
+      if(error){ semTabelaInstrutores = true; console.error('Instrutores:', error.message); return; }
+      instrutores = data || [];
+    }
+    function renderInstrutores(){
+      if(!$('coSgcInstrutores')) return;
+      $('coSgcInstrutores').innerHTML = semTabelaInstrutores
+        ? '<p class="co-nota">Falta criar a tabela de instrutores no banco: rode o arquivo supabase/instrutores-sgc.sql no SQL Editor do Supabase.</p>'
+        : (instrutores.length
+          ? instrutores.map(i => '<div class="co-instr-linha"><span>' + esc(i.nome) + '</span><button type="button" class="co-mini perigo" data-rm-instr="' + esc(i.id) + '">Remover</button></div>').join('')
+          : '<p class="co-vazio">Nenhum instrutor cadastrado ainda.</p>');
+      $('coInstrList').innerHTML = instrutores.map(i => '<option value="' + esc(i.nome) + '"></option>').join('');
+      const atual = $('coSgcInstrutor').value;
+      $('coSgcInstrutor').innerHTML = '<option value="">' + (instrutores.length ? 'Escolha o instrutor…' : 'Cadastre um instrutor acima') + '</option>' +
+        instrutores.map(i => '<option value="' + esc(i.nome) + '">' + esc(i.nome) + '</option>').join('');
+      if(atual) $('coSgcInstrutor').value = atual;
+    }
+    async function adicionarInstrutor(){
+      const nome = $('coSgcNovo').value.trim().replace(/\s+/g, ' ');
+      if(!nome) return;
+      if(semTabelaInstrutores){ alert('Falta criar a tabela de instrutores no banco (supabase/instrutores-sgc.sql).'); return; }
+      if(instrutores.some(i => norm(i.nome) === norm(nome))){ alert('Esse instrutor já está cadastrado.'); return; }
+      const { error } = await supa.from('instrutores').insert({ nome: nome });
+      if(error){ alert('Não foi possível adicionar: ' + error.message); return; }
+      $('coSgcNovo').value = '';
+      await carregarInstrutores(); renderInstrutores();
+    }
+    async function removerInstrutor(id){
+      const i = instrutores.find(x => x.id === id);
+      if(!i || !confirm('Remover o instrutor "' + i.nome + '" da lista?')) return;
+      const { error } = await supa.from('instrutores').delete().eq('id', id);
+      if(error){ alert('Não foi possível remover: ' + error.message); return; }
+      await carregarInstrutores(); renderInstrutores();
+    }
+    function sgcEspecs(p){
+      const desde = $('coSgcDesde').value;
+      return p.especs.filter(e => e.data_conclusao && (!desde || String(e.data_conclusao).slice(0, 10) >= desde))
+        .slice().sort((a, b) => String(a.data_conclusao).localeCompare(String(b.data_conclusao)));
+    }
+    function renderSgcLista(){
+      if(!$('coSgcLista')) return;
+      const q = norm($('coSgcBusca').value);
+      const marcados = new Set(Array.from($('coSgcLista').querySelectorAll('input:checked')).map(i => i.value));
+      const abertos = new Set(Array.from($('coSgcLista').querySelectorAll('details[open]')).map(d => d.getAttribute('data-p')));
+      const html = pessoas.filter(p => !q || norm(p.nome).indexOf(q) !== -1).map(p => {
+        const es = sgcEspecs(p); if(!es.length) return '';
+        return '<details class="co-sgc-p" data-p="' + esc(p.chave) + '"' + (abertos.has(String(p.chave)) ? ' open' : '') + '><summary><span>' + esc(p.nome) + '</span><small>' + plural(es.length, 'especialidade', 'especialidades') + '</small></summary>' +
+          '<div class="co-acoes" style="margin-bottom:4px;"><button type="button" class="co-mini" data-sgc-todas="' + esc(p.chave) + '">Marcar todas</button><button type="button" class="co-mini" data-sgc-nenhuma="' + esc(p.chave) + '">Limpar</button></div>' +
+          es.map(e => { const v = p.chave + '|' + e.id; return '<label class="co-folha-item"><input type="checkbox" value="' + esc(v) + '"' + (marcados.has(v) ? ' checked' : '') + '><span>' + esc(e.especialidade) + (e.instrutor ? ' <small>· ' + esc(e.instrutor) + '</small>' : '') + '</span><small>' + dataBr(e.data_conclusao) + '</small></label>'; }).join('') +
+          '</details>';
+      }).join('');
+      $('coSgcLista').innerHTML = html || '<p class="co-vazio">Nenhuma especialidade neste filtro.</p>';
+      sgcContagem();
+    }
+    function sgcContagem(){
+      const n = $('coSgcLista').querySelectorAll('input:checked').length;
+      $('coSgcContagem').textContent = n ? plural(n, 'selecionada', 'selecionadas') : '';
+    }
+    function exportarSgc(){
+      const instrutor = $('coSgcInstrutor').value;
+      const sel = new Set(Array.from($('coSgcLista').querySelectorAll('input:checked')).map(i => i.value));
+      if(!sel.size){ alert('Marque pelo menos uma especialidade.'); return; }
+      const registros = [];
+      pessoas.forEach(p => sgcEspecs(p).forEach(e => {
+        if(sel.has(p.chave + '|' + e.id)) registros.push({ nome: p.nome, especialidade: e.especialidade, data: String(e.data_conclusao).slice(0, 10), instrutor: e.instrutor || instrutor });
+      }));
+      registros.sort((a, b) => cmpNome(a.nome, b.nome) || a.data.localeCompare(b.data));
+      const semInstr = registros.filter(r => !r.instrutor).length;
+      if(semInstr){ alert(plural(semInstr, 'especialidade marcada está', 'especialidades marcadas estão') + ' sem instrutor. Preencha o instrutor na ficha do aluno ou escolha o instrutor padrão.'); return; }
+      const blob = new Blob([JSON.stringify({ gerado: new Date().toISOString(), registros: registros }, null, 1)], { type: 'application/json' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'especialidades-sgc.json';
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    }
+    $('coSgcAdd').addEventListener('click', adicionarInstrutor);
+    $('coSgcNovo').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); adicionarInstrutor(); } });
+    $('coSgcInstrutores').addEventListener('click', e => { const b = e.target.closest('[data-rm-instr]'); if(b) removerInstrutor(b.getAttribute('data-rm-instr')); });
+    $('coSgcBusca').addEventListener('input', renderSgcLista);
+    $('coSgcDesde').addEventListener('change', renderSgcLista);
+    $('coSgcLista').addEventListener('change', sgcContagem);
+    $('coSgcLista').addEventListener('click', e => {
+      const t = e.target.closest('[data-sgc-todas],[data-sgc-nenhuma]'); if(!t) return;
+      const marcar = t.hasAttribute('data-sgc-todas');
+      t.closest('details').querySelectorAll('input[type=checkbox]').forEach(i => { i.checked = marcar; });
+      sgcContagem();
+    });
+    // Grava o instrutor escolhido nas especialidades marcadas (corrige as que estão sem instrutor).
+    async function aplicarInstrutor(){
+      const instr = $('coSgcInstrutor').value;
+      if(semColunaInstrutor){ alert('Falta atualizar o banco: rode o arquivo supabase/instrutores-sgc.sql no SQL Editor do Supabase.'); return; }
+      if(!instr){ alert('Escolha o instrutor no campo "Instrutor padrão".'); return; }
+      const sel = new Set(Array.from($('coSgcLista').querySelectorAll('input:checked')).map(i => i.value));
+      if(!sel.size){ alert('Marque as especialidades que receberão esse instrutor.'); return; }
+      const alvo = [];
+      pessoas.forEach(p => sgcEspecs(p).forEach(e => { if(sel.has(p.chave + '|' + e.id)) alvo.push(e); }));
+      const comOutro = alvo.filter(e => e.instrutor && e.instrutor !== instr).length;
+      if(!confirm('Definir "' + instr + '" como instrutor de ' + plural(alvo.length, 'especialidade', 'especialidades') + '?' + (comOutro ? String.fromCharCode(10, 10) + comOutro + ' delas já têm outro instrutor, que será substituído.' : ''))) return;
+      const { error } = await supa.from('especialidades_concluidas').update({ instrutor: instr }).in('id', alvo.map(e => e.id));
+      if(error){ alert('Não foi possível salvar: ' + error.message); return; }
+      alvo.forEach(e => { e.instrutor = instr; });
+      try { localStorage.setItem('co_instrutor_ult', instr); } catch(err){}
+      renderSgcLista();
+      alert('Instrutor definido em ' + plural(alvo.length, 'especialidade', 'especialidades') + '.');
+    }
+    $('coSgcAplicar').addEventListener('click', aplicarInstrutor);
+    $('coSgcBtn').addEventListener('click', exportarSgc);
     $('coBusca').addEventListener('input', renderLista);
     $('coFiltroClasse').addEventListener('change', renderLista);
     $('coLista').addEventListener('click', e => {
