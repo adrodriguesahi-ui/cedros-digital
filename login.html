@@ -14264,7 +14264,7 @@
             <div class="co-card">
               <h4 class="co-card-titulo">Cadastro no SGC</h4>
               <p class="co-nota">Marque as especialidades que devem ser lançadas no SGC e baixe o arquivo para o robô. Ele confere no SGC e <b>não registra o que já existe lá</b>; cada lançamento ainda pede a sua confirmação.</p>
-              <label class="co-label" for="coSgcInstrutor">Instrutor que assina</label>
+              <label class="co-label" for="coSgcInstrutor">Instrutor padrão (usado nas que não têm instrutor)</label>
               <select id="coSgcInstrutor" class="co-input"></select>
               <div class="co-filtros">
                 <input type="search" id="coSgcBusca" class="co-input" placeholder="Buscar desbravador…" autocomplete="off">
@@ -14366,6 +14366,7 @@
           </div>
         </div>
         <datalist id="coCatalogo"></datalist>
+        <datalist id="coInstrList"></datalist>
 
       </div>
     </section>
@@ -37099,12 +37100,13 @@ const REQ_SUMMARIES = {
     let usuariosApp = [];       // contas do app (id, nome), pra ligar desbravadores sem conta
     let semTabelaClasses = false; // true enquanto a tabela ainda não existir no banco
     let semColunaAssinatura = false; // true enquanto a coluna assinatura ainda não existir no banco
+    let semColunaInstrutor = false;  // true enquanto a coluna instrutor ainda não existir no banco
     let semColunaPagina = false;     // true enquanto a coluna pagina_registro ainda não existir no banco
     let semColunaEntrega = false;    // true enquanto a coluna data_entrega ainda não existir no banco
     let semColunasClasse = false;    // true enquanto investidura/comprovante ainda não existirem no banco
     const COLS_ESPEC = 'id, usuario_id, especialidade, categoria, ano, data_conclusao';
     const COLS_REG = 'id, usuario_id, nome_aluno, classe, nivel, ano, data_conclusao';
-    const colsEspec = () => COLS_ESPEC + (semColunaAssinatura ? '' : ', assinatura') + (semColunaEntrega ? '' : ', data_entrega') + (semColunaPagina ? '' : ', pagina_registro');
+    const colsEspec = () => COLS_ESPEC + (semColunaAssinatura ? '' : ', assinatura') + (semColunaEntrega ? '' : ', data_entrega') + (semColunaPagina ? '' : ', pagina_registro') + (semColunaInstrutor ? '' : ', instrutor');
     const colsReg = () => COLS_REG + (semColunasClasse ? '' : ', data_investidura, comprovante_path, comprovante_nome');
     let aberta = null;          // chave da pessoa com a ficha aberta
     let carregando = false;
@@ -37191,10 +37193,10 @@ const REQ_SUMMARIES = {
       if(!supa) return;
       // Tenta com assinatura e data de entrega; se o banco ainda não tem as
       // colunas novas, lê só as que existem.
-      const camadas = [[false, false, false], [false, false, true], [false, true, true], [true, true, true]]; // [semAssinatura, semEntrega, semPagina]
+      const camadas = [[false, false, false, false], [false, false, false, true], [false, false, true, true], [false, true, true, true], [true, true, true, true]]; // [semAssinatura, semEntrega, semPagina, semInstrutor]
       let r = null;
-      for(const [semA, semE, semP] of camadas){
-        semColunaAssinatura = semA; semColunaEntrega = semE; semColunaPagina = semP;
+      for(const [semA, semE, semP, semI] of camadas){
+        semColunaAssinatura = semA; semColunaEntrega = semE; semColunaPagina = semP; semColunaInstrutor = semI;
         r = await supa.from('especialidades_concluidas').select(colsEspec()).order('ano', { ascending: false });
         if(!r.error) break;
       }
@@ -37609,6 +37611,7 @@ const REQ_SUMMARIES = {
             g.itens.map(e => '<div class="co-esp"><span>' + esc(e.especialidade) + (e.categoria ? ' <small>· ' + esc(e.categoria) + '</small>' : '') + '</span><small>' + (e.data_conclusao ? dataBr(e.data_conclusao) : e.ano) + '</small>' +
               '<button type="button" class="co-esp-del" data-del="' + esc(e.id) + '" aria-label="Remover ' + esc(e.especialidade) + '" title="Remover">×</button>' +
               (semColunaAssinatura ? '' : caixasAssin(listaAssin(e), 'data-assin="' + esc(e.id) + '"')) +
+              (semColunaInstrutor ? '' : '<div class="co-extra"><label class="co-campo">Instrutor <input type="text" list="coInstrList" maxlength="80" size="22" data-instrutor="' + esc(e.id) + '" value="' + esc(e.instrutor || '') + '" placeholder="Nome do instrutor"></label></div>') +
               (semColunaPagina ? '' : '<div class="co-extra"><label class="co-campo">Página do registro <input type="text" inputmode="numeric" maxlength="12" size="6" data-pagina="' + esc(e.id) + '" value="' + esc(e.pagina_registro || '') + '" placeholder="nº"></label></div>') +
               (semColunaEntrega ? '' : '<div class="co-extra"><label class="co-campo">Condecoração entregue em <input type="date" data-entrega="' + esc(e.id) + '" value="' + esc(e.data_entrega || '') + '"></label><small>' + (e.data_entrega ? '' : 'ainda não entregue') + '</small></div>') +
               '</div>').join('')).join('')
@@ -37632,6 +37635,9 @@ const REQ_SUMMARIES = {
             (semColunaAssinatura
               ? '<p class="co-nota">Para sinalizar a assinatura (Instrutor, Regional, Associação ou Missão), falta adicionar a coluna no banco: rode o arquivo supabase/especialidade-assinatura.sql no SQL Editor do Supabase.</p>'
               : '<p class="co-nota" style="margin:2px 2px 0;">Assinaturas já cumpridas:</p>' + caixasAssin([], 'id="coNovaAssin"')) +
+            (semColunaInstrutor
+              ? '<p class="co-nota">Para registrar o instrutor, falta atualizar o banco: rode o arquivo supabase/instrutores-sgc.sql no SQL Editor do Supabase.</p>'
+              : '<label class="co-label" for="coNovoInstrutor">Instrutor que assina (para o cadastro no SGC)</label><input type="text" id="coNovoInstrutor" class="co-input" list="coInstrList" maxlength="80" placeholder="Nome do instrutor" autocomplete="off" value="' + esc((function(){ try { return localStorage.getItem('co_instrutor_ult') || ''; } catch(err){ return ''; } })()) + '">') +
             (semColunaPagina
               ? '<p class="co-nota">Para registrar a página do registro de especialidades, falta atualizar o banco: rode o arquivo supabase/especialidade-pagina.sql no SQL Editor do Supabase.</p>'
               : '<label class="co-label" for="coNovaPagina">Página do registro de especialidades (opcional)</label><input type="text" id="coNovaPagina" class="co-input" inputmode="numeric" maxlength="12" placeholder="Ex.: 12">') +
@@ -37690,6 +37696,7 @@ const REQ_SUMMARIES = {
       $('coDetalhe').querySelectorAll('[data-cregder]').forEach(b => b.addEventListener('click', () => {
         const [classe, nivel, data] = b.getAttribute('data-cregder').split('|'); registrarDeRequisitos(p, classe, nivel, data);
       }));
+      $('coDetalhe').querySelectorAll('[data-instrutor]').forEach(i => i.addEventListener('change', () => mudarInstrutor(p, i.getAttribute('data-instrutor'), i.value)));
       $('coDetalhe').querySelectorAll('[data-pagina]').forEach(i => i.addEventListener('change', () => mudarPagina(p, i.getAttribute('data-pagina'), i.value)));
       $('coDetalhe').querySelectorAll('[data-entrega]').forEach(i => i.addEventListener('change', () => mudarEntrega(p, i.getAttribute('data-entrega'), i.value)));
       [['coNovaCompFoto', 'coNovaCompArq'], ['coNovaCompArq', 'coNovaCompFoto']].forEach(([a, b]) => {
@@ -37893,6 +37900,16 @@ const REQ_SUMMARIES = {
       registradas = registradas.filter(x => String(x.id) !== String(r.id));
       depoisDeMudarEspec(p);
     }
+    async function mudarInstrutor(p, id, valor){
+      const e = p.especs.find(x => String(x.id) === String(id)); if(!e || !supa) return;
+      valor = String(valor || '').trim().replace(/\s+/g, ' ');
+      const { error } = await supa.from('especialidades_concluidas').update({ instrutor: valor || null }).eq('id', e.id);
+      if(error){ alert('Não foi possível salvar o instrutor: ' + error.message); if(aberta === p.chave) abrirFicha(p.chave); return; }
+      e.instrutor = valor || null;
+      const t = todasEspec.find(x => String(x.id) === String(e.id)); if(t) t.instrutor = e.instrutor;
+      try { if(valor) localStorage.setItem('co_instrutor_ult', valor); } catch(err){}
+      renderSgcLista();
+    }
     async function mudarPagina(p, id, valor){
       const e = p.especs.find(x => String(x.id) === String(id)); if(!e || !supa) return;
       valor = String(valor || '').trim();
@@ -37937,6 +37954,8 @@ const REQ_SUMMARIES = {
       if(entrega) payload.data_entrega = entrega;
       const pagina = (!semColunaPagina && $('coNovaPagina')) ? $('coNovaPagina').value.trim() : '';
       if(pagina) payload.pagina_registro = pagina;
+      const instr = (!semColunaInstrutor && $('coNovoInstrutor')) ? $('coNovoInstrutor').value.trim().replace(/\s+/g, ' ') : '';
+      if(instr){ payload.instrutor = instr; try { localStorage.setItem('co_instrutor_ult', instr); } catch(err){} }
       const { data: linha, error } = await supa.from('especialidades_concluidas').insert(payload).select(colsEspec()).single();
       btn.disabled = false;
       if(error || !linha){
@@ -38496,6 +38515,7 @@ const REQ_SUMMARIES = {
         : (instrutores.length
           ? instrutores.map(i => '<div class="co-instr-linha"><span>' + esc(i.nome) + '</span><button type="button" class="co-mini perigo" data-rm-instr="' + esc(i.id) + '">Remover</button></div>').join('')
           : '<p class="co-vazio">Nenhum instrutor cadastrado ainda.</p>');
+      $('coInstrList').innerHTML = instrutores.map(i => '<option value="' + esc(i.nome) + '"></option>').join('');
       const atual = $('coSgcInstrutor').value;
       $('coSgcInstrutor').innerHTML = '<option value="">' + (instrutores.length ? 'Escolha o instrutor…' : 'Cadastre um instrutor acima') + '</option>' +
         instrutores.map(i => '<option value="' + esc(i.nome) + '">' + esc(i.nome) + '</option>').join('');
@@ -38532,7 +38552,7 @@ const REQ_SUMMARIES = {
         const es = sgcEspecs(p); if(!es.length) return '';
         return '<details class="co-sgc-p" data-p="' + esc(p.chave) + '"' + (abertos.has(String(p.chave)) ? ' open' : '') + '><summary><span>' + esc(p.nome) + '</span><small>' + plural(es.length, 'especialidade', 'especialidades') + '</small></summary>' +
           '<div class="co-acoes" style="margin-bottom:4px;"><button type="button" class="co-mini" data-sgc-todas="' + esc(p.chave) + '">Marcar todas</button><button type="button" class="co-mini" data-sgc-nenhuma="' + esc(p.chave) + '">Limpar</button></div>' +
-          es.map(e => { const v = p.chave + '|' + e.id; return '<label class="co-folha-item"><input type="checkbox" value="' + esc(v) + '"' + (marcados.has(v) ? ' checked' : '') + '><span>' + esc(e.especialidade) + '</span><small>' + dataBr(e.data_conclusao) + '</small></label>'; }).join('') +
+          es.map(e => { const v = p.chave + '|' + e.id; return '<label class="co-folha-item"><input type="checkbox" value="' + esc(v) + '"' + (marcados.has(v) ? ' checked' : '') + '><span>' + esc(e.especialidade) + (e.instrutor ? ' <small>· ' + esc(e.instrutor) + '</small>' : '') + '</span><small>' + dataBr(e.data_conclusao) + '</small></label>'; }).join('') +
           '</details>';
       }).join('');
       $('coSgcLista').innerHTML = html || '<p class="co-vazio">Nenhuma especialidade neste filtro.</p>';
@@ -38544,14 +38564,15 @@ const REQ_SUMMARIES = {
     }
     function exportarSgc(){
       const instrutor = $('coSgcInstrutor').value;
-      if(!instrutor){ alert('Escolha o instrutor que assina.'); return; }
       const sel = new Set(Array.from($('coSgcLista').querySelectorAll('input:checked')).map(i => i.value));
       if(!sel.size){ alert('Marque pelo menos uma especialidade.'); return; }
       const registros = [];
       pessoas.forEach(p => sgcEspecs(p).forEach(e => {
-        if(sel.has(p.chave + '|' + e.id)) registros.push({ nome: p.nome, especialidade: e.especialidade, data: String(e.data_conclusao).slice(0, 10), instrutor: instrutor });
+        if(sel.has(p.chave + '|' + e.id)) registros.push({ nome: p.nome, especialidade: e.especialidade, data: String(e.data_conclusao).slice(0, 10), instrutor: e.instrutor || instrutor });
       }));
       registros.sort((a, b) => cmpNome(a.nome, b.nome) || a.data.localeCompare(b.data));
+      const semInstr = registros.filter(r => !r.instrutor).length;
+      if(semInstr){ alert(plural(semInstr, 'especialidade marcada está', 'especialidades marcadas estão') + ' sem instrutor. Preencha o instrutor na ficha do aluno ou escolha o instrutor padrão.'); return; }
       const blob = new Blob([JSON.stringify({ gerado: new Date().toISOString(), registros: registros }, null, 1)], { type: 'application/json' });
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'especialidades-sgc.json';
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);

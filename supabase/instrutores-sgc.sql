@@ -11,3 +11,6 @@ create table if not exists instrutores (
 alter table instrutores enable row level security;
 drop policy if exists p_instrutores on instrutores;
 create policy p_instrutores on instrutores for all using(true) with check(true);
+
+-- Instrutor que assinou cada especialidade (enviado ao SGC pelo robô).
+alter table especialidades_concluidas add column if not exists instrutor text;
