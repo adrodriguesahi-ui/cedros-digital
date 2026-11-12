@@ -12847,6 +12847,12 @@
 
               <label class="pl-field-label" for="clbNome">Seu nome completo</label>
               <input type="text" class="pl-input" id="clbNome" list="clbMembros" maxlength="80" autocomplete="off">
+              <label class="pl-field-label" for="clbGenero">Quem assina</label>
+              <select class="pl-input" id="clbGenero">
+                <option value="n">portador(a) — neutro</option>
+                <option value="m">portador — masculino</option>
+                <option value="f">portadora — feminino</option>
+              </select>
               <datalist id="clbMembros"></datalist>
               <div class="pl-field-row">
                 <div class="pl-field-col">
@@ -12867,27 +12873,27 @@
 
               <div class="pl-field-row">
                 <div class="pl-field-col">
-                  <label class="pl-field-label" for="clbInicio">De</label>
+                  <label class="pl-field-label" for="clbInicio">Início da ausência</label>
                   <input type="date" class="pl-input" id="clbInicio">
                 </div>
                 <div class="pl-field-col">
-                  <label class="pl-field-label" for="clbFim">Até</label>
+                  <label class="pl-field-label" for="clbFim">Fim da ausência</label>
                   <input type="date" class="pl-input" id="clbFim">
                 </div>
               </div>
               <label class="pl-field-label" for="clbCampori">Nome do Campori</label>
               <input type="text" class="pl-input" id="clbCampori" placeholder="Ex.: Campori Regional 2027" maxlength="100">
-              <label class="pl-field-label" for="clbPapel">No clube, você é (descreva a sua função)</label>
-              <input type="text" class="pl-input" id="clbPapel" list="clbPapelList" placeholder="Ex.: conselheiro e instrutor" maxlength="120" autocomplete="off">
+              <label class="pl-field-label" for="clbPapel">Sua função no clube (aparece na carta)</label>
+              <input type="text" class="pl-input" id="clbPapel" list="clbPapelList" placeholder="Ex.: conselheiro, instrutor, diretoria" maxlength="120" autocomplete="off">
               <datalist id="clbPapelList"><option value="líder"></option><option value="participante ativo"></option><option value="participante ativa"></option><option value="conselheiro"></option><option value="instrutor"></option><option value="diretor"></option><option value="diretora"></option><option value="secretário"></option><option value="secretária"></option><option value="tesoureiro"></option><option value="tesoureira"></option></datalist>
 
               <label class="pl-field-label" style="display:flex;gap:8px;align-items:center;">
-                <input type="checkbox" id="clbCompensa"> Incluir acordo de compensação das horas
+                <input type="checkbox" id="clbCompensa"> Incluir parágrafo sobre compensação das horas
               </label>
-              <input type="text" class="pl-input" id="clbCompensaForma" list="clbCompensaList" maxlength="120" style="display:none;">
-              <datalist id="clbCompensaList"><option value="banco de horas"></option><option value="horas extras antecipadas"></option><option value="acordo previamente estabelecido com a gestão"></option></datalist>
+              <input type="text" class="pl-input" id="clbCompensaForma" list="clbCompensaList" maxlength="120" placeholder="Como será compensado" style="display:none;">
+              <datalist id="clbCompensaList"><option value="banco de horas"></option><option value="horas extras antecipadas"></option><option value="acordo prévio com a gestão"></option></datalist>
 
-              <label class="pl-field-label" for="clbCargoClube">Seu cargo/função no clube (opcional)</label>
+              <label class="pl-field-label" for="clbCargoClube">Cargo/função abaixo da assinatura (opcional)</label>
               <input type="text" class="pl-input" id="clbCargoClube" maxlength="60">
               <label class="pl-field-label" for="clbSimbolo">Símbolo do clube no cabeçalho</label>
               <select class="pl-input" id="clbSimbolo">
@@ -29530,7 +29536,7 @@
       localidade: $('clbLocalidade'), data: $('clbData'), empresa: $('clbEmpresa'), ac: $('clbAc'), depto: $('clbDepto'),
       nome: $('clbNome'), docTipo: $('clbDocTipo'), docNum: $('clbDocNum'), cargo: $('clbCargo'), inicio: $('clbInicio'),
       fim: $('clbFim'), campori: $('clbCampori'), papel: $('clbPapel'), compensa: $('clbCompensa'),
-      forma: $('clbCompensaForma'), cargoClube: $('clbCargoClube'), simbolo: $('clbSimbolo')
+      forma: $('clbCompensaForma'), cargoClube: $('clbCargoClube'), simbolo: $('clbSimbolo'), genero: $('clbGenero')
     };
     const previa = $('clbPrevia');
     const MEMORIA = 'clube:carta-liberacao';
@@ -29544,7 +29550,7 @@
       try {
         localStorage.setItem(MEMORIA, JSON.stringify({
           localidade: campos.localidade.value.trim(), nome: campos.nome.value.trim(), papel: campos.papel.value,
-          cargoClube: campos.cargoClube.value.trim(), simbolo: campos.simbolo.value
+          cargoClube: campos.cargoClube.value.trim(), simbolo: campos.simbolo.value, genero: campos.genero.value
         }));
       } catch(e){}
     }
@@ -29564,6 +29570,19 @@
       return (d.getDate() === 1 ? '1º' : d.getDate()) + ' de ' + meses[d.getMonth()] + ' de ' + d.getFullYear();
     }
     const normalizar = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+
+    const MESES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+    const diaDe = d => d.getDate() === 1 ? '1º' : String(d.getDate());
+    // Período em texto corrido: "no dia 20 de janeiro de 2027", "de 20 a 25 de janeiro de 2027"...
+    function periodoTexto(ini, fim){
+      if(!ini || !fim) return null;
+      const a = new Date(ini + 'T12:00:00'), b = new Date(fim + 'T12:00:00');
+      if(isNaN(a) || isNaN(b)) return null;
+      if(ini === fim) return { pre: 'no dia ', txt: dataPorExtenso(ini) };
+      if(a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()) return { pre: 'no período de ', txt: diaDe(a) + ' a ' + diaDe(b) + ' de ' + MESES[a.getMonth()] + ' de ' + a.getFullYear() };
+      if(a.getFullYear() === b.getFullYear()) return { pre: 'no período de ', txt: diaDe(a) + ' de ' + MESES[a.getMonth()] + ' a ' + diaDe(b) + ' de ' + MESES[b.getMonth()] + ' de ' + a.getFullYear() };
+      return { pre: 'no período de ', txt: dataPorExtenso(ini) + ' a ' + dataPorExtenso(fim) };
+    }
 
     // ---- Texto com negrito, quebra de linha e alinhamento justificado ----
     function palavras(segs){
@@ -29647,25 +29666,25 @@
       y += 44;
 
       // Corpo da carta.
+      const portador = d.genero === 'm' ? 'portador' : (d.genero === 'f' ? 'portadora' : 'portador(a)');
       const docRot = d.docTipo === 'CTPS' ? 'da CTPS' : (d.docTipo === 'CPF' ? 'do CPF' : 'do RG');
+      const per = periodoTexto(d.inicio, d.fim);
       const docPh = d.docTipo === 'CTPS' ? 'número e série' : (d.docTipo === 'CPF' ? 'número do CPF' : 'número do RG');
       const p1 = [
         { t: 'Eu, ' }, { t: val(d.nome, 'seu nome completo'), b: true },
-        { t: ', portador(a) ' + docRot + ' nº ' }, { t: val(d.docNum, docPh) },
+        { t: ', ' + portador + ' ' + docRot + ' nº ' }, { t: val(d.docNum, docPh) },
         { t: ', ocupante do cargo de ' }, { t: val(d.cargo, 'seu cargo'), b: true },
-        { t: ' nesta empresa, venho, respeitosamente, solicitar a liberação de minhas atividades laborais no período de ' },
-        { t: d.inicio ? dataPorExtenso(d.inicio) : val('', 'data de início'), b: true }, { t: ' a ' },
-        { t: d.fim ? dataPorExtenso(d.fim) : val('', 'data de término'), b: true }, { t: '.' }
-      ];
+        { t: ' nesta empresa, venho, respeitosamente, solicitar a liberação de minhas atividades laborais ' + (per ? per.pre : 'no período de ') }
+      ].concat(per ? [{ t: per.txt, b: true }] : [{ t: val(d.inicio ? dataPorExtenso(d.inicio) : '', 'data de início'), b: true }, { t: ' a ' }, { t: val(d.fim ? dataPorExtenso(d.fim) : '', 'data de término'), b: true }], [{ t: '.' }]);
       y = paragrafo(x, p1, ESQ, DIR, y, 22.5, 14.5, true) + 18;
       y = paragrafo(x, [
         { t: 'A ausência justifica-se pela minha participação no ' }, { t: val(d.campori, 'nome do Campori'), b: true },
-        { t: ', evento oficial de caráter educacional, juvenil, cultural e de serviço voluntário, organizado pelo Clube de Desbravadores da Igreja Adventista do Sétimo Dia, do qual sou ' }, { t: val(d.papel, 'líder/participante ativo(a)') }, { t: '.' }
+        { t: ', evento oficial de caráter educacional, juvenil, cultural e de serviço voluntário, organizado pelo Clube de Desbravadores da Igreja Adventista do Sétimo Dia, no qual exerço a função de ' }, { t: val(d.papel, 'sua função no clube') }, { t: '.' }
       ], ESQ, DIR, y, 22.5, 14.5, true) + 18;
       if(d.compensa){
         y = paragrafo(x, [
-          { t: 'Informo que as horas correspondentes ao período solicitado poderão ser compensadas mediante ' },
-          { t: val(d.forma, 'banco de horas / horas extras antecipadas / acordo previamente estabelecido com a gestão') },
+          { t: 'Informo que as horas correspondentes à ausência poderão ser compensadas por meio de ' },
+          { t: val(d.forma, 'forma de compensação') },
           { t: ', conforme alinhamento e aprovação da empresa.' }
         ], ESQ, DIR, y, 22.5, 14.5, true) + 18;
       }
@@ -29693,7 +29712,7 @@
         docTipo: campos.docTipo.value, docNum: campos.docNum.value.trim(), cargo: campos.cargo.value.trim(),
         inicio: campos.inicio.value, fim: campos.fim.value, campori: campos.campori.value.trim(),
         papel: campos.papel.value, compensa: campos.compensa.checked, forma: campos.forma.value.trim(),
-        cargoClube: campos.cargoClube.value.trim(), simbolo: campos.simbolo.value
+        cargoClube: campos.cargoClube.value.trim(), simbolo: campos.simbolo.value, genero: campos.genero.value
       };
     }
     let previaTimer = null;
@@ -29716,6 +29735,7 @@
       campos.papel.value = mem.papel || '';
       campos.cargoClube.value = mem.cargoClube || '';
       campos.simbolo.value = mem.simbolo || 'original';
+      campos.genero.value = mem.genero || 'n';
       campos.docNum.value = ''; campos.compensa.checked = false;
       overlay.classList.add('show');
       carregarImagens().then(atualizarPrevia);
