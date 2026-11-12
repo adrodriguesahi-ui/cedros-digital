@@ -38662,7 +38662,7 @@ const REQ_SUMMARIES = {
           p.itens.map(i => '<div class="co-ent-linha"><div><b>' + esc(i.nome) + '</b><small>' + esc(i.especialidade) + ' · ' + dataBr(i.data) + (i.instrutor ? ' · ' + esc(i.instrutor) : '') + '</small><small>' + esc(SIT_ROTULO[i.situacao] || i.situacao) + (i.obs ? ' — ' + esc(i.obs) : '') + '</small></div>' +
             (i.situacao === 'preenchido' && !i.decisao ? '<div class="co-comp-acoes"><button type="button" class="co-mini" data-pdec="salvar|' + esc(i.id) + '">Salvar no SGC</button><button type="button" class="co-mini perigo" data-pdec="pular|' + esc(i.id) + '">Pular</button></div>' : (i.situacao === 'preenchido' ? '<small>enviando…</small>' : '')) +
             '</div>').join('') +
-          (ativo ? '<div class="co-acoes" style="margin-top:8px;"><button type="button" class="co-mini perigo" data-pcancel="' + esc(p.id) + '">Cancelar pedido</button></div>' : '') + '</div>';
+          (ativo ? '<div class="co-acoes" style="margin-top:8px;">' + (!p.simular && p.itens.some(i => !i.decisao && (i.situacao === 'pendente' || i.situacao === 'preenchido')) ? '<button type="button" class="co-btn" data-ptodas="' + esc(p.id) + '">Salvar todas (' + p.itens.filter(i => !i.decisao && (i.situacao === 'pendente' || i.situacao === 'preenchido')).length + ')</button>' : '') + '<button type="button" class="co-mini perigo" data-pcancel="' + esc(p.id) + '">Cancelar pedido</button></div>' : '') + '</div>';
       }).join('') : '<p class="co-vazio">Nenhum pedido ainda.</p>';
     }
     async function atualizarRobo(){ await carregarPedidos(); renderRobo(); }
@@ -38703,6 +38703,17 @@ const REQ_SUMMARIES = {
       if(error){ alert('Não foi possível registrar a sua resposta: ' + error.message); return; }
       await atualizarRobo();
     }
+    async function salvarTodas(id){
+      const p = pedidosSgc.find(x => x.id === id); if(!p) return;
+      const alvo = p.itens.filter(i => !i.decisao && (i.situacao === 'pendente' || i.situacao === 'preenchido'));
+      if(!alvo.length) return;
+      const nl = String.fromCharCode(10);
+      const lista = alvo.slice(0, 12).map(i => '• ' + i.nome + ' — ' + i.especialidade + ' (' + dataBr(i.data) + ')').join(nl) + (alvo.length > 12 ? nl + '… e mais ' + (alvo.length - 12) : '');
+      if(!confirm('Salvar no SGC, sem perguntar de novo, ' + plural(alvo.length, 'especialidade', 'especialidades') + '?' + nl + nl + lista + nl + nl + 'O robô ainda pula o que já existe no SGC e confere se cada uma entrou.')) return;
+      const { error } = await supa.from('pedidos_sgc_itens').update({ decisao: 'salvar' }).eq('pedido_id', id).is('decisao', null).in('situacao', ['pendente', 'preenchido']);
+      if(error){ alert('Não foi possível confirmar: ' + error.message); return; }
+      await atualizarRobo();
+    }
     async function cancelarPedido(id){
       if(!confirm('Cancelar este pedido? O que ainda não foi salvo no SGC não será enviado.')) return;
       const { error } = await supa.from('pedidos_sgc').update({ status: 'cancelado' }).eq('id', id);
@@ -38712,6 +38723,7 @@ const REQ_SUMMARIES = {
     $('coSgcEnviar').addEventListener('click', enviarAoSgc);
     $('coPedidos').addEventListener('click', e => {
       const d = e.target.closest('[data-pdec]'); if(d){ const [v, id] = d.getAttribute('data-pdec').split('|'); decidirItem(v, id); return; }
+      const t = e.target.closest('[data-ptodas]'); if(t){ salvarTodas(t.getAttribute('data-ptodas')); return; }
       const c = e.target.closest('[data-pcancel]'); if(c) cancelarPedido(c.getAttribute('data-pcancel'));
     });
     $('coSgcBtn').addEventListener('click', exportarSgc);
