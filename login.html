@@ -14291,6 +14291,7 @@
               <p class="co-nota" id="coRoboStatus">Verificando o robô…</p>
               <label class="co-assin-op" style="margin-bottom:10px;"><input type="checkbox" id="coSgcSimular"> Só simular (preenche no SGC, mas não salva)</label>
               <div id="coPedidos"></div>
+              <div class="co-acoes" id="coPedidosLimparBox" style="display:none;margin-top:6px;"><button type="button" class="co-mini perigo" id="coPedidosLimpar">Limpar histórico</button><small class="co-nota" style="margin:0;">Apaga só os pedidos já concluídos, com erro ou cancelados. O que está na fila ou em andamento fica.</small></div>
             </div>
           </div>
 
@@ -38655,6 +38656,7 @@ const REQ_SUMMARIES = {
       $('coRoboStatus').innerHTML = on.length
         ? on.map(r => '<b>' + esc(r.nome) + '</b>: ligado' + (r.sessao_ok ? ', sessão do SGC ativa' : ' — <b style="color:#ff9b9b">precisa entrar no SGC</b> (' + esc(r.detalhe || 'rode entrar-no-sgc.bat no computador do robô') + ')')).join('<br>')
         : 'Nenhum robô ligado agora. Abra o <b>iniciar-robo.bat</b> no computador do robô: os pedidos ficam na fila até ele ligar.';
+      { const b = $('coPedidosLimparBox'); if(b) b.style.display = pedidosSgc.some(p => p.status !== 'pendente' && p.status !== 'em_andamento') ? '' : 'none'; }
       $('coPedidos').innerHTML = pedidosSgc.length ? pedidosSgc.map(p => {
         const ativo = p.status === 'pendente' || p.status === 'em_andamento';
         return '<div class="co-card" style="margin:0 0 8px;"><div class="co-classe-top"><span>' + new Date(p.criado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + (p.simular ? ' · simulação' : '') + '</span><span class="co-classe-pct">' + (STATUS_PEDIDO[p.status] || p.status) + '</span></div>' +
@@ -38662,7 +38664,7 @@ const REQ_SUMMARIES = {
           p.itens.map(i => '<div class="co-ent-linha"><div><b>' + esc(i.nome) + '</b><small>' + esc(i.especialidade) + ' · ' + dataBr(i.data) + (i.instrutor ? ' · ' + esc(i.instrutor) : '') + '</small><small>' + esc(SIT_ROTULO[i.situacao] || i.situacao) + (i.obs ? ' — ' + esc(i.obs) : '') + '</small></div>' +
             (i.situacao === 'preenchido' && !i.decisao ? '<div class="co-comp-acoes"><button type="button" class="co-mini" data-pdec="salvar|' + esc(i.id) + '">Salvar no SGC</button><button type="button" class="co-mini perigo" data-pdec="pular|' + esc(i.id) + '">Pular</button></div>' : (i.situacao === 'preenchido' ? '<small>enviando…</small>' : '')) +
             '</div>').join('') +
-          (ativo ? '<div class="co-acoes" style="margin-top:8px;">' + (!p.simular && !p.itens.some(i => i.situacao === 'pendente') && p.itens.some(i => !i.decisao && i.situacao === 'preenchido') ? '<button type="button" class="co-btn" data-ptodas="' + esc(p.id) + '">Salvar todas (' + p.itens.filter(i => !i.decisao && i.situacao === 'preenchido').length + ')</button>' : (!p.simular && p.itens.some(i => i.situacao === 'pendente') ? '<small class="co-nota" style="margin:0;">O robô está conferindo no SGC; a confirmação aparece quando terminar.</small>' : '')) + '<button type="button" class="co-mini perigo" data-pcancel="' + esc(p.id) + '">Cancelar pedido</button></div>' : '') + '</div>';
+          (ativo ? '<div class="co-acoes" style="margin-top:8px;">' + (!p.simular && !p.itens.some(i => i.situacao === 'pendente') && p.itens.some(i => !i.decisao && i.situacao === 'preenchido') ? '<button type="button" class="co-btn" data-ptodas="' + esc(p.id) + '">Salvar todas (' + p.itens.filter(i => !i.decisao && i.situacao === 'preenchido').length + ')</button>' : (!p.simular && p.itens.some(i => i.situacao === 'pendente') ? '<small class="co-nota" style="margin:0;">O robô está conferindo no SGC; a confirmação aparece quando terminar.</small>' : '')) + '<button type="button" class="co-mini perigo" data-pcancel="' + esc(p.id) + '">Cancelar pedido</button></div>' : '<div class="co-acoes" style="margin-top:8px;"><button type="button" class="co-mini perigo" data-pdel="' + esc(p.id) + '">Remover do histórico</button></div>') + '</div>';
       }).join('') : '<p class="co-vazio">Nenhum pedido ainda.</p>';
     }
     async function atualizarRobo(){ await carregarPedidos(); renderRobo(); }
@@ -38714,6 +38716,15 @@ const REQ_SUMMARIES = {
       if(error){ alert('Não foi possível confirmar: ' + error.message); return; }
       await atualizarRobo();
     }
+    async function limparHistorico(id){
+      const msg = id ? 'Remover este pedido do histórico?' : 'Limpar o histórico de pedidos do SGC? Serão apagados os pedidos concluídos, com erro ou cancelados. Isso não altera o que já foi lançado no SGC.';
+      if(!confirm(msg)) return;
+      let q = supa.from('pedidos_sgc').delete();
+      q = id ? q.eq('id', id).in('status', ['concluido', 'cancelado', 'erro']) : q.in('status', ['concluido', 'cancelado', 'erro']);
+      const { error } = await q;
+      if(error){ alert('Não foi possível limpar: ' + error.message); return; }
+      await atualizarRobo();
+    }
     async function cancelarPedido(id){
       if(!confirm('Cancelar este pedido? O que ainda não foi salvo no SGC não será enviado.')) return;
       const { error } = await supa.from('pedidos_sgc').update({ status: 'cancelado' }).eq('id', id);
@@ -38721,8 +38732,10 @@ const REQ_SUMMARIES = {
       await atualizarRobo();
     }
     $('coSgcEnviar').addEventListener('click', enviarAoSgc);
+    $('coPedidosLimpar').addEventListener('click', () => limparHistorico(null));
     $('coPedidos').addEventListener('click', e => {
       const d = e.target.closest('[data-pdec]'); if(d){ const [v, id] = d.getAttribute('data-pdec').split('|'); decidirItem(v, id); return; }
+      const x = e.target.closest('[data-pdel]'); if(x){ limparHistorico(x.getAttribute('data-pdel')); return; }
       const t = e.target.closest('[data-ptodas]'); if(t){ salvarTodas(t.getAttribute('data-ptodas')); return; }
       const c = e.target.closest('[data-pcancel]'); if(c) cancelarPedido(c.getAttribute('data-pcancel'));
     });
