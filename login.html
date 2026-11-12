@@ -12877,12 +12877,9 @@
               </div>
               <label class="pl-field-label" for="clbCampori">Nome do Campori</label>
               <input type="text" class="pl-input" id="clbCampori" placeholder="Ex.: Campori Regional 2027" maxlength="100">
-              <label class="pl-field-label" for="clbPapel">No clube, você é</label>
-              <select class="pl-input" id="clbPapel">
-                <option value="líder">líder</option>
-                <option value="participante ativo">participante ativo</option>
-                <option value="participante ativa">participante ativa</option>
-              </select>
+              <label class="pl-field-label" for="clbPapel">No clube, você é (descreva a sua função)</label>
+              <input type="text" class="pl-input" id="clbPapel" list="clbPapelList" placeholder="Ex.: conselheiro e instrutor" maxlength="120" autocomplete="off">
+              <datalist id="clbPapelList"><option value="líder"></option><option value="participante ativo"></option><option value="participante ativa"></option><option value="conselheiro"></option><option value="instrutor"></option><option value="diretor"></option><option value="diretora"></option><option value="secretário"></option><option value="secretária"></option><option value="tesoureiro"></option><option value="tesoureira"></option></datalist>
 
               <label class="pl-field-label" style="display:flex;gap:8px;align-items:center;">
                 <input type="checkbox" id="clbCompensa"> Incluir acordo de compensação das horas
@@ -29663,7 +29660,7 @@
       y = paragrafo(x, p1, ESQ, DIR, y, 22.5, 14.5, true) + 18;
       y = paragrafo(x, [
         { t: 'A ausência justifica-se pela minha participação no ' }, { t: val(d.campori, 'nome do Campori'), b: true },
-        { t: ', evento oficial de caráter educacional, juvenil, cultural e de serviço voluntário, organizado pelo Clube de Desbravadores da Igreja Adventista do Sétimo Dia, do qual sou ' + d.papel + '.' }
+        { t: ', evento oficial de caráter educacional, juvenil, cultural e de serviço voluntário, organizado pelo Clube de Desbravadores da Igreja Adventista do Sétimo Dia, do qual sou ' }, { t: val(d.papel, 'líder/participante ativo(a)') }, { t: '.' }
       ], ESQ, DIR, y, 22.5, 14.5, true) + 18;
       if(d.compensa){
         y = paragrafo(x, [
@@ -29716,7 +29713,7 @@
       campos.localidade.value = mem.localidade || 'Cotia';
       campos.data.value = new Date().toISOString().slice(0, 10);
       campos.nome.value = mem.nome || '';
-      campos.papel.value = mem.papel || 'líder';
+      campos.papel.value = mem.papel || '';
       campos.cargoClube.value = mem.cargoClube || '';
       campos.simbolo.value = mem.simbolo || 'original';
       campos.docNum.value = ''; campos.compensa.checked = false;
