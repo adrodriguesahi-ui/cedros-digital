@@ -14312,6 +14312,7 @@
               <p class="co-nota" style="margin-top:-2px;">O campo de data mostra só as especialidades concluídas a partir dela.</p>
               <div id="coSgcLista" class="co-folha-lista" style="max-height:420px;"></div>
               <div class="co-acoes">
+                <button type="button" class="co-btn sec" id="coSgcAplicar">Definir instrutor nas marcadas</button>
                 <button type="button" class="co-btn" id="coSgcBtn">Baixar arquivo para o robô</button>
                 <small id="coSgcContagem" class="co-nota" style="margin:0;"></small>
               </div>
@@ -38846,6 +38847,25 @@ const REQ_SUMMARIES = {
       t.closest('details').querySelectorAll('input[type=checkbox]').forEach(i => { i.checked = marcar; });
       sgcContagem();
     });
+    // Grava o instrutor escolhido nas especialidades marcadas (corrige as que estão sem instrutor).
+    async function aplicarInstrutor(){
+      const instr = $('coSgcInstrutor').value;
+      if(semColunaInstrutor){ alert('Falta atualizar o banco: rode o arquivo supabase/instrutores-sgc.sql no SQL Editor do Supabase.'); return; }
+      if(!instr){ alert('Escolha o instrutor no campo "Instrutor padrão".'); return; }
+      const sel = new Set(Array.from($('coSgcLista').querySelectorAll('input:checked')).map(i => i.value));
+      if(!sel.size){ alert('Marque as especialidades que receberão esse instrutor.'); return; }
+      const alvo = [];
+      pessoas.forEach(p => sgcEspecs(p).forEach(e => { if(sel.has(p.chave + '|' + e.id)) alvo.push(e); }));
+      const comOutro = alvo.filter(e => e.instrutor && e.instrutor !== instr).length;
+      if(!confirm('Definir "' + instr + '" como instrutor de ' + plural(alvo.length, 'especialidade', 'especialidades') + '?' + (comOutro ? String.fromCharCode(10, 10) + comOutro + ' delas já têm outro instrutor, que será substituído.' : ''))) return;
+      const { error } = await supa.from('especialidades_concluidas').update({ instrutor: instr }).in('id', alvo.map(e => e.id));
+      if(error){ alert('Não foi possível salvar: ' + error.message); return; }
+      alvo.forEach(e => { e.instrutor = instr; });
+      try { localStorage.setItem('co_instrutor_ult', instr); } catch(err){}
+      renderSgcLista();
+      alert('Instrutor definido em ' + plural(alvo.length, 'especialidade', 'especialidades') + '.');
+    }
+    $('coSgcAplicar').addEventListener('click', aplicarInstrutor);
     $('coSgcBtn').addEventListener('click', exportarSgc);
     $('coBusca').addEventListener('input', renderLista);
     $('coFiltroClasse').addEventListener('change', renderLista);
