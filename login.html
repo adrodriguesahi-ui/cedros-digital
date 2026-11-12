@@ -12543,6 +12543,11 @@
                   <span class="dcl-atalho-txt"><b>Declaração de idade mínima</b><span>Comprovante do requisito 1 das classes, no modelo do clube</span></span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
                 </button>
+                <button type="button" class="dcl-atalho" id="clbAbrirBtn">
+                  <span class="dcl-atalho-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span>
+                  <span class="dcl-atalho-txt"><b>Carta de liberação do trabalho</b><span>Pedido à empresa para participar de Campori, com campos editáveis</span></span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+                </button>
                 <div class="aut-modelos" id="autModelos" style="display:none;">
                   <label class="pl-field-label" style="margin-top:0;">Modelos salvos</label>
                   <div class="aut-modelos-lista" id="autModelosLista"></div>
@@ -12804,6 +12809,103 @@
           </div>
           <div class="pl-modal-actions">
             <button type="button" class="pl-btn pl-btn-primary" id="dclGerarBtn" style="flex:1;">Gerar PDF</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Carta de liberação do trabalho (participação em Campori): campos
+           editáveis à esquerda, prévia do documento ao lado. -->
+      <div class="pl-modal-overlay" id="clbOverlay">
+        <div class="pl-modal dcl-modal" role="dialog" aria-labelledby="clbTitulo">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title" id="clbTitulo">Carta de liberação do trabalho</h4>
+            <button type="button" class="pl-modal-close" id="clbFechar" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="dcl-corpo">
+            <div class="dcl-campos">
+              <p class="pl-reminder-hint" style="margin-top:0;">Campo em branco sai entre colchetes na carta, para preencher à mão.</p>
+              <div class="pl-field-row">
+                <div class="pl-field-col pl-field-col-wide">
+                  <label class="pl-field-label" for="clbLocalidade" style="margin-top:0;">Localidade</label>
+                  <input type="text" class="pl-input" id="clbLocalidade" maxlength="40">
+                </div>
+                <div class="pl-field-col">
+                  <label class="pl-field-label" for="clbData" style="margin-top:0;">Data da carta</label>
+                  <input type="date" class="pl-input" id="clbData">
+                </div>
+              </div>
+
+              <label class="pl-field-label" for="clbEmpresa">Empresa ou Gerência de Recursos Humanos</label>
+              <input type="text" class="pl-input" id="clbEmpresa" placeholder="Nome da empresa / setor" maxlength="100">
+              <label class="pl-field-label" for="clbAc">A/C (gestor ou diretor, se souber)</label>
+              <input type="text" class="pl-input" id="clbAc" maxlength="80">
+              <label class="pl-field-label" for="clbDepto">Cargo/Departamento do destinatário</label>
+              <input type="text" class="pl-input" id="clbDepto" list="clbDeptoList" placeholder="Gestão de Pessoas" maxlength="80">
+              <datalist id="clbDeptoList"><option value="Gestão de Pessoas"></option><option value="Supervisão"></option><option value="Recursos Humanos"></option></datalist>
+
+              <label class="pl-field-label" for="clbNome">Seu nome completo</label>
+              <input type="text" class="pl-input" id="clbNome" list="clbMembros" maxlength="80" autocomplete="off">
+              <datalist id="clbMembros"></datalist>
+              <div class="pl-field-row">
+                <div class="pl-field-col">
+                  <label class="pl-field-label" for="clbDocTipo">Documento</label>
+                  <select class="pl-input" id="clbDocTipo">
+                    <option value="CTPS">CTPS</option>
+                    <option value="CPF">CPF</option>
+                    <option value="RG">RG</option>
+                  </select>
+                </div>
+                <div class="pl-field-col pl-field-col-wide">
+                  <label class="pl-field-label" for="clbDocNum">Número</label>
+                  <input type="text" class="pl-input" id="clbDocNum" maxlength="40" autocomplete="off">
+                </div>
+              </div>
+              <label class="pl-field-label" for="clbCargo">Seu cargo na empresa</label>
+              <input type="text" class="pl-input" id="clbCargo" maxlength="80">
+
+              <div class="pl-field-row">
+                <div class="pl-field-col">
+                  <label class="pl-field-label" for="clbInicio">De</label>
+                  <input type="date" class="pl-input" id="clbInicio">
+                </div>
+                <div class="pl-field-col">
+                  <label class="pl-field-label" for="clbFim">Até</label>
+                  <input type="date" class="pl-input" id="clbFim">
+                </div>
+              </div>
+              <label class="pl-field-label" for="clbCampori">Nome do Campori</label>
+              <input type="text" class="pl-input" id="clbCampori" placeholder="Ex.: Campori Regional 2027" maxlength="100">
+              <label class="pl-field-label" for="clbPapel">No clube, você é</label>
+              <select class="pl-input" id="clbPapel">
+                <option value="líder">líder</option>
+                <option value="participante ativo">participante ativo</option>
+                <option value="participante ativa">participante ativa</option>
+              </select>
+
+              <label class="pl-field-label" style="display:flex;gap:8px;align-items:center;">
+                <input type="checkbox" id="clbCompensa"> Incluir acordo de compensação das horas
+              </label>
+              <input type="text" class="pl-input" id="clbCompensaForma" list="clbCompensaList" maxlength="120" style="display:none;">
+              <datalist id="clbCompensaList"><option value="banco de horas"></option><option value="horas extras antecipadas"></option><option value="acordo previamente estabelecido com a gestão"></option></datalist>
+
+              <label class="pl-field-label" for="clbCargoClube">Seu cargo/função no clube (opcional)</label>
+              <input type="text" class="pl-input" id="clbCargoClube" maxlength="60">
+              <label class="pl-field-label" for="clbSimbolo">Símbolo do clube no cabeçalho</label>
+              <select class="pl-input" id="clbSimbolo">
+                <option value="brasao">Brasão Cedros do Líbano</option>
+                <option value="selo">Selo dos Desbravadores</option>
+              </select>
+              <p class="pl-reminder-hint">Localidade, nome, papel e cargo no clube ficam neste aparelho para a próxima carta. O documento (CTPS, CPF ou RG) não é guardado.</p>
+            </div>
+            <div class="dcl-previa-wrap">
+              <span class="dcl-previa-rotulo">Prévia</span>
+              <img id="clbPrevia" class="dcl-previa" alt="Prévia da carta">
+            </div>
+          </div>
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-primary" id="clbGerarBtn" style="flex:1;">Gerar PDF</button>
           </div>
         </div>
       </div>
@@ -29411,6 +29513,231 @@
       doc.addImage(img, 'JPEG', 0, 0, 210, 297);
       const arquivo = 'Declaracao-idade-' + normalizar(d.desbravador).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.pdf';
       await salvarPDF(doc, arquivo);
+    });
+  })();
+
+  // Carta de solicitação de liberação do trabalho (participação em Campori)
+  //
+  // Mesmo esquema da Declaração de idade: o documento é desenhado num canvas A4
+  // e vai pro PDF como imagem; a prévia usa a mesma função. Cada [campo] do
+  // modelo é editável; o que ficar em branco sai entre colchetes na carta (e o
+  // rodapé "Documento-modelo" avisa). O número do CTPS/CPF/RG não é guardado.
+  // ---------------------------------------------------------------------
+  (function(){
+    const overlay = document.getElementById('clbOverlay');
+    const abrirBtn = document.getElementById('clbAbrirBtn');
+    if(!overlay || !abrirBtn) return;
+    const $ = id => document.getElementById(id);
+    const campos = {
+      localidade: $('clbLocalidade'), data: $('clbData'), empresa: $('clbEmpresa'), ac: $('clbAc'), depto: $('clbDepto'),
+      nome: $('clbNome'), docTipo: $('clbDocTipo'), docNum: $('clbDocNum'), cargo: $('clbCargo'), inicio: $('clbInicio'),
+      fim: $('clbFim'), campori: $('clbCampori'), papel: $('clbPapel'), compensa: $('clbCompensa'),
+      forma: $('clbCompensaForma'), cargoClube: $('clbCargoClube'), simbolo: $('clbSimbolo')
+    };
+    const previa = $('clbPrevia');
+    const MEMORIA = 'clube:carta-liberacao';
+    const imgs = { brasao: null, selo: null, iasd: null };
+    const FONTE = 'Arial, Helvetica, "Liberation Sans", sans-serif';
+    const AZUL = '#1F4272', VERDE = '#6AA02B', TINTA = '#222222', CINZA = '#6B7280';
+    const W = 1654, H = 2339, S = W / 921;   // o desenho usa o espaço 921 x 1303 do modelo
+
+    function lerMemoria(){ try { return JSON.parse(localStorage.getItem(MEMORIA) || '{}'); } catch(e){ return {}; } }
+    function gravarMemoria(){
+      try {
+        localStorage.setItem(MEMORIA, JSON.stringify({
+          localidade: campos.localidade.value.trim(), nome: campos.nome.value.trim(), papel: campos.papel.value,
+          cargoClube: campos.cargoClube.value.trim(), simbolo: campos.simbolo.value
+        }));
+      } catch(e){}
+    }
+    function carregar(src){
+      return new Promise(resolve => { const i = new Image(); i.onload = () => resolve(i); i.onerror = () => resolve(null); i.src = src; });
+    }
+    async function carregarImagens(){
+      if(!imgs.brasao) imgs.brasao = await carregar((window.CLUBE_CONFIG && window.CLUBE_CONFIG.logo) || 'logo.png');
+      if(!imgs.selo) imgs.selo = await carregar('selo-desbravadores.png');
+      if(!imgs.iasd) imgs.iasd = await carregar('iasd-logo.png');
+    }
+    function dataPorExtenso(iso){
+      if(!iso) return '';
+      const d = new Date(iso + 'T12:00:00');
+      const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+      return (d.getDate() === 1 ? '1º' : d.getDate()) + ' de ' + meses[d.getMonth()] + ' de ' + d.getFullYear();
+    }
+    const normalizar = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+
+    // ---- Texto com negrito, quebra de linha e alinhamento justificado ----
+    function palavras(segs){
+      const ws = []; let prevEsp = false;
+      segs.forEach(s => {
+        if(!s.t) return;
+        const re = /(\s*)(\S+)/g; let m, primeiro = true;
+        while((m = re.exec(s.t))){
+          const sp = !!m[1] || (primeiro && prevEsp) || !ws.length;
+          primeiro = false;
+          if(sp) ws.push([{ w: m[2], b: !!s.b }]); else ws[ws.length - 1].push({ w: m[2], b: !!s.b });
+        }
+        prevEsp = /\s$/.test(s.t);
+      });
+      return ws;
+    }
+    function paragrafo(x, segs, esq, dir, y, lh, tam, justificar){
+      const f = b => (b ? 'bold ' : '') + tam + 'px ' + FONTE;
+      const medida = w => w.reduce((t, p) => { x.font = f(p.b); return t + x.measureText(p.w).width; }, 0);
+      x.font = f(false); const esp = x.measureText(' ').width;
+      const ws = palavras(segs).map(w => ({ p: w, l: medida(w) }));
+      const linhas = []; let atual = [], larg = 0;
+      ws.forEach(w => {
+        const nova = atual.length ? larg + esp + w.l : w.l;
+        if(nova > dir - esq && atual.length){ linhas.push(atual); atual = [w]; larg = w.l; } else { atual.push(w); larg = nova; }
+      });
+      if(atual.length) linhas.push(atual);
+      x.fillStyle = TINTA; x.textAlign = 'left';
+      linhas.forEach((ln, i) => {
+        const soma = ln.reduce((t, w) => t + w.l, 0);
+        const ultima = i === linhas.length - 1;
+        const gap = (justificar && !ultima && ln.length > 1) ? (dir - esq - soma) / (ln.length - 1) : esp;
+        let cx = esq;
+        ln.forEach(w => { w.p.forEach(p => { x.font = f(p.b); x.fillText(p.w, cx, y + i * lh); cx += x.measureText(p.w).width; }); cx += gap; });
+      });
+      return y + linhas.length * lh;
+    }
+    function contain(x, img, bx, by, bw, bh){
+      if(!img) return;
+      const r = Math.min(bw / img.width, bh / img.height);
+      const w = img.width * r, h = img.height * r;
+      x.drawImage(img, bx + (bw - w) / 2, by + (bh - h) / 2, w, h);
+    }
+
+    function desenhar(d){
+      const c = document.createElement('canvas');
+      c.width = W; c.height = H;
+      const x = c.getContext('2d');
+      x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, W, H);
+      x.scale(S, S);
+      let faltam = false;
+      const val = (v, ph) => { if(v) return v; faltam = true; return '[' + ph + ']'; };
+      const ESQ = 106, DIR = 818;
+
+      // Cabeçalho: símbolo do clube | nome | IASD, e a linha verde.
+      contain(x, d.simbolo === 'selo' ? imgs.selo : imgs.brasao, 128, 72, 114, 122);
+      x.textAlign = 'center'; x.font = 'bold 17px ' + FONTE; x.fillStyle = '#5E9B30';
+      x.fillText('CLUBE DE DESBRAVADORES', 460, 114);
+      x.fillText('CEDROS DO LÍBANO', 460, 138);
+      x.font = '12px ' + FONTE; x.fillStyle = CINZA; x.fillText('Igreja Adventista do Sétimo Dia', 460, 160);
+      contain(x, imgs.iasd, 660, 96, 140, 82);
+      x.fillStyle = VERDE; x.fillRect(110, 210, 705, 4);
+
+      x.textAlign = 'center'; x.fillStyle = AZUL; x.font = 'bold 24px ' + FONTE;
+      x.fillText('CARTA DE SOLICITAÇÃO DE LIBERAÇÃO', 460, 262);
+      x.fillStyle = CINZA; x.font = '11.5px ' + FONTE;
+      x.fillText('PARTICIPAÇÃO EM CAMPORI DE DESBRAVADORES', 460, 288);
+
+      // Local e data (à direita) e destinatário.
+      const quando = val(d.localidade, 'Localidade') + ', ' + (d.data ? dataPorExtenso(d.data) : (faltam = true, '[dia] de [mês] de [ano]')) + '.';
+      x.textAlign = 'right'; x.fillStyle = TINTA; x.font = '14.5px ' + FONTE; x.fillText(quando, DIR, 349);
+      x.textAlign = 'left'; x.font = 'bold 14.5px ' + FONTE; x.fillText('À', ESQ, 399);
+      x.font = '14.5px ' + FONTE;
+      let y = 421;
+      [val(d.empresa, 'Nome da empresa ou Gerência de Recursos Humanos'), d.ac ? 'A/C: ' + d.ac : '', d.depto ? 'Cargo/Departamento: ' + d.depto : '']
+        .filter(Boolean).forEach(l => { x.fillText(l, ESQ, y); y += 21; });
+      y += 30;
+      y = paragrafo(x, [{ t: 'Assunto:', b: true }, { t: ' Solicitação de liberação/ausência programada para participação em evento (Campori).' }], ESQ, DIR, y, 21.5, 14.5, false);
+      y += 21;
+      x.font = '14.5px ' + FONTE; x.textAlign = 'left'; x.fillText('Prezado(a) Senhor(a),', ESQ, y);
+      y += 44;
+
+      // Corpo da carta.
+      const docRot = d.docTipo === 'CTPS' ? 'da CTPS' : (d.docTipo === 'CPF' ? 'do CPF' : 'do RG');
+      const docPh = d.docTipo === 'CTPS' ? 'número e série' : (d.docTipo === 'CPF' ? 'número do CPF' : 'número do RG');
+      const p1 = [
+        { t: 'Eu, ' }, { t: val(d.nome, 'seu nome completo'), b: true },
+        { t: ', portador(a) ' + docRot + ' nº ' }, { t: val(d.docNum, docPh) },
+        { t: ', ocupante do cargo de ' }, { t: val(d.cargo, 'seu cargo'), b: true },
+        { t: ' nesta empresa, venho, respeitosamente, solicitar a liberação de minhas atividades laborais no período de ' },
+        { t: d.inicio ? dataPorExtenso(d.inicio) : val('', 'data de início'), b: true }, { t: ' a ' },
+        { t: d.fim ? dataPorExtenso(d.fim) : val('', 'data de término'), b: true }, { t: '.' }
+      ];
+      y = paragrafo(x, p1, ESQ, DIR, y, 22.5, 14.5, true) + 18;
+      y = paragrafo(x, [
+        { t: 'A ausência justifica-se pela minha participação no ' }, { t: val(d.campori, 'nome do Campori'), b: true },
+        { t: ', evento oficial de caráter educacional, juvenil, cultural e de serviço voluntário, organizado pelo Clube de Desbravadores da Igreja Adventista do Sétimo Dia, do qual sou ' + d.papel + '.' }
+      ], ESQ, DIR, y, 22.5, 14.5, true) + 18;
+      if(d.compensa){
+        y = paragrafo(x, [
+          { t: 'Informo que as horas correspondentes ao período solicitado poderão ser compensadas mediante ' },
+          { t: val(d.forma, 'banco de horas / horas extras antecipadas / acordo previamente estabelecido com a gestão') },
+          { t: ', conforme alinhamento e aprovação da empresa.' }
+        ], ESQ, DIR, y, 22.5, 14.5, true) + 18;
+      }
+      y = paragrafo(x, [{ t: 'Agradeço antecipadamente pela atenção, compreensão e consideração deste pedido. Coloco-me à disposição para prestar eventuais esclarecimentos e alinhar a melhor forma de organização das atividades durante minha ausência.' }], ESQ, DIR, y, 22.5, 14.5, true) + 34;
+      x.textAlign = 'left'; x.fillStyle = TINTA; x.font = '14.5px ' + FONTE; x.fillText('Atenciosamente,', ESQ, y);
+
+      // Assinatura (ancorada no pé da página, para não "dançar" com o tamanho do texto).
+      const ya = Math.max(y + 80, 1040);
+      x.strokeStyle = '#444'; x.lineWidth = 1; x.beginPath(); x.moveTo(262, ya); x.lineTo(658, ya); x.stroke();
+      x.textAlign = 'center'; x.fillStyle = TINTA; x.font = 'bold 14.5px ' + FONTE; x.fillText(val(d.nome, 'Seu nome completo'), 460, ya + 28);
+      if(d.cargoClube){ x.fillStyle = CINZA; x.font = '12px ' + FONTE; x.fillText(d.cargoClube, 460, ya + 50); }
+      else if(!d.cargoClube){ /* opcional: sem texto */ }
+
+      // Rodapé.
+      x.fillStyle = AZUL; x.font = 'bold 10.5px ' + FONTE; x.fillText('CLUBE DE DESBRAVADORES CEDROS DO LÍBANO | IGREJA ADVENTISTA DO SÉTIMO DIA', 460, 1203);
+      x.fillStyle = '#B08457'; x.fillRect(97, 1256, 730, 1.5);
+      if(faltam){ x.fillStyle = '#8A8F98'; x.font = '9px ' + FONTE; x.fillText('Documento-modelo — preencher os campos entre colchetes antes de entregar', 460, 1274); }
+      return c;
+    }
+
+    function dados(){
+      return {
+        localidade: campos.localidade.value.trim(), data: campos.data.value, empresa: campos.empresa.value.trim(),
+        ac: campos.ac.value.trim(), depto: campos.depto.value.trim(), nome: campos.nome.value.trim(),
+        docTipo: campos.docTipo.value, docNum: campos.docNum.value.trim(), cargo: campos.cargo.value.trim(),
+        inicio: campos.inicio.value, fim: campos.fim.value, campori: campos.campori.value.trim(),
+        papel: campos.papel.value, compensa: campos.compensa.checked, forma: campos.forma.value.trim(),
+        cargoClube: campos.cargoClube.value.trim(), simbolo: campos.simbolo.value
+      };
+    }
+    let previaTimer = null;
+    function atualizarPrevia(){
+      campos.forma.style.display = campos.compensa.checked ? '' : 'none';
+      clearTimeout(previaTimer);
+      previaTimer = setTimeout(() => { previa.src = desenhar(dados()).toDataURL('image/jpeg', 0.75); }, 200);
+    }
+    async function carregarUsuarios(){
+      if(!supa) return;
+      const { data } = await supa.from('usuarios').select('nome, ativo').order('nome');
+      const lista = $('clbMembros'); lista.innerHTML = '';
+      (data || []).filter(u => u.ativo !== false).forEach(u => { const o = document.createElement('option'); o.value = u.nome; lista.appendChild(o); });
+    }
+    function abrir(){
+      const mem = lerMemoria();
+      campos.localidade.value = mem.localidade || 'Cotia';
+      campos.data.value = new Date().toISOString().slice(0, 10);
+      campos.nome.value = mem.nome || '';
+      campos.papel.value = mem.papel || 'líder';
+      campos.cargoClube.value = mem.cargoClube || '';
+      campos.simbolo.value = mem.simbolo || 'brasao';
+      campos.docNum.value = ''; campos.compensa.checked = false;
+      overlay.classList.add('show');
+      carregarImagens().then(atualizarPrevia);
+      carregarUsuarios();
+      atualizarPrevia();
+    }
+    abrirBtn.addEventListener('click', abrir);
+    $('clbFechar').addEventListener('click', () => overlay.classList.remove('show'));
+    overlay.addEventListener('click', e => { if(e.target === overlay) overlay.classList.remove('show'); });
+    Object.values(campos).forEach(el => { el.addEventListener('input', atualizarPrevia); el.addEventListener('change', atualizarPrevia); });
+
+    $('clbGerarBtn').addEventListener('click', async () => {
+      const jsPDFLib = window.jspdf && window.jspdf.jsPDF;
+      if(!jsPDFLib){ alert('Não foi possível carregar a biblioteca de PDF. Verifique sua conexão com a internet e tente novamente.'); return; }
+      const d = dados();
+      gravarMemoria();
+      await carregarImagens();
+      const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
+      doc.addImage(desenhar(d).toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 210, 297);
+      const sufixo = normalizar(d.nome).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      await salvarPDF(doc, 'Carta-liberacao-campori' + (sufixo ? '-' + sufixo : '') + '.pdf');
     });
   })();
 
