@@ -1866,6 +1866,18 @@
     background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
     border-radius:14px; padding:10px 12px;
   }
+  /* Importar do SGC (Robô SGC) */
+  .un-sgc-sec{ margin:16px 0 8px !important; }
+  .un-sgc-item{
+    display:flex; align-items:flex-start; gap:10px; margin-bottom:6px;
+    background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
+    border-radius:12px; padding:9px 11px;
+  }
+  label.un-sgc-item{ cursor:pointer; }
+  .un-sgc-item input{ margin-top:3px; flex-shrink:0; width:17px; height:17px; accent-color:var(--accent); }
+  .un-sgc-item span{ display:flex; flex-direction:column; min-width:0; }
+  .un-sgc-item b{ font-size:13.5px; font-weight:800; color:var(--cream); }
+  .un-sgc-item small{ font-size:11px; font-weight:600; color:rgba(245,239,225,0.55); margin-top:1px; }
   .un-member-avatar{
     flex-shrink:0; width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
     font-size:13px; font-weight:900; color:#08130A;
@@ -11085,6 +11097,22 @@
             </button>
           </div>
           <div class="un-member-detail" id="unMemberDetail"></div>
+        </div>
+      </div>
+
+      <!-- Importar do SGC: lista que o Robô SGC (extensão, pasta robo-sgc) leu do SGC -->
+      <div class="pl-modal-overlay" id="unSgcOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">🤖 Importar do SGC</h4>
+            <button type="button" class="pl-modal-close" id="unSgcClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div id="unSgcBody"></div>
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-primary" id="unSgcSaveBtn">Gravar selecionados</button>
+          </div>
         </div>
       </div>
 
@@ -23918,7 +23946,10 @@
       const nova = '<a href="#" class="cl-hub-row un-hub-row" id="unNovaUnidadeBtn" style="display:none;">' +
         '<span class="cl-class-dot cl-color-gray"></span><span class="cl-hub-row-name">+ Nova unidade</span>' +
         '<span class="cl-hub-row-count"></span></a>';
-      hub.innerHTML = linhas + vazio + nova;
+      const sgc = '<a href="#" class="cl-hub-row un-hub-row" id="unSgcImportBtn" style="display:none;">' +
+        '<span class="cl-class-dot cl-color-gray"></span><span class="cl-hub-row-name">🤖 Importar do SGC</span>' +
+        '<span class="cl-hub-row-count" id="unSgcImportCount"></span>' + HUB_ARROW + '</a>';
+      hub.innerHTML = linhas + vazio + nova + sgc;
     }
 
     async function criarUnidade(){
@@ -25138,7 +25169,207 @@
       // Criar unidade: só quem gerencia o clube todo (e já logado).
       const nova = document.getElementById('unNovaUnidadeBtn');
       if(nova) nova.style.display = (usuario && UNIT_FULL_ACCESS_ROLES.indexOf(usuario.papel) !== -1) ? '' : 'none';
+      // Importar do SGC: só aparece quando o Robô SGC trouxe uma lista e quem
+      // está logado é administrador (a importação cadastra usuários).
+      const sgcBtn = document.getElementById('unSgcImportBtn');
+      if(sgcBtn){
+        sgcBtn.style.display = (sgcDados && podeImportarSgc()) ? '' : 'none';
+        const cnt = document.getElementById('unSgcImportCount');
+        if(cnt) cnt.textContent = sgcDados ? (sgcDados.membros.length + ' lidos') : '';
+      }
     }
+
+    // ---------------------------------------------------------------
+    // Importar do SGC. A extensão Robô SGC (pasta robo-sgc) lê a lista de
+    // membros no SGC e a entrega a esta página por postMessage (ponte.js).
+    // Aqui o app compara com `usuarios` e `usuario_matricula_oficial`,
+    // mostra as diferenças e só grava o que o administrador marcar — com a
+    // sessão dele, nunca com chave guardada na extensão.
+    // ---------------------------------------------------------------
+    var sgcDados = null;   // { lidoEm, membros: [{ nome, unidade, matricula, classe, cargo, situacao }] }
+    var sgcPlano = null;
+    function podeImportarSgc(){
+      const u = window.__currentUsuario;
+      return !!(u && (u.papel === 'Administrador' || (u.acesso && u.acesso.admin)));
+    }
+    const chaveNome = s => normalize(s).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+    function unidadeDoApp(nomeSgc){
+      const n = chaveNome(nomeSgc);
+      if(!n) return null;
+      return UNITS.find(u => chaveNome(u) === n) ||
+        UNITS.find(u => { const k = chaveNome(u); return k && (n.indexOf(k) !== -1 || k.indexOf(n) !== -1); }) || null;
+    }
+
+    function montarPlanoSgc(sgc, usuarios, mats){
+      const matPorId = {};
+      mats.forEach(r => { matPorId[r.usuario_id] = r; });
+      const usPorId = {};
+      usuarios.forEach(u => { usPorId[u.id] = u; });
+      const porNome = new Map();
+      usuarios.forEach(u => { const k = chaveNome(u.nome); if(!porNome.has(k)) porNome.set(k, []); porNome.get(k).push(u); });
+      const porNumero = new Map();
+      mats.forEach(r => { if(r.numero_matricula) porNumero.set(String(r.numero_matricula).trim(), r.usuario_id); });
+
+      const plano = { marcar: [], criar: [], unidadeDiferente: [], ambiguos: [], soNoApp: [], ok: 0 };
+      const achados = new Set();
+      sgc.forEach(m => {
+        let u = (m.matricula && porNumero.has(m.matricula)) ? usPorId[porNumero.get(m.matricula)] : null;
+        if(!u){
+          const cands = porNome.get(chaveNome(m.nome)) || [];
+          if(cands.length > 1){ plano.ambiguos.push({ sgc: m, candidatos: cands }); cands.forEach(c => achados.add(c.id)); return; }
+          u = cands[0] || null;
+        }
+        const unidade = unidadeDoApp(m.unidade);
+        if(!u){ plano.criar.push({ sgc: m, unidade, marcado: !!unidade }); return; }
+        achados.add(u.id);
+        if(unidade && u.unidade !== unidade) plano.unidadeDiferente.push({ sgc: m, usuario: u, unidade });
+        const r = matPorId[u.id];
+        const numeroAtual = r && r.numero_matricula ? String(r.numero_matricula).trim() : '';
+        const numeroNovo = !!(m.matricula && numeroAtual !== m.matricula);
+        if(!r || !r.matriculado || numeroNovo) plano.marcar.push({ sgc: m, usuario: u, numeroAtual, marcado: true });
+        else plano.ok++;
+      });
+      // Desbravadores ativos das unidades que vieram do SGC, mas que não estavam na lista.
+      const unidadesLidas = new Set(sgc.map(m => unidadeDoApp(m.unidade)).filter(Boolean));
+      usuarios.forEach(u => {
+        if(u.papel === 'Desbravador' && u.ativo !== false && !achados.has(u.id) && unidadesLidas.has(u.unidade)) plano.soNoApp.push(u);
+      });
+      return plano;
+    }
+
+    function renderPlanoSgc(){
+      const p = sgcPlano;
+      const corpo = document.getElementById('unSgcBody');
+      const item = (grupo, i, texto, sub, marcado, desabilitado) =>
+        '<label class="un-sgc-item"><input type="checkbox" data-grupo="' + grupo + '" data-i="' + i + '"' +
+        (marcado && !desabilitado ? ' checked' : '') + (desabilitado ? ' disabled' : '') + '>' +
+        '<span><b>' + escHtml(texto) + '</b><small>' + escHtml(sub) + '</small></span></label>';
+      const info = (texto, sub) => '<div class="un-sgc-item"><span><b>' + escHtml(texto) + '</b><small>' + escHtml(sub) + '</small></span></div>';
+      const secao = (titulo, lista) => lista.length ? '<p class="un-section-title un-sgc-sec">' + titulo + ' (' + lista.length + ')</p>' + lista.join('') : '';
+
+      const lidoEm = sgcDados.lidoEm ? new Date(sgcDados.lidoEm).toLocaleString('pt-BR') : '—';
+      let html = '<p class="pl-reminder-hint" style="margin-top:0;">' + sgcDados.membros.length + ' membros lidos do SGC em ' + escHtml(lidoEm) +
+        '. Nada é gravado até você tocar em "Gravar selecionados".</p>';
+      html += secao('Marcar matrícula oficial', p.marcar.map((it, i) => item('marcar', i, it.usuario.nome,
+        it.usuario.unidade + (it.sgc.matricula ? ' · matrícula ' + it.sgc.matricula : '') + (it.numeroAtual && it.sgc.matricula ? ' (antes: ' + it.numeroAtual + ')' : ''), it.marcado)));
+      html += secao('Cadastrar no app (estão no SGC, faltam aqui)', p.criar.map((it, i) => item('criar', i, it.sgc.nome,
+        it.unidade ? 'Unidade ' + it.unidade + ' · Desbravador' + (it.sgc.matricula ? ' · matrícula ' + it.sgc.matricula : '')
+                   : 'Unidade "' + (it.sgc.unidade || 'sem unidade') + '" não existe no app. Crie a unidade e importe de novo.', it.marcado, !it.unidade)));
+      html += secao('Unidade diferente no SGC (só aviso)', p.unidadeDiferente.map(it => info(it.usuario.nome, 'No app: ' + it.usuario.unidade + ' · no SGC: ' + (it.sgc.unidade || it.unidade))));
+      html += secao('Nome repetido no app (confira à mão)', p.ambiguos.map(it => info(it.sgc.nome, it.candidatos.length + ' cadastros com esse nome: ' + it.candidatos.map(c => c.unidade).join(', '))));
+      html += secao('No app, mas não apareceram no SGC (só aviso)', p.soNoApp.map(u => info(u.nome, u.unidade)));
+      if(p.ok) html += '<p class="pl-reminder-hint">' + p.ok + ' já estavam com a matrícula oficial confirmada.</p>';
+      if(!p.marcar.length && !p.criar.length && !p.unidadeDiferente.length && !p.ambiguos.length && !p.soNoApp.length){
+        html += '<p class="un-empty-hint">Tudo igual: o cadastro do app já bate com o SGC.</p>';
+      }
+      corpo.innerHTML = html;
+      document.getElementById('unSgcSaveBtn').disabled = !(p.marcar.length || p.criar.some(c => c.unidade));
+    }
+
+    async function abrirImportSgc(){
+      if(!sgcDados) return;
+      if(!supa){ alert('Configure o Supabase em clube.js primeiro.'); return; }
+      if(!podeImportarSgc()){ alert('Só administradores podem importar do SGC.'); return; }
+      const corpo = document.getElementById('unSgcBody');
+      const salvar = document.getElementById('unSgcSaveBtn');
+      corpo.innerHTML = '<p class="un-empty-hint">Comparando com o cadastro do app...</p>';
+      salvar.disabled = true; salvar.textContent = 'Gravar selecionados';
+      document.getElementById('unSgcOverlay').classList.add('show');
+      const [us, mats] = await Promise.all([
+        supa.from('usuarios').select('id, nome, email, unidade, papel, ativo'),
+        supa.from('usuario_matricula_oficial').select('usuario_id, matriculado, numero_matricula')
+      ]);
+      const erro = us.error || mats.error;
+      if(erro){ corpo.innerHTML = '<p class="un-empty-hint">Não foi possível ler o cadastro: ' + escHtml(erro.message) + '</p>'; return; }
+      sgcPlano = montarPlanoSgc(sgcDados.membros, us.data || [], mats.data || []);
+      renderPlanoSgc();
+    }
+
+    async function gravarSgc(){
+      const corpo = document.getElementById('unSgcBody');
+      const salvar = document.getElementById('unSgcSaveBtn');
+      const sel = grupo => Array.from(corpo.querySelectorAll('input[data-grupo="' + grupo + '"]:checked')).map(c => sgcPlano[grupo][Number(c.dataset.i)]);
+      const marcar = sel('marcar');
+      const criar = sel('criar').filter(it => it.unidade);
+      if(!marcar.length && !criar.length){ alert('Nada selecionado.'); return; }
+      if(!confirm('Gravar no Cedros Digital?\n\n• ' + marcar.length + ' matrícula(s) a marcar\n• ' + criar.length + ' desbravador(es) a cadastrar')) return;
+      salvar.disabled = true; salvar.textContent = 'Gravando...';
+
+      const quem = ((window.__currentUsuario && window.__currentUsuario.nome) || 'Administrador') + ' (Robô SGC)';
+      const agora = new Date().toISOString();
+      const erros = [];
+      const matriculas = marcar.map(it => ({
+        usuario_id: it.usuario.id, matriculado: true, verificado_em: agora, verificado_por: quem,
+        numero_matricula: it.sgc.matricula || it.numeroAtual || null
+      }));
+
+      // Quem não tem e-mail entra com e-mail de fachada, como os que vieram
+      // da planilha da Secretaria (ver README → "Dar acesso a quem não tem e-mail").
+      let criados = 0;
+      if(criar.length){
+        const { data: emailsRows } = await supa.from('usuarios').select('email');
+        const emails = new Set((emailsRows || []).map(r => String(r.email || '').toLowerCase()));
+        for(const it of criar){
+          const base = (it.sgc.matricula || chaveNome(it.sgc.nome).replace(/ /g, '.') || 'sgc').toLowerCase();
+          let email = base + '@sememail.local';
+          for(let n = 2; emails.has(email); n++) email = base + '-' + n + '@sememail.local';
+          emails.add(email);
+          const { data, error } = await supa.from('usuarios')
+            .insert({ nome: it.sgc.nome, email, unidade: it.unidade, papel: 'Desbravador', ativo: true, aprovado: true })
+            .select('id').single();
+          if(error){ erros.push(it.sgc.nome + ': ' + error.message); continue; }
+          criados++;
+          matriculas.push({ usuario_id: data.id, matriculado: true, verificado_em: agora, verificado_por: quem, numero_matricula: it.sgc.matricula || null });
+        }
+      }
+      if(matriculas.length){
+        const { error } = await supa.from('usuario_matricula_oficial').upsert(matriculas, { onConflict: 'usuario_id' });
+        if(error) erros.push('Matrículas: ' + error.message);
+      }
+
+      salvar.textContent = 'Gravar selecionados';
+      if(erros.length){
+        alert('Gravei parte, mas deu erro em:\n\n' + erros.slice(0, 15).join('\n') + '\n\nA lista do SGC continua guardada; reabra a importação para conferir.');
+        await abrirImportSgc();
+      } else {
+        alert('Pronto! ' + marcar.length + ' matrícula(s) marcada(s) e ' + criados + ' desbravador(es) cadastrado(s).');
+        sgcDados = null; sgcPlano = null;
+        window.postMessage({ origem: 'cedros-app', tipo: 'membros-sgc-importados' }, location.origin);
+        document.getElementById('unSgcOverlay').classList.remove('show');
+        applyUnitAccessRestriction();
+      }
+      if(window.CLUBE && window.CLUBE.recarregar) window.CLUBE.recarregar(); else refreshHub();
+    }
+
+    document.getElementById('unSgcClose').addEventListener('click', () => document.getElementById('unSgcOverlay').classList.remove('show'));
+    document.getElementById('unSgcSaveBtn').addEventListener('click', gravarSgc);
+
+    // O robô abre o app em .../#importar-sgc: assim que houver lista e login
+    // de administrador, vai direto pra Unidades com a importação aberta.
+    function abrirSgcSeVeioDoRobo(){
+      if(location.hash !== '#importar-sgc' || !sgcDados || !podeImportarSgc()) return;
+      history.replaceState(null, '', location.pathname + location.search);
+      showView('view-units');
+      showHub();
+      abrirImportSgc();
+    }
+    window.addEventListener('message', e => {
+      if(e.source !== window || e.origin !== location.origin) return;
+      const m = e.data;
+      if(!m || m.origem !== 'robo-sgc' || m.tipo !== 'membros-sgc') return;
+      if(!m.dados || !Array.isArray(m.dados.membros) || !m.dados.membros.length) return;
+      sgcDados = {
+        lidoEm: m.dados.lidoEm || null,
+        membros: m.dados.membros.filter(x => x && x.nome).map(x => ({
+          nome: String(x.nome).trim(), unidade: String(x.unidade || '').trim(), matricula: String(x.matricula || '').trim(),
+          classe: String(x.classe || '').trim(), cargo: String(x.cargo || '').trim(), situacao: String(x.situacao || '').trim()
+        }))
+      };
+      applyUnitAccessRestriction();
+      abrirSgcSeVeioDoRobo();
+    });
+    document.addEventListener('cedros:loggedin', () => { applyUnitAccessRestriction(); abrirSgcSeVeioDoRobo(); });
+    window.postMessage({ origem: 'cedros-app', tipo: 'pedir-membros-sgc' }, location.origin);
 
     function showHub(){
       currentUnit = null;
@@ -25156,6 +25387,7 @@
       if(!row) return;
       e.preventDefault();
       if(row.id === 'unNovaUnidadeBtn') { criarUnidade(); return; }
+      if(row.id === 'unSgcImportBtn') { abrirImportSgc(); return; }
       openUnit(row.getAttribute('data-open-unit'));
     });
 
