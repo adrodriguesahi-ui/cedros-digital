@@ -1,0 +1,25 @@
+#robo-sgc-btn{
+  position:fixed; right:18px; bottom:18px; z-index:2147483646;
+  width:54px; height:54px; border-radius:50%; border:none; cursor:pointer;
+  background:#3FCB6B; color:#08130A; font-size:26px; box-shadow:0 6px 18px rgba(0,0,0,.35);
+}
+#robo-sgc-painel{
+  position:fixed; right:18px; bottom:82px; z-index:2147483647; width:290px;
+  background:#101A13; color:#F5EFE1; border:1px solid #2A3A2E; border-radius:14px;
+  padding:14px; font:14px/1.4 system-ui, sans-serif; box-shadow:0 10px 30px rgba(0,0,0,.45);
+  display:none;
+}
+#robo-sgc-painel.aberto{ display:block; }
+#robo-sgc-painel h3{ margin:0 0 4px; font-size:15px; color:#3FCB6B; }
+#robo-sgc-painel p{ margin:0 0 10px; font-size:12px; color:rgba(245,239,225,.7); }
+#robo-sgc-painel button{
+  display:block; width:100%; margin:6px 0 0; padding:9px 10px; border-radius:10px; cursor:pointer;
+  border:1px solid #2A3A2E; background:#1A271E; color:#F5EFE1; font:600 13px system-ui, sans-serif; text-align:left;
+}
+#robo-sgc-painel button:hover{ border-color:#3FCB6B; }
+#robo-sgc-painel button[disabled]{ opacity:.45; cursor:default; }
+#robo-sgc-painel{ max-height:calc(100vh - 110px); overflow-y:auto; }
+#robo-sgc-painel p.robo-sgc-sub{ margin:12px 0 2px; font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#3FCB6B; }
+#robo-sgc-painel button.robo-sgc-sec{ background:transparent; }
+#robo-sgc-status{ margin:6px 0 4px; font-size:12px; color:#D8A83E; }
+#robo-sgc-status:not(:empty){ padding:8px 10px; border:1px solid #D8A83E; border-radius:10px; background:rgba(216,168,62,.08); }
