@@ -21,4 +21,5 @@
 #robo-sgc-painel{ max-height:calc(100vh - 110px); overflow-y:auto; }
 #robo-sgc-painel p.robo-sgc-sub{ margin:12px 0 2px; font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:#3FCB6B; }
 #robo-sgc-painel button.robo-sgc-sec{ background:transparent; }
-#robo-sgc-status{ margin-top:10px; font-size:12px; color:#D8A83E; min-height:16px; }
+#robo-sgc-status{ margin:6px 0 4px; font-size:12px; color:#D8A83E; }
+#robo-sgc-status:not(:empty){ padding:8px 10px; border:1px solid #D8A83E; border-radius:10px; background:rgba(216,168,62,.08); }

@@ -22,6 +22,8 @@
   painel.id = 'robo-sgc-painel';
   painel.innerHTML =
     '<h3>Robô SGC</h3>' +
+    // Mensagens no topo: com muitos botões o painel rola, e embaixo ela sumia.
+    '<div id="robo-sgc-status"></div>' +
     '<p class="robo-sgc-sub">Desbravadores por unidade</p>' +
     '<p>Abra a lista de membros do SGC e toque em "Trazer desbravadores". Se a lista vier separada por unidade, repita em cada uma: o robô vai juntando.</p>' +
     '<button type="button" data-acao="trazer">⬇️ Trazer desbravadores desta tela</button>' +
@@ -31,8 +33,7 @@
     '<button type="button" data-acao="mapear" class="robo-sgc-sec">📋 Mapear esta tela</button>' +
     '<button type="button" disabled>✅ Lançar requisitos de classe (em breve)</button>' +
     '<button type="button" disabled>🏅 Lançar especialidades (em breve)</button>' +
-    '<button type="button" disabled>🗓️ Atualizar o planejamento (em breve)</button>' +
-    '<div id="robo-sgc-status"></div>';
+    '<button type="button" disabled>🗓️ Atualizar o planejamento (em breve)</button>';
   document.body.append(btn, painel);
   btn.addEventListener('click', () => { painel.classList.toggle('aberto'); if(painel.classList.contains('aberto')) mostrarResumo(); });
   const status = t => { document.getElementById('robo-sgc-status').textContent = t; };
