@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cedros-digital-v24';
+const CACHE_NAME = 'cedros-digital-v25';
 const ASSETS = [
   './login.html',
   './manifest.json',
