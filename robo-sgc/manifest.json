@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Robô SGC – Cedros Digital",
+  "version": "0.2.0",
+  "description": "Ajuda a lançar no SGC o que já está no app do clube e traz do SGC os desbravadores por unidade. Trabalha na janela em que você já entrou no SGC; não guarda senha.",
+  "icons": { "128": "icone.png" },
+  "permissions": ["storage"],
+  "content_scripts": [
+    {
+      "matches": ["https://clubes.adventistas.org/*", "https://*.adventistas.org/*", "https://*.sdasystems.org/*"],
+      "js": ["robo.js"],
+      "css": ["robo.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://cedros-digital.adrodrigues-ahi.workers.dev/*"],
+      "js": ["ponte.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
