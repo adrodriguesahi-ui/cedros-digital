@@ -12831,6 +12831,7 @@
         </div>
 
         <div id="spAchievementsPanel" class="pl-content" style="display:none;">
+          <button type="button" class="pl-btn pl-btn-primary" id="spSgcImportBtn" style="display:none; width:100%; margin:0 0 12px;">🤖 Importar especialidades do SGC</button>
           <div class="pl-field-row">
             <div class="pl-field-col pl-field-col-wide">
               <label class="pl-field-label" style="margin-top:0;">Membro</label>
@@ -12864,6 +12865,22 @@
       <button type="button" class="pl-fab" id="spAchAddBtn" aria-label="Registrar conquista" style="display:none;">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
+
+      <!-- Importar especialidades do SGC: o que o Robô SGC (pasta robo-sgc) leu das telas "Especialidades - NOME" -->
+      <div class="pl-modal-overlay" id="spSgcOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">🤖 Especialidades do SGC</h4>
+            <button type="button" class="pl-modal-close" id="spSgcClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div id="spSgcBody"></div>
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-primary" id="spSgcSaveBtn">Gravar selecionadas</button>
+          </div>
+        </div>
+      </div>
 
       <div class="pl-modal-overlay" id="spAchModalOverlay">
         <div class="pl-modal">
@@ -30803,6 +30820,170 @@ const REQ_SUMMARIES = {
 
     populateYears();
     document.addEventListener('cedros:loggedin', updateDashboardChip);
+
+    // -------------------------------------------------------------------
+    // Importar especialidades do SGC. O Robô SGC (pasta robo-sgc) lê as
+    // telas "Especialidades - NOME" do SGC e a ponte.js entrega aqui por
+    // postMessage. O app acha a pessoa (pelo número de matrícula oficial,
+    // senão pelo nome), compara com especialidades_concluidas e só grava as
+    // que faltam e que o administrador deixar marcadas — com a sessão dele.
+    // -------------------------------------------------------------------
+    const sgcBtn = document.getElementById('spSgcImportBtn');
+    const sgcOverlay = document.getElementById('spSgcOverlay');
+    const sgcBody = document.getElementById('spSgcBody');
+    const sgcSave = document.getElementById('spSgcSaveBtn');
+    let espSgc = null;    // { lidoEm, membros: [{ codUsuario, nome, especialidades: [{ especialidade, area, conclusao, ... }] }] }
+    let espPlano = null;
+    const escSgc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
+    const chaveSgc = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+    const CATALOGO_POR_CHAVE = {};
+    Object.keys(CATEGORY_BY_NAME).forEach(nome => { CATALOGO_POR_CHAVE[chaveSgc(nome)] = nome; });
+    function podeImportarEsp(){
+      const u = window.__currentUsuario;
+      return !!(u && (u.papel === 'Administrador' || (u.acesso && u.acesso.admin)));
+    }
+    function atualizarBotaoSgc(){
+      if(!sgcBtn) return;
+      const total = espSgc ? espSgc.membros.reduce((s, m) => s + m.especialidades.length, 0) : 0;
+      sgcBtn.style.display = (espSgc && podeImportarEsp()) ? '' : 'none';
+      sgcBtn.textContent = '🤖 Importar especialidades do SGC (' + total + ')';
+    }
+    // "dd/mm/aaaa" → "aaaa-mm-dd"
+    function dataSgc(t){
+      const m = String(t || '').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      return m ? m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0') : null;
+    }
+
+    function montarPlanoEsp(sgc, usuarios, mats, feitas){
+      const porNumero = new Map();
+      mats.forEach(r => { if(r.numero_matricula) porNumero.set(String(r.numero_matricula).trim(), r.usuario_id); });
+      const usPorId = {};
+      usuarios.forEach(u => { usPorId[u.id] = u; });
+      const porNome = new Map();
+      usuarios.forEach(u => { const k = chaveSgc(u.nome); if(!porNome.has(k)) porNome.set(k, []); porNome.get(k).push(u); });
+      const jaTem = new Set(feitas.map(f => f.usuario_id + '|' + chaveSgc(f.especialidade)));
+
+      const p = { novas: [], andamento: [], semMembro: [], ambiguos: [], ok: 0 };
+      sgc.forEach(m => {
+        let u = (m.codUsuario && porNumero.has(String(m.codUsuario))) ? usPorId[porNumero.get(String(m.codUsuario))] : null;
+        if(!u){
+          const cands = porNome.get(chaveSgc(m.nome)) || [];
+          if(cands.length > 1){ p.ambiguos.push({ m, cands }); return; }
+          u = cands[0] || null;
+        }
+        if(!u){ p.semMembro.push(m); return; }
+        const vistasAqui = new Set();
+        m.especialidades.forEach(e => {
+          const nomeCat = CATALOGO_POR_CHAVE[chaveSgc(e.especialidade)] || null;
+          const nome = nomeCat || e.especialidade;
+          const k = chaveSgc(nome);
+          if(vistasAqui.has(k)) return;
+          vistasAqui.add(k);
+          if(jaTem.has(u.id + '|' + k) || jaTem.has(u.id + '|' + chaveSgc(e.especialidade))){ p.ok++; return; }
+          const data = dataSgc(e.conclusao);
+          if(!data){ p.andamento.push({ usuario: u, nome }); return; }
+          p.novas.push({ usuario: u, nome, categoria: nomeCat ? CATEGORY_BY_NAME[nomeCat] : null, foraCatalogo: !nomeCat, data, marcado: true });
+        });
+      });
+      return p;
+    }
+
+    function renderPlanoEsp(){
+      const p = espPlano;
+      const item = (i, it) =>
+        '<label class="un-sgc-item"><input type="checkbox" data-i="' + i + '"' + (it.marcado ? ' checked' : '') + '>' +
+        '<span><b>' + escSgc(it.nome) + '</b><small>' + escSgc(it.usuario.nome + ' · ' + it.data.split('-').reverse().join('/') +
+        (it.foraCatalogo ? ' · fora do catálogo do app' : (it.categoria ? ' · ' + it.categoria : ''))) + '</small></span></label>';
+      const info = (t, s) => '<div class="un-sgc-item"><span><b>' + escSgc(t) + '</b><small>' + escSgc(s) + '</small></span></div>';
+      const secao = (titulo, lista) => lista.length ? '<p class="un-section-title un-sgc-sec">' + titulo + ' (' + lista.length + ')</p>' + lista.join('') : '';
+      const lidoEm = espSgc.lidoEm ? new Date(espSgc.lidoEm).toLocaleString('pt-BR') : '—';
+      let html = '<p class="pl-reminder-hint" style="margin-top:0;">' + espSgc.membros.length + ' membro(s) lidos do SGC em ' + escSgc(lidoEm) +
+        '. Nada é gravado até você tocar em "Gravar selecionadas".</p>';
+      html += secao('Concluídas no SGC, faltam no app', p.novas.map((it, i) => item(i, it)));
+      html += secao('Membro não achado no app (importe os membros antes)', p.semMembro.map(m => info(m.nome, m.especialidades.length + ' especialidade(s) no SGC')));
+      html += secao('Nome repetido no app (confira à mão)', p.ambiguos.map(a => info(a.m.nome, a.cands.length + ' cadastros com esse nome: ' + a.cands.map(c => c.unidade).join(', '))));
+      html += secao('Sem data de conclusão no SGC (em andamento, não importa)', p.andamento.map(a => info(a.nome, a.usuario.nome)));
+      if(p.ok) html += '<p class="pl-reminder-hint">' + p.ok + ' já estavam registradas no app.</p>';
+      if(!p.novas.length && !p.semMembro.length && !p.ambiguos.length && !p.andamento.length) html += '<p class="un-empty-hint">Tudo igual: o app já tem todas as especialidades do SGC.</p>';
+      sgcBody.innerHTML = html;
+      sgcSave.disabled = !p.novas.length;
+    }
+
+    async function abrirImportEsp(){
+      if(!espSgc) return;
+      if(!supa){ alert('Configure o Supabase em clube.js primeiro.'); return; }
+      if(!podeImportarEsp()){ alert('Só administradores podem importar do SGC.'); return; }
+      sgcBody.innerHTML = '<p class="un-empty-hint">Comparando com o cadastro do app...</p>';
+      sgcSave.disabled = true; sgcSave.textContent = 'Gravar selecionadas';
+      sgcOverlay.classList.add('show');
+      const [us, mats, feitas] = await Promise.all([
+        supa.from('usuarios').select('id, nome, unidade, ativo'),
+        supa.from('usuario_matricula_oficial').select('usuario_id, numero_matricula'),
+        supa.from('especialidades_concluidas').select('usuario_id, especialidade')
+      ]);
+      const erro = us.error || mats.error || feitas.error;
+      if(erro){ sgcBody.innerHTML = '<p class="un-empty-hint">Não foi possível ler o cadastro: ' + escSgc(erro.message) + '</p>'; return; }
+      espPlano = montarPlanoEsp(espSgc.membros, us.data || [], mats.data || [], feitas.data || []);
+      renderPlanoEsp();
+    }
+
+    async function gravarEsp(){
+      const sel = Array.from(sgcBody.querySelectorAll('input[data-i]:checked')).map(c => espPlano.novas[Number(c.dataset.i)]);
+      if(!sel.length){ alert('Nada selecionado.'); return; }
+      if(!confirm('Gravar ' + sel.length + ' especialidade(s) concluída(s) no Cedros Digital?')) return;
+      sgcSave.disabled = true; sgcSave.textContent = 'Gravando...';
+      const linhas = sel.map(it => ({ usuario_id: it.usuario.id, especialidade: it.nome, categoria: it.categoria, ano: parseInt(it.data.slice(0, 4), 10), data_conclusao: it.data }));
+      const { error } = await supa.from('especialidades_concluidas').insert(linhas);
+      sgcSave.textContent = 'Gravar selecionadas';
+      if(error){
+        alert('Não foi possível gravar: ' + error.message + '\n\nA lista do SGC continua guardada; tente de novo.');
+        sgcSave.disabled = false;
+        return;
+      }
+      alert('Pronto! ' + linhas.length + ' especialidade(s) registrada(s).');
+      espSgc = null; espPlano = null;
+      window.postMessage({ origem: 'cedros-app', tipo: 'especialidades-sgc-importadas' }, location.origin);
+      sgcOverlay.classList.remove('show');
+      atualizarBotaoSgc();
+      loadAchievements();
+      updateDashboardChip();
+    }
+
+    if(sgcBtn){
+      sgcBtn.addEventListener('click', abrirImportEsp);
+      document.getElementById('spSgcClose').addEventListener('click', () => sgcOverlay.classList.remove('show'));
+      sgcSave.addEventListener('click', gravarEsp);
+
+      // O robô abre o app em .../#importar-sgc-esp quando só há especialidades.
+      const abrirSeVeioDoRobo = () => {
+        if(location.hash !== '#importar-sgc-esp' || !espSgc || !podeImportarEsp()) return;
+        // window.: aqui dentro "history" é a lista de anos (spAchHistory).
+        window.history.replaceState(null, '', location.pathname + location.search);
+        showView('view-specialties');
+        tabAchievements.click();
+        abrirImportEsp();
+      };
+      window.addEventListener('message', e => {
+        if(e.source !== window || e.origin !== location.origin) return;
+        const m = e.data;
+        if(!m || m.origem !== 'robo-sgc' || m.tipo !== 'especialidades-sgc') return;
+        if(!m.dados || !Array.isArray(m.dados.membros) || !m.dados.membros.length) return;
+        const txt = v => String(v == null ? '' : v).trim();
+        espSgc = {
+          lidoEm: m.dados.lidoEm || null,
+          membros: m.dados.membros.filter(x => x && x.nome).map(x => ({
+            codUsuario: txt(x.codUsuario), nome: txt(x.nome),
+            especialidades: (Array.isArray(x.especialidades) ? x.especialidades : []).filter(e => e && e.especialidade).map(e => ({
+              especialidade: txt(e.especialidade), area: txt(e.area), conclusao: txt(e.conclusao), cadastro: txt(e.cadastro)
+            }))
+          }))
+        };
+        atualizarBotaoSgc();
+        abrirSeVeioDoRobo();
+      });
+      document.addEventListener('cedros:loggedin', () => { atualizarBotaoSgc(); abrirSeVeioDoRobo(); });
+      window.postMessage({ origem: 'cedros-app', tipo: 'pedir-membros-sgc' }, location.origin);
+    }
   })();
 
   // ---------------------------------------------------------------------

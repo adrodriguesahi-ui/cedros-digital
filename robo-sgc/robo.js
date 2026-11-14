@@ -13,8 +13,9 @@
 (function(){
   if(window.top !== window.self || document.getElementById('robo-sgc-btn')) return;
 
-  const APP_URL = 'https://cedros-digital.adrodrigues-ahi.workers.dev/#importar-sgc';
+  const APP_URL = 'https://cedros-digital.adrodrigues-ahi.workers.dev/';
   const CHAVE = 'roboSgcMembros';
+  const CHAVE_ESP = 'roboSgcEspecialidades';
 
   const btn = document.createElement('button');
   btn.id = 'robo-sgc-btn'; btn.type = 'button'; btn.title = 'Robô SGC'; btn.textContent = '🤖';
@@ -27,12 +28,16 @@
     '<p class="robo-sgc-sub">Desbravadores por unidade</p>' +
     '<p>Abra a lista de membros do SGC e toque em "Trazer desbravadores". Se a lista vier separada por unidade, repita em cada uma: o robô vai juntando.</p>' +
     '<button type="button" data-acao="trazer">⬇️ Trazer desbravadores desta tela</button>' +
+    '<p class="robo-sgc-sub">Especialidades</p>' +
+    '<p>Na tela de especialidades de um membro, traz as dele. Numa lista de membros, passa por todos.</p>' +
+    '<button type="button" data-acao="trazer-esp">🏅 Trazer especialidades</button>' +
+    '<p class="robo-sgc-sub">Enviar</p>' +
     '<button type="button" data-acao="enviar">📤 Registrar no Cedros Digital</button>' +
     '<button type="button" data-acao="limpar" class="robo-sgc-sec">🗑️ Limpar o que já foi lido</button>' +
     '<p class="robo-sgc-sub">Outras tarefas</p>' +
     '<button type="button" data-acao="mapear" class="robo-sgc-sec">📋 Mapear esta tela</button>' +
     '<button type="button" disabled>✅ Lançar requisitos de classe (em breve)</button>' +
-    '<button type="button" disabled>🏅 Lançar especialidades (em breve)</button>' +
+    '<button type="button" disabled>🏅 Lançar especialidades no SGC (em breve)</button>' +
     '<button type="button" disabled>🗓️ Atualizar o planejamento (em breve)</button>';
   document.body.append(btn, painel);
   btn.addEventListener('click', () => { painel.classList.toggle('aberto'); if(painel.classList.contains('aberto')) mostrarResumo(); });
@@ -47,16 +52,24 @@
   // ------------------------------------------------------------------
   // Armazenamento local da extensão (só até o app importar)
   // ------------------------------------------------------------------
-  const ler = () => new Promise(r => chrome.storage.local.get(CHAVE, o => r(o[CHAVE] || null)));
-  const gravar = v => new Promise(r => chrome.storage.local.set({ [CHAVE]: v }, r));
-  const apagar = () => new Promise(r => chrome.storage.local.remove(CHAVE, r));
+  const ler = (chave = CHAVE) => new Promise(r => chrome.storage.local.get(chave, o => r(o[chave] || null)));
+  const gravar = (v, chave = CHAVE) => new Promise(r => chrome.storage.local.set({ [chave]: v }, r));
+  const apagar = () => new Promise(r => chrome.storage.local.remove([CHAVE, CHAVE_ESP], r));
 
   async function mostrarResumo(){
     const d = await ler();
-    if(!d || !d.membros.length){ status('Nada lido ainda.'); return; }
-    const porUnidade = {};
-    d.membros.forEach(m => { const u = m.unidade || '(sem unidade)'; porUnidade[u] = (porUnidade[u] || 0) + 1; });
-    status(d.membros.length + ' lidos até agora: ' + Object.keys(porUnidade).sort().map(u => u + ' (' + porUnidade[u] + ')').join(', '));
+    const e = await ler(CHAVE_ESP);
+    const partes = [];
+    if(d && d.membros.length){
+      const porUnidade = {};
+      d.membros.forEach(m => { const u = m.unidade || '(sem unidade)'; porUnidade[u] = (porUnidade[u] || 0) + 1; });
+      partes.push('Membros: ' + d.membros.length + ' lidos (' + Object.keys(porUnidade).sort().map(u => u + ' ' + porUnidade[u]).join(', ') + ').');
+    }
+    if(e && e.membros.length){
+      const total = e.membros.reduce((s, m) => s + m.especialidades.length, 0);
+      partes.push('Especialidades: ' + total + ' de ' + e.membros.length + ' membro(s).');
+    }
+    status(partes.length ? partes.join(' ') : 'Nada lido ainda.');
   }
 
   // ------------------------------------------------------------------
@@ -196,9 +209,123 @@
 
   async function enviar(){
     const d = await ler();
-    if(!d || !d.membros.length){ status('Nada lido ainda. Primeiro toque em "Trazer desbravadores".'); return; }
-    window.open(APP_URL, '_blank');
-    status('Abri o Cedros Digital. Entre com sua conta de administrador; a tela de importação vai mostrar as diferenças antes de gravar.');
+    const e = await ler(CHAVE_ESP);
+    const temMembros = !!(d && d.membros.length), temEsp = !!(e && e.membros.length);
+    if(!temMembros && !temEsp){ status('Nada lido ainda. Primeiro toque em "Trazer desbravadores" ou "Trazer especialidades".'); return; }
+    // Membros primeiro: as especialidades precisam achar a pessoa no app.
+    window.open(APP_URL + (temMembros ? '#importar-sgc' : '#importar-sgc-esp'), '_blank');
+    status('Abri o Cedros Digital. Entre com sua conta de administrador; a tela de importação vai mostrar as diferenças antes de gravar.' +
+      (temMembros && temEsp ? ' Depois dos membros, as especialidades ficam em Especialidades → Conquistadas → "Importar do SGC".' : ''));
+  }
+
+  // ------------------------------------------------------------------
+  // Trazer especialidades. A tela do SGC é por membro:
+  //   /cms/visualiza_membro_esp.php?cod_usuario=N  → título "Especialidades - NOME"
+  //   tabela #example: Id | Especialidade | Área | Instrutor | Cadastro | Conclusão | Clube | ...
+  // Numa lista de membros, o robô abre (só leitura, em segundo plano) a
+  // tela de especialidades de cada cod_usuario que achar nos links.
+  // ------------------------------------------------------------------
+  const PAGINA_ESP = 'visualiza_membro_esp.php';
+
+  function lerEspecialidadesDe(doc){
+    const tabelas = Array.from(doc.querySelectorAll('table')).filter(t => !t.closest('#robo-sgc-painel'));
+    let melhor = null;
+    tabelas.forEach(t => {
+      const { titulos } = colunasDe(t);
+      const iEsp = titulos.findIndex(x => /^especialidade/.test(x));
+      if(iEsp === -1) return;
+      const linhas = Array.from(t.querySelectorAll('tbody tr')).filter(tr => tr.cells.length > iEsp);
+      if(!melhor || linhas.length > melhor.linhas.length) melhor = { titulos, linhas, iEsp };
+    });
+    if(!melhor) return null;
+    const { titulos, linhas, iEsp } = melhor;
+    const col = re => titulos.findIndex(x => re.test(x));
+    const iId = col(/^id$/), iArea = col(/^area|^categoria/), iInstr = col(/^instrutor/), iCad = col(/^cadastro/), iConc = col(/^conclus/), iClube = col(/^clube/);
+    const cel = (tr, i) => (i === -1 || !tr.cells[i]) ? '' : limpo(tr.cells[i].textContent);
+    return linhas.map(tr => ({
+      id: cel(tr, iId), especialidade: cel(tr, iEsp), area: cel(tr, iArea), instrutor: cel(tr, iInstr),
+      cadastro: cel(tr, iCad), conclusao: cel(tr, iConc), clube: cel(tr, iClube)
+    })).filter(x => x.especialidade && !/nenhum registro|no data|sem registros/i.test(x.especialidade));
+  }
+
+  function nomeDoMembro(doc){
+    // Não usa o <title>: lá vem "Especialidades - Secretaria".
+    const h = Array.from(doc.querySelectorAll('h1, h2, h3, h4, h5, .box-title, .content-header'))
+      .map(x => limpo(x.textContent)).find(t => /^especialidades\s*[-–]\s*\S/i.test(t) && !/^especialidades\s*[-–]\s*secretaria$/i.test(t));
+    return h ? h.replace(/^especialidades\s*[-–]\s*/i, '').trim() : '';
+  }
+
+  async function guardarEsp(lidos){
+    const atual = (await ler(CHAVE_ESP)) || { membros: [] };
+    const porCod = new Map(atual.membros.map(m => [m.codUsuario || norm(m.nome), m]));
+    lidos.forEach(m => porCod.set(m.codUsuario || norm(m.nome), m));
+    await gravar({ lidoEm: new Date().toISOString(), membros: Array.from(porCod.values()) }, CHAVE_ESP);
+  }
+
+  async function lerPaginaEsp(cod){
+    const url = new URL(PAGINA_ESP, location.href);
+    url.searchParams.set('cod_usuario', cod);
+    url.searchParams.set('dt1', ''); url.searchParams.set('dt2', '');
+    const r = await fetch(url.href, { credentials: 'include' });
+    if(!r.ok) throw new Error('SGC respondeu ' + r.status);
+    // O SGC é antigo e pode vir em ISO-8859-1: decodifica pelo charset da resposta.
+    const buf = await r.arrayBuffer();
+    const cs = ((r.headers.get('content-type') || '').match(/charset=([\w-]+)/i) || [])[1];
+    let html = new TextDecoder(cs || 'utf-8').decode(buf);
+    if(!cs){ const meta = html.match(/<meta[^>]+charset=["']?([\w-]+)/i); if(meta && !/utf-?8/i.test(meta[1])) html = new TextDecoder(meta[1]).decode(buf); }
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return { nome: nomeDoMembro(doc), especialidades: lerEspecialidadesDe(doc) || [] };
+  }
+
+  async function trazerEsp(){
+    // 1) Tela de especialidades de um membro.
+    if(location.pathname.indexOf(PAGINA_ESP) !== -1){
+      status('Lendo as especialidades desta tela...');
+      const cod = new URLSearchParams(location.search).get('cod_usuario') || '';
+      const nome = nomeDoMembro(document);
+      // Lê do servidor (pega todas as linhas, mesmo com a tabela paginada);
+      // se não vier nada, lê o que está na tela.
+      let esp = [];
+      try{ if(cod) esp = (await lerPaginaEsp(cod)).especialidades; } catch(e){ /* usa a tela */ }
+      if(!esp.length){ await mostrarTodos(); esp = lerEspecialidadesDe(document) || []; }
+      if(!nome){ status('Não achei o nome do membro no título ("Especialidades - NOME").'); return; }
+      await guardarEsp([{ codUsuario: cod, nome, especialidades: esp }]);
+      await mostrarResumo();
+      const st = document.getElementById('robo-sgc-status');
+      st.textContent = nome + ': ' + esp.length + ' especialidade(s). ' + st.textContent;
+      return;
+    }
+
+    // 2) Lista de membros: acha os cod_usuario nos links da página.
+    const vistos = new Map();
+    Array.from(document.querySelectorAll('a[href*="cod_usuario="]')).forEach(a => {
+      try{
+        const u = new URL(a.getAttribute('href'), location.href);
+        const cod = u.searchParams.get('cod_usuario');
+        if(cod && !vistos.has(cod)) vistos.set(cod, limpo(a.closest('tr') ? a.closest('tr').textContent : a.textContent));
+      } catch(e){ /* link estranho */ }
+    });
+    if(!vistos.size){
+      status('Abra a tela de especialidades de um membro (Especialidades - NOME) ou a lista de membros do SGC, e toque de novo. Se não funcionar, use "Mapear esta tela" e me mande o arquivo.');
+      return;
+    }
+    if(!confirm('Achei ' + vistos.size + ' membro(s) nesta tela. Ler as especialidades de todos? (só leitura, pode levar uns minutos)')) return;
+    const lidos = [], falhas = [];
+    let n = 0;
+    for(const cod of vistos.keys()){
+      n++;
+      status('Lendo ' + n + ' de ' + vistos.size + '...');
+      try{
+        const r = await lerPaginaEsp(cod);
+        if(r.nome) lidos.push({ codUsuario: cod, nome: r.nome, especialidades: r.especialidades });
+        else falhas.push(cod);
+      } catch(e){ falhas.push(cod); }
+      await espera(350); // sem pressa, pra não sobrecarregar o SGC
+    }
+    await guardarEsp(lidos);
+    await mostrarResumo();
+    const st = document.getElementById('robo-sgc-status');
+    st.textContent = 'Li ' + lidos.length + ' membro(s)' + (falhas.length ? ', ' + falhas.length + ' sem resposta' : '') + '. ' + st.textContent;
   }
 
   // ------------------------------------------------------------------
@@ -274,8 +401,9 @@
     try{
       if(acao === 'mapear') mapear();
       else if(acao === 'trazer') await trazer();
+      else if(acao === 'trazer-esp') await trazerEsp();
       else if(acao === 'enviar') await enviar();
-      else if(acao === 'limpar'){ if(confirm('Apagar a lista lida do SGC (só da extensão; nada muda no SGC nem no app)?')){ await apagar(); status('Lista apagada.'); } }
+      else if(acao === 'limpar'){ if(confirm('Apagar os membros e especialidades lidos do SGC (só da extensão; nada muda no SGC nem no app)?')){ await apagar(); status('Lista apagada.'); } }
     } catch(err){
       status('Deu erro: ' + (err && err.message ? err.message : err));
     }
