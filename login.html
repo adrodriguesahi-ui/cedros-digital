@@ -2219,6 +2219,18 @@
     background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
     border-radius:14px; padding:10px 12px;
   }
+  /* Importar do SGC (Robô SGC) */
+  .un-sgc-sec{ margin:16px 0 8px !important; }
+  .un-sgc-item{
+    display:flex; align-items:flex-start; gap:10px; margin-bottom:6px;
+    background:rgba(255,255,255,0.045); border:1px solid rgba(255,255,255,0.08);
+    border-radius:12px; padding:9px 11px;
+  }
+  label.un-sgc-item{ cursor:pointer; }
+  .un-sgc-item input{ margin-top:3px; flex-shrink:0; width:17px; height:17px; accent-color:var(--accent); }
+  .un-sgc-item span{ display:flex; flex-direction:column; min-width:0; }
+  .un-sgc-item b{ font-size:13.5px; font-weight:800; color:var(--cream); }
+  .un-sgc-item small{ font-size:11px; font-weight:600; color:rgba(245,239,225,0.55); margin-top:1px; }
   .un-member-avatar{
     flex-shrink:0; width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
     font-size:13px; font-weight:900; color:#08130A;
@@ -2688,6 +2700,20 @@
   .tr-pdf-btn:hover{ border-color:var(--t-ink); }
   .tr-whats-mini{ flex-shrink:0; width:32px; height:30px; margin-left:6px; border-radius:9px; border:1px solid #25D366; background:color-mix(in srgb, #25D366 14%, transparent); font-size:14px; cursor:pointer; }
   .tr-whats-mini.sem-numero{ border-style:dashed; opacity:0.7; }
+  /* Doação: doador, WhatsApp, quem pediu e lembrete */
+  .tr-doacao-box{ margin:14px 0 4px; padding:12px 14px 14px; border-radius:16px; background:color-mix(in srgb, var(--t-gold, #D8A83E) 9%, transparent); border:1px solid color-mix(in srgb, var(--t-gold, #D8A83E) 28%, transparent); }
+  .tr-doacao-tit{ font-size:13px; font-weight:900; color:var(--t-ink, var(--cream)); margin-bottom:2px; }
+  .tr-doacao-aviso{ margin:6px 2px 0; padding:7px 10px; border-radius:10px; font-size:11.5px; font-weight:800; line-height:1.4; background:color-mix(in srgb, var(--t-out, #FF6B5C) 14%, transparent); color:var(--t-ink, var(--cream)); }
+  .tr-doacao-box .pl-reminder-toggle-row{ margin-top:12px; }
+  .tr-lembretes{ margin:0 0 12px; padding:12px; border-radius:16px; background:color-mix(in srgb, var(--t-gold, #D8A83E) 10%, transparent); border:1px solid color-mix(in srgb, var(--t-gold, #D8A83E) 30%, transparent); }
+  .tr-lembretes h5{ margin:0 0 8px; font-size:13px; font-weight:900; color:var(--t-ink, var(--cream)); }
+  .tr-lemb{ display:flex; align-items:center; gap:8px; padding:8px 0; border-top:1px solid var(--t-line, rgba(255,255,255,0.1)); }
+  .tr-lemb:first-of-type{ border-top:0; }
+  .tr-lemb-corpo{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+  .tr-lemb-nome{ font-size:13.5px; font-weight:800; color:var(--t-ink, var(--cream)); }
+  .tr-lemb-meta{ font-size:11.5px; font-weight:700; color:var(--t-muted, rgba(245,239,225,0.6)); }
+  .tr-lemb-meta.atraso{ color:var(--t-out, #FF6B5C); }
+  .tr-lemb-ok{ flex-shrink:0; width:32px; height:30px; border-radius:9px; border:1px solid var(--t-line2, rgba(255,255,255,0.2)); background:var(--t-card2, transparent); color:var(--t-ink, var(--cream)); font-size:14px; font-weight:900; cursor:pointer; }
   .tr-whats-mini:disabled{ opacity:0.3; cursor:default; }
   @media (max-width:420px){ .tr-aba-web{ display:none; } .tr-aba-cel{ display:inline; } .tr-aba{ font-size:11.5px; padding:9px 2px; } .tr-hero-saldo{ font-size:32px; } }
   @media (min-width:900px){
@@ -3528,10 +3554,13 @@
   .cl-hub-row-age{ font-size:11.5px; color:rgba(245,239,225,0.45); }
 
   /* ---- Coordenação de Classes ---- */
-  .co-wrap{ padding:4px 16px calc(120px + env(safe-area-inset-bottom,0px)); max-width:760px; margin:0 auto; box-sizing:border-box; }
+  .co-wrap{ padding:4px 16px calc(120px + env(safe-area-inset-bottom,0px)); max-width:760px; margin:0 auto; width:100%; min-width:0; box-sizing:border-box; }
   .co-wrap *{ box-sizing:border-box; }
-  .co-tabs{ display:flex; gap:6px; background:rgba(255,255,255,0.05); border-radius:12px; padding:4px; margin-bottom:14px; }
-  .co-tab{ flex:1; min-width:0; border:0; background:transparent; color:rgba(245,239,225,0.65); font:inherit; font-size:11.5px; font-weight:800; padding:9px 1px; border-radius:9px; cursor:pointer; }
+  /* Seis abas não cabem num celular: a barra rola de lado em vez de espremer
+     uma aba em cima da outra. */
+  .co-tabs{ display:flex; gap:4px; background:rgba(255,255,255,0.05); border-radius:12px; padding:4px; margin-bottom:14px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .co-tabs::-webkit-scrollbar, .co-est-tipos::-webkit-scrollbar{ display:none; }
+  .co-tab{ flex:1 0 auto; border:0; background:transparent; color:rgba(245,239,225,0.65); font:inherit; font-size:12px; font-weight:800; padding:9px 10px; border-radius:9px; cursor:pointer; white-space:nowrap; }
   .co-tab.active{ background:var(--accent); color:#0D130C; }
   .co-resumo{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
   .co-stat{ background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:10px 8px; text-align:center; }
@@ -3580,6 +3609,27 @@
   .co-evo-linha b{ color:var(--cream); }
   .co-acoes{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
   .co-acoes .co-input{ flex:1 1 180px; margin:0; }
+  /* Estoque */
+  .co-est-tipos{ display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; margin-bottom:10px; -webkit-overflow-scrolling:touch; }
+  .co-est-tipo{ flex-shrink:0; border:1px solid rgba(255,255,255,0.12); background:transparent; color:rgba(245,239,225,0.75); font:inherit; font-size:12px; font-weight:800; padding:6px 12px; border-radius:20px; cursor:pointer; }
+  .co-est-tipo.active{ background:rgba(63,203,107,0.18); border-color:var(--accent); color:var(--accent); }
+  .co-est-item{ display:flex; align-items:center; gap:10px; width:100%; text-align:left; font:inherit; color:var(--cream); cursor:pointer; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:10px 12px; }
+  .co-est-item.baixo{ border-color:rgba(230,110,80,0.55); }
+  .co-est-info{ flex:1; min-width:0; }
+  .co-est-nome{ display:block; font-size:14px; font-weight:800; overflow:hidden; text-overflow:ellipsis; }
+  .co-est-sub{ display:block; font-size:11px; color:rgba(245,239,225,0.55); margin-top:2px; }
+  .co-est-qtd{ flex-shrink:0; min-width:48px; text-align:center; font-size:20px; font-weight:900; color:var(--gold); line-height:1; }
+  .co-est-qtd small{ display:block; font-size:9.5px; font-weight:700; color:rgba(245,239,225,0.5); margin-top:3px; }
+  .co-est-item.baixo .co-est-qtd{ color:#F08A6C; }
+  .co-est-rapido{ flex-shrink:0; width:34px; height:34px; border-radius:10px; border:0; background:rgba(255,255,255,0.08); color:var(--cream); font:inherit; font-size:18px; font-weight:900; cursor:pointer; }
+  .co-est-rapido.mais{ background:rgba(63,203,107,0.18); color:var(--accent); }
+  .co-est-alerta{ font-size:11px; font-weight:800; color:#F08A6C; }
+  .co-est-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0 10px; }
+  .co-est-mov{ display:flex; justify-content:space-between; gap:8px; font-size:12.5px; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+  .co-est-mov b.entrada{ color:var(--accent); } .co-est-mov b.saida{ color:#F08A6C; } .co-est-mov b.ajuste{ color:var(--gold); }
+  .co-est-mov small{ color:rgba(245,239,225,0.55); }
+  .co-btn.perigo{ background:rgba(230,110,80,0.18); color:#F08A6C; }
+  .co-btn:disabled{ opacity:.5; cursor:default; }
   .co-graf svg{ display:block; width:100%; height:auto; }
   .co-graf .eixo{ fill:rgba(245,239,225,0.55); font-size:10px; font-family:inherit; }
   .co-graf .grade{ stroke:rgba(245,239,225,0.1); stroke-width:1; }
@@ -11733,6 +11783,22 @@
         </div>
       </div>
 
+      <!-- Importar do SGC: lista que o Robô SGC (extensão, pasta robo-sgc) leu do SGC -->
+      <div class="pl-modal-overlay" id="unSgcOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">🤖 Importar do SGC</h4>
+            <button type="button" class="pl-modal-close" id="unSgcClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div id="unSgcBody"></div>
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-primary" id="unSgcSaveBtn">Gravar selecionados</button>
+          </div>
+        </div>
+      </div>
+
       <div class="pl-modal-overlay" id="unRoleModalOverlay">
         <div class="pl-modal">
           <div class="pl-modal-head">
@@ -12203,6 +12269,7 @@
               <div class="tr-resumo-item"><span>Resultado</span><b id="trResultadoMes">R$ 0,00</b></div>
             </div>
             <div class="tr-cats" id="trCats"></div>
+            <div class="tr-lembretes" id="trLembretes" style="display:none;"></div>
             <div class="tr-filtros-linha">
               <div class="tr-filtros" id="trFiltros">
                 <button type="button" class="tr-filtro active" data-filtro="todos">Todos</button>
@@ -12297,6 +12364,28 @@
           <div id="trFieldItemWrap" style="display:none;">
             <label class="pl-field-label" for="trFieldItem">Item do orçamento</label>
             <select class="pl-input" id="trFieldItem"></select>
+          </div>
+          <!-- Só aparece em entrada de "Doação": doador, WhatsApp, quem pediu e o lembrete. -->
+          <div class="tr-doacao-box" id="trDoacaoBox" style="display:none;">
+            <div class="tr-doacao-tit">🤝 Doador e lembrete</div>
+            <label class="pl-field-label" for="trDoadorNome">Doador</label>
+            <input type="text" class="pl-input" id="trDoadorNome" list="trDoadoresLista" placeholder="Nome de quem doa" maxlength="80" autocomplete="off">
+            <datalist id="trDoadoresLista"></datalist>
+            <label class="pl-field-label" for="trDoadorWhats">WhatsApp do doador</label>
+            <input type="tel" class="pl-input" id="trDoadorWhats" inputmode="tel" placeholder="(11) 91234-5678" maxlength="20" autocomplete="off">
+            <p class="tr-doacao-aviso" id="trDoadorWhatsAviso" style="display:none;">📵 Cadastre o WhatsApp do doador para poder mandar o lembrete.</p>
+            <label class="pl-field-label" for="trDoacaoPediu">Quem pediu a doação</label>
+            <input type="text" class="pl-input" id="trDoacaoPediu" list="trSolicitantesLista" placeholder="Nome de quem pediu" maxlength="80" autocomplete="off">
+            <datalist id="trSolicitantesLista"></datalist>
+            <label class="pl-reminder-toggle-row" for="trLembreteOn">
+              <span class="pl-reminder-toggle-text">🔔 Lembrar o doador</span>
+              <span class="pl-switch"><input type="checkbox" id="trLembreteOn"><span class="pl-switch-track"><span class="pl-switch-thumb"></span></span></span>
+            </label>
+            <div id="trLembreteCampos" style="display:none;">
+              <label class="pl-field-label" for="trLembreteData">Data do lembrete</label>
+              <input type="date" class="pl-input" id="trLembreteData">
+              <p class="pl-reminder-hint">Nesse dia o app avisa na Tesouraria e no sino do Início, com botão para mandar a mensagem pelo WhatsApp.</p>
+            </div>
           </div>
           <label class="pl-field-label" for="trFieldObs">Observação</label>
           <input type="text" class="pl-input" id="trFieldObs" placeholder="Opcional (ex.: recibo nº 12)" maxlength="120">
@@ -12463,7 +12552,9 @@
           <textarea class="pl-input pl-textarea" id="trCfgMsgCob" rows="6"></textarea>
           <label class="pl-field-label" for="trCfgMsgRec">Mensagem de recibo (WhatsApp)</label>
           <textarea class="pl-input pl-textarea" id="trCfgMsgRec" rows="5"></textarea>
-          <p class="pl-reminder-hint">Use os campos entre chaves, que o app troca na hora: {responsavel}, {desbravador}, {descricao}, {valor}, {parcela}, {vencimento}, {data_pagamento}, {pix}, {pix_nome}, {clube}. Linhas com {pix} somem se a chave estiver vazia.</p>
+          <label class="pl-field-label" for="trCfgMsgDoa">Mensagem de lembrete de doação (WhatsApp)</label>
+          <textarea class="pl-input pl-textarea" id="trCfgMsgDoa" rows="5"></textarea>
+          <p class="pl-reminder-hint">Use os campos entre chaves, que o app troca na hora: {responsavel}, {desbravador}, {descricao}, {valor}, {parcela}, {vencimento}, {data_pagamento}, {pix}, {pix_nome}, {clube}. Na mensagem de doação: {doador}, {valor}, {data}, {pediu}. Linhas com {pix} somem se a chave estiver vazia.</p>
           <div class="pl-modal-actions">
             <button type="button" class="pl-btn pl-btn-neutral" id="trCfgPadrao">Textos padrão</button>
             <button type="button" class="pl-btn pl-btn-primary" id="trCfgSalvar">Salvar</button>
@@ -13756,6 +13847,7 @@
         </div>
 
         <div id="spAchievementsPanel" class="pl-content" style="display:none;">
+          <button type="button" class="pl-btn pl-btn-primary" id="spSgcImportBtn" style="display:none; width:100%; margin:0 0 12px;">🤖 Importar especialidades do SGC</button>
           <div class="pl-field-row">
             <div class="pl-field-col pl-field-col-wide">
               <label class="pl-field-label" style="margin-top:0;">Membro</label>
@@ -13789,6 +13881,22 @@
       <button type="button" class="pl-fab" id="spAchAddBtn" aria-label="Registrar conquista" style="display:none;">
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
+
+      <!-- Importar especialidades do SGC: o que o Robô SGC (pasta robo-sgc) leu das telas "Especialidades - NOME" -->
+      <div class="pl-modal-overlay" id="spSgcOverlay">
+        <div class="pl-modal">
+          <div class="pl-modal-head">
+            <h4 class="pl-modal-title">🤖 Especialidades do SGC</h4>
+            <button type="button" class="pl-modal-close" id="spSgcClose" aria-label="Fechar">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div id="spSgcBody"></div>
+          <div class="pl-modal-actions">
+            <button type="button" class="pl-btn pl-btn-primary" id="spSgcSaveBtn">Gravar selecionadas</button>
+          </div>
+        </div>
+      </div>
 
       <div class="pl-modal-overlay" id="spAchModalOverlay">
         <div class="pl-modal">
@@ -14321,8 +14429,35 @@
             <button type="button" class="co-tab active" data-co-tab="lista" role="tab">Desbravadores</button>
             <button type="button" class="co-tab" data-co-tab="evo" role="tab">Evolução</button>
             <button type="button" class="co-tab" data-co-tab="ent" role="tab">Entregas</button>
+            <button type="button" class="co-tab" data-co-tab="est" role="tab">Estoque</button>
             <button type="button" class="co-tab" data-co-tab="rel" role="tab">Relatórios</button>
             <button type="button" class="co-tab" data-co-tab="sgc" role="tab">SGC</button>
+          </div>
+
+          <!-- Estoque: insígnias de classe, especialidades, pins de excelência etc.
+               Tabelas estoque_itens e estoque_movimentos (supabase/schema.sql). -->
+          <div id="coPaneEst" style="display:none;">
+            <div id="coEstListaWrap">
+              <div class="co-resumo" id="coEstResumo"></div>
+              <div class="co-est-tipos" id="coEstTipos">
+                <button type="button" class="co-est-tipo active" data-tipo="">Todos</button>
+                <button type="button" class="co-est-tipo" data-tipo="classe">Classes</button>
+                <button type="button" class="co-est-tipo" data-tipo="especialidade">Especialidades</button>
+                <button type="button" class="co-est-tipo" data-tipo="pin">Pins</button>
+                <button type="button" class="co-est-tipo" data-tipo="outro">Outros</button>
+              </div>
+              <div class="co-filtros">
+                <input type="search" id="coEstBusca" class="co-input" placeholder="Buscar item…" autocomplete="off">
+              </div>
+              <div class="co-acoes" style="margin-bottom:10px;">
+                <button type="button" class="co-btn" id="coEstNovo">+ Novo item</button>
+                <button type="button" class="co-btn sec" id="coEstPdf">Relatório do estoque (PDF)</button>
+              </div>
+              <div class="co-lista" id="coEstLista"></div>
+              <p class="co-vazio" id="coEstVazio" style="display:none;">Nenhum item no estoque.</p>
+            </div>
+            <div id="coEstDetalhe" style="display:none;"></div>
+            <datalist id="coEstSugNomes"></datalist>
           </div>
 
           <div id="coPaneLista">
@@ -15585,7 +15720,7 @@
         <h3 class="tab-more-title">Mais opções</h3>
         <div class="tab-more-grid">
           <a href="#" class="bd-qn-item" data-goto="view-classes">
-            <span class="bd-qn-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg></span>
+            <span class="bd-qn-icon bd-qn-icon-img"><img src="icons/nav-classes.png?v=2" alt="Classes Regulares"></span>
             <span>Classes Regulares</span>
           </a>
           <a href="#" class="bd-qn-item" data-goto="view-class-planning">
@@ -15593,11 +15728,11 @@
             <span>Planejamento de Classes</span>
           </a>
           <a href="#" class="bd-qn-item" data-goto="view-devotional">
-            <span class="bd-qn-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h9l3 3v13H6Z"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/></svg></span>
+            <span class="bd-qn-icon bd-qn-icon-img"><img src="icons/nav-devotional.png?v=2" alt="Devocional"></span>
             <span>Devocional</span>
           </a>
           <a href="#" class="bd-qn-item" data-goto="view-treasury">
-            <span class="bd-qn-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10"/><path d="M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5c0 1.4 1.3 2 3 2.5 1.7.5 3 1.1 3 2.5 0 1.4-1.3 2.5-3 2.5s-3-1.1-3-2.5"/></svg></span>
+            <span class="bd-qn-icon bd-qn-icon-img"><img src="icons/nav-treasury.png" alt="Tesouraria"></span>
             <span>Tesouraria</span>
           </a>
           <a href="#" class="bd-qn-item" data-goto="view-secretary">
@@ -15605,7 +15740,7 @@
             <span>Secretaria</span>
           </a>
           <a href="#" class="bd-qn-item" data-goto="view-storage">
-            <span class="bd-qn-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span>
+            <span class="bd-qn-icon bd-qn-icon-img"><img src="icons/nav-storage.png" alt="Almoxarifado"></span>
             <span>Almoxarifado</span>
           </a>
           <a href="#" class="bd-qn-item bd-qn-birthday" data-goto="view-birthdays">
@@ -19131,6 +19266,14 @@
           });
         }
       }
+      // Lembretes de doação da Tesouraria (já vencidos) — itens sintéticos, sem card na Agenda.
+      if(typeof window.__trGetDoacaoReminders === 'function'){
+        window.__trGetDoacaoReminders().forEach(r => due.push({
+          card: { dataset: { local: '' } },
+          title: r.title, msg: r.msg, day: r.day, monAbbr: r.monAbbr,
+          repeatOn: false, timesLeft: 0, isDoacao: true, lancId: r.lancId
+        }));
+      }
       return due;
     }
 
@@ -19170,6 +19313,9 @@
     async function confirmReminderItem(item){
       if(item.isBirthday){
         if(window.__btConfirmBirthdayReminder) await window.__btConfirmBirthdayReminder(item.meetingId);
+        refreshReminderBell();
+      } else if(item.isDoacao){
+        if(window.__trConfirmDoacao) await window.__trConfirmDoacao(item.lancId);
         refreshReminderBell();
       } else {
         await confirmReminderRead(item.card);
@@ -25539,7 +25685,10 @@
       const nova = '<a href="#" class="cl-hub-row un-hub-row" id="unNovaUnidadeBtn" style="display:none;">' +
         '<span class="cl-class-dot cl-color-gray"></span><span class="cl-hub-row-name">+ Nova unidade</span>' +
         '<span class="cl-hub-row-count"></span></a>';
-      hub.innerHTML = linhas + vazio + nova;
+      const sgc = '<a href="#" class="cl-hub-row un-hub-row" id="unSgcImportBtn" style="display:none;">' +
+        '<span class="cl-class-dot cl-color-gray"></span><span class="cl-hub-row-name">🤖 Importar do SGC</span>' +
+        '<span class="cl-hub-row-count" id="unSgcImportCount"></span>' + HUB_ARROW + '</a>';
+      hub.innerHTML = linhas + vazio + nova + sgc;
     }
 
     async function criarUnidade(){
@@ -26759,7 +26908,207 @@
       // Criar unidade: só quem gerencia o clube todo (e já logado).
       const nova = document.getElementById('unNovaUnidadeBtn');
       if(nova) nova.style.display = (usuario && UNIT_FULL_ACCESS_ROLES.indexOf(usuario.papel) !== -1) ? '' : 'none';
+      // Importar do SGC: só aparece quando o Robô SGC trouxe uma lista e quem
+      // está logado é administrador (a importação cadastra usuários).
+      const sgcBtn = document.getElementById('unSgcImportBtn');
+      if(sgcBtn){
+        sgcBtn.style.display = (sgcDados && podeImportarSgc()) ? '' : 'none';
+        const cnt = document.getElementById('unSgcImportCount');
+        if(cnt) cnt.textContent = sgcDados ? (sgcDados.membros.length + ' lidos') : '';
+      }
     }
+
+    // ---------------------------------------------------------------
+    // Importar do SGC. A extensão Robô SGC (pasta robo-sgc) lê a lista de
+    // membros no SGC e a entrega a esta página por postMessage (ponte.js).
+    // Aqui o app compara com `usuarios` e `usuario_matricula_oficial`,
+    // mostra as diferenças e só grava o que o administrador marcar — com a
+    // sessão dele, nunca com chave guardada na extensão.
+    // ---------------------------------------------------------------
+    var sgcDados = null;   // { lidoEm, membros: [{ nome, unidade, matricula, classe, cargo, situacao }] }
+    var sgcPlano = null;
+    function podeImportarSgc(){
+      const u = window.__currentUsuario;
+      return !!(u && (u.papel === 'Administrador' || (u.acesso && u.acesso.admin)));
+    }
+    const chaveNome = s => normalize(s).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+    function unidadeDoApp(nomeSgc){
+      const n = chaveNome(nomeSgc);
+      if(!n) return null;
+      return UNITS.find(u => chaveNome(u) === n) ||
+        UNITS.find(u => { const k = chaveNome(u); return k && (n.indexOf(k) !== -1 || k.indexOf(n) !== -1); }) || null;
+    }
+
+    function montarPlanoSgc(sgc, usuarios, mats){
+      const matPorId = {};
+      mats.forEach(r => { matPorId[r.usuario_id] = r; });
+      const usPorId = {};
+      usuarios.forEach(u => { usPorId[u.id] = u; });
+      const porNome = new Map();
+      usuarios.forEach(u => { const k = chaveNome(u.nome); if(!porNome.has(k)) porNome.set(k, []); porNome.get(k).push(u); });
+      const porNumero = new Map();
+      mats.forEach(r => { if(r.numero_matricula) porNumero.set(String(r.numero_matricula).trim(), r.usuario_id); });
+
+      const plano = { marcar: [], criar: [], unidadeDiferente: [], ambiguos: [], soNoApp: [], ok: 0 };
+      const achados = new Set();
+      sgc.forEach(m => {
+        let u = (m.matricula && porNumero.has(m.matricula)) ? usPorId[porNumero.get(m.matricula)] : null;
+        if(!u){
+          const cands = porNome.get(chaveNome(m.nome)) || [];
+          if(cands.length > 1){ plano.ambiguos.push({ sgc: m, candidatos: cands }); cands.forEach(c => achados.add(c.id)); return; }
+          u = cands[0] || null;
+        }
+        const unidade = unidadeDoApp(m.unidade);
+        if(!u){ plano.criar.push({ sgc: m, unidade, marcado: !!unidade }); return; }
+        achados.add(u.id);
+        if(unidade && u.unidade !== unidade) plano.unidadeDiferente.push({ sgc: m, usuario: u, unidade });
+        const r = matPorId[u.id];
+        const numeroAtual = r && r.numero_matricula ? String(r.numero_matricula).trim() : '';
+        const numeroNovo = !!(m.matricula && numeroAtual !== m.matricula);
+        if(!r || !r.matriculado || numeroNovo) plano.marcar.push({ sgc: m, usuario: u, numeroAtual, marcado: true });
+        else plano.ok++;
+      });
+      // Desbravadores ativos das unidades que vieram do SGC, mas que não estavam na lista.
+      const unidadesLidas = new Set(sgc.map(m => unidadeDoApp(m.unidade)).filter(Boolean));
+      usuarios.forEach(u => {
+        if(u.papel === 'Desbravador' && u.ativo !== false && !achados.has(u.id) && unidadesLidas.has(u.unidade)) plano.soNoApp.push(u);
+      });
+      return plano;
+    }
+
+    function renderPlanoSgc(){
+      const p = sgcPlano;
+      const corpo = document.getElementById('unSgcBody');
+      const item = (grupo, i, texto, sub, marcado, desabilitado) =>
+        '<label class="un-sgc-item"><input type="checkbox" data-grupo="' + grupo + '" data-i="' + i + '"' +
+        (marcado && !desabilitado ? ' checked' : '') + (desabilitado ? ' disabled' : '') + '>' +
+        '<span><b>' + escHtml(texto) + '</b><small>' + escHtml(sub) + '</small></span></label>';
+      const info = (texto, sub) => '<div class="un-sgc-item"><span><b>' + escHtml(texto) + '</b><small>' + escHtml(sub) + '</small></span></div>';
+      const secao = (titulo, lista) => lista.length ? '<p class="un-section-title un-sgc-sec">' + titulo + ' (' + lista.length + ')</p>' + lista.join('') : '';
+
+      const lidoEm = sgcDados.lidoEm ? new Date(sgcDados.lidoEm).toLocaleString('pt-BR') : '—';
+      let html = '<p class="pl-reminder-hint" style="margin-top:0;">' + sgcDados.membros.length + ' membros lidos do SGC em ' + escHtml(lidoEm) +
+        '. Nada é gravado até você tocar em "Gravar selecionados".</p>';
+      html += secao('Marcar matrícula oficial', p.marcar.map((it, i) => item('marcar', i, it.usuario.nome,
+        it.usuario.unidade + (it.sgc.matricula ? ' · matrícula ' + it.sgc.matricula : '') + (it.numeroAtual && it.sgc.matricula ? ' (antes: ' + it.numeroAtual + ')' : ''), it.marcado)));
+      html += secao('Cadastrar no app (estão no SGC, faltam aqui)', p.criar.map((it, i) => item('criar', i, it.sgc.nome,
+        it.unidade ? 'Unidade ' + it.unidade + ' · Desbravador' + (it.sgc.matricula ? ' · matrícula ' + it.sgc.matricula : '')
+                   : 'Unidade "' + (it.sgc.unidade || 'sem unidade') + '" não existe no app. Crie a unidade e importe de novo.', it.marcado, !it.unidade)));
+      html += secao('Unidade diferente no SGC (só aviso)', p.unidadeDiferente.map(it => info(it.usuario.nome, 'No app: ' + it.usuario.unidade + ' · no SGC: ' + (it.sgc.unidade || it.unidade))));
+      html += secao('Nome repetido no app (confira à mão)', p.ambiguos.map(it => info(it.sgc.nome, it.candidatos.length + ' cadastros com esse nome: ' + it.candidatos.map(c => c.unidade).join(', '))));
+      html += secao('No app, mas não apareceram no SGC (só aviso)', p.soNoApp.map(u => info(u.nome, u.unidade)));
+      if(p.ok) html += '<p class="pl-reminder-hint">' + p.ok + ' já estavam com a matrícula oficial confirmada.</p>';
+      if(!p.marcar.length && !p.criar.length && !p.unidadeDiferente.length && !p.ambiguos.length && !p.soNoApp.length){
+        html += '<p class="un-empty-hint">Tudo igual: o cadastro do app já bate com o SGC.</p>';
+      }
+      corpo.innerHTML = html;
+      document.getElementById('unSgcSaveBtn').disabled = !(p.marcar.length || p.criar.some(c => c.unidade));
+    }
+
+    async function abrirImportSgc(){
+      if(!sgcDados) return;
+      if(!supa){ alert('Configure o Supabase em clube.js primeiro.'); return; }
+      if(!podeImportarSgc()){ alert('Só administradores podem importar do SGC.'); return; }
+      const corpo = document.getElementById('unSgcBody');
+      const salvar = document.getElementById('unSgcSaveBtn');
+      corpo.innerHTML = '<p class="un-empty-hint">Comparando com o cadastro do app...</p>';
+      salvar.disabled = true; salvar.textContent = 'Gravar selecionados';
+      document.getElementById('unSgcOverlay').classList.add('show');
+      const [us, mats] = await Promise.all([
+        supa.from('usuarios').select('id, nome, email, unidade, papel, ativo'),
+        supa.from('usuario_matricula_oficial').select('usuario_id, matriculado, numero_matricula')
+      ]);
+      const erro = us.error || mats.error;
+      if(erro){ corpo.innerHTML = '<p class="un-empty-hint">Não foi possível ler o cadastro: ' + escHtml(erro.message) + '</p>'; return; }
+      sgcPlano = montarPlanoSgc(sgcDados.membros, us.data || [], mats.data || []);
+      renderPlanoSgc();
+    }
+
+    async function gravarSgc(){
+      const corpo = document.getElementById('unSgcBody');
+      const salvar = document.getElementById('unSgcSaveBtn');
+      const sel = grupo => Array.from(corpo.querySelectorAll('input[data-grupo="' + grupo + '"]:checked')).map(c => sgcPlano[grupo][Number(c.dataset.i)]);
+      const marcar = sel('marcar');
+      const criar = sel('criar').filter(it => it.unidade);
+      if(!marcar.length && !criar.length){ alert('Nada selecionado.'); return; }
+      if(!confirm('Gravar no Cedros Digital?\n\n• ' + marcar.length + ' matrícula(s) a marcar\n• ' + criar.length + ' desbravador(es) a cadastrar')) return;
+      salvar.disabled = true; salvar.textContent = 'Gravando...';
+
+      const quem = ((window.__currentUsuario && window.__currentUsuario.nome) || 'Administrador') + ' (Robô SGC)';
+      const agora = new Date().toISOString();
+      const erros = [];
+      const matriculas = marcar.map(it => ({
+        usuario_id: it.usuario.id, matriculado: true, verificado_em: agora, verificado_por: quem,
+        numero_matricula: it.sgc.matricula || it.numeroAtual || null
+      }));
+
+      // Quem não tem e-mail entra com e-mail de fachada, como os que vieram
+      // da planilha da Secretaria (ver README → "Dar acesso a quem não tem e-mail").
+      let criados = 0;
+      if(criar.length){
+        const { data: emailsRows } = await supa.from('usuarios').select('email');
+        const emails = new Set((emailsRows || []).map(r => String(r.email || '').toLowerCase()));
+        for(const it of criar){
+          const base = (it.sgc.matricula || chaveNome(it.sgc.nome).replace(/ /g, '.') || 'sgc').toLowerCase();
+          let email = base + '@sememail.local';
+          for(let n = 2; emails.has(email); n++) email = base + '-' + n + '@sememail.local';
+          emails.add(email);
+          const { data, error } = await supa.from('usuarios')
+            .insert({ nome: it.sgc.nome, email, unidade: it.unidade, papel: 'Desbravador', ativo: true, aprovado: true })
+            .select('id').single();
+          if(error){ erros.push(it.sgc.nome + ': ' + error.message); continue; }
+          criados++;
+          matriculas.push({ usuario_id: data.id, matriculado: true, verificado_em: agora, verificado_por: quem, numero_matricula: it.sgc.matricula || null });
+        }
+      }
+      if(matriculas.length){
+        const { error } = await supa.from('usuario_matricula_oficial').upsert(matriculas, { onConflict: 'usuario_id' });
+        if(error) erros.push('Matrículas: ' + error.message);
+      }
+
+      salvar.textContent = 'Gravar selecionados';
+      if(erros.length){
+        alert('Gravei parte, mas deu erro em:\n\n' + erros.slice(0, 15).join('\n') + '\n\nA lista do SGC continua guardada; reabra a importação para conferir.');
+        await abrirImportSgc();
+      } else {
+        alert('Pronto! ' + marcar.length + ' matrícula(s) marcada(s) e ' + criados + ' desbravador(es) cadastrado(s).');
+        sgcDados = null; sgcPlano = null;
+        window.postMessage({ origem: 'cedros-app', tipo: 'membros-sgc-importados' }, location.origin);
+        document.getElementById('unSgcOverlay').classList.remove('show');
+        applyUnitAccessRestriction();
+      }
+      if(window.CLUBE && window.CLUBE.recarregar) window.CLUBE.recarregar(); else refreshHub();
+    }
+
+    document.getElementById('unSgcClose').addEventListener('click', () => document.getElementById('unSgcOverlay').classList.remove('show'));
+    document.getElementById('unSgcSaveBtn').addEventListener('click', gravarSgc);
+
+    // O robô abre o app em .../#importar-sgc: assim que houver lista e login
+    // de administrador, vai direto pra Unidades com a importação aberta.
+    function abrirSgcSeVeioDoRobo(){
+      if(location.hash !== '#importar-sgc' || !sgcDados || !podeImportarSgc()) return;
+      history.replaceState(null, '', location.pathname + location.search);
+      showView('view-units');
+      showHub();
+      abrirImportSgc();
+    }
+    window.addEventListener('message', e => {
+      if(e.source !== window || e.origin !== location.origin) return;
+      const m = e.data;
+      if(!m || m.origem !== 'robo-sgc' || m.tipo !== 'membros-sgc') return;
+      if(!m.dados || !Array.isArray(m.dados.membros) || !m.dados.membros.length) return;
+      sgcDados = {
+        lidoEm: m.dados.lidoEm || null,
+        membros: m.dados.membros.filter(x => x && x.nome).map(x => ({
+          nome: String(x.nome).trim(), unidade: String(x.unidade || '').trim(), matricula: String(x.matricula || '').trim(),
+          classe: String(x.classe || '').trim(), cargo: String(x.cargo || '').trim(), situacao: String(x.situacao || '').trim()
+        }))
+      };
+      applyUnitAccessRestriction();
+      abrirSgcSeVeioDoRobo();
+    });
+    document.addEventListener('cedros:loggedin', () => { applyUnitAccessRestriction(); abrirSgcSeVeioDoRobo(); });
+    window.postMessage({ origem: 'cedros-app', tipo: 'pedir-membros-sgc' }, location.origin);
 
     function showHub(){
       currentUnit = null;
@@ -26777,6 +27126,7 @@
       if(!row) return;
       e.preventDefault();
       if(row.id === 'unNovaUnidadeBtn') { criarUnidade(); return; }
+      if(row.id === 'unSgcImportBtn') { abrirImportSgc(); return; }
       openUnit(row.getAttribute('data-open-unit'));
     });
 
@@ -27007,7 +27357,7 @@
     });
 
     // ---- Estado ----
-    let lancamentos = [], eventos = [], itens = [], cobrancas = [], parcelas = [], agenda = [], pessoas = [];
+    let lancamentos = [], eventos = [], itens = [], cobrancas = [], parcelas = [], agenda = [], pessoas = [], doadores = [];
     let cobrancasOk = true;
     const agora = new Date();
     let mesSel = { ano: agora.getFullYear(), mes: agora.getMonth() + 1 };
@@ -27037,6 +27387,8 @@
         return;
       }
       lancamentos = (l.data || []).map(num);
+      const d = await supa.from('tesouraria_doadores').select('*').order('nome');
+      doadores = d.error ? [] : (d.data || []);
       eventos = e.data || [];
       itens = (o.data || []).map(num);
       cobrancasOk = !c.error && !p.error;
@@ -27072,7 +27424,8 @@
     // Configurações do clube (clube_config): chave Pix, recebedor e textos.
     const MSG_PADRAO = {
       msg_cobranca: 'Olá, {responsavel}! 👋\nLembrete do {clube}: {descricao} de {desbravador}{parcela} — {valor}, {vencimento}.\n\nPix: {pix} ({pix_nome})\n\nSe já pagou, por favor desconsidere. Obrigado!',
-      msg_recibo: 'Olá, {responsavel}! ✅\nRecebemos {valor} referente a {descricao} de {desbravador}{parcela}, em {data_pagamento}.\n\nObrigado! — Tesouraria do {clube}'
+      msg_recibo: 'Olá, {responsavel}! ✅\nRecebemos {valor} referente a {descricao} de {desbravador}{parcela}, em {data_pagamento}.\n\nObrigado! — Tesouraria do {clube}',
+      msg_doacao: 'Olá, {doador}! 👋\nPassando para lembrar da doação de {valor} ao {clube}, combinada para {data}{pediu}.\n\nPix: {pix} ({pix_nome})\n\nSe já realizou, por favor desconsidere. Deus abençoe! 🙏'
     };
     let config = {};
     async function carregarConfig(){
@@ -27784,7 +28137,8 @@
       if(ev) desc.appendChild(el('span', 'tr-row-evento', ev.nome));
       corpo.appendChild(desc);
       // Nas listas agrupadas por dia a data já está no cabeçalho do dia.
-      corpo.appendChild(el('span', 'tr-l-meta', [mostrarEvento ? '' : dataCurta(x.data), x.forma_pagamento, x.registrado_por].filter(Boolean).join(' · ')));
+      const lembPendente = x.lembrete_data && !x.lembrete_feito_em;
+      corpo.appendChild(el('span', 'tr-l-meta', [mostrarEvento ? '' : dataCurta(x.data), x.forma_pagamento, x.registrado_por, lembPendente ? '🔔 ' + dataCurta(x.lembrete_data) : ''].filter(Boolean).join(' · ')));
       linha.appendChild(corpo);
       linha.appendChild(el('span', 'tr-l-val ' + (ent ? 'tr-value-in' : 'tr-value-out'), (ent ? '+ ' : '− ') + brl(x.valor)));
       if(x.observacao) linha.title = x.observacao;
@@ -27823,6 +28177,7 @@
       const termo = normalizar(busca);
       const filtrados = doMes.filter(x => (filtro === 'todos' ? true : filtro === 'geral' ? !x.evento_id : filtro === 'eventos' ? !!x.evento_id : x.tipo === filtro)
         && (!termo || normalizar([x.descricao, x.categoria, x.forma_pagamento, x.registrado_por, (eventoPorId(x.evento_id) || {}).nome].join(' ')).indexOf(termo) !== -1));
+      desenharLembretesDoacao();
       lista.innerHTML = '';
       if(!filtrados.length){ lista.appendChild(vazio(doMes.length ? 'Nenhum lançamento com esse filtro neste mês.' : 'Nenhum lançamento em ' + MESES[mesSel.mes - 1] + '.')); return; }
       porDia(filtrados, lista);
@@ -28340,6 +28695,175 @@
 
     // ---- Lançamento ----
     let lancEditando = null, tipoLanc = 'entrada';
+
+    // ---------------------------------------------------------------
+    // Doações: doador, WhatsApp, quem pediu e lembrete da data
+    // ---------------------------------------------------------------
+    // Cada doação é uma entrada da categoria "Doação". Os dados do doador
+    // (nome + WhatsApp) ficam em tesouraria_doadores, pra não digitar de novo;
+    // quem pediu e a data do lembrete ficam no próprio lançamento (colunas
+    // doador_id, solicitado_por, lembrete_data, lembrete_feito_em/_por —
+    // ver supabase/atualizacao-doacoes.sql). O lembrete aparece no card da
+    // aba Lançamentos e no sino do Início até alguém marcar como feito.
+    const SQL_DOACOES = 'Rode o arquivo supabase/atualizacao-doacoes.sql no Supabase para ligar o lembrete de doação.';
+    const erroDeDoacao = msg => /doador|solicitado_por|lembrete_|tesouraria_doadores/i.test(msg || '');
+    const doadorPorId = id => doadores.find(d => d.id === id) || null;
+    const doadorPorNome = nome => { const n = normalizar(nome); return n ? doadores.find(d => normalizar(d.nome) === n) || null : null; };
+    const clubeNome = () => window.CLUBE_CONFIG ? window.CLUBE_CONFIG.nomeCompleto : 'Clube';
+    const ehDoacaoAgora = () => tipoLanc === 'entrada' && $('trFieldCategory').value === 'Doação';
+
+    function atualizarAvisoWhats(){
+      const sem = $('trLembreteOn').checked && !$('trDoadorWhats').value.trim();
+      $('trDoadorWhatsAviso').style.display = sem ? '' : 'none';
+    }
+    function atualizarCaixaDoacao(){
+      const ver = ehDoacaoAgora();
+      $('trDoacaoBox').style.display = ver ? '' : 'none';
+      if(!ver) return;
+      // O nome de quem doa costuma ir no "Detalhe": reaproveita nos dois sentidos.
+      if(!$('trDoadorNome').value && $('trFieldDesc').value && !lancEditando) $('trDoadorNome').value = $('trFieldDesc').value.trim();
+      const nomes = $('trDoadoresLista'); nomes.innerHTML = '';
+      doadores.forEach(d => { const o = el('option'); o.value = d.nome; nomes.appendChild(o); });
+      const pediu = $('trSolicitantesLista'); pediu.innerHTML = '';
+      Array.from(new Set(lancamentos.map(x => x.solicitado_por).filter(Boolean))).sort().forEach(n => { const o = el('option'); o.value = n; pediu.appendChild(o); });
+      $('trLembreteCampos').style.display = $('trLembreteOn').checked ? '' : 'none';
+      atualizarAvisoWhats();
+    }
+    function preencherDoacao(x){
+      const d = x && x.doador_id ? doadorPorId(x.doador_id) : null;
+      $('trDoadorNome').value = d ? d.nome : '';
+      $('trDoadorWhats').value = d && d.whatsapp ? d.whatsapp : '';
+      $('trDoacaoPediu').value = x && x.solicitado_por ? x.solicitado_por : '';
+      $('trLembreteOn').checked = !!(x && x.lembrete_data);
+      $('trLembreteData').value = x && x.lembrete_data ? x.lembrete_data : '';
+      atualizarCaixaDoacao();
+    }
+    $('trDoadorNome').addEventListener('input', () => {
+      // Doador já cadastrado: traz o WhatsApp dele.
+      const d = doadorPorNome($('trDoadorNome').value);
+      if(d && d.whatsapp && !$('trDoadorWhats').value.trim()){ $('trDoadorWhats').value = d.whatsapp; atualizarAvisoWhats(); }
+    });
+    $('trDoadorWhats').addEventListener('input', () => { $('trDoadorWhats').style.borderColor = ''; atualizarAvisoWhats(); });
+    $('trLembreteOn').addEventListener('change', () => {
+      if($('trLembreteOn').checked && !$('trLembreteData').value){
+        // Sugestão: a própria data da doação, se ainda não passou; senão, daqui a uma semana.
+        const d = $('trFieldDate').value;
+        $('trLembreteData').value = d && d >= hoje() ? d : isoDe(new Date(Date.now() + 7 * 86400000));
+      }
+      atualizarCaixaDoacao();
+    });
+    $('trFieldCatChips').addEventListener('click', atualizarCaixaDoacao);
+
+    // Grava (ou atualiza) o doador e devolve o id. null = sem nome; false = erro já avisado.
+    async function salvarDoador(nome, whats){
+      nome = (nome || '').trim();
+      if(!nome) return null;
+      const fone = whats ? foneWhats(whats).replace(/^55/, '') : '';
+      const ja = doadorPorNome(nome);
+      if(ja){
+        if((ja.whatsapp || '') !== fone && (fone || !ja.whatsapp)){
+          const { error } = await supa.from('tesouraria_doadores').update({ whatsapp: fone || null }).eq('id', ja.id);
+          if(error){ alert(erroDeDoacao(error.message) ? SQL_DOACOES : 'Não consegui salvar o doador: ' + error.message); return false; }
+        }
+        return ja.id;
+      }
+      const { data, error } = await supa.from('tesouraria_doadores').insert({ nome, whatsapp: fone || null }).select().single();
+      if(error){ alert(erroDeDoacao(error.message) ? SQL_DOACOES : 'Não consegui salvar o doador: ' + error.message); return false; }
+      return data.id;
+    }
+
+    // ---- Lembretes pendentes (card da aba Lançamentos + sino do Início) ----
+    const lembretesPendentes = () => lancamentos
+      .filter(x => x.tipo === 'entrada' && x.lembrete_data && !x.lembrete_feito_em)
+      .sort((a, b) => a.lembrete_data.localeCompare(b.lembrete_data));
+    const lembretesVencidos = () => lembretesPendentes().filter(x => x.lembrete_data <= hoje());
+    function nomeDoDoador(x){ const d = doadorPorId(x.doador_id); return d ? d.nome : (x.descricao || 'Doador'); }
+
+    async function enviarLembreteDoacao(x){
+      const d = doadorPorId(x.doador_id);
+      let fone = foneWhats(d && d.whatsapp);
+      if(!fone){
+        const digitado = prompt('WhatsApp de ' + nomeDoDoador(x) + ' (com DDD).\nFica salvo no cadastro do doador.', '');
+        if(digitado === null) return;
+        fone = foneWhats(digitado);
+        if(!fone){ alert('Número inválido. Use DDD + número, ex.: (11) 91234-5678.'); return; }
+        if(d){
+          const { error } = await supa.from('tesouraria_doadores').update({ whatsapp: fone.replace(/^55/, '') }).eq('id', d.id);
+          if(error) alert('O número não foi salvo: ' + (erroDeDoacao(error.message) ? SQL_DOACOES : error.message) + ' A mensagem abre mesmo assim.');
+          else d.whatsapp = fone.replace(/^55/, '');
+        }
+      }
+      const vars = {
+        doador: nomeDoDoador(x).split(' ')[0], valor: brl(x.valor), data: dataLonga(x.data),
+        pediu: x.solicitado_por ? ' (pedido de ' + x.solicitado_por + ')' : '',
+        descricao: x.descricao || 'doação', pix: (config.pix_chave || '').trim(), pix_nome: (config.pix_nome || '').trim(), clube: clubeNome()
+      };
+      abrirWhats(fone, montarMensagem(cfg('msg_doacao'), vars));
+    }
+    async function concluirLembreteDoacao(id){
+      const quem = (window.__currentUsuario && window.__currentUsuario.nome) || null;
+      const { error } = await supa.from('tesouraria_lancamentos').update({ lembrete_feito_em: new Date().toISOString(), lembrete_feito_por: quem }).eq('id', id);
+      if(error){ alert('Não consegui marcar como feito: ' + error.message); return false; }
+      const x = lancamentos.find(l => l.id === id);
+      if(x){ x.lembrete_feito_em = new Date().toISOString(); x.lembrete_feito_por = quem; }
+      desenharLembretesDoacao();
+      desenharGeral();
+      if(window.__plRefreshReminderBell) window.__plRefreshReminderBell();
+      return true;
+    }
+    function desenharLembretesDoacao(){
+      const box = $('trLembretes');
+      const lista_ = podeEditar() ? lembretesPendentes() : [];
+      box.innerHTML = '';
+      box.style.display = lista_.length ? '' : 'none';
+      if(!lista_.length) return;
+      box.appendChild(el('h5', null, '🔔 Lembretes de doação (' + lista_.length + ')'));
+      lista_.forEach(x => {
+        const d = doadorPorId(x.doador_id);
+        const atraso = x.lembrete_data < hoje(), hojeE = x.lembrete_data === hoje();
+        const quando = hojeE ? 'hoje' : atraso ? 'atrasado desde ' + dataCurta(x.lembrete_data) : 'em ' + dataCurta(x.lembrete_data);
+        const linha = el('div', 'tr-lemb');
+        const corpo = el('div', 'tr-lemb-corpo');
+        corpo.appendChild(el('span', 'tr-lemb-nome', nomeDoDoador(x) + ' · ' + brl(x.valor)));
+        corpo.appendChild(el('span', 'tr-lemb-meta' + (atraso ? ' atraso' : ''), [quando, x.solicitado_por ? 'pediu: ' + x.solicitado_por : '', d && d.whatsapp ? '' : '📵 sem WhatsApp'].filter(Boolean).join(' · ')));
+        const w = el('button', 'tr-whats-mini' + (d && d.whatsapp ? '' : ' sem-numero'), '📲');
+        w.type = 'button'; w.title = d && d.whatsapp ? 'Lembrar pelo WhatsApp' : 'Cadastrar o WhatsApp e lembrar';
+        w.addEventListener('click', () => enviarLembreteDoacao(x));
+        const ok = el('button', 'tr-lemb-ok', '✓'); ok.type = 'button'; ok.title = 'Marcar como feito';
+        ok.addEventListener('click', () => concluirLembreteDoacao(x.id));
+        linha.append(corpo, w, ok);
+        corpo.addEventListener('click', () => abrirLancamento(x));
+        box.appendChild(linha);
+      });
+    }
+
+    // Sino do Início: itens sintéticos dos lembretes que já venceram (ver collectDueReminders).
+    window.__trGetDoacaoReminders = function(){
+      if(!podeEditar()) return [];
+      return lembretesVencidos().map(x => {
+        const [a, m, dia] = x.lembrete_data.split('-');
+        return {
+          lancId: x.id, title: 'Lembrar doação',
+          msg: 'Lembrar ' + nomeDoDoador(x) + ' da doação de ' + brl(x.valor) + (x.solicitado_por ? ' (pediu: ' + x.solicitado_por + ')' : ''),
+          day: dia, monAbbr: MES_CURTO[Number(m) - 1].replace(/^./, c => c.toUpperCase())
+        };
+      });
+    };
+    window.__trConfirmDoacao = id => concluirLembreteDoacao(id);
+    // Carga leve pro sino funcionar sem abrir a Tesouraria: só quem lança/edita.
+    async function carregarLembretesLeve(){
+      if(!supa || !podeEditar()) return;
+      const [l, d] = await Promise.all([
+        supa.from('tesouraria_lancamentos').select('*').not('lembrete_data', 'is', null).is('lembrete_feito_em', null),
+        supa.from('tesouraria_doadores').select('*')
+      ]);
+      if(l.error || d.error) return; // banco ainda sem o SQL de doações
+      doadores = d.data || [];
+      const outros = lancamentos.filter(x => !(x.lembrete_data && !x.lembrete_feito_em));
+      lancamentos = outros.concat((l.data || []).map(num));
+      if(window.__plRefreshReminderBell) window.__plRefreshReminderBell();
+    }
+
     function preencherItens(atualItem){
       const evId = $('trFieldEvento').value;
       const doEvento = itens.filter(x => x.evento_id === evId && x.tipo === tipoLanc);
@@ -28365,6 +28889,8 @@
       preencherEventos($('trFieldEvento'), x ? x.evento_id : (pre.evento || ''));
       preencherItens(x ? x.orcamento_item_id : (pre.item || null));
       $('trFieldObs').value = x ? (x.observacao || '') : '';
+      preencherDoacao(x);
+      $('trDoadorWhats').style.borderColor = '';
       $('trDeleteBtn').style.display = x ? '' : 'none';
       $('trLancCobAviso').style.display = x && parcelas.some(p => p.lancamento_id === x.id) ? '' : 'none';
       // Recibo só faz sentido pra entrada já gravada.
@@ -28376,7 +28902,7 @@
     }
     $('trFieldKind').querySelectorAll('.tr-tipo-btn').forEach(b => b.addEventListener('click', () => {
       tipoLanc = b.dataset.tipo; marcarTipo($('trFieldKind'), tipoLanc);
-      preencherCategorias($('trFieldCategory'), tipoLanc, null); preencherItens(null);
+      preencherCategorias($('trFieldCategory'), tipoLanc, null); preencherItens(null); atualizarCaixaDoacao();
     }));
     $('trFieldEvento').addEventListener('change', () => preencherItens(null));
     $('trModalClose').addEventListener('click', () => $('trModalOverlay').classList.remove('show'));
@@ -28387,7 +28913,21 @@
       if(!descricao){ $('trFieldDesc').style.borderColor = 'var(--t-out)'; ok = false; }
       if(!(valor > 0)){ $('trFieldValue').style.borderColor = 'var(--t-out)'; ok = false; }
       if(!$('trFieldDate').value){ alert('Informe a data do lançamento.'); ok = false; }
+      const ehDoacao = ehDoacaoAgora();
+      let doadorFone = '';
+      if(ehDoacao){
+        const bruto = $('trDoadorWhats').value.trim();
+        doadorFone = bruto ? foneWhats(bruto) : '';
+        if(bruto && !doadorFone){ $('trDoadorWhats').style.borderColor = 'var(--t-out)'; alert('WhatsApp inválido. Use DDD + número, ex.: (11) 91234-5678.'); ok = false; }
+        if($('trLembreteOn').checked && !$('trLembreteData').value){ alert('Informe a data do lembrete.'); ok = false; }
+        if($('trLembreteOn').checked && !$('trDoadorNome').value.trim() && !$('trFieldDesc').value.trim()){ alert('Informe o doador para poder lembrar.'); ok = false; }
+      }
       if(!ok) return;
+      // Lembrete ligado e sem número: lembra de cadastrar antes de seguir.
+      if(ehDoacao && $('trLembreteOn').checked && !doadorFone &&
+         !confirm('Este doador está sem WhatsApp cadastrado, então não dá para mandar o lembrete pelo app.\n\nSalvar assim mesmo? (Cancelar para preencher o número)')){
+        $('trDoadorWhats').focus(); return;
+      }
       const linha = {
         data: $('trFieldDate').value, descricao, tipo: tipoLanc, valor,
         categoria: $('trFieldCategory').value || null, forma_pagamento: $('trFieldPagamento').value || null,
@@ -28396,11 +28936,26 @@
         registrado_por: (window.__currentUsuario && window.__currentUsuario.nome) || null
       };
       $('trSaveBtn').disabled = true;
+      if(ehDoacao){
+        const nomeDoador = $('trDoadorNome').value.trim() || ($('trLembreteOn').checked ? descricao : '');
+        const idDoador = await salvarDoador(nomeDoador, doadorFone);
+        if(idDoador === false){ $('trSaveBtn').disabled = false; return; }
+        const antes = lancEditando || {};
+        const lembData = $('trLembreteOn').checked ? $('trLembreteData').value : null;
+        linha.doador_id = idDoador;
+        linha.solicitado_por = $('trDoacaoPediu').value.trim() || null;
+        linha.lembrete_data = lembData;
+        // Mudou a data (ou ligou de novo): o lembrete volta a ficar pendente.
+        if(lembData !== (antes.lembrete_data || null)){ linha.lembrete_feito_em = null; linha.lembrete_feito_por = null; }
+      } else if(lancEditando && (lancEditando.doador_id || lancEditando.solicitado_por || lancEditando.lembrete_data)){
+        // Saiu da categoria Doação: limpa os dados de doador/lembrete.
+        Object.assign(linha, { doador_id: null, solicitado_por: null, lembrete_data: null, lembrete_feito_em: null, lembrete_feito_por: null });
+      }
       const { error } = lancEditando
         ? await supa.from('tesouraria_lancamentos').update(linha).eq('id', lancEditando.id)
         : await supa.from('tesouraria_lancamentos').insert(linha);
       $('trSaveBtn').disabled = false;
-      if(error){ alert('Não consegui salvar o lançamento: ' + error.message); return; }
+      if(error){ alert(erroDeDoacao(error.message) ? SQL_DOACOES : 'Não consegui salvar o lançamento: ' + error.message); return; }
       $('trModalOverlay').classList.remove('show');
       // Lançou num mês que não está na tela: vai pra ele, senão parece que sumiu.
       const [a, m] = linha.data.split('-').map(Number);
@@ -28730,6 +29285,7 @@
       $('trCfgCidade').value = config.cidade || '';
       $('trCfgMsgCob').value = cfg('msg_cobranca');
       $('trCfgMsgRec').value = cfg('msg_recibo');
+      $('trCfgMsgDoa').value = cfg('msg_doacao');
       mostrarModal($('trConfigModal'));
     }
     $('trConfigBtn').addEventListener('click', async () => { await carregarConfig(); abrirConfig(); });
@@ -28737,12 +29293,13 @@
     $('trCfgPadrao').addEventListener('click', () => {
       $('trCfgMsgCob').value = MSG_PADRAO.msg_cobranca;
       $('trCfgMsgRec').value = MSG_PADRAO.msg_recibo;
+      $('trCfgMsgDoa').value = MSG_PADRAO.msg_doacao;
     });
     $('trCfgSalvar').addEventListener('click', async () => {
       const quem = (window.__currentUsuario && window.__currentUsuario.nome) || null;
       const linhas = [['pix_chave', $('trCfgPix').value.trim()], ['pix_nome', $('trCfgPixNome').value.trim()],
         ['tesoureiro_nome', $('trCfgAssNome').value.trim()], ['tesoureiro_cargo', $('trCfgAssCargo').value.trim()], ['cidade', $('trCfgCidade').value.trim()],
-        ['msg_cobranca', $('trCfgMsgCob').value.trim()], ['msg_recibo', $('trCfgMsgRec').value.trim()]]
+        ['msg_cobranca', $('trCfgMsgCob').value.trim()], ['msg_recibo', $('trCfgMsgRec').value.trim()], ['msg_doacao', $('trCfgMsgDoa').value.trim()]]
         .map(([chave, valor]) => ({ chave, valor, atualizado_por: quem, atualizado_em: new Date().toISOString() }));
       $('trCfgSalvar').disabled = true;
       const { error } = await supa.from('clube_config').upsert(linhas);
@@ -28776,7 +29333,7 @@
       carregarAgenda().then(() => { if(eventoAberto) desenharDetalhe(); });
       carregarPessoas().then(() => { if($('trAbaCobrancas').style.display !== 'none') desenharCobrancas(); });
     };
-    document.addEventListener('cedros:loggedin', () => { if(view.classList.contains('active')) carregar(); else desenharTudo(); });
+    document.addEventListener('cedros:loggedin', () => { if(view.classList.contains('active')) carregar(); else { desenharTudo(); carregarConfig(); carregarLembretesLeve(); } });
   })();
 
   // ---- Generic helper: simple "list + tag + modal" screens (Secretaria, Almoxarifado, Manuais, Aniversário, Especialidades) ----
@@ -33736,6 +34293,170 @@ const REQ_SUMMARIES = {
 
     populateYears();
     document.addEventListener('cedros:loggedin', updateDashboardChip);
+
+    // -------------------------------------------------------------------
+    // Importar especialidades do SGC. O Robô SGC (pasta robo-sgc) lê as
+    // telas "Especialidades - NOME" do SGC e a ponte.js entrega aqui por
+    // postMessage. O app acha a pessoa (pelo número de matrícula oficial,
+    // senão pelo nome), compara com especialidades_concluidas e só grava as
+    // que faltam e que o administrador deixar marcadas — com a sessão dele.
+    // -------------------------------------------------------------------
+    const sgcBtn = document.getElementById('spSgcImportBtn');
+    const sgcOverlay = document.getElementById('spSgcOverlay');
+    const sgcBody = document.getElementById('spSgcBody');
+    const sgcSave = document.getElementById('spSgcSaveBtn');
+    let espSgc = null;    // { lidoEm, membros: [{ codUsuario, nome, especialidades: [{ especialidade, area, conclusao, ... }] }] }
+    let espPlano = null;
+    const escSgc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
+    const chaveSgc = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+    const CATALOGO_POR_CHAVE = {};
+    Object.keys(CATEGORY_BY_NAME).forEach(nome => { CATALOGO_POR_CHAVE[chaveSgc(nome)] = nome; });
+    function podeImportarEsp(){
+      const u = window.__currentUsuario;
+      return !!(u && (u.papel === 'Administrador' || (u.acesso && u.acesso.admin)));
+    }
+    function atualizarBotaoSgc(){
+      if(!sgcBtn) return;
+      const total = espSgc ? espSgc.membros.reduce((s, m) => s + m.especialidades.length, 0) : 0;
+      sgcBtn.style.display = (espSgc && podeImportarEsp()) ? '' : 'none';
+      sgcBtn.textContent = '🤖 Importar especialidades do SGC (' + total + ')';
+    }
+    // "dd/mm/aaaa" → "aaaa-mm-dd"
+    function dataSgc(t){
+      const m = String(t || '').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      return m ? m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0') : null;
+    }
+
+    function montarPlanoEsp(sgc, usuarios, mats, feitas){
+      const porNumero = new Map();
+      mats.forEach(r => { if(r.numero_matricula) porNumero.set(String(r.numero_matricula).trim(), r.usuario_id); });
+      const usPorId = {};
+      usuarios.forEach(u => { usPorId[u.id] = u; });
+      const porNome = new Map();
+      usuarios.forEach(u => { const k = chaveSgc(u.nome); if(!porNome.has(k)) porNome.set(k, []); porNome.get(k).push(u); });
+      const jaTem = new Set(feitas.map(f => f.usuario_id + '|' + chaveSgc(f.especialidade)));
+
+      const p = { novas: [], andamento: [], semMembro: [], ambiguos: [], ok: 0 };
+      sgc.forEach(m => {
+        let u = (m.codUsuario && porNumero.has(String(m.codUsuario))) ? usPorId[porNumero.get(String(m.codUsuario))] : null;
+        if(!u){
+          const cands = porNome.get(chaveSgc(m.nome)) || [];
+          if(cands.length > 1){ p.ambiguos.push({ m, cands }); return; }
+          u = cands[0] || null;
+        }
+        if(!u){ p.semMembro.push(m); return; }
+        const vistasAqui = new Set();
+        m.especialidades.forEach(e => {
+          const nomeCat = CATALOGO_POR_CHAVE[chaveSgc(e.especialidade)] || null;
+          const nome = nomeCat || e.especialidade;
+          const k = chaveSgc(nome);
+          if(vistasAqui.has(k)) return;
+          vistasAqui.add(k);
+          if(jaTem.has(u.id + '|' + k) || jaTem.has(u.id + '|' + chaveSgc(e.especialidade))){ p.ok++; return; }
+          const data = dataSgc(e.conclusao);
+          if(!data){ p.andamento.push({ usuario: u, nome }); return; }
+          p.novas.push({ usuario: u, nome, categoria: nomeCat ? CATEGORY_BY_NAME[nomeCat] : null, foraCatalogo: !nomeCat, data, marcado: true });
+        });
+      });
+      return p;
+    }
+
+    function renderPlanoEsp(){
+      const p = espPlano;
+      const item = (i, it) =>
+        '<label class="un-sgc-item"><input type="checkbox" data-i="' + i + '"' + (it.marcado ? ' checked' : '') + '>' +
+        '<span><b>' + escSgc(it.nome) + '</b><small>' + escSgc(it.usuario.nome + ' · ' + it.data.split('-').reverse().join('/') +
+        (it.foraCatalogo ? ' · fora do catálogo do app' : (it.categoria ? ' · ' + it.categoria : ''))) + '</small></span></label>';
+      const info = (t, s) => '<div class="un-sgc-item"><span><b>' + escSgc(t) + '</b><small>' + escSgc(s) + '</small></span></div>';
+      const secao = (titulo, lista) => lista.length ? '<p class="un-section-title un-sgc-sec">' + titulo + ' (' + lista.length + ')</p>' + lista.join('') : '';
+      const lidoEm = espSgc.lidoEm ? new Date(espSgc.lidoEm).toLocaleString('pt-BR') : '—';
+      let html = '<p class="pl-reminder-hint" style="margin-top:0;">' + espSgc.membros.length + ' membro(s) lidos do SGC em ' + escSgc(lidoEm) +
+        '. Nada é gravado até você tocar em "Gravar selecionadas".</p>';
+      html += secao('Concluídas no SGC, faltam no app', p.novas.map((it, i) => item(i, it)));
+      html += secao('Membro não achado no app (importe os membros antes)', p.semMembro.map(m => info(m.nome, m.especialidades.length + ' especialidade(s) no SGC')));
+      html += secao('Nome repetido no app (confira à mão)', p.ambiguos.map(a => info(a.m.nome, a.cands.length + ' cadastros com esse nome: ' + a.cands.map(c => c.unidade).join(', '))));
+      html += secao('Sem data de conclusão no SGC (em andamento, não importa)', p.andamento.map(a => info(a.nome, a.usuario.nome)));
+      if(p.ok) html += '<p class="pl-reminder-hint">' + p.ok + ' já estavam registradas no app.</p>';
+      if(!p.novas.length && !p.semMembro.length && !p.ambiguos.length && !p.andamento.length) html += '<p class="un-empty-hint">Tudo igual: o app já tem todas as especialidades do SGC.</p>';
+      sgcBody.innerHTML = html;
+      sgcSave.disabled = !p.novas.length;
+    }
+
+    async function abrirImportEsp(){
+      if(!espSgc) return;
+      if(!supa){ alert('Configure o Supabase em clube.js primeiro.'); return; }
+      if(!podeImportarEsp()){ alert('Só administradores podem importar do SGC.'); return; }
+      sgcBody.innerHTML = '<p class="un-empty-hint">Comparando com o cadastro do app...</p>';
+      sgcSave.disabled = true; sgcSave.textContent = 'Gravar selecionadas';
+      sgcOverlay.classList.add('show');
+      const [us, mats, feitas] = await Promise.all([
+        supa.from('usuarios').select('id, nome, unidade, ativo'),
+        supa.from('usuario_matricula_oficial').select('usuario_id, numero_matricula'),
+        supa.from('especialidades_concluidas').select('usuario_id, especialidade')
+      ]);
+      const erro = us.error || mats.error || feitas.error;
+      if(erro){ sgcBody.innerHTML = '<p class="un-empty-hint">Não foi possível ler o cadastro: ' + escSgc(erro.message) + '</p>'; return; }
+      espPlano = montarPlanoEsp(espSgc.membros, us.data || [], mats.data || [], feitas.data || []);
+      renderPlanoEsp();
+    }
+
+    async function gravarEsp(){
+      const sel = Array.from(sgcBody.querySelectorAll('input[data-i]:checked')).map(c => espPlano.novas[Number(c.dataset.i)]);
+      if(!sel.length){ alert('Nada selecionado.'); return; }
+      if(!confirm('Gravar ' + sel.length + ' especialidade(s) concluída(s) no Cedros Digital?')) return;
+      sgcSave.disabled = true; sgcSave.textContent = 'Gravando...';
+      const linhas = sel.map(it => ({ usuario_id: it.usuario.id, especialidade: it.nome, categoria: it.categoria, ano: parseInt(it.data.slice(0, 4), 10), data_conclusao: it.data }));
+      const { error } = await supa.from('especialidades_concluidas').insert(linhas);
+      sgcSave.textContent = 'Gravar selecionadas';
+      if(error){
+        alert('Não foi possível gravar: ' + error.message + '\n\nA lista do SGC continua guardada; tente de novo.');
+        sgcSave.disabled = false;
+        return;
+      }
+      alert('Pronto! ' + linhas.length + ' especialidade(s) registrada(s).');
+      espSgc = null; espPlano = null;
+      window.postMessage({ origem: 'cedros-app', tipo: 'especialidades-sgc-importadas' }, location.origin);
+      sgcOverlay.classList.remove('show');
+      atualizarBotaoSgc();
+      loadAchievements();
+      updateDashboardChip();
+    }
+
+    if(sgcBtn){
+      sgcBtn.addEventListener('click', abrirImportEsp);
+      document.getElementById('spSgcClose').addEventListener('click', () => sgcOverlay.classList.remove('show'));
+      sgcSave.addEventListener('click', gravarEsp);
+
+      // O robô abre o app em .../#importar-sgc-esp quando só há especialidades.
+      const abrirSeVeioDoRobo = () => {
+        if(location.hash !== '#importar-sgc-esp' || !espSgc || !podeImportarEsp()) return;
+        // window.: aqui dentro "history" é a lista de anos (spAchHistory).
+        window.history.replaceState(null, '', location.pathname + location.search);
+        showView('view-specialties');
+        tabAchievements.click();
+        abrirImportEsp();
+      };
+      window.addEventListener('message', e => {
+        if(e.source !== window || e.origin !== location.origin) return;
+        const m = e.data;
+        if(!m || m.origem !== 'robo-sgc' || m.tipo !== 'especialidades-sgc') return;
+        if(!m.dados || !Array.isArray(m.dados.membros) || !m.dados.membros.length) return;
+        const txt = v => String(v == null ? '' : v).trim();
+        espSgc = {
+          lidoEm: m.dados.lidoEm || null,
+          membros: m.dados.membros.filter(x => x && x.nome).map(x => ({
+            codUsuario: txt(x.codUsuario), nome: txt(x.nome),
+            especialidades: (Array.isArray(x.especialidades) ? x.especialidades : []).filter(e => e && e.especialidade).map(e => ({
+              especialidade: txt(e.especialidade), area: txt(e.area), conclusao: txt(e.conclusao), cadastro: txt(e.cadastro)
+            }))
+          }))
+        };
+        atualizarBotaoSgc();
+        abrirSeVeioDoRobo();
+      });
+      document.addEventListener('cedros:loggedin', () => { atualizarBotaoSgc(); abrirSeVeioDoRobo(); });
+      window.postMessage({ origem: 'cedros-app', tipo: 'pedir-membros-sgc' }, location.origin);
+    }
   })();
 
   // ---------------------------------------------------------------------
@@ -38823,12 +39544,285 @@ const REQ_SUMMARIES = {
       salvarPDF(doc, 'evolucao-anual.pdf');
     }
 
+    // ---- Estoque ----
+    // Insígnias de classe, especialidades, pins de excelência e outros itens que
+    // a coordenação entrega. A quantidade mora em estoque_itens; cada entrada/
+    // saída grava uma linha em estoque_movimentos com o saldo depois dela.
+    const EST_TIPOS = { classe: 'Classe', especialidade: 'Especialidade', pin: 'Pin de excelência', outro: 'Outro' };
+    const EST_DETALHE_SUG = { classe: 'Ex.: Insígnia, Cartão, Distintivo', especialidade: 'Ex.: Insígnia (pano), Mestrado', pin: 'Ex.: Pin dourado, Pin prata', outro: 'Ex.: Tamanho, cor' };
+    const EST_MOV_TXT = { entrada: 'Entrada', saida: 'Saída', ajuste: 'Ajuste' };
+    let estItens = [];
+    let estTipo = '';
+    let estAberto = null;        // id do item aberto, 'novo' ou null
+    let estCarregado = false;
+    let estSalvando = false;
+
+    function quemFez(){ const u = window.__currentUsuario || {}; return u.nome || u.email || ''; }
+    function dataHoraBr(iso){
+      const d = new Date(iso); if(isNaN(d)) return '';
+      return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+    const estBaixo = it => it.minimo > 0 && it.quantidade <= it.minimo;
+    const estOrdenar = (a, b) => (Object.keys(EST_TIPOS).indexOf(a.tipo) - Object.keys(EST_TIPOS).indexOf(b.tipo))
+      || (a.tipo === 'classe' ? ordemClasse(a.nome) - ordemClasse(b.nome) : 0)
+      || String(a.nome).localeCompare(String(b.nome), 'pt-BR', { sensitivity: 'base' })
+      || String(a.detalhe || '').localeCompare(String(b.detalhe || ''), 'pt-BR');
+
+    async function estCarregar(){
+      if(!supa){ $('coEstLista').innerHTML = '<p class="co-vazio">Sem conexão com o banco.</p>'; return; }
+      if(!estCarregado) $('coEstLista').innerHTML = '<p class="co-vazio">Carregando…</p>';
+      const { data, error } = await supa.from('estoque_itens').select('*');
+      if(error){
+        console.error('Erro ao carregar estoque:', error.message);
+        $('coEstLista').innerHTML = '<p class="co-vazio">Não foi possível carregar o estoque. Tente de novo.</p>';
+        return;
+      }
+      estItens = (data || []).sort(estOrdenar);
+      estCarregado = true;
+      estRenderLista();
+      if(estAberto && estAberto !== 'novo') estAbrir(estAberto);
+    }
+    function estRenderResumo(){
+      const unidades = estItens.reduce((n, it) => n + (it.quantidade || 0), 0);
+      const baixos = estItens.filter(estBaixo).length;
+      $('coEstResumo').innerHTML =
+        '<div class="co-stat"><b>' + estItens.length + '</b><span>Itens</span></div>' +
+        '<div class="co-stat"><b>' + unidades + '</b><span>Unidades em estoque</span></div>' +
+        '<div class="co-stat"><b' + (baixos ? ' style="color:#F08A6C"' : '') + '>' + baixos + '</b><span>Abaixo do mínimo</span></div>';
+    }
+    function estRenderLista(){
+      estRenderResumo();
+      const termo = norm($('coEstBusca').value);
+      const lista = estItens.filter(it => (!estTipo || it.tipo === estTipo) && (!termo || norm(it.nome + ' ' + (it.detalhe || '')).indexOf(termo) !== -1));
+      $('coEstLista').innerHTML = lista.map(it =>
+        '<div class="co-est-item' + (estBaixo(it) ? ' baixo' : '') + '" data-id="' + esc(it.id) + '" role="button" tabindex="0">' +
+          '<button type="button" class="co-est-rapido" data-rapido="saida" aria-label="Dar saída de 1"' + (it.quantidade ? '' : ' disabled') + '>−</button>' +
+          '<span class="co-est-info">' +
+            '<span class="co-est-nome">' + esc(it.nome) + '</span>' +
+            '<span class="co-est-sub">' + esc(EST_TIPOS[it.tipo] || it.tipo) + (it.detalhe ? ' · ' + esc(it.detalhe) : '') +
+              (estBaixo(it) ? ' · <span class="co-est-alerta">' + (it.quantidade ? 'estoque baixo' : 'esgotado') + '</span>' : '') + '</span>' +
+          '</span>' +
+          '<span class="co-est-qtd">' + it.quantidade + '<small>' + (it.minimo ? 'mín. ' + it.minimo : 'unid.') + '</small></span>' +
+          '<button type="button" class="co-est-rapido mais" data-rapido="entrada" aria-label="Dar entrada de 1">+</button>' +
+        '</div>').join('');
+      $('coEstVazio').style.display = lista.length ? 'none' : '';
+      $('coEstVazio').textContent = estItens.length ? 'Nenhum item encontrado com esse filtro.' : 'Nenhum item no estoque ainda. Toque em “+ Novo item” para cadastrar.';
+    }
+    function estMostrarLista(){
+      estAberto = null;
+      $('coEstDetalhe').style.display = 'none';
+      $('coEstListaWrap').style.display = '';
+    }
+    function estSugestoes(tipo){
+      let nomes = [];
+      if(tipo === 'classe') nomes = ORDEM.slice();
+      else if(tipo === 'especialidade' && typeof SPECIALTY_DB !== 'undefined') nomes = Object.keys(SPECIALTY_DB).flatMap(k => SPECIALTY_DB[k]);
+      else if(tipo === 'pin') nomes = ORDEM.map(c => 'Pin de excelência — ' + c);
+      $('coEstSugNomes').innerHTML = nomes.map(n => '<option value="' + esc(n) + '">').join('');
+    }
+    function estFormHtml(it){
+      const t = it ? it.tipo : (estTipo || 'classe');
+      return '<div class="co-card">' +
+        '<h4 class="co-card-titulo">' + (it ? 'Editar item' : 'Novo item') + '</h4>' +
+        '<label class="co-label" for="coEstFTipo">Tipo</label>' +
+        '<select id="coEstFTipo" class="co-input">' + Object.keys(EST_TIPOS).map(k => '<option value="' + k + '"' + (k === t ? ' selected' : '') + '>' + EST_TIPOS[k] + '</option>').join('') + '</select>' +
+        '<label class="co-label" for="coEstFNome">Nome</label>' +
+        '<input type="text" id="coEstFNome" class="co-input" list="coEstSugNomes" autocomplete="off" placeholder="Ex.: Amigo, Primeiros Socorros…" value="' + esc(it ? it.nome : '') + '">' +
+        '<label class="co-label" for="coEstFDetalhe">Detalhe (opcional)</label>' +
+        '<input type="text" id="coEstFDetalhe" class="co-input" autocomplete="off" placeholder="' + esc(EST_DETALHE_SUG[t]) + '" value="' + esc(it ? (it.detalhe || '') : '') + '">' +
+        '<div class="co-est-grid">' +
+          (it ? '' : '<div><label class="co-label" for="coEstFQtd">Quantidade inicial</label><input type="number" min="0" step="1" inputmode="numeric" id="coEstFQtd" class="co-input" value="0"></div>') +
+          '<div><label class="co-label" for="coEstFMin">Avisar quando tiver até</label><input type="number" min="0" step="1" inputmode="numeric" id="coEstFMin" class="co-input" value="' + (it ? it.minimo : 0) + '"></div>' +
+        '</div>' +
+        '<label class="co-label" for="coEstFObs">Observação (opcional)</label>' +
+        '<input type="text" id="coEstFObs" class="co-input" autocomplete="off" placeholder="Ex.: guardado no armário da secretaria" value="' + esc(it ? (it.observacao || '') : '') + '">' +
+        '<p class="co-nota" id="coEstFErro" style="display:none; color:#F08A6C;"></p>' +
+        '<div class="co-acoes"><button type="button" class="co-btn" id="coEstFSalvar">Salvar</button>' +
+        (it ? '<button type="button" class="co-btn perigo" id="coEstFExcluir">Excluir item</button>' : '<button type="button" class="co-btn sec" id="coEstFCancelar">Cancelar</button>') +
+        '</div></div>';
+    }
+    function estLigarForm(it){
+      estSugestoes($('coEstFTipo').value);
+      $('coEstFTipo').addEventListener('change', () => {
+        estSugestoes($('coEstFTipo').value);
+        $('coEstFDetalhe').placeholder = EST_DETALHE_SUG[$('coEstFTipo').value] || '';
+      });
+      $('coEstFSalvar').addEventListener('click', () => estSalvarItem(it));
+      if($('coEstFCancelar')) $('coEstFCancelar').addEventListener('click', estMostrarLista);
+      if($('coEstFExcluir')) $('coEstFExcluir').addEventListener('click', () => estExcluir(it));
+    }
+    function estNovo(){
+      estAberto = 'novo';
+      $('coEstDetalhe').innerHTML = '<button type="button" class="co-voltar" id="coEstVoltar">‹ Voltar ao estoque</button>' + estFormHtml(null);
+      $('coEstListaWrap').style.display = 'none';
+      $('coEstDetalhe').style.display = '';
+      $('coEstVoltar').addEventListener('click', estMostrarLista);
+      estLigarForm(null);
+      $('coEstFNome').focus();
+    }
+    async function estAbrir(id){
+      const it = estItens.find(x => x.id === id);
+      if(!it){ estMostrarLista(); return; }
+      estAberto = id;
+      $('coEstDetalhe').innerHTML =
+        '<button type="button" class="co-voltar" id="coEstVoltar">‹ Voltar ao estoque</button>' +
+        '<h3 class="co-det-nome">' + esc(it.nome) + '</h3>' +
+        '<p class="co-det-sub">' + esc(EST_TIPOS[it.tipo] || it.tipo) + (it.detalhe ? ' · ' + esc(it.detalhe) : '') + (it.observacao ? ' · ' + esc(it.observacao) : '') + '</p>' +
+        '<div class="co-resumo" style="grid-template-columns:repeat(2,1fr);">' +
+          '<div class="co-stat"><b' + (estBaixo(it) ? ' style="color:#F08A6C"' : '') + '>' + it.quantidade + '</b><span>Em estoque</span></div>' +
+          '<div class="co-stat"><b>' + (it.minimo || '—') + '</b><span>Aviso de mínimo</span></div>' +
+        '</div>' +
+        '<div class="co-card">' +
+          '<h4 class="co-card-titulo">Registrar movimentação</h4>' +
+          '<div class="co-est-grid">' +
+            '<div><label class="co-label" for="coEstMTipo">Tipo</label><select id="coEstMTipo" class="co-input">' +
+              '<option value="entrada">Entrada (chegou)</option><option value="saida">Saída (entregue)</option><option value="ajuste">Ajuste (contagem)</option></select></div>' +
+            '<div><label class="co-label" for="coEstMQtd" id="coEstMQtdLabel">Quantidade</label><input type="number" min="0" step="1" inputmode="numeric" id="coEstMQtd" class="co-input" value="1"></div>' +
+          '</div>' +
+          '<label class="co-label" for="coEstMMotivo">Motivo (opcional)</label>' +
+          '<input type="text" id="coEstMMotivo" class="co-input" autocomplete="off" placeholder="Ex.: Investidura 2026, compra na Associação…">' +
+          '<p class="co-nota" id="coEstMErro" style="display:none; color:#F08A6C;"></p>' +
+          '<button type="button" class="co-btn" id="coEstMSalvar">Registrar</button>' +
+        '</div>' +
+        '<h4 class="co-card-titulo" style="margin-top:14px;">Histórico</h4>' +
+        '<div class="co-card" id="coEstHist"><p class="co-nota">Carregando…</p></div>' +
+        '<details class="co-card" style="padding:12px 14px;"><summary class="co-card-titulo" style="cursor:pointer; margin:0;">Editar ou excluir item</summary><div style="margin-top:10px;" id="coEstEditWrap"></div></details>';
+      $('coEstEditWrap').innerHTML = estFormHtml(it).replace(/^<div class="co-card">/, '<div>');
+      $('coEstListaWrap').style.display = 'none';
+      $('coEstDetalhe').style.display = '';
+      $('coEstVoltar').addEventListener('click', estMostrarLista);
+      $('coEstMTipo').addEventListener('change', () => {
+        const aj = $('coEstMTipo').value === 'ajuste';
+        $('coEstMQtdLabel').textContent = aj ? 'Quantidade contada' : 'Quantidade';
+        $('coEstMQtd').value = aj ? it.quantidade : 1;
+      });
+      $('coEstMSalvar').addEventListener('click', () => estMovimentar(it, $('coEstMTipo').value, parseInt($('coEstMQtd').value, 10), $('coEstMMotivo').value.trim()));
+      estLigarForm(it);
+      const { data, error } = await supa.from('estoque_movimentos').select('*').eq('item_id', id).order('created_at', { ascending: false }).limit(100);
+      if(estAberto !== id || !$('coEstHist')) return;
+      if(error){ $('coEstHist').innerHTML = '<p class="co-nota">Não foi possível carregar o histórico.</p>'; return; }
+      $('coEstHist').innerHTML = (data || []).length ? data.map(m =>
+        '<div class="co-est-mov"><span><b class="' + m.tipo + '">' + EST_MOV_TXT[m.tipo] + ' ' + (m.tipo === 'ajuste' ? '→ ' + m.saldo : (m.tipo === 'saida' ? '−' : '+') + Math.abs(m.quantidade)) + '</b>' +
+          (m.motivo ? ' · ' + esc(m.motivo) : '') + '<br><small>' + dataHoraBr(m.created_at) + (m.feito_por ? ' · ' + esc(m.feito_por) : '') + '</small></span>' +
+          '<small>saldo ' + m.saldo + '</small></div>').join('')
+        : '<p class="co-nota">Nenhuma movimentação ainda.</p>';
+    }
+    function estErro(id, msg){
+      const el = $(id);
+      if(el){ el.textContent = msg; el.style.display = msg ? '' : 'none'; }
+      else if(msg) alert(msg);   // botões rápidos +/− da lista não têm onde mostrar
+    }
+    async function estSalvarItem(it){
+      if(estSalvando) return;
+      const tipo = $('coEstFTipo').value;
+      const nome = $('coEstFNome').value.trim();
+      const detalhe = $('coEstFDetalhe').value.trim() || null;
+      const minimo = Math.max(0, parseInt($('coEstFMin').value, 10) || 0);
+      const observacao = $('coEstFObs').value.trim() || null;
+      if(!nome){ estErro('coEstFErro', 'Informe o nome do item.'); return; }
+      const repetido = estItens.find(x => x.id !== (it && it.id) && x.tipo === tipo && norm(x.nome) === norm(nome) && norm(x.detalhe) === norm(detalhe));
+      if(repetido){ estErro('coEstFErro', 'Esse item já está cadastrado. Abra-o na lista para dar entrada.'); return; }
+      estSalvando = true; $('coEstFSalvar').disabled = true;
+      try {
+        if(it){
+          const { error } = await supa.from('estoque_itens').update({ tipo, nome, detalhe, minimo, observacao }).eq('id', it.id);
+          if(error) throw error;
+        } else {
+          const quantidade = Math.max(0, parseInt($('coEstFQtd').value, 10) || 0);
+          const { data, error } = await supa.from('estoque_itens').insert({ tipo, nome, detalhe, minimo, observacao, quantidade }).select().single();
+          if(error) throw error;
+          if(quantidade) await supa.from('estoque_movimentos').insert({ item_id: data.id, tipo: 'entrada', quantidade, saldo: quantidade, motivo: 'Cadastro do item', feito_por: quemFez() });
+          estAberto = data.id;
+        }
+        await estCarregar();
+      } catch(e){
+        console.error('Erro ao salvar item do estoque:', e.message || e);
+        estErro('coEstFErro', 'Não foi possível salvar. ' + (e.message || ''));
+      } finally {
+        estSalvando = false;
+        if($('coEstFSalvar')) $('coEstFSalvar').disabled = false;
+      }
+    }
+    async function estExcluir(it){
+      if(!confirm('Excluir “' + it.nome + (it.detalhe ? ' (' + it.detalhe + ')' : '') + '” do estoque? O histórico de movimentações dele também será apagado.')) return;
+      const { error } = await supa.from('estoque_itens').delete().eq('id', it.id);
+      if(error){ alert('Não foi possível excluir: ' + error.message); return; }
+      estMostrarLista();
+      estCarregar();
+    }
+    async function estMovimentar(it, tipo, qtd, motivo){
+      if(estSalvando) return;
+      if(!Number.isInteger(qtd) || qtd < 0 || (tipo !== 'ajuste' && qtd === 0)){ estErro('coEstMErro', 'Informe uma quantidade válida.'); return; }
+      estSalvando = true;
+      if($('coEstMSalvar')) $('coEstMSalvar').disabled = true;
+      try {
+        // Lê o saldo do banco na hora, pra duas pessoas mexendo ao mesmo tempo
+        // não sobrescreverem uma à outra com um número velho da tela.
+        const { data: atual, error: e1 } = await supa.from('estoque_itens').select('quantidade').eq('id', it.id).single();
+        if(e1) throw e1;
+        const antes = atual.quantidade;
+        const saldo = tipo === 'entrada' ? antes + qtd : tipo === 'saida' ? antes - qtd : qtd;
+        if(saldo < 0){ estErro('coEstMErro', 'Só há ' + antes + ' em estoque.'); return; }
+        const { data: mudou, error: e2 } = await supa.from('estoque_itens').update({ quantidade: saldo }).eq('id', it.id).eq('quantidade', antes).select('id');
+        if(e2) throw e2;
+        if(!mudou || !mudou.length){ estErro('coEstMErro', 'Alguém acabou de mexer neste item. Confira o saldo e tente de novo.'); await estCarregar(); return; }
+        const { error: e3 } = await supa.from('estoque_movimentos').insert({ item_id: it.id, tipo, quantidade: tipo === 'ajuste' ? saldo - antes : (tipo === 'saida' ? -qtd : qtd), saldo, motivo: motivo || null, feito_por: quemFez() });
+        if(e3) throw e3;
+        await estCarregar();
+      } catch(e){
+        console.error('Erro ao movimentar estoque:', e.message || e);
+        estErro('coEstMErro', 'Não foi possível registrar. ' + (e.message || ''));
+      } finally {
+        estSalvando = false;
+        if($('coEstMSalvar')) $('coEstMSalvar').disabled = false;
+      }
+    }
+    function pdfEstoque(){
+      if(!estItens.length){ alert('Não há itens no estoque.'); return; }
+      const doc = novoDoc(); if(!doc) return;
+      const tit = 'Relatório do estoque';
+      let y = cabecalho(doc, tit);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.text('Estoque da Coordenação de Classes', 16, y); y += 6;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(80, 90, 82);
+      doc.text(estItens.length + ' itens · ' + estItens.reduce((n, it) => n + it.quantidade, 0) + ' unidades · ' + estItens.filter(estBaixo).length + ' abaixo do mínimo · ' + hojeLongo(), 16, y); y += 10;
+      doc.setTextColor(20, 24, 20);
+      Object.keys(EST_TIPOS).forEach(tipo => {
+        const l = estItens.filter(it => it.tipo === tipo);
+        if(!l.length) return;
+        y = secao(doc, y, (tipo === 'pin' ? 'PINS DE EXCELÊNCIA' : tipo === 'classe' ? 'CLASSES' : tipo === 'especialidade' ? 'ESPECIALIDADES' : 'OUTROS') + '  (' + l.length + ')', tit);
+        const cab = () => {
+          doc.setFillColor(232, 240, 234); doc.rect(16, y - 5, 178, 7, 'F');
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(30, 80, 50);
+          doc.text('Item', 17, y); doc.text('Detalhe', 110, y); doc.text('Mínimo', 168, y, { align: 'right' }); doc.text('Qtd.', 193, y, { align: 'right' });
+          y += 6; doc.setTextColor(20, 24, 20);
+        };
+        cab();
+        l.forEach((it, i) => {
+          if(y > 278){ y = novaPagina(doc, tit) + 4; cab(); }
+          if(i % 2){ doc.setFillColor(246, 248, 246); doc.rect(16, y - 4.2, 178, 6, 'F'); }
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+          doc.text(doc.splitTextToSize(it.nome, 90)[0], 17, y);
+          doc.text(doc.splitTextToSize(it.detalhe || '', 48)[0] || '', 110, y);
+          doc.text(it.minimo ? String(it.minimo) : '—', 168, y, { align: 'right' });
+          doc.setFont('helvetica', 'bold');
+          if(estBaixo(it)) doc.setTextColor(200, 70, 40);
+          doc.text(String(it.quantidade), 193, y, { align: 'right' });
+          doc.setTextColor(20, 24, 20);
+          y += 6;
+        });
+        y += 6;
+      });
+      rodape(doc);
+      salvarPDF(doc, 'estoque-coordenacao.pdf');
+    }
+
     // ---- Eventos ----
-    const ABAS = { lista: 'coPaneLista', evo: 'coPaneEvo', ent: 'coPaneEnt', rel: 'coPaneRel', sgc: 'coPaneSgc' };
+    const ABAS = { lista: 'coPaneLista', evo: 'coPaneEvo', ent: 'coPaneEnt', est: 'coPaneEst', rel: 'coPaneRel', sgc: 'coPaneSgc' };
     function trocarAba(qual){
       view.querySelectorAll('.co-tab').forEach(b => b.classList.toggle('active', b.getAttribute('data-co-tab') === qual));
       Object.keys(ABAS).forEach(k => { $(ABAS[k]).style.display = k === qual ? '' : 'none'; });
       if(qual === 'sgc') iniciarRoboTimer(); else pararRoboTimer();
+      if(qual === 'est'){ estMostrarLista(); estCarregar(); }
     }
     function abrir(){
       if(!podeAcessar()) return;
@@ -38842,7 +39836,32 @@ const REQ_SUMMARIES = {
     view.querySelectorAll('.co-tab').forEach(b => b.addEventListener('click', () => trocarAba(b.getAttribute('data-co-tab'))));
     $('coBackBtn').addEventListener('click', () => {
       if(aberta && $('coPaneLista').style.display !== 'none'){ mostrarLista(); return; }
+      if(estAberto && $('coPaneEst').style.display !== 'none'){ estMostrarLista(); return; }
       showView('view-dashboard');
+    });
+    $('coEstBusca').addEventListener('input', estRenderLista);
+    $('coEstTipos').addEventListener('click', e => {
+      const b = e.target.closest('.co-est-tipo'); if(!b) return;
+      estTipo = b.getAttribute('data-tipo');
+      $('coEstTipos').querySelectorAll('.co-est-tipo').forEach(x => x.classList.toggle('active', x === b));
+      estRenderLista();
+    });
+    $('coEstNovo').addEventListener('click', estNovo);
+    $('coEstPdf').addEventListener('click', pdfEstoque);
+    $('coEstLista').addEventListener('click', e => {
+      const card = e.target.closest('.co-est-item'); if(!card) return;
+      const id = card.getAttribute('data-id');
+      const rapido = e.target.closest('[data-rapido]');
+      if(rapido){
+        const it = estItens.find(x => x.id === id);
+        if(it && !rapido.disabled) estMovimentar(it, rapido.getAttribute('data-rapido'), 1, '');
+        return;
+      }
+      estAbrir(id);
+    });
+    $('coEstLista').addEventListener('keydown', e => {
+      if(e.key !== 'Enter' || e.target.closest('[data-rapido]')) return;
+      const card = e.target.closest('.co-est-item'); if(card) estAbrir(card.getAttribute('data-id'));
     });
 
     // ---- Incluir instrutor/membro (conta do app) para acompanhamento de classe ----
