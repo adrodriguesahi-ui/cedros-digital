@@ -1506,3 +1506,52 @@ alter table usuarios add column if not exists gerencia_almoxarifado boolean not 
 -- Vive em usuarios, e não no metadata do Auth, porque o app já lê esta tabela
 -- no login e porque assim o administrador enxerga quem ainda não trocou.
 alter table usuarios add column if not exists senha_provisoria boolean not null default false;
+
+-- ---------------------------------------------------------------------
+-- Estoque da Coordenação de Classes: insígnias de classe, especialidades,
+-- pins de excelência e o que mais o clube guarda pra entregar. A quantidade
+-- fica no item; cada entrada/saída vira uma linha em estoque_movimentos,
+-- pra saber quem mexeu, quando e por quê (ex.: entregue na investidura).
+-- ---------------------------------------------------------------------
+create table if not exists estoque_itens (
+  id uuid primary key default gen_random_uuid(),
+  tipo text not null check (tipo in ('classe', 'especialidade', 'pin', 'outro')),
+  nome text not null,
+  detalhe text,
+  quantidade int not null default 0 check (quantidade >= 0),
+  minimo int not null default 0 check (minimo >= 0),
+  observacao text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create unique index if not exists estoque_itens_tipo_nome_idx
+  on estoque_itens(tipo, lower(nome), lower(coalesce(detalhe, '')));
+
+drop trigger if exists trg_estoque_itens_updated_at on estoque_itens;
+create trigger trg_estoque_itens_updated_at
+  before update on estoque_itens
+  for each row execute function set_updated_at();
+
+create table if not exists estoque_movimentos (
+  id uuid primary key default gen_random_uuid(),
+  item_id uuid not null references estoque_itens(id) on delete cascade,
+  tipo text not null check (tipo in ('entrada', 'saida', 'ajuste')),
+  quantidade int not null,
+  saldo int not null,
+  motivo text,
+  feito_por text,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists estoque_movimentos_item_idx
+  on estoque_movimentos(item_id, created_at desc);
+
+alter table estoque_itens enable row level security;
+alter table estoque_movimentos enable row level security;
+
+drop policy if exists p_estoque_itens on estoque_itens;
+create policy p_estoque_itens on estoque_itens for all using(true) with check(true);
+
+drop policy if exists p_estoque_movimentos on estoque_movimentos;
+create policy p_estoque_movimentos on estoque_movimentos for all using(true) with check(true);
