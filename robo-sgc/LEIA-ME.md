@@ -39,6 +39,31 @@ Para apagar a lista sem importar, use **Limpar o que já foi lido**.
 Se o robô não achar a tabela, use **Mapear esta tela** na lista de membros e mande o arquivo
 `mapa-sgc-....json` (ele leva só a estrutura da tela, sem nomes nem valores).
 
+## Trazer as especialidades do SGC
+
+No SGC, as especialidades ficam numa tela por membro ("Especialidades - NOME",
+endereço `.../cms/visualiza_membro_esp.php?cod_usuario=...`).
+
+1. Abra uma destas telas no SGC e toque em 🤖 → **🏅 Trazer especialidades**:
+   - **a tela de especialidades de um membro**: o robô traz só as dele;
+   - **uma lista de membros** (por exemplo Unidades → Membros): o robô acha os membros pelos
+     links e abre, só para ler e em segundo plano, a tela de especialidades de cada um. Ele
+     pergunta antes e mostra "Lendo 3 de 20..." enquanto trabalha.
+2. Toque em **📤 Registrar no Cedros Digital** e entre como **administrador**.
+   Se só houver especialidades lidas, o app abre direto em **Especialidades → Conquistadas**
+   com a tela **🤖 Especialidades do SGC**. Se também houver membros lidos, os membros vêm
+   primeiro; depois use o botão **🤖 Importar especialidades do SGC** em Conquistadas.
+3. A tela mostra:
+   - as especialidades **concluídas no SGC que faltam no app** (já vêm marcadas);
+   - quem **não foi achado no app** (importe os membros antes) e nomes repetidos;
+   - as que estão **sem data de conclusão** no SGC (em andamento, não são importadas).
+   As que o app já tem não aparecem de novo.
+4. Toque em **Gravar selecionadas**.
+
+A pessoa é achada pelo número de matrícula oficial (o `cod_usuario` do SGC) e, se não tiver,
+pelo nome. O nome da especialidade é ligado ao catálogo do app para pegar a área; se não
+estiver no catálogo, entra com o nome do SGC e sem área.
+
 ## Mapear telas (para as próximas tarefas)
 
 Abra cada tela abaixo no SGC, toque em 🤖 e depois em **Mapear esta tela**.
