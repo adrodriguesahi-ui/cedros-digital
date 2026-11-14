@@ -1033,6 +1033,14 @@ alter table planejamentos_aula add column if not exists instrutor_convidado bool
 -- Aulas que o Coordenador da classe marcou pra acompanhar pessoalmente.
 alter table planejamentos_aula add column if not exists coordenador_acompanha boolean not null default false;
 
+-- Semana planejada, independente da data: a aula pode ficar "Fevereiro, 1ª
+-- semana" e ganhar a data depois. Com data marcada, o app grava o mês e a
+-- semana derivados dela.
+alter table planejamentos_aula add column if not exists mes_planejado smallint
+  check (mes_planejado between 1 and 12);
+alter table planejamentos_aula add column if not exists semana_planejada smallint
+  check (semana_planejada between 1 and 5);
+
 -- Texto do requisito ajustado pelo Coordenador daquele cartão: o catálogo de
 -- requisitos é fixo no app, e esta tabela guarda só o que foi reescrito.
 -- ATENÇÃO: requisito_titulo é a CHAVE do requisito no catálogo e nunca muda —
@@ -1389,6 +1397,31 @@ create policy p_clube_config on clube_config for all using(true) with check(true
 -- primeira vez que o recibo é gerado; reimprimir mantém o número.
 alter table tesouraria_lancamentos add column if not exists recibo_numero int;
 
+-- Doações: doador (com WhatsApp), quem pediu e lembrete da data.
+-- (Mesmo conteúdo de supabase/atualizacao-doacoes.sql.)
+-- Doadores: nome + WhatsApp (só dígitos, com DDD, sem o 55). Dado pessoal:
+-- só a liderança que lança na Tesouraria mexe nele pelo app.
+create table if not exists tesouraria_doadores (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null,
+  whatsapp text,
+  created_at timestamptz not null default now()
+);
+alter table tesouraria_doadores enable row level security;
+drop policy if exists p_tesouraria_doadores on tesouraria_doadores;
+create policy p_tesouraria_doadores on tesouraria_doadores for all using(true) with check(true);
+
+-- No lançamento de "Doação": quem doou, quem pediu e o lembrete. O lembrete
+-- fica pendente (lembrete_data preenchida e lembrete_feito_em vazio) até
+-- alguém marcar como feito no card da Tesouraria ou no sino do Início.
+alter table tesouraria_lancamentos add column if not exists doador_id uuid references tesouraria_doadores(id) on delete set null;
+alter table tesouraria_lancamentos add column if not exists solicitado_por text;
+alter table tesouraria_lancamentos add column if not exists lembrete_data date;
+alter table tesouraria_lancamentos add column if not exists lembrete_feito_em timestamptz;
+alter table tesouraria_lancamentos add column if not exists lembrete_feito_por text;
+create index if not exists tesouraria_lancamentos_lembrete_idx
+  on tesouraria_lancamentos(lembrete_data) where lembrete_data is not null and lembrete_feito_em is null;
+
 -- ---------------------------------------------------------------------
 -- Jogo da Forca (Desafio Só Desbravador).
 
@@ -1493,6 +1526,35 @@ create policy p_almoxarifado_itens on almoxarifado_itens for all using(true) wit
 drop policy if exists p_almoxarifado_emprestimos on almoxarifado_emprestimos;
 create policy p_almoxarifado_emprestimos on almoxarifado_emprestimos for all using(true) with check(true);
 
+-- Planilha de patrimônio do clube (N°, Quantidade, Item, Descrição, Condição,
+-- Valor): o Almoxarifado segue esse padrão. Item = nome, Condição = estado.
+-- Faltavam Descrição e Valor. O N° é a ordem de cadastro, calculada na tela.
+-- 'valor' é o valor UNITÁRIO; o total do item (quantidade × valor) é calculado
+-- na tela e não é guardado.
+alter table almoxarifado_itens add column if not exists descricao text;
+alter table almoxarifado_itens add column if not exists valor numeric(12,2) check (valor is null or valor >= 0);
+
+-- Lembretes ligados a itens do almoxarifado (ex.: "trocar a lona da barraca 3").
+-- Aparecem como card no topo da tela até alguém concluir. Concluído fica
+-- guardado (quem e quando) em vez de apagar. Apagar o item leva os lembretes.
+create table if not exists almoxarifado_lembretes (
+  id uuid primary key default gen_random_uuid(),
+  item_id uuid not null references almoxarifado_itens(id) on delete cascade,
+  mensagem text not null,
+  data_lembrete date,
+  concluido boolean not null default false,
+  concluido_em timestamptz,
+  concluido_por text,
+  criado_por text,
+  created_at timestamptz not null default now()
+);
+create index if not exists almoxarifado_lembretes_item_idx on almoxarifado_lembretes(item_id);
+create index if not exists almoxarifado_lembretes_abertos_idx
+  on almoxarifado_lembretes(data_lembrete) where concluido = false;
+alter table almoxarifado_lembretes enable row level security;
+drop policy if exists p_almoxarifado_lembretes on almoxarifado_lembretes;
+create policy p_almoxarifado_lembretes on almoxarifado_lembretes for all using(true) with check(true);
+
 -- Quem cadastra e dá baixa no almoxarifado. Coluna própria, e não um valor
 -- de usuarios.cargo, pela mesma razão do pode_pontuar_unidades: uma pessoa
 -- acumula funções no clube, e cargo só guarda uma. Quem não tem isto ligado
@@ -1555,3 +1617,90 @@ create policy p_estoque_itens on estoque_itens for all using(true) with check(tr
 
 drop policy if exists p_estoque_movimentos on estoque_movimentos;
 create policy p_estoque_movimentos on estoque_movimentos for all using(true) with check(true);
+
+-- Modelos de Autorização de Saída salvos na Secretaria. Só os dados do evento
+-- e o nome do responsável pelo clube: RG e CPF não vêm para cá, porque esta
+-- tabela segue a mesma política aberta das demais. O app apaga os vencidos.
+create table if not exists autorizacao_modelos (
+  id uuid primary key default gen_random_uuid(),
+  evento text not null,
+  data_inicio date not null,
+  data_fim date,
+  origem text,
+  destino text not null,
+  responsavel_nome text,
+  valido_ate date not null,
+  created_at timestamptz not null default now()
+);
+alter table autorizacao_modelos enable row level security;
+drop policy if exists p_autorizacao_modelos on autorizacao_modelos;
+create policy p_autorizacao_modelos on autorizacao_modelos for all using(true) with check(true);
+
+
+-- Avaliações de especialidade criadas no app: modelo do documento, capa e os
+-- itens digitados (tipo, texto, linhas, alternativas, pontos, subitem, gabarito).
+create table if not exists especialidade_avaliacoes (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null,
+  titulo text not null,
+  modelo text not null default 'cedros',
+  associacao text,
+  regiao text,
+  abertura text,
+  capa_data text,
+  itens jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists especialidade_avaliacoes_nome_idx on especialidade_avaliacoes(nome);
+alter table especialidade_avaliacoes enable row level security;
+drop policy if exists p_especialidade_avaliacoes on especialidade_avaliacoes;
+create policy p_especialidade_avaliacoes on especialidade_avaliacoes for all using(true) with check(true);
+
+
+-- ---------------------------------------------------------------------
+-- Coordenação de Classes: registro de classes concluídas por data.
+-- Guarda a classe que o desbravador concluiu (Regular, Avançada ou Liderança)
+-- e o ano/data, pra montar o histórico por ano e os relatórios, inclusive de
+-- classes feitas antes de o app existir (sem requisitos marcados).
+-- Quem tem conta no app liga por usuario_id; quem não tem, pelo nome.
+-- Rode uma vez no SQL Editor do Supabase (é seguro rodar de novo).
+-- ---------------------------------------------------------------------
+create table if not exists classes_registradas (
+  id uuid primary key default gen_random_uuid(),
+  usuario_id uuid references usuarios(id) on delete cascade,
+  nome_aluno text,
+  classe text not null,
+  nivel text not null default 'regular' check (nivel in ('regular', 'avancada', 'lideranca')),
+  ano int not null,
+  data_conclusao date,
+  registrado_por text,
+  created_at timestamptz not null default now(),
+  check (usuario_id is not null or nome_aluno is not null)
+);
+create index if not exists classes_registradas_usuario_idx on classes_registradas(usuario_id);
+create index if not exists classes_registradas_ano_idx on classes_registradas(ano);
+
+alter table classes_registradas enable row level security;
+drop policy if exists p_classes_registradas on classes_registradas;
+create policy p_classes_registradas on classes_registradas for all using(true) with check(true);
+
+
+-- ---------------------------------------------------------------------
+-- Coordenação de Classes: quem já assinou a especialidade concluída.
+-- Guarda, numa lista separada por vírgula, as assinaturas já cumpridas:
+-- instrutor, regional, associacao, missao (vazio = nenhuma ainda).
+-- Ex.: 'instrutor,regional'. Rode no SQL Editor do Supabase; é seguro rodar
+-- de novo (também atualiza quem já tinha a versão de uma assinatura só).
+-- ---------------------------------------------------------------------
+alter table especialidades_concluidas add column if not exists assinatura text;
+alter table especialidades_concluidas drop constraint if exists especialidades_concluidas_assinatura_chk;
+alter table especialidades_concluidas add constraint especialidades_concluidas_assinatura_chk
+  check (assinatura is null or assinatura ~ '^(instrutor|regional|associacao|missao)(,(instrutor|regional|associacao|missao))*$');
+
+-- Coordenação de Classes: investidura, comprovante da classe e entrega da condecoração.
+alter table classes_registradas add column if not exists data_investidura date;
+alter table classes_registradas add column if not exists comprovante_path text;
+alter table classes_registradas add column if not exists comprovante_nome text;
+alter table especialidades_concluidas add column if not exists data_entrega date;
+alter table especialidades_concluidas add column if not exists pagina_registro text;
+alter table especialidades_concluidas add column if not exists instrutor text;
