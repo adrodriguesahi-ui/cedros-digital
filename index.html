@@ -40518,152 +40518,130 @@ const REQ_SUMMARIES = {
       cmpMostrarLista();
       cmpCarregar();
     }
-    // Formulário de Pedido de Materiais no padrão da Associação: cabeçalho com
-    // o brasão, quadro do clube, Distintivos e Classes, especialidades em duas
-    // colunas (QTD + nome em maiúsculas), "Continuação" nas páginas seguintes e
-    // a assinatura e carimbo do(a) Coordenador(a) Regional. Sem valores.
+    // Formulário de Pedido de Materiais (modelo "Formulário D" da Associação):
+    // brasão e nome do clube centralizado, quadro Clube/Data/Diretor(a),
+    // Distintivos e Classes, especialidades em duas colunas, "Continuação" nas
+    // páginas seguintes e a assinatura do(a) Coordenador(a). Sem valores.
     function cmpPdf(p){
       const doc = novoDoc(); if(!doc) return;
       const CFG = window.CLUBE_CONFIG || {};
-      const W = 210, M = 16, LIM = 274, RH = 6.2, HC = 7.5, CW = 87, GAP = 4;
-      const VERDE = [31, 92, 52], VIVO = [63, 203, 107], TINTA = [24, 30, 26], CINZA = [105, 115, 108], ZEBRA = [243, 247, 244], GRADE = [205, 214, 207];
+      const W = 210, M = 18, CONT = W - 2 * M, LIM = 273, RH = 5.6, LH = 3.6, HC = 6.2, GAP = 4, CW = (CONT - GAP) / 2, QW = 13;
+      const VERDE = [34, 110, 52], TITULO = [51, 65, 85], TINTA = [30, 41, 59], CINZA = [100, 116, 139];
+      const GRADE = [148, 163, 184], CAB = [226, 232, 240], ZEBRA = [248, 250, 252], CAIXA = [203, 213, 225];
       const sobe = t => String(t || '').toLocaleUpperCase('pt-BR');
       const regiao = p.regiao || CFG.regiao || '';
       const brasao = window.CLUBE && window.CLUBE.brasaoPdf ? window.CLUBE.brasaoPdf(false) : '';
-      const dist = p.itens.filter(cmpEhDist), especs = p.itens.filter(i => !cmpEhDist(i));
+      const dist = p.itens.filter(cmpEhDist).map(i => ({ qtd: cmpQtd(i), nome: String(i.nome || '') }));
+      const especs = p.itens.filter(i => !cmpEhDist(i)).map(i => ({ qtd: cmpQtd(i), nome: sobe(i.nome) }));
+      const tracejado = on => { try { doc.setLineDashPattern(on ? [1, 0.8] : [], 0); } catch(e){} };
 
-      // Cabeçalho da 1ª página
-      let xT = M;
-      if(brasao){ try { doc.addImage(brasao, 'PNG', M, 9, 27, 27); xT = M + 33; } catch(e){} }
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.setTextColor(...TINTA);
-      doc.text(sobe('Clube ' + (CFG.nomeClube || '')), xT, 20.5);
-      doc.setFontSize(10.5); doc.setTextColor(...VERDE);
-      doc.text(sobe([CFG.associacao, regiao].filter(Boolean).join(' — ')), xT, 27);
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...CINZA);
-      doc.text('Formulário de Pedido de Materiais — Desbravadores', xT, 32.5);
-      doc.setFillColor(...VERDE); doc.roundedRect(W - M - 40, 13, 40, 16, 2, 2, 'F');
-      doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
-      doc.setFontSize(7.5); doc.text('PEDIDO DE', W - M - 20, 19.5, { align: 'center' });
-      doc.setFontSize(10.5); doc.text('MATERIAIS', W - M - 20, 25, { align: 'center' });
-      doc.setDrawColor(...VIVO); doc.setLineWidth(0.9); doc.line(M, 40, W - M, 40);
+      // Cabeçalho
+      if(brasao){ try { doc.addImage(brasao, 'PNG', M, 14, 21, 21); } catch(e){} }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(...VERDE);
+      doc.text(sobe('Clube ' + (CFG.nomeClube || '')), W / 2 + 4, 24, { align: 'center' });
+      doc.setFontSize(10); doc.setTextColor(...TITULO);
+      doc.text(sobe([CFG.associacao, regiao].filter(Boolean).join(' — ')), W / 2 + 4, 29.5, { align: 'center' });
+      doc.setDrawColor(...VERDE); doc.setLineWidth(0.7); doc.line(M, 37.5, W - M, 37.5);
 
       // Quadro do clube
-      let y = 45;
-      doc.setFillColor(...ZEBRA); doc.setDrawColor(...GRADE); doc.setLineWidth(0.3);
-      doc.roundedRect(M, y, W - 2 * M, 21, 2.5, 2.5, 'FD');
-      const campo = (rot, val, x, yy, w) => {
+      let y = 41.5;
+      doc.setFillColor(...ZEBRA); doc.setDrawColor(...CAIXA); doc.setLineWidth(0.3);
+      doc.roundedRect(M, y, CONT, 14.5, 1.8, 1.8, 'FD');
+      const campo = (rot, val, x, yy, fimLinha) => {
         doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...TINTA);
         doc.text(rot, x, yy);
-        const lx = x + doc.getTextWidth(rot) + 2;
-        doc.setDrawColor(150, 160, 152); doc.setLineWidth(0.2); doc.line(lx, yy + 1.2, x + w, yy + 1.2);
-        if(val){ doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text(doc.splitTextToSize(String(val), x + w - lx - 1)[0], lx + 1, yy); }
+        const lx = x + doc.getTextWidth(rot) + 1.5;
+        doc.setDrawColor(...CINZA); doc.setLineWidth(0.2); tracejado(true);
+        doc.line(lx, yy + 0.8, fimLinha, yy + 0.8); tracejado(false);
+        if(val){ doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.text(doc.splitTextToSize(String(val), fimLinha - lx - 1)[0], lx + 0.5, yy - 0.4); }
       };
-      campo('CLUBE:', (CFG.nomeClube || '') + (CFG.codigoClube ? '  ·  SGC ' + CFG.codigoClube : ''), M + 5, y + 8.5, 112);
-      campo('DATA:', dataBr(p.data), M + 124, y + 8.5, 49);
-      campo('DIRETOR(A):', p.diretor, M + 5, y + 16.5, 112);
-      campo('SOLICITANTE:', p.solicitante, M + 124, y + 16.5, 49);
-      y += 29;
+      campo('CLUBE:', CFG.nomeClube || '', M + 4, y + 5.6, 131);
+      campo('DATA:', p.data ? dataBr(p.data) : '      /      /', 135.5, y + 5.6, W - M - 4);
+      campo('DIRETOR(A):', p.diretor, M + 4, y + 11.6, 131);
+      y += 18.5;
 
       const continuar = () => {
         doc.addPage();
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(...TINTA);
-        const a = 'PEDIDO DE MATERIAIS — ';
-        doc.text(a, M, 20);
-        doc.setTextColor(...VERDE); doc.text('CONTINUAÇÃO', M + doc.getTextWidth(a) + 1.5, 20);
-        if(brasao){ try { doc.addImage(brasao, 'PNG', W - M - 13, 9, 13, 13); } catch(e){} }
-        doc.setDrawColor(...VIVO); doc.setLineWidth(0.6); doc.line(M, 25, W - M, 25);
-        return 32;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...VERDE);
+        doc.text('PEDIDO DE MATERIAIS — CONTINUAÇÃO', M, 19);
+        doc.setDrawColor(...CAIXA); doc.setLineWidth(0.4); doc.line(M, 22.5, W - M, 22.5);
+        return 26;
       };
-      // Uma coluna da tabela: QTD | título, linhas zebradas e grade fina.
+      // Altura da linha: nome que não cabe quebra em até duas linhas.
+      const linhasDe = (it, w) => { doc.setFont('helvetica', 'normal'); doc.setFontSize(8.4); return doc.splitTextToSize(it.nome, w - QW - 4).slice(0, 2); };
+      const alturaDe = (it, w) => { const n = linhasDe(it, w).length; return n > 1 ? RH + (n - 1) * LH : RH; };
       const coluna = (x, w, yy, titulo, lista) => {
-        doc.setFillColor(...VERDE); doc.rect(x, yy, w, HC, 'F');
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(255, 255, 255);
-        doc.text('QTD', x + 6.5, yy + 5, { align: 'center' }); doc.text(titulo, x + 15.5, yy + 5);
+        doc.setFillColor(...CAB); doc.rect(x, yy, w, HC, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...TINTA);
+        doc.text('QTD', x + QW / 2, yy + 4.2, { align: 'center' }); doc.text(titulo, x + QW + 2.2, yy + 4.2);
         let ry = yy + HC;
+        const cortes = [];
         lista.forEach((it, k) => {
-          if(k % 2){ doc.setFillColor(...ZEBRA); doc.rect(x, ry, w, RH, 'F'); }
-          doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...TINTA);
-          doc.text(String(cmpQtd(it)), x + 6.5, ry + 4.3, { align: 'center' });
-          const nome = sobe(it.nome), max = w - 18;
-          let fs = 8.6; doc.setFont('helvetica', 'normal'); doc.setFontSize(fs);
-          while(fs > 6.6 && doc.getTextWidth(nome) > max){ fs -= 0.2; doc.setFontSize(fs); }
-          doc.text(doc.getTextWidth(nome) > max ? doc.splitTextToSize(nome, max)[0] : nome, x + 15.5, ry + 4.2);
-          ry += RH;
+          const linhas = linhasDe(it, w), h = alturaDe(it, w);
+          if(k % 2){ doc.setFillColor(...ZEBRA); doc.rect(x, ry, w, h, 'F'); }
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(8.6); doc.setTextColor(...TINTA);
+          doc.text(String(it.qtd), x + QW / 2, ry + h / 2 + 1.1, { align: 'center' });
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(8.4); doc.setTextColor(40, 48, 60);
+          const y0 = ry + h / 2 + 1.1 - (linhas.length - 1) * LH / 2;
+          linhas.forEach((l, j) => doc.text(l, x + QW + 2.2, y0 + j * LH));
+          ry += h; cortes.push(ry);
         });
-        doc.setDrawColor(...GRADE); doc.setLineWidth(0.25);
-        doc.rect(x, yy, w, HC + lista.length * RH);
-        doc.line(x + 13, yy + HC, x + 13, ry);
-        for(let k = 1; k < lista.length; k++) doc.line(x, yy + HC + k * RH, x + w, yy + HC + k * RH);
+        doc.setDrawColor(...GRADE); doc.setLineWidth(0.3);
+        doc.rect(x, yy, w, ry - yy);
+        doc.line(x, yy + HC, x + w, yy + HC);
+        doc.line(x + QW, yy, x + QW, ry);
+        cortes.slice(0, -1).forEach(c => doc.line(x, c, x + w, c));
+        return ry;
       };
-      // Seção inteira, em uma ou duas colunas, quebrando página quando precisa.
-      const secao = (titulo, lista, umaColuna) => {
+      // Uma coluna larga (distintivos) ou duas (especialidades), quebrando página.
+      const secao = (titulo, lista, duas) => {
+        const w = duas ? CW : CONT;
         let i = 0;
         while(i < lista.length){
           if(y + HC + RH * 2 > LIM) y = continuar();
-          const cabem = Math.floor((LIM - y - HC) / RH);
-          if(umaColuna){
-            const parte = lista.slice(i, i + cabem);
-            coluna(M, W - 2 * M, y, titulo, parte);
-            i += parte.length; y += HC + parte.length * RH + 6;
+          const livre = LIM - y - HC;
+          const pegar = (de) => { let h = 0, k = de; while(k < lista.length && h + alturaDe(lista[k], w) <= livre){ h += alturaDe(lista[k], w); k++; } return k; };
+          if(!duas){
+            const k = Math.max(i + 1, pegar(i));
+            y = coluna(M, w, y, titulo, lista.slice(i, k)) + 4; i = k;
           } else {
-            const porCol = Math.min(cabem, Math.ceil((lista.length - i) / 2));
-            const a = lista.slice(i, i + porCol), b = lista.slice(i + porCol, i + 2 * porCol);
-            coluna(M, CW, y, titulo, a);
-            if(b.length) coluna(M + CW + GAP, CW, y, titulo, b);
-            i += a.length + b.length; y += HC + porCol * RH + 6;
+            // Se o resto cabe nas duas colunas, divide pela metade da altura
+            // (a da esquerda fica com a sobra); senão enche as duas.
+            const resto = lista.slice(i);
+            const total = resto.reduce((n, it) => n + alturaDe(it, w), 0);
+            let corte;
+            if(total <= livre * 2){
+              let h = 0; corte = i;
+              while(corte < lista.length && h < total / 2){ h += alturaDe(lista[corte], w); corte++; }
+              if(lista.slice(i, corte).reduce((n, it) => n + alturaDe(it, w), 0) > livre) corte = pegar(i);
+            } else corte = Math.max(i + 1, pegar(i));
+            const fimDir = Math.max(corte, pegar(corte));
+            const yE = coluna(M, w, y, titulo, lista.slice(i, corte));
+            const yD = fimDir > corte ? coluna(M + w + GAP, w, y, titulo, lista.slice(corte, fimDir)) : y;
+            y = Math.max(yE, yD) + 4; i = fimDir;
           }
           if(i < lista.length) y = continuar();
         }
       };
-      if(dist.length) secao('DISTINTIVOS E CLASSES', dist, dist.length <= 6);
-      if(especs.length) secao('ESPECIALIDADES', especs, false);
+      if(dist.length) secao('DISTINTIVOS E CLASSES', dist, false);
+      if(especs.length) secao('ESPECIALIDADE', especs, true);
 
-      // Totais e observação
-      if(y + 8 > LIM) y = continuar();
-      const qtdDe = l => l.reduce((n, i) => n + cmpQtd(i), 0);
-      const partes = [];
-      if(dist.length) partes.push(plural(qtdDe(dist), 'distintivo', 'distintivos'));
-      if(especs.length) partes.push(plural(qtdDe(especs), 'insígnia', 'insígnias') + ' de ' + plural(especs.length, 'especialidade', 'especialidades'));
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...TINTA);
-      doc.text('Total do pedido: ' + partes.join(' · '), W - M, y - 1, { align: 'right' });
-      y += 5;
-      if(p.observacao){
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
-        const obs = doc.splitTextToSize('Observação: ' + p.observacao, W - 2 * M);
-        if(y + obs.length * 4.6 > LIM) y = continuar();
-        doc.text(obs, M, y + 2); y += obs.length * 4.6 + 3;
-      }
+      // Assinatura do(a) Coordenador(a)
+      if(y + 18 > LIM) y = continuar();
+      y += 8;
+      doc.setDrawColor(...TINTA); doc.setLineWidth(0.4); doc.line(M, y, M + 80, y);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...TINTA);
+      doc.text('ASSINATURA DO(A) COORDENADOR(A)', M + 40, y + 4.6, { align: 'center' });
+      if(p.regional){ doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...CINZA); doc.text(doc.splitTextToSize(p.regional, 80)[0], M + 40, y + 8.8, { align: 'center' }); }
 
-      // Assinaturas: Diretor(a) e Coordenador(a) Regional, com espaço do carimbo.
-      // O carimbo fica ao lado da linha do(a) coordenador(a), pra o bloco ser baixo.
-      if(y + 34 > LIM) y = continuar();
-      y += 4;
-      const xr = M + CW + GAP;
-      try { doc.setLineDashPattern([1.2, 1.2], 0); } catch(e){}
-      doc.setDrawColor(170, 180, 172); doc.setLineWidth(0.3);
-      doc.roundedRect(xr + CW - 30, y, 30, 28, 2, 2);
-      try { doc.setLineDashPattern([], 0); } catch(e){}
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(170, 180, 172);
-      doc.text('CARIMBO', xr + CW - 15, y + 15, { align: 'center' });
-      y += 18;
-      const assina = (x, w, cargo, nome) => {
-        doc.setDrawColor(...TINTA); doc.setLineWidth(0.35); doc.line(x, y, x + w, y);
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...TINTA);
-        doc.text(cargo, x + w / 2, y + 4.5, { align: 'center' });
-        if(nome){ doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...CINZA); doc.text(doc.splitTextToSize(nome, w)[0], x + w / 2, y + 9, { align: 'center' }); }
-      };
-      assina(M, CW - 6, 'ASSINATURA DO(A) DIRETOR(A)', p.diretor);
-      assina(xr, CW - 34, 'ASSINATURA DO(A) COORDENADOR(A)', p.regional ? p.regional + (regiao ? ' · ' + regiao : '') : regiao);
-
-      // Rodapé em todas as páginas
+      // Rodapé
       const n = doc.getNumberOfPages();
       for(let k = 1; k <= n; k++){
         doc.setPage(k);
-        doc.setDrawColor(...GRADE); doc.setLineWidth(0.3); doc.line(M, 281, W - M, 281);
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...CINZA);
-        doc.text('Formulário de Pedido de Materiais — Desbravadores', M, 286);
-        doc.text('Emitido em ' + new Date().toLocaleDateString('pt-BR') + ' pelo ' + (CFG.appNome || 'app do clube'), W / 2 + 12, 286, { align: 'center' });
-        doc.text('Página ' + k + ' de ' + n, W - M, 286, { align: 'right' });
+        doc.setDrawColor(...CAIXA); doc.setLineWidth(0.3); doc.line(M, 278.5, W - M, 278.5);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...CINZA);
+        doc.text('Formulário de Pedido de Materiais - Desbravadores', M, 285);
+        doc.text('Página ' + k + ' de ' + n, W - M, 285, { align: 'right' });
       }
       salvarPDF(doc, 'pedido-de-materiais-' + String(p.data || cmpHoje()).slice(0, 10) + '.pdf');
     }
