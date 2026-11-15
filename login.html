@@ -1953,6 +1953,12 @@
   .prv-alt input[type="radio"]{ width:18px; height:18px; flex-shrink:0; accent-color:var(--accent); }
   .prv-alt-letra{ width:20px; flex-shrink:0; font-size:12.5px; font-weight:800; color:var(--ink-soft); }
   .prv-alt .pl-input{ flex:1; min-width:0; }
+  .prv-perg{ margin-top:8px; padding-bottom:8px; border-bottom:1px dashed var(--line, rgba(0,0,0,.12)); }
+  .prv-perg > .pl-input{ margin:6px 0 0 26px; width:calc(100% - 26px); }
+  .prv-perg-opcoes{ display:flex; align-items:center; gap:6px; margin:6px 0 0 26px; }
+  .prv-perg-opcoes select.pl-input{ flex:1; min-width:0; }
+  .prv-perg-opcoes input[type="number"]{ width:64px; flex:0 0 64px; }
+  .prv-perg-linhas{ font-size:12.5px; color:var(--ink-soft); }
   .prv-imagem{ display:flex; align-items:center; gap:8px; margin-top:8px; }
   .prv-imagem img{ width:64px; height:48px; object-fit:contain; border-radius:6px; background:#FFFFFF; flex-shrink:0; }
   .prv-imagem-txt{ flex:1; min-width:0; font-size:11.5px; font-weight:600; color:var(--ink-dim); }
@@ -42435,14 +42441,18 @@ const REQ_SUMMARIES = {
       nota_gabarito: 'Você é inteligente e dedicado, tudo dará certo na prova!'
     };
     const PRV_MEMORIA = 'clube:avaliacao-associacao';
-    const PRV_TIPOS = { escrita: 'Resposta escrita', multipla: 'Múltipla escolha', vf: 'Verdadeiro ou falso' };
+    const PRV_TIPOS = { escrita: 'Resposta escrita', multipla: 'Múltipla escolha', vf: 'Verdadeiro ou falso', grupo: 'Pergunta com alternativas' };
     let provas = [];
     let provaAtual = null;
     let prvItens = [];
     let prvCapa = '';
     let prvAlterada = false;
 
-    const prvNovoItem = () => ({ tipo: 'escrita', texto: '', linhas: 4, alternativas: ['', '', '', ''], pontos: '', subitem: false, resposta: '', correta: null, espaco: '', imagem: '' });
+    // Pedido de resposta escrita que vai junto da múltipla escolha ou do V/F.
+    const PRV_COMENTARIO_PADRAO = 'Responda em um pequeno parágrafo suas considerações.';
+    const prvNovoItem = () => ({ tipo: 'escrita', texto: '', linhas: 4, alternativas: ['', '', '', ''], pontos: '', subitem: false, resposta: '', correta: null, espaco: '', imagem: '', comentario: false, comentarioTexto: PRV_COMENTARIO_PADRAO, perguntas: [] });
+    // Alternativa de uma "Pergunta com alternativas": cada uma responde em V/F ou por escrito.
+    const prvNovaPergunta = () => ({ texto: '', tipo: 'vf', correta: null, resposta: '', linhas: 4 });
     // Altura em mm do espaço para imagem na página impressa.
     const PRV_ESPACOS = { pequeno: 35, medio: 60, grande: 95 };
     // O gabarito fica guardado junto: quem tem perfil de Desbravador não vê as avaliações.
@@ -42561,7 +42571,88 @@ const REQ_SUMMARIES = {
           certa.addEventListener('change', () => { item.correta = certa.value || null; prvMarcarAlterada(); });
           card.appendChild(certa);
         }
-        if(item.tipo === 'escrita'){
+        // Pergunta com alternativas: cada alternativa é uma pergunta com resposta própria.
+        if(item.tipo === 'grupo'){
+          if(!Array.isArray(item.perguntas)) item.perguntas = [];
+          if(!item.perguntas.length) item.perguntas.push(prvNovaPergunta(), prvNovaPergunta());
+          card.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Alternativas (cada uma com sua resposta)' }));
+          item.perguntas.forEach((q, a) => {
+            const bloco = prvEl('div', 'prv-perg');
+            const linha = prvEl('div', 'prv-alt');
+            linha.appendChild(prvEl('span', 'prv-alt-letra', { textContent: String.fromCharCode(97 + a) + ')' }));
+            const campo = prvEl('input', 'pl-input', { type: 'text', value: q.texto, maxLength: 500, placeholder: 'Pergunta da alternativa' });
+            campo.addEventListener('input', () => { q.texto = campo.value; card.classList.remove('prv-erro'); prvMarcarAlterada(); });
+            linha.appendChild(campo);
+            const tirar = prvEl('button', 'aut-btn-mini', { type: 'button', textContent: '×', disabled: item.perguntas.length <= 1 });
+            tirar.setAttribute('aria-label', 'Remover alternativa');
+            tirar.addEventListener('click', () => { item.perguntas.splice(a, 1); prvMarcarAlterada(); prvRenderItens(); });
+            linha.appendChild(tirar);
+            bloco.appendChild(linha);
+
+            const opcoes = prvEl('div', 'prv-perg-opcoes');
+            const forma = prvEl('select', 'pl-input');
+            forma.setAttribute('aria-label', 'Tipo de resposta da alternativa');
+            [['vf', 'Verdadeiro ou falso'], ['escrita', 'Resposta escrita']].forEach(([v, t]) => forma.appendChild(prvEl('option', '', { value: v, textContent: t })));
+            forma.value = q.tipo === 'escrita' ? 'escrita' : 'vf';
+            forma.addEventListener('change', () => { q.tipo = forma.value; prvMarcarAlterada(); prvRenderItens(); });
+            opcoes.appendChild(forma);
+            if(q.tipo === 'escrita'){
+              const linhas = prvEl('input', 'pl-input', { type: 'number', min: 0, max: 30, value: q.linhas, inputMode: 'numeric', title: 'Linhas para a resposta' });
+              linhas.setAttribute('aria-label', 'Linhas para a resposta');
+              linhas.addEventListener('input', () => { q.linhas = Math.min(30, Math.max(0, parseInt(linhas.value, 10) || 0)); prvMarcarAlterada(); });
+              opcoes.appendChild(linhas);
+              opcoes.appendChild(prvEl('span', 'prv-perg-linhas', { textContent: 'linhas' }));
+            } else {
+              const certa = prvEl('select', 'pl-input');
+              certa.setAttribute('aria-label', 'Resposta correta da alternativa');
+              [['', 'Resposta: não informar'], ['V', 'Resposta: Verdadeiro'], ['F', 'Resposta: Falso']].forEach(([v, t]) => certa.appendChild(prvEl('option', '', { value: v, textContent: t })));
+              certa.value = q.correta === 'V' || q.correta === 'F' ? q.correta : '';
+              certa.addEventListener('change', () => { q.correta = certa.value || null; prvMarcarAlterada(); });
+              opcoes.appendChild(certa);
+            }
+            bloco.appendChild(opcoes);
+            if(q.tipo === 'escrita'){
+              const esperada = prvEl('input', 'pl-input', { type: 'text', value: q.resposta || '', maxLength: 1000, placeholder: 'Resposta esperada (opcional, vai para o gabarito)' });
+              esperada.addEventListener('input', () => { q.resposta = esperada.value; prvMarcarAlterada(); });
+              bloco.appendChild(esperada);
+            }
+            card.appendChild(bloco);
+          });
+          if(item.perguntas.length < 26){
+            const mais = prvEl('button', 'pl-list-add-btn', { type: 'button', textContent: '+ Alternativa' });
+            mais.addEventListener('click', () => {
+              const ultima = item.perguntas[item.perguntas.length - 1];
+              const nova = prvNovaPergunta();
+              if(ultima){ nova.tipo = ultima.tipo; nova.linhas = ultima.linhas; }
+              item.perguntas.push(nova);
+              prvMarcarAlterada();
+              prvRenderItens();
+            });
+            card.appendChild(mais);
+          }
+        }
+        // Múltipla escolha e V/F podem pedir também uma resposta escrita.
+        const comComentario = (item.tipo === 'multipla' || item.tipo === 'vf') && !!item.comentario;
+        if(item.tipo === 'multipla' || item.tipo === 'vf'){
+          const opcaoEscrita = prvEl('label', 'prv-sub-opcao');
+          const caixaEscrita = prvEl('input', '', { type: 'checkbox', checked: comComentario });
+          caixaEscrita.addEventListener('change', () => {
+            item.comentario = caixaEscrita.checked;
+            if(item.comentario && !(item.comentarioTexto || '').trim()) item.comentarioTexto = PRV_COMENTARIO_PADRAO;
+            prvMarcarAlterada();
+            prvRenderItens();
+          });
+          opcaoEscrita.appendChild(caixaEscrita);
+          opcaoEscrita.appendChild(prvEl('span', '', { textContent: 'Pedir também resposta escrita' }));
+          card.appendChild(opcaoEscrita);
+          if(comComentario){
+            card.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Enunciado da resposta escrita' }));
+            const pedido = prvEl('input', 'pl-input', { type: 'text', value: item.comentarioTexto || '', maxLength: 300, placeholder: PRV_COMENTARIO_PADRAO });
+            pedido.addEventListener('input', () => { item.comentarioTexto = pedido.value; prvMarcarAlterada(); });
+            card.appendChild(pedido);
+          }
+        }
+        if(item.tipo === 'escrita' || comComentario){
           card.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Resposta esperada (opcional)' }));
           const esperada = prvEl('textarea', 'pl-input', { value: item.resposta || '', maxLength: 1000 });
           esperada.addEventListener('input', () => { item.resposta = esperada.value; prvMarcarAlterada(); });
@@ -42569,7 +42660,7 @@ const REQ_SUMMARIES = {
         }
 
         const linhaCampos = prvEl('div', 'pl-field-row');
-        if(item.tipo === 'escrita'){
+        if(item.tipo === 'escrita' || comComentario){
           const col = prvEl('div', 'pl-field-col');
           col.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Linhas' }));
           const linhas = prvEl('input', 'pl-input', { type: 'number', min: 0, max: 30, value: item.linhas, inputMode: 'numeric' });
@@ -42713,14 +42804,24 @@ const REQ_SUMMARIES = {
           if(i.tipo === 'multipla' && i.correta === k) correta = alternativas.length;
           alternativas.push(a.trim());
         });
+        const perguntas = i.tipo === 'grupo'
+          ? (i.perguntas || []).filter(q => (q.texto || '').trim()).map(q => ({
+              texto: q.texto.trim(), tipo: q.tipo === 'escrita' ? 'escrita' : 'vf',
+              correta: q.tipo === 'escrita' ? null : (q.correta === 'V' || q.correta === 'F' ? q.correta : null),
+              resposta: q.tipo === 'escrita' ? (q.resposta || '').trim() : '',
+              linhas: Math.min(30, Math.max(0, parseInt(q.linhas, 10) || 0)) }))
+          : [];
         if(!i.texto.trim() && !i.espaco){
-          if(i.tipo === 'multipla' && alternativas.length){ cards[idx].classList.add('prv-erro'); incompleto = true; }
+          if((i.tipo === 'multipla' && alternativas.length) || perguntas.length){ cards[idx].classList.add('prv-erro'); incompleto = true; }
           return;
         }
         if(i.tipo === 'multipla' && alternativas.length < 2){ cards[idx].classList.add('prv-erro'); incompleto = true; return; }
-        itens.push(Object.assign({}, i, { texto: i.texto.trim(), alternativas: alternativas.length ? alternativas : i.alternativas, pontos: i.pontos.trim(), resposta: (i.resposta || '').trim(), correta }));
+        if(i.tipo === 'grupo' && !perguntas.length){ cards[idx].classList.add('prv-erro'); incompleto = true; return; }
+        const comentario = (i.tipo === 'multipla' || i.tipo === 'vf') && !!i.comentario;
+        itens.push(Object.assign({}, i, { texto: i.texto.trim(), alternativas: alternativas.length ? alternativas : i.alternativas, pontos: i.pontos.trim(), resposta: (i.resposta || '').trim(), correta,
+          comentario, comentarioTexto: comentario ? ((i.comentarioTexto || '').trim() || PRV_COMENTARIO_PADRAO) : (i.comentarioTexto || PRV_COMENTARIO_PADRAO), perguntas }));
       });
-      if(incompleto){ prvMsg('Complete os itens marcados: múltipla escolha precisa de pergunta e duas alternativas.', true); return null; }
+      if(incompleto){ prvMsg('Complete os itens marcados: múltipla escolha precisa de pergunta e duas alternativas; pergunta com alternativas precisa da pergunta e de ao menos uma alternativa.', true); return null; }
       if(!itens.length){ prvMsg('Digite pelo menos um item.', true); return null; }
       return {
         titulo: prvCampos.nome.value.trim() || 'Avaliação de ' + currentName,
@@ -42902,10 +43003,54 @@ const REQ_SUMMARIES = {
             doc.text(letra, xAlt, y);
             altLinhas.forEach(l => { doc.text(l, xAlt + larg, y); y += e.linha; });
           });
+        } else if(item.tipo === 'grupo'){
+          // Cada alternativa é uma pergunta: V/F ao lado da letra, ou linhas para escrever.
+          const xAlt = e.recuoFixo ? xTexto + 4 : e.xItem;
+          (item.perguntas || []).forEach((q, a) => {
+            const letra = String.fromCharCode(97 + a) + ') ';
+            const xq = xAlt + doc.getTextWidth(letra);
+            const ql = doc.splitTextToSize(q.texto, e.dir - xq);
+            const ehVf = q.tipo !== 'escrita';
+            if(a) y += 1;
+            garantir(ql.length * e.linha + (ehVf ? e.linha : (q.linhas > 0 ? 8.5 : 0)));
+            doc.text(letra, xAlt, y);
+            ql.forEach(l => { doc.text(l, xq, y); y += e.linha; });
+            if(ehVf){
+              doc.text('(     ) Verdadeiro          (     ) Falso', xq, y);
+              y += e.linha;
+            } else {
+              doc.setDrawColor(e.corLinha[0], e.corLinha[1], e.corLinha[2]);
+              doc.setLineWidth(0.2);
+              if(q.linhas > 0) y += 1.5;
+              for(let i = 0; i < q.linhas; i++){
+                garantir(7);
+                doc.line(xq, y + 1.5, e.dir, y + 1.5);
+                y += 7;
+              }
+            }
+          });
         } else {
           garantir(e.linha);
           doc.text('(     ) Verdadeiro          (     ) Falso', e.recuoFixo ? xTexto : e.xItem, y);
           y += e.linha;
+        }
+        // Resposta escrita pedida junto da múltipla escolha ou do V/F.
+        if((item.tipo === 'multipla' || item.tipo === 'vf') && item.comentario){
+          const xPedido = e.recuoFixo ? xTexto : e.xItem;
+          doc.setFont(e.fonte, 'italic');
+          const pedido = doc.splitTextToSize(item.comentarioTexto || PRV_COMENTARIO_PADRAO, e.dir - xPedido);
+          y += 1;
+          garantir(pedido.length * e.linha + (item.linhas > 0 ? 8.5 : 0));
+          pedido.forEach(l => { doc.text(l, xPedido, y); y += e.linha; });
+          doc.setFont(e.fonte, 'normal');
+          doc.setDrawColor(e.corLinha[0], e.corLinha[1], e.corLinha[2]);
+          doc.setLineWidth(0.2);
+          if(item.linhas > 0) y += 1.5;
+          for(let i = 0; i < item.linhas; i++){
+            garantir(7);
+            doc.line(e.xItem, y + 1.5, e.dir, y + 1.5);
+            y += 7;
+          }
         }
         y += e.depois;
       });
@@ -43199,6 +43344,14 @@ const REQ_SUMMARIES = {
         if(i.tipo === 'multipla' && Number.isInteger(i.correta)) resposta = String.fromCharCode(65 + i.correta);
         else if(i.tipo === 'vf' && i.correta) resposta = i.correta === 'V' ? 'Verdadeiro' : 'Falso';
         else if(i.tipo === 'escrita') resposta = i.resposta || '';
+        if((i.tipo === 'multipla' || i.tipo === 'vf') && i.comentario && i.resposta) resposta = resposta ? resposta + ' — ' + i.resposta : i.resposta;
+        if(i.tipo === 'grupo'){
+          (i.perguntas || []).forEach((q, a) => {
+            const r = q.tipo === 'escrita' ? (q.resposta || '') : (q.correta ? (q.correta === 'V' ? 'Verdadeiro' : 'Falso') : '');
+            linhas.push({ rotulo: rotulo + ' ' + String.fromCharCode(97 + a) + ')', resposta: r });
+          });
+          return;
+        }
         // Enunciado sem linhas nem resposta (como "Escolher 2 dos itens") não entra.
         if(!resposta && i.tipo === 'escrita' && !i.linhas) return;
         linhas.push({ rotulo, resposta });
