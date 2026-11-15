@@ -42996,6 +42996,23 @@ const REQ_SUMMARIES = {
     function prvItensPdf(doc, p, yInicial, e){
       let y = yInicial;
       const garantir = altura => { if(y + altura > e.base){ y = e.novaPagina(); doc.setFontSize(e.tam); doc.setTextColor(e.cor[0], e.cor[1], e.cor[2]); } };
+      // Linhas de resposta, no mesmo padrão em toda a prova: "R:" na linha logo
+      // abaixo da pergunta, linhas a cada 7 mm, alinhadas ao texto (x) até a margem.
+      const linhasResposta = (x, n) => {
+        doc.setFont(e.fonte, 'normal');
+        for(let i = 0; i < n; i++){
+          garantir(7);
+          let inicio = x;
+          if(i === 0){
+            doc.text('R:', x, y);
+            inicio = x + doc.getTextWidth('R:') + 0.5;
+          }
+          doc.setDrawColor(e.corLinha[0], e.corLinha[1], e.corLinha[2]);
+          doc.setLineWidth(0.2);
+          doc.line(inicio, y + 0.6, e.dir, y + 0.6);
+          y += 7;
+        }
+      };
       doc.setFontSize(e.tam);
       doc.setTextColor(e.cor[0], e.cor[1], e.cor[2]);
       const rotulos = prvRotulos(p.itens);
@@ -43033,14 +43050,7 @@ const REQ_SUMMARIES = {
           y = topo + altCaixa + 6;
         }
         if(item.tipo === 'escrita'){
-          doc.setDrawColor(e.corLinha[0], e.corLinha[1], e.corLinha[2]);
-          doc.setLineWidth(0.2);
-          if(item.linhas > 0) y += 1.5;
-          for(let i = 0; i < item.linhas; i++){
-            garantir(7);
-            doc.line(e.xItem, y + 1.5, e.dir, y + 1.5);
-            y += 7;
-          }
+          linhasResposta(xTexto, item.linhas);
         } else if(item.tipo === 'multipla'){
           const xAlt = e.recuoFixo ? xTexto + 4 : e.xItem;
           item.alternativas.forEach((alt, a) => {
@@ -43083,20 +43093,7 @@ const REQ_SUMMARIES = {
               doc.text('(     ) Verdadeiro          (     ) Falso', xq, y);
               y += e.linha;
             } else {
-              // Como no modelo em papel: "R:" com a primeira linha logo abaixo
-              // da pergunta, e as demais linhas na largura toda.
-              for(let i = 0; i < linhasAlt; i++){
-                garantir(7);
-                let inicio = xAlt;
-                if(i === 0){
-                  doc.text('R:', xAlt, y);
-                  inicio = xAlt + doc.getTextWidth('R:') + 0.5;
-                }
-                doc.setDrawColor(e.corLinha[0], e.corLinha[1], e.corLinha[2]);
-                doc.setLineWidth(0.2);
-                doc.line(inicio, y + 0.6, e.dir, y + 0.6);
-                y += 7;
-              }
+              linhasResposta(xAlt, linhasAlt);
             }
           });
         } else {
@@ -43110,17 +43107,9 @@ const REQ_SUMMARIES = {
           doc.setFont(e.fonte, 'italic');
           const pedido = doc.splitTextToSize(item.comentarioTexto || PRV_COMENTARIO_PADRAO, e.dir - xPedido);
           y += 1;
-          garantir(pedido.length * e.linha + (item.linhas > 0 ? 8.5 : 0));
+          garantir(pedido.length * e.linha + (item.linhas > 0 ? 7 : 0));
           pedido.forEach(l => { doc.text(l, xPedido, y); y += e.linha; });
-          doc.setFont(e.fonte, 'normal');
-          doc.setDrawColor(e.corLinha[0], e.corLinha[1], e.corLinha[2]);
-          doc.setLineWidth(0.2);
-          if(item.linhas > 0) y += 1.5;
-          for(let i = 0; i < item.linhas; i++){
-            garantir(7);
-            doc.line(e.xItem, y + 1.5, e.dir, y + 1.5);
-            y += 7;
-          }
+          linhasResposta(xPedido, item.linhas);
         }
         y += e.depois;
       });
