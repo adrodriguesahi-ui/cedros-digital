@@ -14083,7 +14083,7 @@
             </div>
           </div>
           <label class="prv-sub-opcao"><input type="checkbox" id="cfMaiusculas" checked><span>Escrever em LETRAS MAIÚSCULAS</span></label>
-          <label class="prv-sub-opcao"><input type="checkbox" id="cfMesmoTamanho" checked><span>Mesmo tamanho de letra em todos os cartões</span></label>
+          <label class="prv-sub-opcao"><input type="checkbox" id="cfMesmoTamanho"><span>Mesmo tamanho de letra em todos os cartões</span></label>
           <p class="pl-reminder-hint" id="cfResumo" style="margin-top:8px;"></p>
           <div class="pl-modal-actions">
             <button type="button" class="pl-btn pl-btn-primary" id="cfGerar">Gerar PDF</button>
@@ -35975,7 +35975,7 @@ const REQ_SUMMARIES = {
   // ---------------------------------------------------------------------
   // Cartões de frases: as frases saem numa grade em folha A4, prontas para
   // recortar e usar em jogos. A letra cresce até o maior tamanho que cabe no
-  // cartão; com "mesmo tamanho", todos usam o tamanho da frase mais longa.
+  // próprio cartão (padrão); com "mesmo tamanho", todos usam o tamanho da frase mais longa.
   (function(){
     const overlay = document.getElementById('cfOverlay');
     const entrada = document.getElementById('cfEntradaBtn');
@@ -36020,7 +36020,7 @@ const REQ_SUMMARIES = {
     }
     // O texto digitado fica guardado só neste aparelho, para não se perder ao fechar.
     function guardar(){
-      try { localStorage.setItem(MEMORIA, JSON.stringify({ frases: campo.value, c: colunas.value, l: linhasSel.value, mai: maiusculas.checked, mesmo: mesmoTamanho.checked })); } catch(e){}
+      try { localStorage.setItem(MEMORIA, JSON.stringify({ frases: campo.value, c: colunas.value, l: linhasSel.value, mai: maiusculas.checked, igual: mesmoTamanho.checked })); } catch(e){}
     }
     function lembrar(){
       try {
@@ -36030,7 +36030,7 @@ const REQ_SUMMARIES = {
         if(m.c) colunas.value = m.c;
         if(m.l) linhasSel.value = m.l;
         maiusculas.checked = m.mai !== false;
-        mesmoTamanho.checked = m.mesmo !== false;
+        mesmoTamanho.checked = m.igual === true;
       } catch(e){}
     }
 
