@@ -40142,13 +40142,25 @@ const REQ_SUMMARIES = {
     const cmpDataLonga = iso => { const d = new Date(String(iso || '').slice(0, 10) + 'T12:00:00'); return isNaN(d) ? hojeLongo() : d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }); };
     const cmpEhDist = i => i && i.tipo === 'distintivo';
     // Distintivos e classes primeiro (na ordem das classes), depois as especialidades em ordem alfabética.
-    // Ordem: Amigo, Amigo da Natureza (avançada), Companheiro, ... Guia de Exploração; o resto depois.
+    // Distintivos sugeridos, já na ordem em que aparecem no pedido e no documento:
+    // cada regular seguida da avançada, depois as agrupadas e a liderança.
+    const CMP_DIST_SUG = REGULARES.flatMap(c => ['Distintivo de Classes de Regulares ' + c + ' Metal', 'Distintivo de Classes Avançadas ' + AVANCADAS[c] + ' Metal'])
+      .concat([
+        'Distintivo de Classes de Regulares Agrupadas Metal',
+        'Distintivo de Classes Avançadas Agrupadas',
+        'Distintivo de Classes de Liderança Líder de Metal',
+        'Distintivo de Classes de Liderança Líder Master',
+        'Distintivo de Classes de Liderança Líder Master Avançado'
+      ]);
+    // Ordem: a da lista acima; nome digitado à mão cai perto da classe que cita, ou no fim.
     const cmpOrdemDist = n => {
       const t = norm(n);
+      const s = CMP_DIST_SUG.findIndex(x => norm(x) === t);
+      if(s !== -1) return s;
       const av = REGULARES.findIndex(c => t.indexOf(norm(AVANCADAS[c])) !== -1);
       if(av !== -1) return av * 2 + 1;
       const i = ORDEM.findIndex(c => t.indexOf(norm(c)) !== -1);
-      return i === -1 ? 999 : (i < REGULARES.length ? i * 2 : 100 + i);
+      return i === -1 ? 999 : (i < REGULARES.length ? i * 2 + 0.5 : 100 + i);
     };
     const cmpOrdenarItens = () => cmpAtual.itens.sort((a, b) => (cmpEhDist(b) - cmpEhDist(a))
       || (cmpEhDist(a) ? cmpOrdemDist(a.nome) - cmpOrdemDist(b.nome) : 0) || cmpNome(a.nome, b.nome));
@@ -40205,8 +40217,7 @@ const REQ_SUMMARIES = {
     }
     function cmpSugestoes(){
       if(!$('coCmpSugDist').options.length)
-        $('coCmpSugDist').innerHTML = REGULARES.flatMap(c => ['Distintivo de Classes de Regulares ' + c + ' Metal', 'Distintivo de Classes Avançadas ' + AVANCADAS[c] + ' Metal'])
-          .map(n => '<option value="' + esc(n) + '">').join('');
+        $('coCmpSugDist').innerHTML = CMP_DIST_SUG.map(n => '<option value="' + esc(n) + '">').join('');
       if($('coCmpSugNomes').options.length || typeof SPECIALTY_DB === 'undefined') return;
       $('coCmpSugNomes').innerHTML = Object.keys(SPECIALTY_DB).flatMap(k => SPECIALTY_DB[k]).sort(cmpNome).map(n => '<option value="' + esc(n) + '">').join('');
     }
