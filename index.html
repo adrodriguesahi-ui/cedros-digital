@@ -42442,7 +42442,9 @@ const REQ_SUMMARIES = {
     let prvCapa = '';
     let prvAlterada = false;
 
-    const prvNovoItem = () => ({ tipo: 'escrita', texto: '', linhas: 4, alternativas: ['', '', '', ''], pontos: '', subitem: false, resposta: '', correta: null, espaco: '', imagem: '' });
+    // Pedido de resposta escrita que vai junto da múltipla escolha ou do V/F.
+    const PRV_COMENTARIO_PADRAO = 'Responda em um pequeno parágrafo suas considerações.';
+    const prvNovoItem = () => ({ tipo: 'escrita', texto: '', linhas: 4, alternativas: ['', '', '', ''], pontos: '', subitem: false, resposta: '', correta: null, espaco: '', imagem: '', comentario: false, comentarioTexto: PRV_COMENTARIO_PADRAO });
     // Altura em mm do espaço para imagem na página impressa.
     const PRV_ESPACOS = { pequeno: 35, medio: 60, grande: 95 };
     // O gabarito fica guardado junto: quem tem perfil de Desbravador não vê as avaliações.
@@ -42561,7 +42563,28 @@ const REQ_SUMMARIES = {
           certa.addEventListener('change', () => { item.correta = certa.value || null; prvMarcarAlterada(); });
           card.appendChild(certa);
         }
-        if(item.tipo === 'escrita'){
+        // Múltipla escolha e V/F podem pedir também uma resposta escrita.
+        const comComentario = item.tipo !== 'escrita' && !!item.comentario;
+        if(item.tipo !== 'escrita'){
+          const opcaoEscrita = prvEl('label', 'prv-sub-opcao');
+          const caixaEscrita = prvEl('input', '', { type: 'checkbox', checked: comComentario });
+          caixaEscrita.addEventListener('change', () => {
+            item.comentario = caixaEscrita.checked;
+            if(item.comentario && !(item.comentarioTexto || '').trim()) item.comentarioTexto = PRV_COMENTARIO_PADRAO;
+            prvMarcarAlterada();
+            prvRenderItens();
+          });
+          opcaoEscrita.appendChild(caixaEscrita);
+          opcaoEscrita.appendChild(prvEl('span', '', { textContent: 'Pedir também resposta escrita' }));
+          card.appendChild(opcaoEscrita);
+          if(comComentario){
+            card.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Enunciado da resposta escrita' }));
+            const pedido = prvEl('input', 'pl-input', { type: 'text', value: item.comentarioTexto || '', maxLength: 300, placeholder: PRV_COMENTARIO_PADRAO });
+            pedido.addEventListener('input', () => { item.comentarioTexto = pedido.value; prvMarcarAlterada(); });
+            card.appendChild(pedido);
+          }
+        }
+        if(item.tipo === 'escrita' || comComentario){
           card.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Resposta esperada (opcional)' }));
           const esperada = prvEl('textarea', 'pl-input', { value: item.resposta || '', maxLength: 1000 });
           esperada.addEventListener('input', () => { item.resposta = esperada.value; prvMarcarAlterada(); });
@@ -42569,7 +42592,7 @@ const REQ_SUMMARIES = {
         }
 
         const linhaCampos = prvEl('div', 'pl-field-row');
-        if(item.tipo === 'escrita'){
+        if(item.tipo === 'escrita' || comComentario){
           const col = prvEl('div', 'pl-field-col');
           col.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Linhas' }));
           const linhas = prvEl('input', 'pl-input', { type: 'number', min: 0, max: 30, value: item.linhas, inputMode: 'numeric' });
@@ -42718,7 +42741,9 @@ const REQ_SUMMARIES = {
           return;
         }
         if(i.tipo === 'multipla' && alternativas.length < 2){ cards[idx].classList.add('prv-erro'); incompleto = true; return; }
-        itens.push(Object.assign({}, i, { texto: i.texto.trim(), alternativas: alternativas.length ? alternativas : i.alternativas, pontos: i.pontos.trim(), resposta: (i.resposta || '').trim(), correta }));
+        const comentario = i.tipo !== 'escrita' && !!i.comentario;
+        itens.push(Object.assign({}, i, { texto: i.texto.trim(), alternativas: alternativas.length ? alternativas : i.alternativas, pontos: i.pontos.trim(), resposta: (i.resposta || '').trim(), correta,
+          comentario, comentarioTexto: comentario ? ((i.comentarioTexto || '').trim() || PRV_COMENTARIO_PADRAO) : (i.comentarioTexto || PRV_COMENTARIO_PADRAO) }));
       });
       if(incompleto){ prvMsg('Complete os itens marcados: múltipla escolha precisa de pergunta e duas alternativas.', true); return null; }
       if(!itens.length){ prvMsg('Digite pelo menos um item.', true); return null; }
@@ -42906,6 +42931,24 @@ const REQ_SUMMARIES = {
           garantir(e.linha);
           doc.text('(     ) Verdadeiro          (     ) Falso', e.recuoFixo ? xTexto : e.xItem, y);
           y += e.linha;
+        }
+        // Resposta escrita pedida junto da múltipla escolha ou do V/F.
+        if(item.tipo !== 'escrita' && item.comentario){
+          const xPedido = e.recuoFixo ? xTexto : e.xItem;
+          doc.setFont(e.fonte, 'italic');
+          const pedido = doc.splitTextToSize(item.comentarioTexto || PRV_COMENTARIO_PADRAO, e.dir - xPedido);
+          y += 1;
+          garantir(pedido.length * e.linha + (item.linhas > 0 ? 8.5 : 0));
+          pedido.forEach(l => { doc.text(l, xPedido, y); y += e.linha; });
+          doc.setFont(e.fonte, 'normal');
+          doc.setDrawColor(e.corLinha[0], e.corLinha[1], e.corLinha[2]);
+          doc.setLineWidth(0.2);
+          if(item.linhas > 0) y += 1.5;
+          for(let i = 0; i < item.linhas; i++){
+            garantir(7);
+            doc.line(e.xItem, y + 1.5, e.dir, y + 1.5);
+            y += 7;
+          }
         }
         y += e.depois;
       });
@@ -43199,6 +43242,7 @@ const REQ_SUMMARIES = {
         if(i.tipo === 'multipla' && Number.isInteger(i.correta)) resposta = String.fromCharCode(65 + i.correta);
         else if(i.tipo === 'vf' && i.correta) resposta = i.correta === 'V' ? 'Verdadeiro' : 'Falso';
         else if(i.tipo === 'escrita') resposta = i.resposta || '';
+        if(i.tipo !== 'escrita' && i.comentario && i.resposta) resposta = resposta ? resposta + ' — ' + i.resposta : i.resposta;
         // Enunciado sem linhas nem resposta (como "Escolher 2 dos itens") não entra.
         if(!resposta && i.tipo === 'escrita' && !i.linhas) return;
         linhas.push({ rotulo, resposta });
