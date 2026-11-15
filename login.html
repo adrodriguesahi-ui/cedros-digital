@@ -40205,7 +40205,7 @@ const REQ_SUMMARIES = {
     }
     function cmpSugestoes(){
       if(!$('coCmpSugDist').options.length)
-        $('coCmpSugDist').innerHTML = REGULARES.flatMap(c => ['Distintivo de Classe de ' + c, 'Distintivo de Classe Avançada ' + AVANCADAS[c]])
+        $('coCmpSugDist').innerHTML = REGULARES.flatMap(c => ['Distintivo de Classes de Regulares ' + c + ' Metal', 'Distintivo de Classes Avançadas ' + AVANCADAS[c] + ' Metal'])
           .map(n => '<option value="' + esc(n) + '">').join('');
       if($('coCmpSugNomes').options.length || typeof SPECIALTY_DB === 'undefined') return;
       $('coCmpSugNomes').innerHTML = Object.keys(SPECIALTY_DB).flatMap(k => SPECIALTY_DB[k]).sort(cmpNome).map(n => '<option value="' + esc(n) + '">').join('');
@@ -40277,7 +40277,7 @@ const REQ_SUMMARIES = {
       $('coCmpAddTipo').addEventListener('change', () => {
         const dist = $('coCmpAddTipo').value === 'distintivo';
         $('coCmpAddNome').setAttribute('list', dist ? 'coCmpSugDist' : 'coCmpSugNomes');
-        $('coCmpAddNome').placeholder = dist ? 'Ex.: Distintivo de Classe de Amigo' : 'Nome da especialidade';
+        $('coCmpAddNome').placeholder = dist ? 'Ex.: Distintivo de Classes de Regulares Amigo Metal' : 'Nome da especialidade';
         $('coCmpAddNome').focus();
       });
       $('coCmpAddNome').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); cmpAdicionar(); } });
