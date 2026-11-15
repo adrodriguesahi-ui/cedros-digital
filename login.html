@@ -40299,6 +40299,10 @@ const REQ_SUMMARIES = {
           campo('coCmpObs', 'Observação (opcional)', cmpAtual.observacao, 'Ex.: compra na loja da Associação') +
         '</div>' +
         '<p class="co-nota" id="coCmpErro" style="display:none; color:#F08A6C;"></p>' +
+        '<label class="co-label" for="coCmpDocItens">Itens no documento</label>' +
+        '<select id="coCmpDocItens" class="co-input">' +
+          Object.keys(CMP_DOC_ITENS).map(k => '<option value="' + k + '"' + (k === cmpDocItens ? ' selected' : '') + '>' + CMP_DOC_ITENS[k] + '</option>').join('') +
+        '</select>' +
         '<div class="co-acoes">' +
           '<button type="button" class="co-btn" id="coCmpPdf">Gerar pedido de materiais (PDF)</button>' +
           '<button type="button" class="co-btn sec" id="coCmpPdfTes">Via da Tesouraria (com valores)</button>' +
@@ -40319,6 +40323,7 @@ const REQ_SUMMARIES = {
       $('coCmpPuxar').addEventListener('click', cmpPuxarPendentes);
       $('coCmpSalvar').addEventListener('click', () => cmpSalvar(null));
       $('coCmpPdf').addEventListener('click', cmpEmitir);
+      $('coCmpDocItens').addEventListener('change', () => { cmpDocItens = $('coCmpDocItens').value; });
       $('coCmpPdfTes').addEventListener('click', cmpEmitirTesouraria);
       $('coCmpTesBtn').addEventListener('click', cmpLancarTesouraria);
       if($('coCmpExcluir')) $('coCmpExcluir').addEventListener('click', cmpExcluir);
@@ -40547,12 +40552,24 @@ const REQ_SUMMARIES = {
         ['coCmpSalvar', 'coCmpPdf'].forEach(id => { if($(id)) $(id).disabled = false; });
       }
     }
+    // Quais itens entram no documento (vale para o pedido e para a via da Tesouraria).
+    const CMP_DOC_ITENS = { todos: 'Todos os itens', especialidade: 'Somente especialidades', distintivo: 'Somente distintivos de classe', uniforme: 'Somente uniformes' };
+    const CMP_DOC_ARQ = { especialidade: 'especialidades', distintivo: 'distintivos', uniforme: 'uniformes' };
+    let cmpDocItens = 'todos';
+    // Cópia do pedido só com a categoria escolhida; null (com aviso) se ela não tem itens.
+    function cmpPedidoDoc(){
+      if(cmpDocItens === 'todos') return cmpAtual;
+      const itens = cmpAtual.itens.filter(i => cmpTipo(i) === cmpDocItens && cmpQtd(i) > 0);
+      if(!itens.length){ estErro('coCmpErro', 'Este pedido não tem itens em "' + CMP_DOC_ITENS[cmpDocItens].replace('Somente ', '') + '".'); return null; }
+      return Object.assign({}, cmpAtual, { itens, parte: CMP_DOC_ARQ[cmpDocItens] });
+    }
     async function cmpEmitir(){
       // Rascunho vira "Aguardando assinatura" quando o documento é emitido.
       const salvou = await cmpSalvar(cmpAtual.status === 'rascunho' ? 'emitido' : null);
       if(!cmpAtual || !cmpAtual.itens.length) return;
       if(!salvou && !cmpSemTabela && supa) return;   // erro de verdade já apareceu na tela
-      cmpPdf(cmpAtual);
+      const doc = cmpPedidoDoc(); if(!doc) return;
+      cmpPdf(doc);
     }
     // Mesmo Pedido de Materiais, mas com valor unitário, subtotal e totais, pra
     // entregar à tesouraria do clube. Não muda a situação do pedido.
@@ -40560,7 +40577,8 @@ const REQ_SUMMARIES = {
       const salvou = await cmpSalvar(null);
       if(!cmpAtual || !cmpAtual.itens.length) return;
       if(!salvou && !cmpSemTabela && supa) return;
-      if(!cmpGasto(cmpAtual) && !confirm('Nenhum item do pedido tem valor informado. Gerar a via da Tesouraria mesmo assim?')) return;
+      const pedidoDoc = cmpPedidoDoc(); if(!pedidoDoc) return;
+      if(!cmpGasto(pedidoDoc) && !confirm('Nenhum item ' + (pedidoDoc === cmpAtual ? 'do pedido' : 'escolhido') + ' tem valor informado. Gerar a via da Tesouraria mesmo assim?')) return;
       let lanc = null;
       if(cmpAtual.lancamento_id && supa){
         const { data } = await supa.from('tesouraria_lancamentos').select('data, valor, forma_pagamento').eq('id', cmpAtual.lancamento_id).maybeSingle();
@@ -40571,7 +40589,7 @@ const REQ_SUMMARIES = {
         const { data } = await supa.from('clube_config').select('valor').eq('chave', 'tesoureiro_nome').maybeSingle();
         tesoureira = (data && data.valor) || '';
       }
-      cmpPdf(cmpAtual, true, lanc, tesoureira);
+      cmpPdf(pedidoDoc, true, lanc, tesoureira);
     }
     // Lança (ou atualiza) o gasto do pedido como saída na Tesouraria e marca o
     // pedido como Comprado. O pedido é salvo antes, pra não sobrar lançamento
@@ -40824,7 +40842,7 @@ const REQ_SUMMARIES = {
         doc.text('Formulário de Pedido de Materiais - Desbravadores' + (comValores ? ' — Via da Tesouraria' : ''), M, 285);
         doc.text('Página ' + k + ' de ' + n, W - M, 285, { align: 'right' });
       }
-      salvarPDF(doc, 'pedido-de-materiais-' + (comValores ? 'tesouraria-' : '') + String(p.data || cmpHoje()).slice(0, 10) + '.pdf');
+      salvarPDF(doc, 'pedido-de-materiais-' + (comValores ? 'tesouraria-' : '') + (p.parte ? p.parte + '-' : '') + String(p.data || cmpHoje()).slice(0, 10) + '.pdf');
     }
 
     // ---- Eventos ----
