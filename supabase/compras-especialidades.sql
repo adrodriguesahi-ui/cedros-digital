@@ -2,7 +2,7 @@
 -- Coordenação de Classes: pedidos de compra de insígnias de especialidades.
 -- Cada pedido guarda a lista de especialidades (itens) e os nomes de quem
 -- assina o documento de autorização (diretor, solicitante e regional).
--- itens: [{ "nome": "Nós e Amarras", "area": "...", "quantidade": 3,
+-- itens: [{ "nome": "Nós e Amarras", "area": "...", "quantidade": 3, "valor": 6.5,
 --           "para": ["Fulano", ...], "ids": [<id em especialidades_concluidas>, ...] }]
 -- Rode no SQL Editor do Supabase; é seguro rodar de novo.
 -- ---------------------------------------------------------------------
@@ -35,3 +35,8 @@ create policy "compras_especialidades: membros" on compras_especialidades
   for all to authenticated
   using ((select public.eh_membro()))
   with check ((select public.eh_membro()));
+
+-- Valor da compra: cada item de "itens" pode ter "valor" (preço por insígnia).
+-- O total vai para a Tesouraria como saída; lancamento_id liga o pedido a ela.
+alter table compras_especialidades
+  add column if not exists lancamento_id uuid references tesouraria_lancamentos(id) on delete set null;

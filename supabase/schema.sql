@@ -1737,3 +1737,8 @@ create trigger trg_compras_especialidades_updated_at
 alter table compras_especialidades enable row level security;
 drop policy if exists p_compras_especialidades on compras_especialidades;
 create policy p_compras_especialidades on compras_especialidades for all using(true) with check(true);
+
+-- Valor da compra: cada item de "itens" pode ter "valor" (preço por insígnia).
+-- O total vai para a Tesouraria como saída; lancamento_id liga o pedido a ela.
+alter table compras_especialidades
+  add column if not exists lancamento_id uuid references tesouraria_lancamentos(id) on delete set null;
