@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
-<script src="clube.js?v=2"></script>
+<script src="clube.js?v=3"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <style>
   :root{
@@ -3648,6 +3648,13 @@
   .co-cmp-linha:last-child{ border-bottom:0; }
   .co-cmp-linha .co-est-info small{ display:block; font-size:11px; color:rgba(245,239,225,0.55); margin-top:2px; }
   .co-cmp-linha input[type=number]{ width:62px; flex-shrink:0; margin:0; text-align:center; }
+  .co-cmp-linha{ flex-wrap:wrap; }
+  .co-cmp-valores{ flex:0 0 100%; display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding-left:46px; font-size:12px; color:rgba(245,239,225,0.6); }
+  .co-cmp-valores .co-input{ margin:0; }
+  .co-cmp-linha .co-cmp-valores input[type=number]{ width:58px; }
+  .co-cmp-valores input[data-cmp-valor]{ width:84px; text-align:right; }
+  .co-cmp-valores b{ color:var(--gold); font-size:13px; margin-left:auto; }
+  .co-cmp-tes-ok{ color:var(--accent); font-weight:800; }
   .co-cmp-tirar{ flex-shrink:0; width:30px; height:30px; border-radius:9px; border:0; background:rgba(230,110,80,0.15); color:#F08A6C; font:inherit; font-size:16px; font-weight:900; cursor:pointer; }
   .co-cmp-add{ display:flex; gap:8px; align-items:center; margin-top:10px; }
   .co-cmp-add .co-input{ margin:0; }
@@ -14541,11 +14548,13 @@
                 <p class="co-nota">Monte a lista das insígnias de especialidade a comprar e emita o documento de autorização para o Regional assinar.</p>
                 <button type="button" class="co-btn" id="coCmpNovo">+ Novo pedido de compra</button>
               </div>
+              <div class="co-resumo" id="coCmpResumo"></div>
               <div class="co-lista" id="coCmpLista"></div>
               <p class="co-vazio" id="coCmpVazio" style="display:none;"></p>
             </div>
             <div id="coCmpDetalhe" style="display:none;"></div>
             <datalist id="coCmpSugNomes"></datalist>
+            <datalist id="coCmpSugDist"></datalist>
           </div>
 
           <div id="coPaneLista">
@@ -27369,7 +27378,7 @@
 
     const CATEGORIAS = {
       entrada: ['Mensalidade', 'Inscrição', 'Venda / Campanhas', 'Oferta / Patrocínio', 'Doação', 'Reembolso', 'Outro'],
-      saida: ['Transporte', 'Alimentação', 'Hospedagem / Taxas', 'Material', 'Uniforme', 'Premiação', 'Manutenção', 'Outro']
+      saida: ['Transporte', 'Alimentação', 'Hospedagem / Taxas', 'Material', 'Uniforme', 'Insígnias / Especialidades', 'Premiação', 'Manutenção', 'Outro']
     };
     const ICONE_CAT = {
       'Mensalidade': '🗓️', 'Inscrição': '📝', 'Venda / Campanhas': '🍕', 'Oferta / Patrocínio': '⛪', 'Doação': '🤝', 'Reembolso': '↩️',
@@ -27377,13 +27386,13 @@
       // continuar com ícone em vez de cair no vazio — o texto da categoria é
       // guardado no banco, então renomear no app não reescreve o que passou.
       'Venda / Cantina': '🍕',
-      'Transporte': '🚌', 'Alimentação': '🍽️', 'Hospedagem / Taxas': '🏕️', 'Material': '🧰', 'Uniforme': '👕', 'Premiação': '🏆', 'Manutenção': '🔧', 'Outro': '•'
+      'Transporte': '🚌', 'Alimentação': '🍽️', 'Hospedagem / Taxas': '🏕️', 'Material': '🧰', 'Uniforme': '👕', 'Insígnias / Especialidades': '🎖️', 'Premiação': '🏆', 'Manutenção': '🔧', 'Outro': '•'
     };
     const EXEMPLO_CAT = {
       'Mensalidade': 'Mensalidades de outubro', 'Inscrição': 'Inscrições — 1º lote', 'Venda / Campanhas': 'Venda de pizzas da campanha', 'Oferta / Patrocínio': 'Patrocínio da igreja',
       'Doação': 'Doação de ex-desbravador', 'Reembolso': 'Devolução da caução do sítio',
       'Transporte': 'Locação de ônibus + caminhão', 'Alimentação': 'Compra de mantimentos', 'Hospedagem / Taxas': 'Inscrição na Associação',
-      'Material': 'Lonas, estacas e cordas', 'Uniforme': 'Camisetas e lenços', 'Premiação': 'Troféus e medalhas', 'Manutenção': 'Conserto das barracas', 'Outro': 'descreva o lançamento'
+      'Material': 'Lonas, estacas e cordas', 'Uniforme': 'Camisetas e lenços', 'Insígnias / Especialidades': 'Insígnias de especialidades', 'Premiação': 'Troféus e medalhas', 'Manutenção': 'Conserto das barracas', 'Outro': 'descreva o lançamento'
     };
     const TIPO_COB = { mensalidade: 'Mensalidade', taxa: 'Taxa única', parcelada: 'Parcelada', inscricao: 'Inscrição de evento' };
     const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
@@ -40097,9 +40106,45 @@ const REQ_SUMMARIES = {
     let cmpSalvando = false;
     const cmpQtd = i => Math.max(0, parseInt(i.quantidade, 10) || 0);
     const cmpTotal = p => (p.itens || []).reduce((n, i) => n + cmpQtd(i), 0);
+    // Valor: cada item guarda o preço de uma insígnia; o gasto do pedido aparece
+    // na Coordenação e vai para a Tesouraria como saída nesta categoria. O
+    // documento de autorização do Regional não mostra valores.
+    const CMP_CAT_TES = 'Insígnias / Especialidades';
+    const cmpCent = v => Math.round(v * 100) / 100;
+    const cmpValor = i => { const v = Number(i && i.valor); return isFinite(v) && v > 0 ? cmpCent(v) : 0; };
+    const cmpSub = i => cmpCent(cmpQtd(i) * cmpValor(i));
+    const cmpGasto = p => cmpCent((p.itens || []).reduce((n, i) => n + cmpSub(i), 0));
+    const cmpMoeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+    const cmpBrl = v => cmpMoeda.format(v || 0);
+    const cmpFmtValor = v => v ? v.toFixed(2).replace('.', ',') : '';
+    // Aceita "6,50", "R$ 1.234,50" ou "6.5".
+    function cmpLerValor(txt){
+      let t = String(txt == null ? '' : txt).replace(/[^\d,.]/g, '');
+      if(t.indexOf(',') !== -1) t = t.replace(/\./g, '').replace(',', '.');
+      const v = parseFloat(t);
+      return isFinite(v) && v > 0 ? cmpCent(v) : 0;
+    }
+    // Preço sugerido: o último usado para a mesma especialidade; sem histórico
+    // dela, o último preço de qualquer insígnia (costuma ser o mesmo pra todas).
+    function cmpPrecoSugerido(nome, tipo){
+      const n = norm(nome), dist = tipo === 'distintivo';
+      let qualquer = 0;
+      const listas = [cmpAtual ? cmpAtual.itens : []].concat(cmpPedidos.map(p => p.itens || []));
+      for(const itens of listas) for(const i of itens){
+        const v = cmpValor(i); if(!v || cmpEhDist(i) !== dist) continue;
+        if(norm(i.nome) === n) return v;
+        if(!qualquer) qualquer = v;
+      }
+      return qualquer;
+    }
+    const cmpLancado = p => !!p.lancamento_id;
     const cmpHoje = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
     const cmpDataLonga = iso => { const d = new Date(String(iso || '').slice(0, 10) + 'T12:00:00'); return isNaN(d) ? hojeLongo() : d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }); };
-    const cmpOrdenarItens = () => cmpAtual.itens.sort((a, b) => cmpNome(a.nome, b.nome));
+    const cmpEhDist = i => i && i.tipo === 'distintivo';
+    // Distintivos e classes primeiro (na ordem das classes), depois as especialidades em ordem alfabética.
+    const cmpOrdemDist = n => { const i = ORDEM.findIndex(c => norm(n).indexOf(norm(c)) !== -1); return i === -1 ? 99 : i; };
+    const cmpOrdenarItens = () => cmpAtual.itens.sort((a, b) => (cmpEhDist(b) - cmpEhDist(a))
+      || (cmpEhDist(a) ? cmpOrdemDist(a.nome) - cmpOrdemDist(b.nome) : 0) || cmpNome(a.nome, b.nome));
 
     async function cmpCarregar(){
       if(!supa){ $('coCmpLista').innerHTML = '<p class="co-vazio">Sem conexão com o banco.</p>'; return; }
@@ -40127,11 +40172,22 @@ const REQ_SUMMARIES = {
           '<span class="co-est-info">' +
             '<span class="co-est-nome">Pedido de ' + dataBr(p.data) + '</span>' +
             '<span class="co-est-sub">' + plural(itens.length, 'especialidade', 'especialidades') + ' · ' + plural(cmpTotal(p), 'insígnia', 'insígnias') +
+              (cmpGasto(p) ? ' · <b style="color:var(--gold);">' + cmpBrl(cmpGasto(p)) + '</b>' : '') +
+              (cmpLancado(p) ? ' · <span class="co-cmp-tes-ok">na Tesouraria</span>' : '') +
               (p.regional ? ' · Regional: ' + esc(p.regional) : '') + '</span>' +
           '</span>' +
           '<span class="co-cmp-status ' + esc(p.status) + '">' + esc(CMP_STATUS[p.status] || p.status) + '</span>' +
         '</div>';
       }).join('');
+      // Gasto do ano: pedidos comprados ou já lançados na Tesouraria.
+      const ano = String(new Date().getFullYear());
+      const feitos = cmpPedidos.filter(p => p.status === 'comprado' || cmpLancado(p));
+      const gastoAno = cmpCent(feitos.filter(p => String(p.data || '').slice(0, 4) === ano).reduce((n, p) => n + cmpGasto(p), 0));
+      const emAberto = cmpCent(cmpPedidos.filter(p => feitos.indexOf(p) === -1).reduce((n, p) => n + cmpGasto(p), 0));
+      $('coCmpResumo').innerHTML = cmpPedidos.length ?
+        '<div class="co-stat"><b>' + cmpBrl(gastoAno) + '</b><span>Gasto em ' + ano + '</span></div>' +
+        '<div class="co-stat"><b>' + cmpBrl(emAberto) + '</b><span>Em pedidos abertos</span></div>' +
+        '<div class="co-stat"><b>' + cmpPedidos.length + '</b><span>' + (cmpPedidos.length === 1 ? 'Pedido' : 'Pedidos') + '</span></div>' : '';
       $('coCmpVazio').style.display = cmpPedidos.length ? 'none' : '';
       $('coCmpVazio').textContent = 'Nenhum pedido de compra ainda. Toque em “+ Novo pedido de compra” para começar.';
     }
@@ -40141,6 +40197,9 @@ const REQ_SUMMARIES = {
       $('coCmpListaWrap').style.display = '';
     }
     function cmpSugestoes(){
+      if(!$('coCmpSugDist').options.length)
+        $('coCmpSugDist').innerHTML = REGULARES.concat(LIDERANCA).map(c => 'PIN ' + c)
+          .concat(REGULARES.map(c => 'PIN ' + AVANCADAS[c])).map(n => '<option value="' + esc(n) + '">').join('');
       if($('coCmpSugNomes').options.length || typeof SPECIALTY_DB === 'undefined') return;
       $('coCmpSugNomes').innerHTML = Object.keys(SPECIALTY_DB).flatMap(k => SPECIALTY_DB[k]).sort(cmpNome).map(n => '<option value="' + esc(n) + '">').join('');
     }
@@ -40150,10 +40209,10 @@ const REQ_SUMMARIES = {
       // Pedido novo já vem com os nomes do último, que quase nunca mudam.
       const ult = cmpPedidos[0] || {};
       cmpAtual = p ? JSON.parse(JSON.stringify(p)) : {
-        id: null, data: cmpHoje(), status: 'rascunho', regional: ult.regional || '', regiao: ult.regiao || '',
+        id: null, data: cmpHoje(), status: 'rascunho', regional: ult.regional || '', regiao: ult.regiao || (window.CLUBE_CONFIG && window.CLUBE_CONFIG.regiao) || '',
         diretor: ult.diretor || '', solicitante: quemFez(), observacao: '', itens: []
       };
-      cmpAtual.itens = (cmpAtual.itens || []).map(i => ({ nome: i.nome, area: i.area || '', quantidade: cmpQtd(i), para: i.para || [], ids: i.ids || [] }));
+      cmpAtual.itens = (cmpAtual.itens || []).map(i => ({ tipo: cmpEhDist(i) ? 'distintivo' : 'especialidade', nome: i.nome, area: i.area || '', quantidade: cmpQtd(i), valor: cmpValor(i), para: i.para || [], ids: i.ids || [] }));
       cmpSugestoes();
       const campo = (id, rot, valor, ph) => '<label class="co-label" for="' + id + '">' + rot + '</label>' +
         '<input type="text" id="' + id + '" class="co-input" autocomplete="off" maxlength="100" placeholder="' + esc(ph || '') + '" value="' + esc(valor || '') + '">';
@@ -40164,6 +40223,8 @@ const REQ_SUMMARIES = {
         '<div class="co-card">' +
           '<h4 class="co-card-titulo" id="coCmpItensTit"></h4>' +
           '<div id="coCmpItens"></div>' +
+          '<select id="coCmpAddTipo" class="co-input" style="margin:10px 0 0;" aria-label="Tipo do item a adicionar">' +
+            '<option value="especialidade">Adicionar especialidade</option><option value="distintivo">Adicionar distintivo ou classe (PIN)</option></select>' +
           '<div class="co-cmp-add">' +
             '<input type="text" id="coCmpAddNome" class="co-input" list="coCmpSugNomes" autocomplete="off" placeholder="Nome da especialidade">' +
             '<input type="number" id="coCmpAddQtd" class="co-input" min="1" step="1" inputmode="numeric" value="1" aria-label="Quantidade">' +
@@ -40171,6 +40232,17 @@ const REQ_SUMMARIES = {
           '</div>' +
           '<div class="co-acoes" style="margin-top:10px;"><button type="button" class="co-btn sec" id="coCmpPuxar">Puxar concluídas sem condecoração</button></div>' +
           '<p class="co-nota" id="coCmpPuxarNota">Adiciona as especialidades concluídas que ainda não tiveram a condecoração entregue e que não estão em outro pedido, com o nome de cada desbravador.</p>' +
+          '<p class="co-nota">Os valores ficam só aqui e na Tesouraria; o pedido de materiais para o Regional sai sem valores.</p>' +
+        '</div>' +
+        '<div class="co-card">' +
+          '<h4 class="co-card-titulo">Tesouraria</h4>' +
+          '<p class="co-nota" id="coCmpTesInfo"></p>' +
+          '<div class="co-est-grid">' +
+            '<div><label class="co-label" for="coCmpTesData">Data do pagamento</label><input type="date" id="coCmpTesData" class="co-input" value="' + cmpHoje() + '"></div>' +
+            '<div><label class="co-label" for="coCmpTesForma">Pagamento</label><select id="coCmpTesForma" class="co-input">' +
+              ['Pix', 'Dinheiro', 'Cartão', 'Transferência', 'Outro'].map(f => '<option value="' + f + '">' + f + '</option>').join('') + '</select></div>' +
+          '</div>' +
+          '<button type="button" class="co-btn" id="coCmpTesBtn"></button>' +
         '</div>' +
         '<div class="co-card">' +
           '<h4 class="co-card-titulo">Dados do documento</h4>' +
@@ -40187,7 +40259,7 @@ const REQ_SUMMARIES = {
         '</div>' +
         '<p class="co-nota" id="coCmpErro" style="display:none; color:#F08A6C;"></p>' +
         '<div class="co-acoes">' +
-          '<button type="button" class="co-btn" id="coCmpPdf">Gerar documento para assinatura (PDF)</button>' +
+          '<button type="button" class="co-btn" id="coCmpPdf">Gerar pedido de materiais (PDF)</button>' +
           '<button type="button" class="co-btn sec" id="coCmpSalvar">Salvar</button>' +
           (cmpAtual.id ? '<button type="button" class="co-btn perigo" id="coCmpExcluir">Excluir pedido</button>' : '') +
         '</div>';
@@ -40195,15 +40267,33 @@ const REQ_SUMMARIES = {
       $('coCmpDetalhe').style.display = '';
       $('coCmpVoltar').addEventListener('click', cmpMostrarLista);
       $('coCmpAddBtn').addEventListener('click', cmpAdicionar);
+      $('coCmpAddTipo').addEventListener('change', () => {
+        const dist = $('coCmpAddTipo').value === 'distintivo';
+        $('coCmpAddNome').setAttribute('list', dist ? 'coCmpSugDist' : 'coCmpSugNomes');
+        $('coCmpAddNome').placeholder = dist ? 'Ex.: PIN Amigo' : 'Nome da especialidade';
+        $('coCmpAddNome').focus();
+      });
       $('coCmpAddNome').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); cmpAdicionar(); } });
       $('coCmpPuxar').addEventListener('click', cmpPuxarPendentes);
       $('coCmpSalvar').addEventListener('click', () => cmpSalvar(null));
       $('coCmpPdf').addEventListener('click', cmpEmitir);
+      $('coCmpTesBtn').addEventListener('click', cmpLancarTesouraria);
       if($('coCmpExcluir')) $('coCmpExcluir').addEventListener('click', cmpExcluir);
       $('coCmpItens').addEventListener('input', e => {
-        const q = e.target.closest('[data-cmp-qtd]'); if(!q) return;
-        const it = cmpAtual.itens[+q.getAttribute('data-cmp-qtd')];
-        if(it){ it.quantidade = cmpQtd({ quantidade: q.value }); cmpTituloItens(); }
+        const q = e.target.closest('[data-cmp-qtd]'), v = e.target.closest('[data-cmp-valor]');
+        if(!q && !v) return;
+        const i = +(q || v).getAttribute(q ? 'data-cmp-qtd' : 'data-cmp-valor');
+        const it = cmpAtual.itens[i]; if(!it) return;
+        if(q) it.quantidade = cmpQtd({ quantidade: q.value });
+        else it.valor = cmpLerValor(v.value);
+        const sub = $('coCmpItens').querySelector('[data-cmp-sub="' + i + '"]');
+        if(sub) sub.textContent = cmpSub(it) ? cmpBrl(cmpSub(it)) : '';
+        cmpTituloItens();
+      });
+      $('coCmpItens').addEventListener('change', e => {
+        const v = e.target.closest('[data-cmp-valor]'); if(!v) return;
+        const it = cmpAtual.itens[+v.getAttribute('data-cmp-valor')];
+        if(it) v.value = cmpFmtValor(cmpValor(it));
       });
       $('coCmpItens').addEventListener('click', e => {
         const b = e.target.closest('[data-cmp-tirar]'); if(!b) return;
@@ -40211,32 +40301,80 @@ const REQ_SUMMARIES = {
         cmpRenderItens();
       });
       cmpRenderItens();
+      cmpInfoTesouraria();
     }
     function cmpTituloItens(){
-      $('coCmpItensTit').textContent = 'Especialidades — ' + plural(cmpAtual.itens.length, 'item', 'itens') + ', ' + plural(cmpTotal(cmpAtual), 'insígnia', 'insígnias');
+      const gasto = cmpGasto(cmpAtual);
+      $('coCmpItensTit').textContent = 'Itens do pedido — ' + plural(cmpAtual.itens.length, 'item', 'itens') + ', ' + plural(cmpTotal(cmpAtual), 'unidade', 'unidades') + (gasto ? ' · ' + cmpBrl(gasto) : '');
+      cmpTextoTesouraria();
+    }
+    // Situação do pedido na Tesouraria. cmpTesLanc: o lançamento ligado
+    // ({ data, valor, forma_pagamento }), null se não há, undefined enquanto busca.
+    let cmpTesLanc;
+    function cmpTextoTesouraria(){
+      const info = $('coCmpTesInfo'), btn = $('coCmpTesBtn'); if(!info || !btn) return;
+      const gasto = cmpGasto(cmpAtual);
+      const l = cmpAtual.lancamento_id ? cmpTesLanc : null;
+      if(cmpAtual.lancamento_id && l === undefined){ info.textContent = 'Conferindo o lançamento na Tesouraria…'; btn.style.display = 'none'; return; }
+      btn.style.display = '';
+      if(l){
+        const difere = cmpCent(Number(l.valor) || 0) !== gasto;
+        info.innerHTML = '<span class="co-cmp-tes-ok">Lançado na Tesouraria</span>: saída de ' + cmpBrl(l.valor) + ' em ' + dataBr(l.data) +
+          (l.forma_pagamento ? ' (' + esc(l.forma_pagamento) + ')' : '') + ', categoria ' + esc(CMP_CAT_TES) + '.' +
+          (difere ? '<br><span style="color:#F08A6C;">O total do pedido agora é ' + cmpBrl(gasto) + '. Atualize o lançamento para a Tesouraria ficar igual.</span>' : '');
+        btn.textContent = 'Atualizar lançamento na Tesouraria';
+        btn.disabled = !gasto || !difere;
+      } else {
+        info.textContent = gasto
+          ? 'Lança o total de ' + cmpBrl(gasto) + ' como saída na Tesouraria (categoria ' + CMP_CAT_TES + ') e marca o pedido como Comprado.'
+          : 'Informe o valor de cada especialidade para lançar o gasto na Tesouraria.';
+        btn.textContent = 'Lançar ' + (gasto ? cmpBrl(gasto) + ' ' : '') + 'na Tesouraria';
+        btn.disabled = !gasto;
+      }
+    }
+    async function cmpInfoTesouraria(){
+      const id = cmpAtual && cmpAtual.lancamento_id;
+      cmpTesLanc = id ? undefined : null;
+      cmpTextoTesouraria();
+      if(!id || !supa) return;
+      const { data, error } = await supa.from('tesouraria_lancamentos').select('id, data, valor, forma_pagamento').eq('id', id).maybeSingle();
+      if(!cmpAtual || cmpAtual.lancamento_id !== id) return;
+      if(error) console.warn('Não consegui ler o lançamento da compra:', error.message);
+      cmpTesLanc = data || null;
+      if(data){
+        if($('coCmpTesData')) $('coCmpTesData').value = String(data.data || '').slice(0, 10) || cmpHoje();
+        if($('coCmpTesForma') && data.forma_pagamento) $('coCmpTesForma').value = data.forma_pagamento;
+      } else if(!error) cmpAtual.lancamento_id = null;   // apagado na Tesouraria
+      cmpTextoTesouraria();
     }
     function cmpRenderItens(){
       cmpTituloItens();
       $('coCmpItens').innerHTML = cmpAtual.itens.length ? cmpAtual.itens.map((it, i) =>
         '<div class="co-cmp-linha">' +
-          estIconeHtml({ tipo: 'especialidade', nome: it.nome }) +
+          (cmpEhDist(it) ? '<span class="co-est-icone" aria-hidden="true">' + EST_ICONE_VAZIO + '</span>' : estIconeHtml({ tipo: 'especialidade', nome: it.nome })) +
           '<span class="co-est-info"><span class="co-est-nome">' + esc(it.nome) + '</span>' +
-            ((it.area || it.para.length) ? '<small>' + esc([it.area, it.para.length ? 'para ' + it.para.join(', ') : ''].filter(Boolean).join(' · ')) + '</small>' : '') +
+            '<small>' + esc([cmpEhDist(it) ? 'Distintivo / classe' : (it.area || 'Especialidade'), it.para.length ? 'para ' + it.para.join(', ') : ''].filter(Boolean).join(' · ')) + '</small>' +
           '</span>' +
-          '<input type="number" class="co-input" min="0" step="1" inputmode="numeric" value="' + cmpQtd(it) + '" data-cmp-qtd="' + i + '" aria-label="Quantidade de ' + esc(it.nome) + '">' +
           '<button type="button" class="co-cmp-tirar" data-cmp-tirar="' + i + '" aria-label="Tirar ' + esc(it.nome) + ' do pedido">×</button>' +
+          '<div class="co-cmp-valores">' +
+            '<input type="number" class="co-input" min="0" step="1" inputmode="numeric" value="' + cmpQtd(it) + '" data-cmp-qtd="' + i + '" aria-label="Quantidade de ' + esc(it.nome) + '">' +
+            '<span>× R$</span>' +
+            '<input type="text" class="co-input" inputmode="decimal" autocomplete="off" placeholder="0,00" value="' + cmpFmtValor(cmpValor(it)) + '" data-cmp-valor="' + i + '" aria-label="Valor de cada insígnia de ' + esc(it.nome) + '">' +
+            '<b data-cmp-sub="' + i + '">' + (cmpSub(it) ? cmpBrl(cmpSub(it)) : '') + '</b>' +
+          '</div>' +
         '</div>').join('')
-        : '<p class="co-nota">Nenhuma especialidade no pedido ainda.</p>';
+        : '<p class="co-nota">Nenhum item no pedido ainda.</p>';
       estPintarIcones($('coCmpItens'));
     }
     function cmpAdicionar(){
       const bruto = $('coCmpAddNome').value.trim();
       if(!bruto){ $('coCmpAddNome').focus(); return; }
-      const nome = estNomeEsp(bruto);
+      const tipo = $('coCmpAddTipo').value === 'distintivo' ? 'distintivo' : 'especialidade';
+      const nome = tipo === 'distintivo' ? bruto : estNomeEsp(bruto);
       const qtd = Math.max(1, parseInt($('coCmpAddQtd').value, 10) || 1);
-      const ja = cmpAtual.itens.find(i => norm(i.nome) === norm(nome));
+      const ja = cmpAtual.itens.find(i => (i.tipo === tipo) && norm(i.nome) === norm(nome));
       if(ja) ja.quantidade = cmpQtd(ja) + qtd;
-      else cmpAtual.itens.push({ nome, area: CATEGORIA_DO_NOME[nome] || '', quantidade: qtd, para: [], ids: [] });
+      else cmpAtual.itens.push({ tipo, nome, area: tipo === 'distintivo' ? '' : (CATEGORIA_DO_NOME[nome] || ''), quantidade: qtd, valor: cmpPrecoSugerido(nome, tipo), para: [], ids: [] });
       cmpOrdenarItens();
       $('coCmpAddNome').value = ''; $('coCmpAddQtd').value = 1;
       cmpRenderItens();
@@ -40252,8 +40390,8 @@ const REQ_SUMMARIES = {
       pessoas.forEach(p => (p.especs || []).forEach(e => {
         if(e.data_entrega || !e.especialidade || usados.has(String(e.id))) return;
         const nome = estNomeEsp(e.especialidade);
-        let it = cmpAtual.itens.find(i => norm(i.nome) === norm(nome));
-        if(!it){ it = { nome, area: e.categoria || CATEGORIA_DO_NOME[nome] || '', quantidade: 0, para: [], ids: [] }; cmpAtual.itens.push(it); }
+        let it = cmpAtual.itens.find(i => !cmpEhDist(i) && norm(i.nome) === norm(nome));
+        if(!it){ it = { tipo: 'especialidade', nome, area: e.categoria || CATEGORIA_DO_NOME[nome] || '', quantidade: 0, valor: cmpPrecoSugerido(nome, 'especialidade'), para: [], ids: [] }; cmpAtual.itens.push(it); }
         it.quantidade = cmpQtd(it) + 1;
         if(it.para.indexOf(p.nome) === -1) it.para.push(p.nome);
         it.ids.push(e.id);
@@ -40277,18 +40415,19 @@ const REQ_SUMMARIES = {
       cmpAtual.itens = cmpAtual.itens.filter(i => cmpQtd(i) > 0);
     }
     // Grava o pedido aberto. Devolve true se ficou salvo.
-    async function cmpSalvar(novoStatus){
+    async function cmpSalvar(novoStatus, extra){
       if(cmpSalvando) return false;
       cmpLerForm();
-      if(!cmpAtual.itens.length){ estErro('coCmpErro', 'Adicione pelo menos uma especialidade com quantidade.'); cmpRenderItens(); return false; }
+      if(!cmpAtual.itens.length){ estErro('coCmpErro', 'Adicione pelo menos um item com quantidade.'); cmpRenderItens(); return false; }
       if(novoStatus) cmpAtual.status = novoStatus;
       estErro('coCmpErro', '');
       if(!supa || cmpSemTabela) return false;
       const dados = {
         data: cmpAtual.data, status: cmpAtual.status, regional: cmpAtual.regional || null, regiao: cmpAtual.regiao || null,
         diretor: cmpAtual.diretor || null, solicitante: cmpAtual.solicitante || null, observacao: cmpAtual.observacao || null,
-        itens: cmpAtual.itens.map(i => ({ nome: i.nome, area: i.area || '', quantidade: cmpQtd(i), para: i.para, ids: i.ids }))
+        itens: cmpAtual.itens.map(i => ({ tipo: cmpEhDist(i) ? 'distintivo' : 'especialidade', nome: i.nome, area: i.area || '', quantidade: cmpQtd(i), valor: cmpValor(i), para: i.para, ids: i.ids }))
       };
+      if(extra) Object.assign(dados, extra);
       cmpSalvando = true;
       ['coCmpSalvar', 'coCmpPdf'].forEach(id => { if($(id)) $(id).disabled = true; });
       try {
@@ -40321,83 +40460,212 @@ const REQ_SUMMARIES = {
       if(!salvou && !cmpSemTabela && supa) return;   // erro de verdade já apareceu na tela
       cmpPdf(cmpAtual);
     }
+    // Lança (ou atualiza) o gasto do pedido como saída na Tesouraria e marca o
+    // pedido como Comprado. O pedido é salvo antes, pra não sobrar lançamento
+    // de um pedido que não ficou gravado.
+    async function cmpLancarTesouraria(){
+      if(cmpSalvando || !cmpAtual) return;
+      const dataPag = $('coCmpTesData').value || cmpHoje(), forma = $('coCmpTesForma').value || null;
+      cmpLerForm();
+      const gasto = cmpGasto(cmpAtual);
+      if(!gasto){ estErro('coCmpErro', 'Informe o valor de cada especialidade antes de lançar na Tesouraria.'); return; }
+      if(!supa || cmpSemTabela){ estErro('coCmpErro', 'Sem a tabela de compras no banco não dá para lançar na Tesouraria.'); return; }
+      const atualizar = !!(cmpAtual.lancamento_id && cmpTesLanc);
+      if(!confirm(atualizar
+        ? 'Atualizar a saída deste pedido na Tesouraria para ' + cmpBrl(gasto) + '?'
+        : 'Lançar uma saída de ' + cmpBrl(gasto) + ' na Tesouraria (' + CMP_CAT_TES + ', ' + dataBr(dataPag) + ') e marcar o pedido como Comprado?')) return;
+      if(!(await cmpSalvar(null))) return;
+      const linha = {
+        data: dataPag, tipo: 'saida', valor: gasto, categoria: CMP_CAT_TES, forma_pagamento: forma,
+        descricao: 'Compra de insígnias de especialidades — ' + plural(cmpTotal(cmpAtual), 'insígnia', 'insígnias'),
+        observacao: ('Pedido de compra da Coordenação de ' + dataBr(cmpAtual.data) + ': ' +
+          cmpAtual.itens.map(i => i.nome + ' × ' + cmpQtd(i) + (cmpValor(i) ? ' (' + cmpBrl(cmpValor(i)) + ' cada)' : '')).join('; ')).slice(0, 2000),
+        registrado_por: quemFez() || null
+      };
+      cmpSalvando = true;
+      if($('coCmpTesBtn')) $('coCmpTesBtn').disabled = true;
+      let lancId = cmpAtual.lancamento_id || null;
+      try {
+        if(lancId){
+          const { data, error } = await supa.from('tesouraria_lancamentos').update(linha).eq('id', lancId).select('id');
+          if(error) throw error;
+          if(!data || !data.length) lancId = null;   // apagado na Tesouraria: lança de novo
+        }
+        if(!lancId){
+          const { data, error } = await supa.from('tesouraria_lancamentos').insert(linha).select('id').single();
+          if(error) throw error;
+          lancId = data.id;
+        }
+      } catch(e){
+        console.error('Erro ao lançar compra na Tesouraria:', e.message || e);
+        estErro('coCmpErro', 'Não foi possível lançar na Tesouraria. ' + (e.message || ''));
+        return;
+      } finally {
+        cmpSalvando = false;
+        if($('coCmpTesBtn')) $('coCmpTesBtn').disabled = false;
+      }
+      cmpAtual.lancamento_id = lancId;
+      if(!(await cmpSalvar('comprado', { lancamento_id: lancId }))){
+        estErro('coCmpErro', 'A saída foi lançada na Tesouraria, mas o pedido não registrou isso. Toque em Salvar para tentar de novo.');
+      }
+    }
     async function cmpExcluir(){
       if(!cmpAtual || !cmpAtual.id) return;
-      if(!confirm('Excluir o pedido de compra de ' + dataBr(cmpAtual.data) + '? As especialidades dele voltam a poder entrar em outro pedido.')) return;
+      if(!confirm('Excluir o pedido de compra de ' + dataBr(cmpAtual.data) + '? As especialidades dele voltam a poder entrar em outro pedido.' +
+        (cmpAtual.lancamento_id ? '\n\nA saída lançada na Tesouraria continua lá; apague por lá se for o caso.' : ''))) return;
       const { error } = await supa.from('compras_especialidades').delete().eq('id', cmpAtual.id);
       if(error){ alert('Não foi possível excluir: ' + error.message); return; }
       cmpMostrarLista();
       cmpCarregar();
     }
+    // Formulário de Pedido de Materiais no padrão da Associação: cabeçalho com
+    // o brasão, quadro do clube, Distintivos e Classes, especialidades em duas
+    // colunas (QTD + nome em maiúsculas), "Continuação" nas páginas seguintes e
+    // a assinatura e carimbo do(a) Coordenador(a) Regional. Sem valores.
     function cmpPdf(p){
       const doc = novoDoc(); if(!doc) return;
       const CFG = window.CLUBE_CONFIG || {};
-      const tit = 'Autorização de compra de especialidades';
-      const total = cmpTotal(p);
-      let y = cabecalho(doc, tit);
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(14);
-      doc.text('AUTORIZAÇÃO PARA COMPRA DE INSÍGNIAS', 105, y, { align: 'center' }); y += 6.5;
-      doc.text('DE ESPECIALIDADES', 105, y, { align: 'center' }); y += 11;
-      const clube = CFG.nomeCompleto || ('Clube de Desbravadores ' + (CFG.nomeClube || ''));
-      const texto = 'Eu, ' + (p.regional || '__________________________________________') + ', Regional' + (p.regiao ? ' (' + p.regiao + ')' : '') +
-        ', autorizo o ' + clube + (CFG.codigoClube ? ' (código SGC ' + CFG.codigoClube + ')' : '') +
-        ' a adquirir ' + plural(total, 'insígnia', 'insígnias') + ' de especialidades, conforme a relação abaixo, referentes a especialidades concluídas por seus membros.';
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(20, 24, 20);
-      const linhas = doc.splitTextToSize(texto, 178);
-      doc.text(linhas, 16, y, { lineHeightFactor: 1.55 }); y += linhas.length * 6 + 6;
+      const W = 210, M = 16, LIM = 274, RH = 6.2, HC = 7.5, CW = 87, GAP = 4;
+      const VERDE = [31, 92, 52], VIVO = [63, 203, 107], TINTA = [24, 30, 26], CINZA = [105, 115, 108], ZEBRA = [243, 247, 244], GRADE = [205, 214, 207];
+      const sobe = t => String(t || '').toLocaleUpperCase('pt-BR');
+      const regiao = p.regiao || CFG.regiao || '';
+      const brasao = window.CLUBE && window.CLUBE.brasaoPdf ? window.CLUBE.brasaoPdf(false) : '';
+      const dist = p.itens.filter(cmpEhDist), especs = p.itens.filter(i => !cmpEhDist(i));
 
-      const cab = () => {
-        doc.setFillColor(13, 19, 12); doc.rect(16, y - 4.6, 178, 7, 'F');
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(245, 239, 225);
-        doc.text('Nº', 19, y); doc.text('Especialidade', 28, y); doc.text('Área', 128, y); doc.text('Qtd.', 191, y, { align: 'right' });
-        doc.setTextColor(20, 24, 20); y += 7;
+      // Cabeçalho da 1ª página
+      let xT = M;
+      if(brasao){ try { doc.addImage(brasao, 'PNG', M, 9, 27, 27); xT = M + 33; } catch(e){} }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(17); doc.setTextColor(...TINTA);
+      doc.text(sobe('Clube ' + (CFG.nomeClube || '')), xT, 20.5);
+      doc.setFontSize(10.5); doc.setTextColor(...VERDE);
+      doc.text(sobe([CFG.associacao, regiao].filter(Boolean).join(' — ')), xT, 27);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...CINZA);
+      doc.text('Formulário de Pedido de Materiais — Desbravadores', xT, 32.5);
+      doc.setFillColor(...VERDE); doc.roundedRect(W - M - 40, 13, 40, 16, 2, 2, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
+      doc.setFontSize(7.5); doc.text('PEDIDO DE', W - M - 20, 19.5, { align: 'center' });
+      doc.setFontSize(10.5); doc.text('MATERIAIS', W - M - 20, 25, { align: 'center' });
+      doc.setDrawColor(...VIVO); doc.setLineWidth(0.9); doc.line(M, 40, W - M, 40);
+
+      // Quadro do clube
+      let y = 45;
+      doc.setFillColor(...ZEBRA); doc.setDrawColor(...GRADE); doc.setLineWidth(0.3);
+      doc.roundedRect(M, y, W - 2 * M, 21, 2.5, 2.5, 'FD');
+      const campo = (rot, val, x, yy, w) => {
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...TINTA);
+        doc.text(rot, x, yy);
+        const lx = x + doc.getTextWidth(rot) + 2;
+        doc.setDrawColor(150, 160, 152); doc.setLineWidth(0.2); doc.line(lx, yy + 1.2, x + w, yy + 1.2);
+        if(val){ doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text(doc.splitTextToSize(String(val), x + w - lx - 1)[0], lx + 1, yy); }
       };
-      cab();
-      p.itens.forEach((it, i) => {
-        doc.setFontSize(8);
-        const para = it.para && it.para.length ? doc.splitTextToSize('Para: ' + it.para.join(', '), 96) : [];
-        const h = 6 + para.length * 3.6;
-        if(y + h > 270){ y = novaPagina(doc, tit) + 4; cab(); }
-        if(i % 2){ doc.setFillColor(246, 248, 246); doc.rect(16, y - 4.2, 178, h, 'F'); }
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
-        doc.text(String(i + 1), 19, y);
-        doc.setFont('helvetica', 'bold');
-        doc.text(doc.splitTextToSize(it.nome, 96)[0], 28, y);
-        doc.setFont('helvetica', 'normal');
-        doc.text(doc.splitTextToSize(it.area || '—', 52)[0], 128, y);
-        doc.text(String(cmpQtd(it)), 191, y, { align: 'right' });
-        if(para.length){ doc.setFontSize(8); doc.setTextColor(95, 105, 97); doc.text(para, 28, y + 3.8, { lineHeightFactor: 1.25 }); doc.setTextColor(20, 24, 20); }
-        y += h;
-      });
-      doc.setDrawColor(63, 203, 107); doc.setLineWidth(0.4); doc.line(16, y - 2.5, 194, y - 2.5);
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
-      doc.text('Total: ' + plural(p.itens.length, 'especialidade', 'especialidades') + ' · ' + plural(total, 'insígnia', 'insígnias'), 191, y + 3, { align: 'right' });
-      y += 11;
+      campo('CLUBE:', (CFG.nomeClube || '') + (CFG.codigoClube ? '  ·  SGC ' + CFG.codigoClube : ''), M + 5, y + 8.5, 112);
+      campo('DATA:', dataBr(p.data), M + 124, y + 8.5, 49);
+      campo('DIRETOR(A):', p.diretor, M + 5, y + 16.5, 112);
+      campo('SOLICITANTE:', p.solicitante, M + 124, y + 16.5, 49);
+      y += 29;
+
+      const continuar = () => {
+        doc.addPage();
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(...TINTA);
+        const a = 'PEDIDO DE MATERIAIS — ';
+        doc.text(a, M, 20);
+        doc.setTextColor(...VERDE); doc.text('CONTINUAÇÃO', M + doc.getTextWidth(a) + 1.5, 20);
+        if(brasao){ try { doc.addImage(brasao, 'PNG', W - M - 13, 9, 13, 13); } catch(e){} }
+        doc.setDrawColor(...VIVO); doc.setLineWidth(0.6); doc.line(M, 25, W - M, 25);
+        return 32;
+      };
+      // Uma coluna da tabela: QTD | título, linhas zebradas e grade fina.
+      const coluna = (x, w, yy, titulo, lista) => {
+        doc.setFillColor(...VERDE); doc.rect(x, yy, w, HC, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(255, 255, 255);
+        doc.text('QTD', x + 6.5, yy + 5, { align: 'center' }); doc.text(titulo, x + 15.5, yy + 5);
+        let ry = yy + HC;
+        lista.forEach((it, k) => {
+          if(k % 2){ doc.setFillColor(...ZEBRA); doc.rect(x, ry, w, RH, 'F'); }
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...TINTA);
+          doc.text(String(cmpQtd(it)), x + 6.5, ry + 4.3, { align: 'center' });
+          const nome = sobe(it.nome), max = w - 18;
+          let fs = 8.6; doc.setFont('helvetica', 'normal'); doc.setFontSize(fs);
+          while(fs > 6.6 && doc.getTextWidth(nome) > max){ fs -= 0.2; doc.setFontSize(fs); }
+          doc.text(doc.getTextWidth(nome) > max ? doc.splitTextToSize(nome, max)[0] : nome, x + 15.5, ry + 4.2);
+          ry += RH;
+        });
+        doc.setDrawColor(...GRADE); doc.setLineWidth(0.25);
+        doc.rect(x, yy, w, HC + lista.length * RH);
+        doc.line(x + 13, yy + HC, x + 13, ry);
+        for(let k = 1; k < lista.length; k++) doc.line(x, yy + HC + k * RH, x + w, yy + HC + k * RH);
+      };
+      // Seção inteira, em uma ou duas colunas, quebrando página quando precisa.
+      const secao = (titulo, lista, umaColuna) => {
+        let i = 0;
+        while(i < lista.length){
+          if(y + HC + RH * 2 > LIM) y = continuar();
+          const cabem = Math.floor((LIM - y - HC) / RH);
+          if(umaColuna){
+            const parte = lista.slice(i, i + cabem);
+            coluna(M, W - 2 * M, y, titulo, parte);
+            i += parte.length; y += HC + parte.length * RH + 6;
+          } else {
+            const porCol = Math.min(cabem, Math.ceil((lista.length - i) / 2));
+            const a = lista.slice(i, i + porCol), b = lista.slice(i + porCol, i + 2 * porCol);
+            coluna(M, CW, y, titulo, a);
+            if(b.length) coluna(M + CW + GAP, CW, y, titulo, b);
+            i += a.length + b.length; y += HC + porCol * RH + 6;
+          }
+          if(i < lista.length) y = continuar();
+        }
+      };
+      if(dist.length) secao('DISTINTIVOS E CLASSES', dist, dist.length <= 6);
+      if(especs.length) secao('ESPECIALIDADES', especs, false);
+
+      // Totais e observação
+      if(y + 8 > LIM) y = continuar();
+      const qtdDe = l => l.reduce((n, i) => n + cmpQtd(i), 0);
+      const partes = [];
+      if(dist.length) partes.push(plural(qtdDe(dist), 'distintivo', 'distintivos'));
+      if(especs.length) partes.push(plural(qtdDe(especs), 'insígnia', 'insígnias') + ' de ' + plural(especs.length, 'especialidade', 'especialidades'));
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...TINTA);
+      doc.text('Total do pedido: ' + partes.join(' · '), W - M, y - 1, { align: 'right' });
+      y += 5;
       if(p.observacao){
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
-        const obs = doc.splitTextToSize('Observação: ' + p.observacao, 178);
-        y = garantir(doc, y, obs.length * 5 + 4, tit);
-        doc.text(obs, 16, y); y += obs.length * 5 + 4;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+        const obs = doc.splitTextToSize('Observação: ' + p.observacao, W - 2 * M);
+        if(y + obs.length * 4.6 > LIM) y = continuar();
+        doc.text(obs, M, y + 2); y += obs.length * 4.6 + 3;
       }
 
-      // Local e data + assinaturas: precisam caber juntos na mesma página.
-      if(y + 82 > 282) y = novaPagina(doc, tit) + 6;
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5);
-      doc.text('______________________________, ' + cmpDataLonga(p.data) + '.', 194, y + 4, { align: 'right' });
-      y += 26;
-      const assinatura = (x, w, nome, cargo) => {
-        doc.setDrawColor(40, 44, 40); doc.setLineWidth(0.3); doc.line(x, y, x + w, y);
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
-        doc.text(doc.splitTextToSize(nome || ' ', w)[0], x + w / 2, y + 5, { align: 'center' });
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(95, 105, 97);
-        doc.text(cargo, x + w / 2, y + 9.5, { align: 'center' }); doc.setTextColor(20, 24, 20);
+      // Assinaturas: Diretor(a) e Coordenador(a) Regional, com espaço do carimbo.
+      // O carimbo fica ao lado da linha do(a) coordenador(a), pra o bloco ser baixo.
+      if(y + 34 > LIM) y = continuar();
+      y += 4;
+      const xr = M + CW + GAP;
+      try { doc.setLineDashPattern([1.2, 1.2], 0); } catch(e){}
+      doc.setDrawColor(170, 180, 172); doc.setLineWidth(0.3);
+      doc.roundedRect(xr + CW - 30, y, 30, 28, 2, 2);
+      try { doc.setLineDashPattern([], 0); } catch(e){}
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(170, 180, 172);
+      doc.text('CARIMBO', xr + CW - 15, y + 15, { align: 'center' });
+      y += 18;
+      const assina = (x, w, cargo, nome) => {
+        doc.setDrawColor(...TINTA); doc.setLineWidth(0.35); doc.line(x, y, x + w, y);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...TINTA);
+        doc.text(cargo, x + w / 2, y + 4.5, { align: 'center' });
+        if(nome){ doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...CINZA); doc.text(doc.splitTextToSize(nome, w)[0], x + w / 2, y + 9, { align: 'center' }); }
       };
-      assinatura(16, 80, p.diretor, 'Diretor(a) do clube');
-      assinatura(114, 80, p.solicitante, 'Solicitante · Coordenação');
-      y += 30;
-      assinatura(60, 90, p.regional, 'Regional' + (p.regiao ? ' · ' + p.regiao : '') + ' — autorização');
-      rodape(doc);
-      salvarPDF(doc, 'autorizacao-compra-especialidades-' + String(p.data || cmpHoje()).slice(0, 10) + '.pdf');
+      assina(M, CW - 6, 'ASSINATURA DO(A) DIRETOR(A)', p.diretor);
+      assina(xr, CW - 34, 'ASSINATURA DO(A) COORDENADOR(A)', p.regional ? p.regional + (regiao ? ' · ' + regiao : '') : regiao);
+
+      // Rodapé em todas as páginas
+      const n = doc.getNumberOfPages();
+      for(let k = 1; k <= n; k++){
+        doc.setPage(k);
+        doc.setDrawColor(...GRADE); doc.setLineWidth(0.3); doc.line(M, 281, W - M, 281);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...CINZA);
+        doc.text('Formulário de Pedido de Materiais — Desbravadores', M, 286);
+        doc.text('Emitido em ' + new Date().toLocaleDateString('pt-BR') + ' pelo ' + (CFG.appNome || 'app do clube'), W / 2 + 12, 286, { align: 'center' });
+        doc.text('Página ' + k + ' de ' + n, W - M, 286, { align: 'right' });
+      }
+      salvarPDF(doc, 'pedido-de-materiais-' + String(p.data || cmpHoje()).slice(0, 10) + '.pdf');
     }
 
     // ---- Eventos ----
