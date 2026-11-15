@@ -40301,6 +40301,7 @@ const REQ_SUMMARIES = {
         '<p class="co-nota" id="coCmpErro" style="display:none; color:#F08A6C;"></p>' +
         '<div class="co-acoes">' +
           '<button type="button" class="co-btn" id="coCmpPdf">Gerar pedido de materiais (PDF)</button>' +
+          '<button type="button" class="co-btn sec" id="coCmpPdfTes">Via da Tesouraria (com valores)</button>' +
           '<button type="button" class="co-btn sec" id="coCmpSalvar">Salvar</button>' +
           (cmpAtual.id ? '<button type="button" class="co-btn perigo" id="coCmpExcluir">Excluir pedido</button>' : '') +
         '</div>';
@@ -40318,6 +40319,7 @@ const REQ_SUMMARIES = {
       $('coCmpPuxar').addEventListener('click', cmpPuxarPendentes);
       $('coCmpSalvar').addEventListener('click', () => cmpSalvar(null));
       $('coCmpPdf').addEventListener('click', cmpEmitir);
+      $('coCmpPdfTes').addEventListener('click', cmpEmitirTesouraria);
       $('coCmpTesBtn').addEventListener('click', cmpLancarTesouraria);
       if($('coCmpExcluir')) $('coCmpExcluir').addEventListener('click', cmpExcluir);
       $('coCmpItens').addEventListener('input', e => {
@@ -40552,6 +40554,20 @@ const REQ_SUMMARIES = {
       if(!salvou && !cmpSemTabela && supa) return;   // erro de verdade já apareceu na tela
       cmpPdf(cmpAtual);
     }
+    // Mesmo Pedido de Materiais, mas com valor unitário, subtotal e totais, pra
+    // entregar à tesouraria do clube. Não muda a situação do pedido.
+    async function cmpEmitirTesouraria(){
+      const salvou = await cmpSalvar(null);
+      if(!cmpAtual || !cmpAtual.itens.length) return;
+      if(!salvou && !cmpSemTabela && supa) return;
+      if(!cmpGasto(cmpAtual) && !confirm('Nenhum item do pedido tem valor informado. Gerar a via da Tesouraria mesmo assim?')) return;
+      let lanc = null;
+      if(cmpAtual.lancamento_id && supa){
+        const { data } = await supa.from('tesouraria_lancamentos').select('data, valor, forma_pagamento').eq('id', cmpAtual.lancamento_id).maybeSingle();
+        lanc = data || null;
+      }
+      cmpPdf(cmpAtual, true, lanc);
+    }
     // Lança (ou atualiza) o gasto do pedido como saída na Tesouraria e marca o
     // pedido como Comprado. O pedido é salvo antes, pra não sobrar lançamento
     // de um pedido que não ficou gravado.
@@ -40614,7 +40630,10 @@ const REQ_SUMMARIES = {
     // brasão e nome do clube centralizado, quadro Clube/Data/Diretor(a),
     // Distintivos e Classes, especialidades em duas colunas, "Continuação" nas
     // páginas seguintes e a assinatura da Regional Desbravadores. Sem valores.
-    function cmpPdf(p){
+    // comValores = via da Tesouraria: mesmas tabelas com valor unitário e
+    // subtotal (especialidades em uma coluna, pra caber), resumo dos totais e
+    // a situação do lançamento (lanc).
+    function cmpPdf(p, comValores, lanc){
       const doc = novoDoc(); if(!doc) return;
       const CFG = window.CLUBE_CONFIG || {};
       const W = 210, M = 18, CONT = W - 2 * M, LIM = 273, RH = 5.6, LH = 3.6, HC = 6.2, GAP = 4, CW = (CONT - GAP) / 2, QW = 13;
@@ -40623,9 +40642,11 @@ const REQ_SUMMARIES = {
       const sobe = t => String(t || '').toLocaleUpperCase('pt-BR');
       const regiao = p.regiao || CFG.regiao || '';
       const brasao = window.CLUBE && window.CLUBE.brasaoPdf ? window.CLUBE.brasaoPdf(false) : '';
-      const dist = p.itens.filter(cmpEhDist).map(i => ({ qtd: cmpQtd(i), nome: String(i.nome || '') }));
-      const unis = p.itens.filter(i => cmpTipo(i) === 'uniforme').map(i => ({ qtd: cmpQtd(i), nome: String(i.nome || '') }));
-      const especs = p.itens.filter(i => cmpTipo(i) === 'especialidade').map(i => ({ qtd: cmpQtd(i), nome: sobe(i.nome) }));
+      const linha = (i, nome) => ({ qtd: cmpQtd(i), nome, un: cmpValor(i), sub: cmpSub(i), usado: cmpUsado(i) });
+      const dist = p.itens.filter(cmpEhDist).map(i => linha(i, String(i.nome || '')));
+      const unis = p.itens.filter(i => cmpTipo(i) === 'uniforme').map(i => linha(i, String(i.nome || '')));
+      const especs = p.itens.filter(i => cmpTipo(i) === 'especialidade').map(i => linha(i, sobe(i.nome)));
+      const VW = comValores ? 54 : 0;   // largura das colunas Valor un. + Subtotal
       const tracejado = on => { try { doc.setLineDashPattern(on ? [1, 0.8] : [], 0); } catch(e){} };
 
       // Cabeçalho
@@ -40635,6 +40656,11 @@ const REQ_SUMMARIES = {
       doc.setFontSize(10); doc.setTextColor(...TITULO);
       doc.text(sobe([CFG.associacao, regiao].filter(Boolean).join(' — ')), W / 2 + 4, 29.5, { align: 'center' });
       doc.setDrawColor(...VERDE); doc.setLineWidth(0.7); doc.line(M, 37.5, W - M, 37.5);
+      if(comValores){
+        doc.setFillColor(232, 180, 60); doc.roundedRect(W - M - 36, 12, 36, 8, 1.6, 1.6, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.setTextColor(40, 30, 10);
+        doc.text('VIA DA TESOURARIA', W - M - 18, 17.2, { align: 'center' });
+      }
 
       // Quadro do clube
       let y = 41.5;
@@ -40661,12 +40687,13 @@ const REQ_SUMMARIES = {
         return 26;
       };
       // Altura da linha: nome que não cabe quebra em até duas linhas.
-      const linhasDe = (it, w) => { doc.setFont('helvetica', 'normal'); doc.setFontSize(8.4); return doc.splitTextToSize(it.nome, w - QW - 4).slice(0, 2); };
+      const linhasDe = (it, w) => { doc.setFont('helvetica', 'normal'); doc.setFontSize(8.4); return doc.splitTextToSize(it.nome, w - QW - 4 - VW).slice(0, 2); };
       const alturaDe = (it, w) => { const n = linhasDe(it, w).length; return n > 1 ? RH + (n - 1) * LH : RH; };
       const coluna = (x, w, yy, titulo, lista) => {
         doc.setFillColor(...CAB); doc.rect(x, yy, w, HC, 'F');
         doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...TINTA);
         doc.text('QTD', x + QW / 2, yy + 4.2, { align: 'center' }); doc.text(titulo, x + QW + 2.2, yy + 4.2);
+        if(VW){ doc.text('VALOR UN.', x + w - 29, yy + 4.2, { align: 'right' }); doc.text('SUBTOTAL', x + w - 2.5, yy + 4.2, { align: 'right' }); }
         let ry = yy + HC;
         const cortes = [];
         lista.forEach((it, k) => {
@@ -40677,12 +40704,18 @@ const REQ_SUMMARIES = {
           doc.setFont('helvetica', 'normal'); doc.setFontSize(8.4); doc.setTextColor(40, 48, 60);
           const y0 = ry + h / 2 + 1.1 - (linhas.length - 1) * LH / 2;
           linhas.forEach((l, j) => doc.text(l, x + QW + 2.2, y0 + j * LH));
+          if(VW){
+            const yv = ry + h / 2 + 1.1;
+            doc.text(it.un ? cmpBrl(it.un) : '—', x + w - 29, yv, { align: 'right' });
+            doc.setFont('helvetica', 'bold'); doc.text(it.sub ? cmpBrl(it.sub) : '—', x + w - 2.5, yv, { align: 'right' });
+          }
           ry += h; cortes.push(ry);
         });
         doc.setDrawColor(...GRADE); doc.setLineWidth(0.3);
         doc.rect(x, yy, w, ry - yy);
         doc.line(x, yy + HC, x + w, yy + HC);
         doc.line(x + QW, yy, x + QW, ry);
+        if(VW){ doc.line(x + w - VW, yy, x + w - VW, ry); doc.line(x + w - 27, yy, x + w - 27, ry); }
         cortes.slice(0, -1).forEach(c => doc.line(x, c, x + w, c));
         return ry;
       };
@@ -40718,7 +40751,45 @@ const REQ_SUMMARIES = {
       };
       if(dist.length) secao('DISTINTIVOS E CLASSES', dist, false);
       if(unis.length) secao('UNIFORMES', unis, false);
-      if(especs.length) secao('ESPECIALIDADE', especs, true);
+      if(especs.length) secao('ESPECIALIDADE', especs, !comValores);
+
+      // Via da Tesouraria: resumo dos valores
+      if(comValores){
+        const soma = l => cmpCent(l.reduce((n, it) => n + it.sub, 0));
+        const qtd = l => l.reduce((n, it) => n + it.qtd, 0);
+        const linhasRes = [];
+        if(dist.length) linhasRes.push(['Distintivos e classes', qtd(dist), soma(dist)]);
+        if(unis.length) linhasRes.push(['Uniformes', qtd(unis), soma(unis)]);
+        if(especs.length) linhasRes.push(['Especialidades', qtd(especs), soma(especs)]);
+        const todos = dist.concat(unis, especs);
+        const semValor = todos.filter(it => !it.un).length;
+        const doEstoque = todos.reduce((n, it) => n + it.usado, 0);
+        const notas = [];
+        if(semValor) notas.push(plural(semValor, 'item está', 'itens estão') + ' sem valor informado e não entra' + (semValor === 1 ? '' : 'm') + ' no total.');
+        if(doEstoque) notas.push(plural(doEstoque, 'unidade foi retirada', 'unidades foram retiradas') + ' do estoque do clube e não entra' + (doEstoque === 1 ? '' : 'm') + ' na compra.');
+        notas.push(lanc ? 'Lançado na Tesouraria em ' + dataBr(lanc.data) + (lanc.forma_pagamento ? ' (' + lanc.forma_pagamento + ')' : '') + ': saída de ' + cmpBrl(lanc.valor) + '.'
+                        : 'Ainda não lançado na Tesouraria do app.');
+        const alto = 8 + (linhasRes.length + 1) * 6 + 4 + notas.length * 4.4;
+        if(y + alto > LIM) y = continuar();
+        const bx = W - M - 96, bw = 96;
+        doc.setFillColor(...CAB); doc.rect(bx, y, bw, HC, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...TINTA);
+        doc.text('RESUMO DOS VALORES', bx + 2.5, y + 4.2); doc.text('QTD', bx + 60, y + 4.2, { align: 'right' }); doc.text('VALOR', bx + bw - 2.5, y + 4.2, { align: 'right' });
+        let ry = y + HC;
+        linhasRes.forEach(([rot, q, v]) => {
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(8.6); doc.setTextColor(40, 48, 60);
+          doc.text(rot, bx + 2.5, ry + 4); doc.text(String(q), bx + 60, ry + 4, { align: 'right' }); doc.text(cmpBrl(v), bx + bw - 2.5, ry + 4, { align: 'right' });
+          ry += 6;
+        });
+        doc.setFillColor(...ZEBRA); doc.rect(bx, ry, bw, 7, 'F');
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...VERDE);
+        doc.text('TOTAL DO PEDIDO', bx + 2.5, ry + 4.8); doc.text(String(qtd(todos)), bx + 60, ry + 4.8, { align: 'right' }); doc.text(cmpBrl(soma(todos)), bx + bw - 2.5, ry + 4.8, { align: 'right' });
+        ry += 7;
+        doc.setDrawColor(...GRADE); doc.setLineWidth(0.3); doc.rect(bx, y, bw, ry - y); doc.line(bx, y + HC, bx + bw, y + HC); doc.line(bx, ry - 7, bx + bw, ry - 7);
+        y = ry + 4;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7.8); doc.setTextColor(...CINZA);
+        notas.forEach(t => { doc.text(doc.splitTextToSize(t, CONT)[0], M, y + 2); y += 4.4; });
+      }
 
       // Assinatura da Regional (Desbravadores)
       if(y + 18 > LIM) y = continuar();
@@ -40727,6 +40798,11 @@ const REQ_SUMMARIES = {
       doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...TINTA);
       doc.text('ASSINATURA REGIONAL DESBRAVADORES', M + 40, y + 4.6, { align: 'center' });
       if(p.regional){ doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...CINZA); doc.text(doc.splitTextToSize(p.regional, 80)[0], M + 40, y + 8.8, { align: 'center' }); }
+      if(comValores){
+        doc.setDrawColor(...TINTA); doc.setLineWidth(0.4); doc.line(W - M - 80, y, W - M, y);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...TINTA);
+        doc.text('RECEBIDO PELA TESOURARIA DO CLUBE', W - M - 40, y + 4.6, { align: 'center' });
+      }
 
       // Rodapé
       const n = doc.getNumberOfPages();
@@ -40734,10 +40810,10 @@ const REQ_SUMMARIES = {
         doc.setPage(k);
         doc.setDrawColor(...CAIXA); doc.setLineWidth(0.3); doc.line(M, 278.5, W - M, 278.5);
         doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...CINZA);
-        doc.text('Formulário de Pedido de Materiais - Desbravadores', M, 285);
+        doc.text('Formulário de Pedido de Materiais - Desbravadores' + (comValores ? ' — Via da Tesouraria' : ''), M, 285);
         doc.text('Página ' + k + ' de ' + n, W - M, 285, { align: 'right' });
       }
-      salvarPDF(doc, 'pedido-de-materiais-' + String(p.data || cmpHoje()).slice(0, 10) + '.pdf');
+      salvarPDF(doc, 'pedido-de-materiais-' + (comValores ? 'tesouraria-' : '') + String(p.data || cmpHoje()).slice(0, 10) + '.pdf');
     }
 
     // ---- Eventos ----
