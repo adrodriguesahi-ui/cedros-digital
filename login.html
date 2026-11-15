@@ -40250,7 +40250,7 @@ const REQ_SUMMARIES = {
       const ult = cmpPedidos[0] || {};
       cmpAtual = p ? JSON.parse(JSON.stringify(p)) : {
         id: null, data: cmpHoje(), status: 'rascunho', regional: ult.regional || '', regiao: ult.regiao || (window.CLUBE_CONFIG && window.CLUBE_CONFIG.regiao) || '',
-        diretor: ult.diretor || '', solicitante: quemFez(), observacao: '', itens: []
+        diretor: ult.diretor || '', diretor_titulo: ult.diretor_titulo || '', solicitante: quemFez(), observacao: '', itens: []
       };
       cmpAtual.itens = (cmpAtual.itens || []).map(i => ({ tipo: cmpTipo(i), nome: i.nome, area: i.area || '', quantidade: cmpQtd(i), valor: cmpValor(i), estoque_usado: cmpUsado(i), para: i.para || [], ids: i.ids || [] }));
       cmpSugestoes();
@@ -40295,6 +40295,10 @@ const REQ_SUMMARIES = {
           campo('coCmpRegional', 'Regional (quem autoriza)', cmpAtual.regional, 'Nome do(a) Regional') +
           campo('coCmpRegiao', 'Região ou distrito (opcional)', cmpAtual.regiao, 'Ex.: Região 5') +
           campo('coCmpDiretor', 'Diretor(a) do clube', cmpAtual.diretor, 'Nome do(a) diretor(a)') +
+          '<label class="co-label" for="coCmpDiretorTit">Nos documentos, sai como</label>' +
+          '<select id="coCmpDiretorTit" class="co-input">' +
+            [['', 'Diretor(a)'], ['diretor', 'Diretor'], ['diretora', 'Diretora']].map(([v, t]) => '<option value="' + v + '"' + (v === (cmpAtual.diretor_titulo || '') ? ' selected' : '') + '>' + t + '</option>').join('') +
+          '</select>' +
           campo('coCmpSolicitante', 'Solicitante (coordenação)', cmpAtual.solicitante, 'Quem pede a compra') +
           campo('coCmpObs', 'Observação (opcional)', cmpAtual.observacao, 'Ex.: compra na loja da Associação') +
         '</div>' +
@@ -40509,6 +40513,7 @@ const REQ_SUMMARIES = {
       cmpAtual.regional = $('coCmpRegional').value.trim();
       cmpAtual.regiao = $('coCmpRegiao').value.trim();
       cmpAtual.diretor = $('coCmpDiretor').value.trim();
+      cmpAtual.diretor_titulo = $('coCmpDiretorTit').value || '';
       cmpAtual.solicitante = $('coCmpSolicitante').value.trim();
       cmpAtual.observacao = $('coCmpObs').value.trim();
       cmpAtual.itens = cmpAtual.itens.filter(i => cmpQtd(i) > 0);
@@ -40523,7 +40528,7 @@ const REQ_SUMMARIES = {
       if(!supa || cmpSemTabela) return false;
       const dados = {
         data: cmpAtual.data, status: cmpAtual.status, regional: cmpAtual.regional || null, regiao: cmpAtual.regiao || null,
-        diretor: cmpAtual.diretor || null, solicitante: cmpAtual.solicitante || null, observacao: cmpAtual.observacao || null,
+        diretor: cmpAtual.diretor || null, diretor_titulo: cmpAtual.diretor_titulo || null, solicitante: cmpAtual.solicitante || null, observacao: cmpAtual.observacao || null,
         itens: cmpAtual.itens.map(i => ({ tipo: cmpTipo(i), nome: i.nome, area: i.area || '', quantidade: cmpQtd(i), valor: cmpValor(i), estoque_usado: cmpUsado(i), para: i.para, ids: i.ids }))
       };
       if(extra) Object.assign(dados, extra);
@@ -40699,7 +40704,9 @@ const REQ_SUMMARIES = {
       };
       campo('CLUBE:', CFG.nomeClube || '', M + 4, y + 5.6, 131);
       campo('DATA:', p.data ? dataBr(p.data) : '      /      /', 135.5, y + 5.6, W - M - 4);
-      campo('DIRETOR(A):', p.diretor, M + 4, y + 11.6, 131);
+      // Diretor ou Diretora, conforme escolhido no pedido; sem escolha, Diretor(a).
+      const TIT_DIR = { diretor: 'DIRETOR', diretora: 'DIRETORA' }[p.diretor_titulo] || 'DIRETOR(A)';
+      campo(TIT_DIR + ':', p.diretor, M + 4, y + 11.6, 131);
       y += 18.5;
 
       const continuar = () => {
@@ -40826,7 +40833,7 @@ const REQ_SUMMARIES = {
       };
       if(comValores){
         const w3 = (CONT - 2 * 8) / 3;
-        assina(M, w3, 'DIRETOR DO CLUBE', p.diretor);
+        assina(M, w3, TIT_DIR + ' DO CLUBE', p.diretor);
         assina(M + w3 + 8, w3, 'COORDENADOR DE CLASSE', p.solicitante);
         assina(M + 2 * (w3 + 8), w3, 'TESOUREIRA', tesoureira);
       } else {

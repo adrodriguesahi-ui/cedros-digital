@@ -40,3 +40,8 @@ create policy "compras_especialidades: membros" on compras_especialidades
 -- O total vai para a Tesouraria como saída; lancamento_id liga o pedido a ela.
 alter table compras_especialidades
   add column if not exists lancamento_id uuid references tesouraria_lancamentos(id) on delete set null;
+
+-- Como o diretor aparece nos documentos: 'diretor' ou 'diretora' (vazio = Diretor(a)).
+alter table compras_especialidades
+  add column if not exists diretor_titulo text
+  check (diretor_titulo is null or diretor_titulo in ('diretor', 'diretora'));
