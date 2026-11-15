@@ -43060,7 +43060,8 @@ const REQ_SUMMARIES = {
             const ql = doc.splitTextToSize(q.texto, e.dir - xq);
             const ehVf = q.tipo !== 'escrita' && q.tipo !== 'nenhuma';
             const linhasAlt = q.tipo === 'escrita' ? (q.linhas || 0) : 0;
-            if(a) y += 1;
+            // Uma linha em branco entre a pergunta principal e a alternativa a).
+            y += a ? 1 : 4;
             const caixaAlt = PRV_ESPACOS[q.espaco] || 0;
             garantir(ql.length * e.linha + (caixaAlt ? caixaAlt + 3 : 0) + (ehVf ? e.linha : (linhasAlt > 0 ? 7 : 0)));
             doc.text(letra, xAlt, y);
