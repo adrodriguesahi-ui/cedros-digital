@@ -3654,6 +3654,9 @@
   .co-cmp-linha .co-cmp-valores input[type=number]{ width:58px; }
   .co-cmp-valores input[data-cmp-valor]{ width:84px; text-align:right; }
   .co-cmp-valores b{ color:var(--gold); font-size:13px; margin-left:auto; }
+  .co-cmp-estoque{ display:inline-block; margin-top:3px; font-size:11px; font-weight:800; color:#1B140A; background:var(--gold); border-radius:6px; padding:1px 7px; }
+  .co-cmp-est-aviso{ margin-top:10px; padding:10px 12px; border-radius:12px; background:rgba(232,180,60,0.12); border:1px solid rgba(232,180,60,0.35); font-size:12.5px; color:var(--cream); }
+  .co-cmp-est-aviso .co-btn{ margin-top:8px; }
   .co-cmp-tes-ok{ color:var(--accent); font-weight:800; }
   .co-cmp-tirar{ flex-shrink:0; width:30px; height:30px; border-radius:9px; border:0; background:rgba(230,110,80,0.15); color:#F08A6C; font:inherit; font-size:16px; font-weight:900; cursor:pointer; }
   .co-cmp-add{ display:flex; gap:8px; align-items:center; margin-top:10px; }
@@ -40249,7 +40252,7 @@ const REQ_SUMMARIES = {
         id: null, data: cmpHoje(), status: 'rascunho', regional: ult.regional || '', regiao: ult.regiao || (window.CLUBE_CONFIG && window.CLUBE_CONFIG.regiao) || '',
         diretor: ult.diretor || '', solicitante: quemFez(), observacao: '', itens: []
       };
-      cmpAtual.itens = (cmpAtual.itens || []).map(i => ({ tipo: cmpTipo(i), nome: i.nome, area: i.area || '', quantidade: cmpQtd(i), valor: cmpValor(i), para: i.para || [], ids: i.ids || [] }));
+      cmpAtual.itens = (cmpAtual.itens || []).map(i => ({ tipo: cmpTipo(i), nome: i.nome, area: i.area || '', quantidade: cmpQtd(i), valor: cmpValor(i), estoque_usado: cmpUsado(i), para: i.para || [], ids: i.ids || [] }));
       cmpSugestoes();
       const campo = (id, rot, valor, ph) => '<label class="co-label" for="' + id + '">' + rot + '</label>' +
         '<input type="text" id="' + id + '" class="co-input" autocomplete="off" maxlength="100" placeholder="' + esc(ph || '') + '" value="' + esc(valor || '') + '">';
@@ -40260,6 +40263,7 @@ const REQ_SUMMARIES = {
         '<div class="co-card">' +
           '<h4 class="co-card-titulo" id="coCmpItensTit"></h4>' +
           '<div id="coCmpItens"></div>' +
+          '<div class="co-cmp-est-aviso" id="coCmpEstAviso" style="display:none;"></div>' +
           '<select id="coCmpAddTipo" class="co-input" style="margin:10px 0 0;" aria-label="Tipo do item a adicionar">' +
             '<option value="especialidade">Adicionar especialidade</option><option value="distintivo">Adicionar distintivo de classe</option><option value="uniforme">Adicionar item de uniforme</option></select>' +
           '<div class="co-cmp-add">' +
@@ -40326,6 +40330,7 @@ const REQ_SUMMARIES = {
         const sub = $('coCmpItens').querySelector('[data-cmp-sub="' + i + '"]');
         if(sub) sub.textContent = cmpSub(it) ? cmpBrl(cmpSub(it)) : '';
         cmpTituloItens();
+        if(q) cmpAvisoEstoque();
       });
       $('coCmpItens').addEventListener('change', e => {
         const v = e.target.closest('[data-cmp-valor]'); if(!v) return;
@@ -40339,6 +40344,7 @@ const REQ_SUMMARIES = {
       });
       cmpRenderItens();
       cmpInfoTesouraria();
+      cmpCarregarEstoque();
     }
     function cmpTituloItens(){
       const gasto = cmpGasto(cmpAtual);
@@ -40384,6 +40390,52 @@ const REQ_SUMMARIES = {
       } else if(!error) cmpAtual.lancamento_id = null;   // apagado na Tesouraria
       cmpTextoTesouraria();
     }
+    // Estoque da Coordenação (estoque_itens), somado por nome: avisa no pedido
+    // o que já temos guardado, pra não comprar de novo.
+    let cmpEstoque = null;   // Map nome normalizado -> { qtd, detalhes: [] }; null = ainda não leu
+    async function cmpCarregarEstoque(){
+      if(!supa) return;
+      const { data, error } = await supa.from('estoque_itens').select('nome, detalhe, quantidade');
+      if(error){ console.warn('Não consegui ler o estoque para as compras:', error.message); return; }
+      const m = new Map();
+      (data || []).forEach(r => {
+        const q = parseInt(r.quantidade, 10) || 0; if(q <= 0) return;
+        const k = norm(r.nome), e = m.get(k) || { qtd: 0, detalhes: [] };
+        e.qtd += q;
+        if(r.detalhe) e.detalhes.push(r.detalhe + ': ' + q);
+        m.set(k, e);
+      });
+      cmpEstoque = m;
+      if(cmpAtual && $('coCmpItens')) cmpRenderItens();
+    }
+    // Estoque do item e quanto dele ainda não foi descontado neste pedido.
+    const cmpNoEstoque = it => (cmpEstoque && cmpEstoque.get(norm(it.nome))) || null;
+    const cmpUsado = it => Math.max(0, parseInt(it.estoque_usado, 10) || 0);
+    const cmpSobraEstoque = it => { const e = cmpNoEstoque(it); return e ? Math.max(0, e.qtd - cmpUsado(it)) : 0; };
+    function cmpAvisoEstoque(){
+      const box = $('coCmpEstAviso'); if(!box) return;
+      const com = cmpAtual.itens.filter(it => cmpQtd(it) > 0 && cmpSobraEstoque(it) > 0);
+      if(!com.length){ box.style.display = 'none'; box.innerHTML = ''; return; }
+      const unid = com.reduce((n, it) => n + Math.min(cmpQtd(it), cmpSobraEstoque(it)), 0);
+      box.style.display = '';
+      box.innerHTML = '<b>' + plural(com.length, 'item do pedido já tem', 'itens do pedido já têm') + ' unidades no estoque.</b> ' +
+        'Dá para usar ' + plural(unid, 'unidade', 'unidades') + ' guardada' + (unid === 1 ? '' : 's') + ' em vez de comprar.' +
+        '<br><button type="button" class="co-btn sec" id="coCmpUsarEst">Descontar o estoque das quantidades</button>';
+      $('coCmpUsarEst').addEventListener('click', cmpDescontarEstoque);
+    }
+    // Tira das quantidades o que já temos guardado (item que zera sai do pedido ao salvar).
+    function cmpDescontarEstoque(){
+      const mud = cmpAtual.itens.filter(it => cmpQtd(it) > 0 && cmpSobraEstoque(it) > 0).map(it => {
+        const usa = Math.min(cmpQtd(it), cmpSobraEstoque(it));
+        return { it, usa, fica: cmpQtd(it) - usa };
+      });
+      if(!mud.length) return;
+      if(!confirm('Descontar o que já temos no estoque?\n\n' + mud.map(m => '• ' + m.it.nome + ': ' + cmpQtd(m.it) + ' → ' + m.fica + (m.fica ? '' : ' (sai do pedido)')).join('\n') +
+        '\n\nO estoque não muda: dê a saída na aba Estoque quando entregar.')) return;
+      mud.forEach(m => { m.it.quantidade = m.fica; m.it.estoque_usado = cmpUsado(m.it) + m.usa; });
+      cmpAtual.itens = cmpAtual.itens.filter(it => cmpQtd(it) > 0);
+      cmpRenderItens();
+    }
     function cmpRenderItens(){
       cmpTituloItens();
       $('coCmpItens').innerHTML = cmpAtual.itens.length ? cmpAtual.itens.map((it, i) =>
@@ -40391,6 +40443,8 @@ const REQ_SUMMARIES = {
           (cmpTipo(it) !== 'especialidade' ? '<span class="co-est-icone" aria-hidden="true">' + EST_ICONE_VAZIO + '</span>' : estIconeHtml({ tipo: 'especialidade', nome: it.nome })) +
           '<span class="co-est-info"><span class="co-est-nome">' + esc(it.nome) + '</span>' +
             '<small>' + esc([{ distintivo: 'Distintivo de classe', uniforme: 'Uniforme' }[cmpTipo(it)] || it.area || 'Especialidade', it.para.length ? 'para ' + it.para.join(', ') : ''].filter(Boolean).join(' · ')) + '</small>' +
+            (cmpNoEstoque(it) ? '<span class="co-cmp-estoque" title="' + esc(cmpNoEstoque(it).detalhes.join(' · ')) + '">Já temos ' + cmpNoEstoque(it).qtd + ' no estoque' +
+              (cmpUsado(it) ? ' · ' + cmpUsado(it) + ' já descontado' + (cmpUsado(it) === 1 ? '' : 's') : '') + '</span>' : '') +
           '</span>' +
           '<button type="button" class="co-cmp-tirar" data-cmp-tirar="' + i + '" aria-label="Tirar ' + esc(it.nome) + ' do pedido">×</button>' +
           '<div class="co-cmp-valores">' +
@@ -40402,6 +40456,7 @@ const REQ_SUMMARIES = {
         '</div>').join('')
         : '<p class="co-nota">Nenhum item no pedido ainda.</p>';
       estPintarIcones($('coCmpItens'));
+      cmpAvisoEstoque();
     }
     function cmpAdicionar(){
       const bruto = $('coCmpAddNome').value.trim();
@@ -40462,7 +40517,7 @@ const REQ_SUMMARIES = {
       const dados = {
         data: cmpAtual.data, status: cmpAtual.status, regional: cmpAtual.regional || null, regiao: cmpAtual.regiao || null,
         diretor: cmpAtual.diretor || null, solicitante: cmpAtual.solicitante || null, observacao: cmpAtual.observacao || null,
-        itens: cmpAtual.itens.map(i => ({ tipo: cmpTipo(i), nome: i.nome, area: i.area || '', quantidade: cmpQtd(i), valor: cmpValor(i), para: i.para, ids: i.ids }))
+        itens: cmpAtual.itens.map(i => ({ tipo: cmpTipo(i), nome: i.nome, area: i.area || '', quantidade: cmpQtd(i), valor: cmpValor(i), estoque_usado: cmpUsado(i), para: i.para, ids: i.ids }))
       };
       if(extra) Object.assign(dados, extra);
       cmpSalvando = true;
@@ -40558,7 +40613,7 @@ const REQ_SUMMARIES = {
     // Formulário de Pedido de Materiais (modelo "Formulário D" da Associação):
     // brasão e nome do clube centralizado, quadro Clube/Data/Diretor(a),
     // Distintivos e Classes, especialidades em duas colunas, "Continuação" nas
-    // páginas seguintes e a assinatura do(a) Coordenador(a). Sem valores.
+    // páginas seguintes e a assinatura da Regional Desbravadores. Sem valores.
     function cmpPdf(p){
       const doc = novoDoc(); if(!doc) return;
       const CFG = window.CLUBE_CONFIG || {};
@@ -40665,12 +40720,12 @@ const REQ_SUMMARIES = {
       if(unis.length) secao('UNIFORMES', unis, false);
       if(especs.length) secao('ESPECIALIDADE', especs, true);
 
-      // Assinatura do(a) Coordenador(a)
+      // Assinatura da Regional (Desbravadores)
       if(y + 18 > LIM) y = continuar();
       y += 8;
       doc.setDrawColor(...TINTA); doc.setLineWidth(0.4); doc.line(M, y, M + 80, y);
       doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...TINTA);
-      doc.text('ASSINATURA DO(A) COORDENADOR(A)', M + 40, y + 4.6, { align: 'center' });
+      doc.text('ASSINATURA REGIONAL DESBRAVADORES', M + 40, y + 4.6, { align: 'center' });
       if(p.regional){ doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...CINZA); doc.text(doc.splitTextToSize(p.regional, 80)[0], M + 40, y + 8.8, { align: 'center' }); }
 
       // Rodapé
