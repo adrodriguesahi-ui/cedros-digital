@@ -1959,6 +1959,8 @@
   .prv-perg-opcoes select.pl-input{ flex:1; min-width:0; }
   .prv-perg-opcoes input[type="number"]{ width:64px; flex:0 0 64px; }
   .prv-perg-linhas{ font-size:12.5px; color:var(--ink-soft); }
+  .prv-perg > select.pl-input{ margin:6px 0 0 26px; width:calc(100% - 26px); }
+  .prv-perg-imagem{ margin-left:26px; }
   .prv-imagem{ display:flex; align-items:center; gap:8px; margin-top:8px; }
   .prv-imagem img{ width:64px; height:48px; object-fit:contain; border-radius:6px; background:#FFFFFF; flex-shrink:0; }
   .prv-imagem-txt{ flex:1; min-width:0; font-size:11.5px; font-weight:600; color:var(--ink-dim); }
@@ -42452,7 +42454,7 @@ const REQ_SUMMARIES = {
     const PRV_COMENTARIO_PADRAO = 'Responda em um pequeno parágrafo suas considerações.';
     const prvNovoItem = () => ({ tipo: 'escrita', texto: '', linhas: 4, alternativas: ['', '', '', ''], pontos: '', subitem: false, resposta: '', correta: null, espaco: '', imagem: '', comentario: false, comentarioTexto: PRV_COMENTARIO_PADRAO, perguntas: [] });
     // Alternativa de uma "Pergunta com alternativas": cada uma responde em V/F ou por escrito.
-    const prvNovaPergunta = () => ({ texto: '', tipo: 'vf', correta: null, resposta: '', linhas: 4 });
+    const prvNovaPergunta = () => ({ texto: '', tipo: 'vf', correta: null, resposta: '', linhas: 4, espaco: '', imagem: '' });
     // Altura em mm do espaço para imagem na página impressa.
     const PRV_ESPACOS = { pequeno: 35, medio: 60, grande: 95 };
     // O gabarito fica guardado junto: quem tem perfil de Desbravador não vê as avaliações.
@@ -42615,6 +42617,47 @@ const REQ_SUMMARIES = {
               const esperada = prvEl('input', 'pl-input', { type: 'text', value: q.resposta || '', maxLength: 1000, placeholder: 'Resposta esperada (opcional, vai para o gabarito)' });
               esperada.addEventListener('input', () => { q.resposta = esperada.value; prvMarcarAlterada(); });
               bloco.appendChild(esperada);
+            }
+            // Espaço para imagem desta alternativa (sai logo abaixo da pergunta dela).
+            const espacoAlt = prvEl('select', 'pl-input');
+            espacoAlt.setAttribute('aria-label', 'Espaço para imagem da alternativa');
+            [['', 'Sem espaço para imagem'], ['pequeno', 'Espaço para imagem: pequeno (3,5 cm)'], ['medio', 'Espaço para imagem: médio (6 cm)'], ['grande', 'Espaço para imagem: grande (9,5 cm)']].forEach(([v, t]) => espacoAlt.appendChild(prvEl('option', '', { value: v, textContent: t })));
+            espacoAlt.value = q.espaco || '';
+            espacoAlt.addEventListener('change', () => {
+              q.espaco = espacoAlt.value;
+              if(!q.espaco) q.imagem = '';
+              prvMarcarAlterada();
+              prvRenderItens();
+            });
+            bloco.appendChild(espacoAlt);
+            if(q.espaco){
+              const areaImg = prvEl('div', 'prv-imagem prv-perg-imagem');
+              if(q.imagem) areaImg.appendChild(prvEl('img', '', { src: q.imagem, alt: 'Imagem da alternativa' }));
+              areaImg.appendChild(prvEl('span', 'prv-imagem-txt', { textContent: q.imagem ? 'Esta imagem sai impressa.' : 'Sem imagem, sai um quadro em branco para colar ou desenhar.' }));
+              const arqAlt = prvEl('input', '', { type: 'file', accept: 'image/*', hidden: true });
+              arqAlt.addEventListener('change', () => {
+                const f = arqAlt.files && arqAlt.files[0];
+                if(!f) return;
+                const leitor = new FileReader();
+                leitor.onload = async () => {
+                  const img = await prvImagem(String(leitor.result), 1000, 1000);
+                  if(!img){ prvMsg('Não foi possível abrir esta imagem.', true); return; }
+                  q.imagem = img.data;
+                  prvMarcarAlterada();
+                  prvRenderItens();
+                };
+                leitor.readAsDataURL(f);
+              });
+              areaImg.appendChild(arqAlt);
+              const escolherAlt = prvEl('button', 'aut-btn-mini', { type: 'button', textContent: q.imagem ? 'Trocar' : 'Escolher imagem' });
+              escolherAlt.addEventListener('click', () => arqAlt.click());
+              areaImg.appendChild(escolherAlt);
+              if(q.imagem){
+                const tirarImg = prvEl('button', 'aut-btn-mini aut-perigo', { type: 'button', textContent: 'Remover' });
+                tirarImg.addEventListener('click', () => { q.imagem = ''; prvMarcarAlterada(); prvRenderItens(); });
+                areaImg.appendChild(tirarImg);
+              }
+              bloco.appendChild(areaImg);
             }
             card.appendChild(bloco);
           });
@@ -42809,7 +42852,8 @@ const REQ_SUMMARIES = {
               texto: q.texto.trim(), tipo: q.tipo === 'escrita' ? 'escrita' : 'vf',
               correta: q.tipo === 'escrita' ? null : (q.correta === 'V' || q.correta === 'F' ? q.correta : null),
               resposta: q.tipo === 'escrita' ? (q.resposta || '').trim() : '',
-              linhas: Math.min(30, Math.max(0, parseInt(q.linhas, 10) || 0)) }))
+              linhas: Math.min(30, Math.max(0, parseInt(q.linhas, 10) || 0)),
+              espaco: PRV_ESPACOS[q.espaco] ? q.espaco : '', imagem: PRV_ESPACOS[q.espaco] ? (q.imagem || '') : '' }))
           : [];
         if(!i.texto.trim() && !i.espaco){
           if((i.tipo === 'multipla' && alternativas.length) || perguntas.length){ cards[idx].classList.add('prv-erro'); incompleto = true; }
@@ -43012,9 +43056,23 @@ const REQ_SUMMARIES = {
             const ql = doc.splitTextToSize(q.texto, e.dir - xq);
             const ehVf = q.tipo !== 'escrita';
             if(a) y += 1;
-            garantir(ql.length * e.linha + (ehVf ? e.linha : (q.linhas > 0 ? 7 : 0)));
+            const caixaAlt = PRV_ESPACOS[q.espaco] || 0;
+            garantir(ql.length * e.linha + (caixaAlt ? caixaAlt + 3 : 0) + (ehVf ? e.linha : (q.linhas > 0 ? 7 : 0)));
             doc.text(letra, xAlt, y);
             ql.forEach(l => { doc.text(l, xq, y); y += e.linha; });
+            if(caixaAlt){
+              const topo = y - 2.5, largura = e.dir - xAlt;
+              if(q._img){
+                prvEncaixar(doc, q._img, xAlt + 1, topo + 1, largura - 2, caixaAlt - 2);
+              } else {
+                doc.setDrawColor(140, 140, 140);
+                doc.setLineWidth(0.25);
+                doc.setLineDashPattern([2, 1.5], 0);
+                doc.rect(xAlt, topo, largura, caixaAlt, 'S');
+                doc.setLineDashPattern([], 0);
+              }
+              y = topo + caixaAlt + 6;
+            }
             if(ehVf){
               doc.text('(     ) Verdadeiro          (     ) Falso', xq, y);
               y += e.linha;
@@ -43328,9 +43386,17 @@ const REQ_SUMMARIES = {
         return;
       }
       // Imagens dos itens: lidas antes, porque o desenho do PDF não espera.
-      const itens = await Promise.all(prova.itens.map(async i => i.imagem
-        ? Object.assign({}, i, { _img: await prvImagem(i.imagem, 1000, 1000) })
-        : i));
+      const itens = await Promise.all(prova.itens.map(async i => {
+        const extra = {};
+        if(i.imagem) extra._img = await prvImagem(i.imagem, 1000, 1000);
+        // Imagens das alternativas da "Pergunta com alternativas".
+        if(Array.isArray(i.perguntas) && i.perguntas.some(q => q.imagem)){
+          extra.perguntas = await Promise.all(i.perguntas.map(async q => q.imagem
+            ? Object.assign({}, q, { _img: await prvImagem(q.imagem, 1000, 1000) })
+            : q));
+        }
+        return Object.assign({}, i, extra);
+      }));
       const p = Object.assign({}, prova, { itens });
       const doc = new jsPDFLib({ unit: 'mm', format: 'a4' });
       if(p.modelo === 'nota_gabarito') await prvPdfAzul(doc, p);
