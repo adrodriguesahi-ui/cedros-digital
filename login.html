@@ -42594,8 +42594,8 @@ const REQ_SUMMARIES = {
             const opcoes = prvEl('div', 'prv-perg-opcoes');
             const forma = prvEl('select', 'pl-input');
             forma.setAttribute('aria-label', 'Tipo de resposta da alternativa');
-            [['vf', 'Verdadeiro ou falso'], ['escrita', 'Resposta escrita']].forEach(([v, t]) => forma.appendChild(prvEl('option', '', { value: v, textContent: t })));
-            forma.value = q.tipo === 'escrita' ? 'escrita' : 'vf';
+            [['vf', 'Verdadeiro ou falso'], ['escrita', 'Resposta escrita'], ['nenhuma', 'Sem resposta (só a pergunta)']].forEach(([v, t]) => forma.appendChild(prvEl('option', '', { value: v, textContent: t })));
+            forma.value = q.tipo === 'escrita' || q.tipo === 'nenhuma' ? q.tipo : 'vf';
             forma.addEventListener('change', () => { q.tipo = forma.value; prvMarcarAlterada(); prvRenderItens(); });
             opcoes.appendChild(forma);
             if(q.tipo === 'escrita'){
@@ -42604,7 +42604,7 @@ const REQ_SUMMARIES = {
               linhas.addEventListener('input', () => { q.linhas = Math.min(30, Math.max(0, parseInt(linhas.value, 10) || 0)); prvMarcarAlterada(); });
               opcoes.appendChild(linhas);
               opcoes.appendChild(prvEl('span', 'prv-perg-linhas', { textContent: 'linhas' }));
-            } else {
+            } else if(q.tipo !== 'nenhuma'){
               const certa = prvEl('select', 'pl-input');
               certa.setAttribute('aria-label', 'Resposta correta da alternativa');
               [['', 'Resposta: não informar'], ['V', 'Resposta: Verdadeiro'], ['F', 'Resposta: Falso']].forEach(([v, t]) => certa.appendChild(prvEl('option', '', { value: v, textContent: t })));
@@ -42722,6 +42722,8 @@ const REQ_SUMMARIES = {
         linhaCampos.appendChild(colPontos);
         card.appendChild(linhaCampos);
 
+        // Na Pergunta com alternativas o espaço fica em cada alternativa, não na questão.
+        if(item.tipo !== 'grupo'){
         card.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Espaço para imagem' }));
         const espaco = prvEl('select', 'pl-input');
         espaco.setAttribute('aria-label', 'Espaço para imagem');
@@ -42763,6 +42765,7 @@ const REQ_SUMMARIES = {
             areaImagem.appendChild(tirar);
           }
           card.appendChild(areaImagem);
+        }
         }
 
         const opcao = prvEl('label', 'prv-sub-opcao');
@@ -42849,8 +42852,8 @@ const REQ_SUMMARIES = {
         });
         const perguntas = i.tipo === 'grupo'
           ? (i.perguntas || []).filter(q => (q.texto || '').trim()).map(q => ({
-              texto: q.texto.trim(), tipo: q.tipo === 'escrita' ? 'escrita' : 'vf',
-              correta: q.tipo === 'escrita' ? null : (q.correta === 'V' || q.correta === 'F' ? q.correta : null),
+              texto: q.texto.trim(), tipo: q.tipo === 'escrita' || q.tipo === 'nenhuma' ? q.tipo : 'vf',
+              correta: q.tipo === 'escrita' || q.tipo === 'nenhuma' ? null : (q.correta === 'V' || q.correta === 'F' ? q.correta : null),
               resposta: q.tipo === 'escrita' ? (q.resposta || '').trim() : '',
               linhas: Math.min(30, Math.max(0, parseInt(q.linhas, 10) || 0)),
               espaco: PRV_ESPACOS[q.espaco] ? q.espaco : '', imagem: PRV_ESPACOS[q.espaco] ? (q.imagem || '') : '' }))
@@ -43008,7 +43011,8 @@ const REQ_SUMMARIES = {
         doc.setFont(e.fonte, estiloTexto);
         const linhas = doc.splitTextToSize(texto, e.dir - xTexto);
         const primeira = item.tipo === 'escrita' ? (item.linhas > 0 ? 7 : 0) : e.linha;
-        const altCaixa = PRV_ESPACOS[item.espaco] || 0;
+        // Pergunta com alternativas não tem quadro da questão inteira (só nas alternativas).
+        const altCaixa = item.tipo === 'grupo' ? 0 : (PRV_ESPACOS[item.espaco] || 0);
         garantir(linhas.length * e.linha + (altCaixa ? altCaixa + 3 : 0) + primeira);
         doc.setFont(e.fonte, 'bold');
         doc.text(rotulo, xRotulo, y);
@@ -43054,10 +43058,11 @@ const REQ_SUMMARIES = {
             const letra = String.fromCharCode(97 + a) + ') ';
             const xq = xAlt + doc.getTextWidth(letra);
             const ql = doc.splitTextToSize(q.texto, e.dir - xq);
-            const ehVf = q.tipo !== 'escrita';
+            const ehVf = q.tipo !== 'escrita' && q.tipo !== 'nenhuma';
+            const linhasAlt = q.tipo === 'escrita' ? (q.linhas || 0) : 0;
             if(a) y += 1;
             const caixaAlt = PRV_ESPACOS[q.espaco] || 0;
-            garantir(ql.length * e.linha + (caixaAlt ? caixaAlt + 3 : 0) + (ehVf ? e.linha : (q.linhas > 0 ? 7 : 0)));
+            garantir(ql.length * e.linha + (caixaAlt ? caixaAlt + 3 : 0) + (ehVf ? e.linha : (linhasAlt > 0 ? 7 : 0)));
             doc.text(letra, xAlt, y);
             ql.forEach(l => { doc.text(l, xq, y); y += e.linha; });
             if(caixaAlt){
@@ -43079,7 +43084,7 @@ const REQ_SUMMARIES = {
             } else {
               // Como no modelo em papel: "R:" com a primeira linha logo abaixo
               // da pergunta, e as demais linhas na largura toda.
-              for(let i = 0; i < q.linhas; i++){
+              for(let i = 0; i < linhasAlt; i++){
                 garantir(7);
                 let inicio = xAlt;
                 if(i === 0){
@@ -43419,6 +43424,7 @@ const REQ_SUMMARIES = {
         if((i.tipo === 'multipla' || i.tipo === 'vf') && i.comentario && i.resposta) resposta = resposta ? resposta + ' — ' + i.resposta : i.resposta;
         if(i.tipo === 'grupo'){
           (i.perguntas || []).forEach((q, a) => {
+            if(q.tipo === 'nenhuma') return;
             const r = q.tipo === 'escrita' ? (q.resposta || '') : (q.correta ? (q.correta === 'V' ? 'Verdadeiro' : 'Falso') : '');
             linhas.push({ rotulo: rotulo + ' ' + String.fromCharCode(97 + a) + ')', resposta: r });
           });
