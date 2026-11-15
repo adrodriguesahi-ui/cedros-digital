@@ -3633,6 +3633,14 @@
   .co-est-rapido{ flex-shrink:0; width:34px; height:34px; border-radius:10px; border:0; background:rgba(255,255,255,0.08); color:var(--cream); font:inherit; font-size:18px; font-weight:900; cursor:pointer; }
   .co-est-rapido.mais{ background:rgba(63,203,107,0.18); color:var(--accent); }
   .co-est-alerta{ font-size:11px; font-weight:800; color:#F08A6C; }
+  .co-est-icone{ flex-shrink:0; width:38px; height:38px; border-radius:10px; background:rgba(255,255,255,0.06); color:rgba(245,239,225,0.45); display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .co-est-icone img{ width:100%; height:100%; object-fit:contain; }
+  .co-est-icone.tem{ background:transparent; }
+  .co-est-cab{ display:flex; align-items:center; gap:12px; }
+  .co-est-cab .co-est-icone{ width:64px; height:64px; border-radius:14px; }
+  .co-est-cab .co-est-icone svg{ width:28px; height:28px; }
+  .co-est-cab-txt{ flex:1; min-width:0; }
+  .co-est-insig{ background:none; border:0; padding:0; margin-top:4px; font:inherit; font-size:12px; font-weight:800; color:var(--accent); cursor:pointer; }
   .co-est-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0 10px; }
   .co-est-mov{ display:flex; justify-content:space-between; gap:8px; font-size:12.5px; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
   .co-est-mov b.entrada{ color:var(--accent); } .co-est-mov b.saida{ color:#F08A6C; } .co-est-mov b.ajuste{ color:var(--gold); }
@@ -39758,6 +39766,40 @@ const REQ_SUMMARIES = {
       estRenderLista();
       if(estAberto && estAberto !== 'novo') estAbrir(estAberto);
     }
+    // Insígnia do item de especialidade: é a mesma imagem do catálogo
+    // (especialidade_fotos), achada pelo nome do item. Se a especialidade ainda
+    // não tem insígnia, dá pra enviar pelo próprio item — ela é gravada no
+    // catálogo e passa a valer para os dois.
+    const EST_ICONE_VAZIO = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>';
+    function estNomeEsp(nome){
+      // O nome digitado pode vir sem acento ou com outra caixa; a insígnia
+      // é guardada pelo nome exato do catálogo.
+      if(typeof SPECIALTY_DB === 'undefined') return nome;
+      const n = norm(nome);
+      for(const k in SPECIALTY_DB){
+        const achou = (SPECIALTY_DB[k] || []).find(x => norm(x) === n);
+        if(achou) return achou;
+      }
+      return nome;
+    }
+    const estIconeHtml = it => it.tipo !== 'especialidade' ? ''
+      : '<span class="co-est-icone" data-esp="' + esc(estNomeEsp(it.nome)) + '" aria-hidden="true">' + EST_ICONE_VAZIO + '</span>';
+    function estPintarIcones(raiz, aoTerminar){
+      if(!raiz || !window.__spFotoDe) return;
+      raiz.querySelectorAll('.co-est-icone[data-esp]').forEach(el => {
+        window.__spFotoDe(el.getAttribute('data-esp')).then(foto => {
+          if(foto){ el.innerHTML = '<img src="' + foto + '" alt="">'; el.classList.add('tem'); }
+          if(aoTerminar) aoTerminar(!!foto);
+        });
+      });
+    }
+    function estEnviarInsignia(it){
+      if(!window.__spTriggerPhotoUpload) return;
+      window.__spTriggerPhotoUpload(estNomeEsp(it.nome), () => {
+        estRenderLista();
+        if(estAberto === it.id) estAbrir(it.id);
+      });
+    }
     function estRenderResumo(){
       const unidades = estItens.reduce((n, it) => n + (it.quantidade || 0), 0);
       const baixos = estItens.filter(estBaixo).length;
@@ -39773,6 +39815,7 @@ const REQ_SUMMARIES = {
       $('coEstLista').innerHTML = lista.map(it =>
         '<div class="co-est-item' + (estBaixo(it) ? ' baixo' : '') + '" data-id="' + esc(it.id) + '" role="button" tabindex="0">' +
           '<button type="button" class="co-est-rapido" data-rapido="saida" aria-label="Dar saída de 1"' + (it.quantidade ? '' : ' disabled') + '>−</button>' +
+          estIconeHtml(it) +
           '<span class="co-est-info">' +
             '<span class="co-est-nome">' + esc(it.nome) + '</span>' +
             '<span class="co-est-sub">' + esc(EST_TIPOS[it.tipo] || it.tipo) + (it.detalhe ? ' · ' + esc(it.detalhe) : '') +
@@ -39781,6 +39824,7 @@ const REQ_SUMMARIES = {
           '<span class="co-est-qtd">' + it.quantidade + '<small>' + (it.minimo ? 'mín. ' + it.minimo : 'unid.') + '</small></span>' +
           '<button type="button" class="co-est-rapido mais" data-rapido="entrada" aria-label="Dar entrada de 1">+</button>' +
         '</div>').join('');
+      estPintarIcones($('coEstLista'));
       $('coEstVazio').style.display = lista.length ? 'none' : '';
       $('coEstVazio').textContent = estItens.length ? 'Nenhum item encontrado com esse filtro.' : 'Nenhum item no estoque ainda. Toque em “+ Novo item” para cadastrar.';
     }
@@ -39842,8 +39886,11 @@ const REQ_SUMMARIES = {
       estAberto = id;
       $('coEstDetalhe').innerHTML =
         '<button type="button" class="co-voltar" id="coEstVoltar">‹ Voltar ao estoque</button>' +
-        '<h3 class="co-det-nome">' + esc(it.nome) + '</h3>' +
-        '<p class="co-det-sub">' + esc(EST_TIPOS[it.tipo] || it.tipo) + (it.detalhe ? ' · ' + esc(it.detalhe) : '') + (it.observacao ? ' · ' + esc(it.observacao) : '') + '</p>' +
+        '<div class="co-est-cab">' + estIconeHtml(it) + '<div class="co-est-cab-txt">' +
+          '<h3 class="co-det-nome">' + esc(it.nome) + '</h3>' +
+          '<p class="co-det-sub">' + esc(EST_TIPOS[it.tipo] || it.tipo) + (it.detalhe ? ' · ' + esc(it.detalhe) : '') + (it.observacao ? ' · ' + esc(it.observacao) : '') + '</p>' +
+          (it.tipo === 'especialidade' ? '<button type="button" class="co-est-insig" id="coEstInsig" style="display:none;">Enviar insígnia</button>' : '') +
+        '</div></div>' +
         '<div class="co-resumo" style="grid-template-columns:repeat(2,1fr);">' +
           '<div class="co-stat"><b' + (estBaixo(it) ? ' style="color:#F08A6C"' : '') + '>' + it.quantidade + '</b><span>Em estoque</span></div>' +
           '<div class="co-stat"><b>' + (it.minimo || '—') + '</b><span>Aviso de mínimo</span></div>' +
@@ -39867,6 +39914,14 @@ const REQ_SUMMARIES = {
       $('coEstListaWrap').style.display = 'none';
       $('coEstDetalhe').style.display = '';
       $('coEstVoltar').addEventListener('click', estMostrarLista);
+      if($('coEstInsig')){
+        $('coEstInsig').addEventListener('click', () => estEnviarInsignia(it));
+        estPintarIcones($('coEstDetalhe').querySelector('.co-est-cab'), tem => {
+          const b = $('coEstInsig'); if(!b || estAberto !== id) return;
+          b.textContent = tem ? 'Trocar insígnia' : 'Sem insígnia — enviar imagem';
+          b.style.display = '';
+        });
+      }
       $('coEstMTipo').addEventListener('change', () => {
         const aj = $('coEstMTipo').value === 'ajuste';
         $('coEstMQtdLabel').textContent = aj ? 'Quantidade contada' : 'Quantidade';
