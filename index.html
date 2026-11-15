@@ -40566,7 +40566,12 @@ const REQ_SUMMARIES = {
         const { data } = await supa.from('tesouraria_lancamentos').select('data, valor, forma_pagamento').eq('id', cmpAtual.lancamento_id).maybeSingle();
         lanc = data || null;
       }
-      cmpPdf(cmpAtual, true, lanc);
+      let tesoureira = '';
+      if(supa){
+        const { data } = await supa.from('clube_config').select('valor').eq('chave', 'tesoureiro_nome').maybeSingle();
+        tesoureira = (data && data.valor) || '';
+      }
+      cmpPdf(cmpAtual, true, lanc, tesoureira);
     }
     // Lança (ou atualiza) o gasto do pedido como saída na Tesouraria e marca o
     // pedido como Comprado. O pedido é salvo antes, pra não sobrar lançamento
@@ -40633,7 +40638,7 @@ const REQ_SUMMARIES = {
     // comValores = via da Tesouraria: mesmas tabelas com valor unitário e
     // subtotal (especialidades em uma coluna, pra caber), resumo dos totais e
     // a situação do lançamento (lanc).
-    function cmpPdf(p, comValores, lanc){
+    function cmpPdf(p, comValores, lanc, tesoureira){
       const doc = novoDoc(); if(!doc) return;
       const CFG = window.CLUBE_CONFIG || {};
       const W = 210, M = 18, CONT = W - 2 * M, LIM = 273, RH = 5.6, LH = 3.6, HC = 6.2, GAP = 4, CW = (CONT - GAP) / 2, QW = 13;
@@ -40791,17 +40796,23 @@ const REQ_SUMMARIES = {
         notas.forEach(t => { doc.text(doc.splitTextToSize(t, CONT)[0], M, y + 2); y += 4.4; });
       }
 
-      // Assinatura da Regional (Desbravadores)
+      // Assinaturas: no pedido para a Regional, só a Regional Desbravadores;
+      // na via da Tesouraria, Diretor do Clube, Coordenador de Classe e Tesoureira.
       if(y + 18 > LIM) y = continuar();
       y += 8;
-      doc.setDrawColor(...TINTA); doc.setLineWidth(0.4); doc.line(M, y, M + 80, y);
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...TINTA);
-      doc.text('ASSINATURA REGIONAL DESBRAVADORES', M + 40, y + 4.6, { align: 'center' });
-      if(p.regional){ doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...CINZA); doc.text(doc.splitTextToSize(p.regional, 80)[0], M + 40, y + 8.8, { align: 'center' }); }
-      if(comValores){
-        doc.setDrawColor(...TINTA); doc.setLineWidth(0.4); doc.line(W - M - 80, y, W - M, y);
+      const assina = (x, w, cargo, nome) => {
+        doc.setDrawColor(...TINTA); doc.setLineWidth(0.4); doc.line(x, y, x + w, y);
         doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...TINTA);
-        doc.text('RECEBIDO PELA TESOURARIA DO CLUBE', W - M - 40, y + 4.6, { align: 'center' });
+        doc.text(cargo, x + w / 2, y + 4.6, { align: 'center' });
+        if(nome){ doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...CINZA); doc.text(doc.splitTextToSize(nome, w)[0], x + w / 2, y + 8.8, { align: 'center' }); }
+      };
+      if(comValores){
+        const w3 = (CONT - 2 * 8) / 3;
+        assina(M, w3, 'DIRETOR DO CLUBE', p.diretor);
+        assina(M + w3 + 8, w3, 'COORDENADOR DE CLASSE', p.solicitante);
+        assina(M + 2 * (w3 + 8), w3, 'TESOUREIRA', tesoureira);
+      } else {
+        assina(M, 80, 'ASSINATURA REGIONAL DESBRAVADORES', p.regional);
       }
 
       // Rodapé
