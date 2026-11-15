@@ -25,6 +25,10 @@ window.CLUBE_CONFIG = {
   // Logo do clube (arquivo na raiz do site, de preferência PNG quadrado com fundo transparente).
   // Ao trocar o logo, aumente o ?v= para os celulares não mostrarem o antigo do cache.
   logo: 'logo.png?v=3',
+
+  // Brasão usado em todos os documentos (PDFs). PNG de fundo transparente.
+  // Deixe '' para os documentos usarem o logo acima.
+  brasaoDocumentos: 'brasao-autorizacao.png',
 };
 
 // =============================================================================
@@ -141,9 +145,48 @@ window.CLUBE_CONFIG = {
         fr.readAsDataURL(b);
       })
       .catch(() => {});
+    prepararBrasao();
+  }
+
+  // Brasão dos documentos, embutido (data URL) para o jsPDF:
+  //   CFG.brasaoDataUrl      — o brasão como é (para página branca);
+  //   CFG.brasaoDiscoDataUrl — o brasão sobre um disco branco, para os
+  //                            cabeçalhos escuros (senão o texto escuro some).
+  // Quem gera PDF pede com CLUBE.brasaoPdf(disco) e cai no logo se faltar.
+  function prepararBrasao() {
+    const src = CFG.brasaoDocumentos;
+    if (!src) return;
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const lado = Math.max(256, Math.min(640, Math.max(img.naturalWidth, img.naturalHeight)));
+        const desenhar = (disco) => {
+          const cv = document.createElement('canvas');
+          cv.width = cv.height = lado;
+          const ctx = cv.getContext('2d');
+          let area = lado;
+          if (disco) {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath(); ctx.arc(lado / 2, lado / 2, lado / 2, 0, Math.PI * 2); ctx.fill();
+            area = lado * 0.9;
+          }
+          const esc = Math.min(area / img.naturalWidth, area / img.naturalHeight);
+          const w = img.naturalWidth * esc, h = img.naturalHeight * esc;
+          ctx.drawImage(img, (lado - w) / 2, (lado - h) / 2, w, h);
+          return cv.toDataURL('image/png');
+        };
+        CFG.brasaoDataUrl = desenhar(false);
+        CFG.brasaoDiscoDataUrl = desenhar(true);
+      } catch (e) { /* fica o logo */ }
+    };
+    img.src = src;
+  }
+  function brasaoPdf(disco) {
+    return (disco ? CFG.brasaoDiscoDataUrl : CFG.brasaoDataUrl) || CFG.logoDataUrl || '';
   }
 
   window.CLUBE = {
+    brasaoPdf,
     config: CFG,
     unidades: nomes,
     cores,
