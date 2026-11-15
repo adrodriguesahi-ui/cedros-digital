@@ -14555,6 +14555,7 @@
             <div id="coCmpDetalhe" style="display:none;"></div>
             <datalist id="coCmpSugNomes"></datalist>
             <datalist id="coCmpSugDist"></datalist>
+            <datalist id="coCmpSugUni"></datalist>
           </div>
 
           <div id="coPaneLista">
@@ -40127,11 +40128,11 @@ const REQ_SUMMARIES = {
     // Preço sugerido: o último usado para a mesma especialidade; sem histórico
     // dela, o último preço de qualquer insígnia (costuma ser o mesmo pra todas).
     function cmpPrecoSugerido(nome, tipo){
-      const n = norm(nome), dist = tipo === 'distintivo';
+      const n = norm(nome);
       let qualquer = 0;
       const listas = [cmpAtual ? cmpAtual.itens : []].concat(cmpPedidos.map(p => p.itens || []));
       for(const itens of listas) for(const i of itens){
-        const v = cmpValor(i); if(!v || cmpEhDist(i) !== dist) continue;
+        const v = cmpValor(i); if(!v || cmpTipo(i) !== tipo) continue;
         if(norm(i.nome) === n) return v;
         if(!qualquer) qualquer = v;
       }
@@ -40140,8 +40141,10 @@ const REQ_SUMMARIES = {
     const cmpLancado = p => !!p.lancamento_id;
     const cmpHoje = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
     const cmpDataLonga = iso => { const d = new Date(String(iso || '').slice(0, 10) + 'T12:00:00'); return isNaN(d) ? hojeLongo() : d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }); };
-    const cmpEhDist = i => i && i.tipo === 'distintivo';
-    // Distintivos e classes primeiro (na ordem das classes), depois as especialidades em ordem alfabética.
+    // Tipos de item: distintivo (de classe), uniforme ou especialidade (o padrão).
+    const cmpTipo = i => i && (i.tipo === 'distintivo' || i.tipo === 'uniforme') ? i.tipo : 'especialidade';
+    const cmpEhDist = i => cmpTipo(i) === 'distintivo';
+    const CMP_TIPO_ORDEM = { distintivo: 0, uniforme: 1, especialidade: 2 };
     // Distintivos sugeridos, já na ordem em que aparecem no pedido e no documento:
     // cada regular seguida da avançada, depois as agrupadas e a liderança.
     const CMP_DIST_SUG = REGULARES.flatMap(c => ['Distintivo de Classes de Regulares ' + c + ' Metal', 'Distintivo de Classes Avançadas ' + AVANCADAS[c] + ' Metal'])
@@ -40152,18 +40155,32 @@ const REQ_SUMMARIES = {
         'Distintivo de Classes de Liderança Líder Master',
         'Distintivo de Classes de Liderança Líder Master Avançado'
       ]);
+    // Itens de uniforme sugeridos, na ordem do pedido e do documento.
+    const CMP_UNI_SUG = [
+        'Lenço Desbravadores - Líder',
+        'Lenço Desbravadores - Branco (Diretoria)',
+        'Lenço Desbravadores - Caqui',
+        'Prendedor Oficial - Líder DBV - 3 Anéis',
+        'Divisa Líder Desbravador Branca Bordado',
+        'Faixa Desbravador - P',
+        'Faixa Desbravador - M',
+        'Faixa Desbravador - G',
+        'Faixa Desbravador - GG',
+        'Emblemas - Bandeirinha do Brasil para Faixa'
+      ];
     // Ordem: a da lista acima; nome digitado à mão cai perto da classe que cita, ou no fim.
     const cmpOrdemDist = n => {
       const t = norm(n);
-      const s = CMP_DIST_SUG.findIndex(x => norm(x) === t);
+      const s = CMP_DIST_SUG.concat(CMP_UNI_SUG).findIndex(x => norm(x) === t);
       if(s !== -1) return s;
       const av = REGULARES.findIndex(c => t.indexOf(norm(AVANCADAS[c])) !== -1);
       if(av !== -1) return av * 2 + 1;
       const i = ORDEM.findIndex(c => t.indexOf(norm(c)) !== -1);
       return i === -1 ? 999 : (i < REGULARES.length ? i * 2 + 0.5 : 100 + i);
     };
-    const cmpOrdenarItens = () => cmpAtual.itens.sort((a, b) => (cmpEhDist(b) - cmpEhDist(a))
-      || (cmpEhDist(a) ? cmpOrdemDist(a.nome) - cmpOrdemDist(b.nome) : 0) || cmpNome(a.nome, b.nome));
+    // Distintivos, depois uniformes (na ordem das listas acima), depois as especialidades em ordem alfabética.
+    const cmpOrdenarItens = () => cmpAtual.itens.sort((a, b) => (CMP_TIPO_ORDEM[cmpTipo(a)] - CMP_TIPO_ORDEM[cmpTipo(b)])
+      || (cmpTipo(a) !== 'especialidade' ? cmpOrdemDist(a.nome) - cmpOrdemDist(b.nome) : 0) || cmpNome(a.nome, b.nome));
 
     async function cmpCarregar(){
       if(!supa){ $('coCmpLista').innerHTML = '<p class="co-vazio">Sem conexão com o banco.</p>'; return; }
@@ -40218,6 +40235,8 @@ const REQ_SUMMARIES = {
     function cmpSugestoes(){
       if(!$('coCmpSugDist').options.length)
         $('coCmpSugDist').innerHTML = CMP_DIST_SUG.map(n => '<option value="' + esc(n) + '">').join('');
+      if(!$('coCmpSugUni').options.length)
+        $('coCmpSugUni').innerHTML = CMP_UNI_SUG.map(n => '<option value="' + esc(n) + '">').join('');
       if($('coCmpSugNomes').options.length || typeof SPECIALTY_DB === 'undefined') return;
       $('coCmpSugNomes').innerHTML = Object.keys(SPECIALTY_DB).flatMap(k => SPECIALTY_DB[k]).sort(cmpNome).map(n => '<option value="' + esc(n) + '">').join('');
     }
@@ -40230,7 +40249,7 @@ const REQ_SUMMARIES = {
         id: null, data: cmpHoje(), status: 'rascunho', regional: ult.regional || '', regiao: ult.regiao || (window.CLUBE_CONFIG && window.CLUBE_CONFIG.regiao) || '',
         diretor: ult.diretor || '', solicitante: quemFez(), observacao: '', itens: []
       };
-      cmpAtual.itens = (cmpAtual.itens || []).map(i => ({ tipo: cmpEhDist(i) ? 'distintivo' : 'especialidade', nome: i.nome, area: i.area || '', quantidade: cmpQtd(i), valor: cmpValor(i), para: i.para || [], ids: i.ids || [] }));
+      cmpAtual.itens = (cmpAtual.itens || []).map(i => ({ tipo: cmpTipo(i), nome: i.nome, area: i.area || '', quantidade: cmpQtd(i), valor: cmpValor(i), para: i.para || [], ids: i.ids || [] }));
       cmpSugestoes();
       const campo = (id, rot, valor, ph) => '<label class="co-label" for="' + id + '">' + rot + '</label>' +
         '<input type="text" id="' + id + '" class="co-input" autocomplete="off" maxlength="100" placeholder="' + esc(ph || '') + '" value="' + esc(valor || '') + '">';
@@ -40242,7 +40261,7 @@ const REQ_SUMMARIES = {
           '<h4 class="co-card-titulo" id="coCmpItensTit"></h4>' +
           '<div id="coCmpItens"></div>' +
           '<select id="coCmpAddTipo" class="co-input" style="margin:10px 0 0;" aria-label="Tipo do item a adicionar">' +
-            '<option value="especialidade">Adicionar especialidade</option><option value="distintivo">Adicionar distintivo de classe</option></select>' +
+            '<option value="especialidade">Adicionar especialidade</option><option value="distintivo">Adicionar distintivo de classe</option><option value="uniforme">Adicionar item de uniforme</option></select>' +
           '<div class="co-cmp-add">' +
             '<input type="text" id="coCmpAddNome" class="co-input" list="coCmpSugNomes" autocomplete="off" placeholder="Nome da especialidade">' +
             '<input type="number" id="coCmpAddQtd" class="co-input" min="1" step="1" inputmode="numeric" value="1" aria-label="Quantidade">' +
@@ -40286,9 +40305,9 @@ const REQ_SUMMARIES = {
       $('coCmpVoltar').addEventListener('click', cmpMostrarLista);
       $('coCmpAddBtn').addEventListener('click', cmpAdicionar);
       $('coCmpAddTipo').addEventListener('change', () => {
-        const dist = $('coCmpAddTipo').value === 'distintivo';
-        $('coCmpAddNome').setAttribute('list', dist ? 'coCmpSugDist' : 'coCmpSugNomes');
-        $('coCmpAddNome').placeholder = dist ? 'Ex.: Distintivo de Classes de Regulares Amigo Metal' : 'Nome da especialidade';
+        const t = $('coCmpAddTipo').value;
+        $('coCmpAddNome').setAttribute('list', { distintivo: 'coCmpSugDist', uniforme: 'coCmpSugUni' }[t] || 'coCmpSugNomes');
+        $('coCmpAddNome').placeholder = { distintivo: 'Ex.: Distintivo de Classes de Regulares Amigo Metal', uniforme: 'Ex.: Lenço Desbravadores - Caqui' }[t] || 'Nome da especialidade';
         $('coCmpAddNome').focus();
       });
       $('coCmpAddNome').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); cmpAdicionar(); } });
@@ -40369,9 +40388,9 @@ const REQ_SUMMARIES = {
       cmpTituloItens();
       $('coCmpItens').innerHTML = cmpAtual.itens.length ? cmpAtual.itens.map((it, i) =>
         '<div class="co-cmp-linha">' +
-          (cmpEhDist(it) ? '<span class="co-est-icone" aria-hidden="true">' + EST_ICONE_VAZIO + '</span>' : estIconeHtml({ tipo: 'especialidade', nome: it.nome })) +
+          (cmpTipo(it) !== 'especialidade' ? '<span class="co-est-icone" aria-hidden="true">' + EST_ICONE_VAZIO + '</span>' : estIconeHtml({ tipo: 'especialidade', nome: it.nome })) +
           '<span class="co-est-info"><span class="co-est-nome">' + esc(it.nome) + '</span>' +
-            '<small>' + esc([cmpEhDist(it) ? 'Distintivo / classe' : (it.area || 'Especialidade'), it.para.length ? 'para ' + it.para.join(', ') : ''].filter(Boolean).join(' · ')) + '</small>' +
+            '<small>' + esc([{ distintivo: 'Distintivo de classe', uniforme: 'Uniforme' }[cmpTipo(it)] || it.area || 'Especialidade', it.para.length ? 'para ' + it.para.join(', ') : ''].filter(Boolean).join(' · ')) + '</small>' +
           '</span>' +
           '<button type="button" class="co-cmp-tirar" data-cmp-tirar="' + i + '" aria-label="Tirar ' + esc(it.nome) + ' do pedido">×</button>' +
           '<div class="co-cmp-valores">' +
@@ -40387,12 +40406,12 @@ const REQ_SUMMARIES = {
     function cmpAdicionar(){
       const bruto = $('coCmpAddNome').value.trim();
       if(!bruto){ $('coCmpAddNome').focus(); return; }
-      const tipo = $('coCmpAddTipo').value === 'distintivo' ? 'distintivo' : 'especialidade';
-      const nome = tipo === 'distintivo' ? bruto : estNomeEsp(bruto);
+      const tipo = cmpTipo({ tipo: $('coCmpAddTipo').value });
+      const nome = tipo === 'especialidade' ? estNomeEsp(bruto) : bruto;
       const qtd = Math.max(1, parseInt($('coCmpAddQtd').value, 10) || 1);
       const ja = cmpAtual.itens.find(i => (i.tipo === tipo) && norm(i.nome) === norm(nome));
       if(ja) ja.quantidade = cmpQtd(ja) + qtd;
-      else cmpAtual.itens.push({ tipo, nome, area: tipo === 'distintivo' ? '' : (CATEGORIA_DO_NOME[nome] || ''), quantidade: qtd, valor: cmpPrecoSugerido(nome, tipo), para: [], ids: [] });
+      else cmpAtual.itens.push({ tipo, nome, area: tipo === 'especialidade' ? (CATEGORIA_DO_NOME[nome] || '') : '', quantidade: qtd, valor: cmpPrecoSugerido(nome, tipo), para: [], ids: [] });
       cmpOrdenarItens();
       $('coCmpAddNome').value = ''; $('coCmpAddQtd').value = 1;
       cmpRenderItens();
@@ -40408,7 +40427,7 @@ const REQ_SUMMARIES = {
       pessoas.forEach(p => (p.especs || []).forEach(e => {
         if(e.data_entrega || !e.especialidade || usados.has(String(e.id))) return;
         const nome = estNomeEsp(e.especialidade);
-        let it = cmpAtual.itens.find(i => !cmpEhDist(i) && norm(i.nome) === norm(nome));
+        let it = cmpAtual.itens.find(i => cmpTipo(i) === 'especialidade' && norm(i.nome) === norm(nome));
         if(!it){ it = { tipo: 'especialidade', nome, area: e.categoria || CATEGORIA_DO_NOME[nome] || '', quantidade: 0, valor: cmpPrecoSugerido(nome, 'especialidade'), para: [], ids: [] }; cmpAtual.itens.push(it); }
         it.quantidade = cmpQtd(it) + 1;
         if(it.para.indexOf(p.nome) === -1) it.para.push(p.nome);
@@ -40443,7 +40462,7 @@ const REQ_SUMMARIES = {
       const dados = {
         data: cmpAtual.data, status: cmpAtual.status, regional: cmpAtual.regional || null, regiao: cmpAtual.regiao || null,
         diretor: cmpAtual.diretor || null, solicitante: cmpAtual.solicitante || null, observacao: cmpAtual.observacao || null,
-        itens: cmpAtual.itens.map(i => ({ tipo: cmpEhDist(i) ? 'distintivo' : 'especialidade', nome: i.nome, area: i.area || '', quantidade: cmpQtd(i), valor: cmpValor(i), para: i.para, ids: i.ids }))
+        itens: cmpAtual.itens.map(i => ({ tipo: cmpTipo(i), nome: i.nome, area: i.area || '', quantidade: cmpQtd(i), valor: cmpValor(i), para: i.para, ids: i.ids }))
       };
       if(extra) Object.assign(dados, extra);
       cmpSalvando = true;
@@ -40550,7 +40569,8 @@ const REQ_SUMMARIES = {
       const regiao = p.regiao || CFG.regiao || '';
       const brasao = window.CLUBE && window.CLUBE.brasaoPdf ? window.CLUBE.brasaoPdf(false) : '';
       const dist = p.itens.filter(cmpEhDist).map(i => ({ qtd: cmpQtd(i), nome: String(i.nome || '') }));
-      const especs = p.itens.filter(i => !cmpEhDist(i)).map(i => ({ qtd: cmpQtd(i), nome: sobe(i.nome) }));
+      const unis = p.itens.filter(i => cmpTipo(i) === 'uniforme').map(i => ({ qtd: cmpQtd(i), nome: String(i.nome || '') }));
+      const especs = p.itens.filter(i => cmpTipo(i) === 'especialidade').map(i => ({ qtd: cmpQtd(i), nome: sobe(i.nome) }));
       const tracejado = on => { try { doc.setLineDashPattern(on ? [1, 0.8] : [], 0); } catch(e){} };
 
       // Cabeçalho
@@ -40642,6 +40662,7 @@ const REQ_SUMMARIES = {
         }
       };
       if(dist.length) secao('DISTINTIVOS E CLASSES', dist, false);
+      if(unis.length) secao('UNIFORMES', unis, false);
       if(especs.length) secao('ESPECIALIDADE', especs, true);
 
       // Assinatura do(a) Coordenador(a)
