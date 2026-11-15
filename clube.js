@@ -16,7 +16,7 @@ window.CLUBE_CONFIG = {
 
   // Associação e região do clube (aparecem no Pedido de Materiais). Deixe '' se não usar.
   associacao: 'Associação Paulistana',
-  regiao: '9ª Região',
+  regiao: '9º Região',
 
   // Endereço público do app depois de publicado (usado nos links e QR Codes).
   // Ex.: 'https://meu-clube.minha-conta.workers.dev'
