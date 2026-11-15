@@ -27,6 +27,11 @@ create trigger trg_compras_especialidades_updated_at
   before update on compras_especialidades
   for each row execute function set_updated_at();
 
+-- Só membros logados (mesma regra de supabase/seguranca-rls.sql).
 alter table compras_especialidades enable row level security;
 drop policy if exists p_compras_especialidades on compras_especialidades;
-create policy p_compras_especialidades on compras_especialidades for all using(true) with check(true);
+drop policy if exists "compras_especialidades: membros" on compras_especialidades;
+create policy "compras_especialidades: membros" on compras_especialidades
+  for all to authenticated
+  using ((select public.eh_membro()))
+  with check ((select public.eh_membro()));
