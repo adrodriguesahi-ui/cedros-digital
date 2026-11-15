@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
-<script src="clube.js?v=3"></script>
+<script src="clube.js?v=4"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <style>
   :root{
@@ -14406,7 +14406,7 @@
             </div>
             <div class="pl-field-col">
               <label class="pl-field-label">Região</label>
-              <input type="text" class="pl-input" id="prvRegiao" placeholder="Ex.: 9ª Região" maxlength="30">
+              <input type="text" class="pl-input" id="prvRegiao" placeholder="Ex.: 9º Região" maxlength="30">
             </div>
           </div>
           <div id="prvBlocoAbertura">
@@ -40142,7 +40142,14 @@ const REQ_SUMMARIES = {
     const cmpDataLonga = iso => { const d = new Date(String(iso || '').slice(0, 10) + 'T12:00:00'); return isNaN(d) ? hojeLongo() : d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }); };
     const cmpEhDist = i => i && i.tipo === 'distintivo';
     // Distintivos e classes primeiro (na ordem das classes), depois as especialidades em ordem alfabética.
-    const cmpOrdemDist = n => { const i = ORDEM.findIndex(c => norm(n).indexOf(norm(c)) !== -1); return i === -1 ? 99 : i; };
+    // Ordem: Amigo, Amigo da Natureza (avançada), Companheiro, ... Guia de Exploração; o resto depois.
+    const cmpOrdemDist = n => {
+      const t = norm(n);
+      const av = REGULARES.findIndex(c => t.indexOf(norm(AVANCADAS[c])) !== -1);
+      if(av !== -1) return av * 2 + 1;
+      const i = ORDEM.findIndex(c => t.indexOf(norm(c)) !== -1);
+      return i === -1 ? 999 : (i < REGULARES.length ? i * 2 : 100 + i);
+    };
     const cmpOrdenarItens = () => cmpAtual.itens.sort((a, b) => (cmpEhDist(b) - cmpEhDist(a))
       || (cmpEhDist(a) ? cmpOrdemDist(a.nome) - cmpOrdemDist(b.nome) : 0) || cmpNome(a.nome, b.nome));
 
@@ -40198,8 +40205,8 @@ const REQ_SUMMARIES = {
     }
     function cmpSugestoes(){
       if(!$('coCmpSugDist').options.length)
-        $('coCmpSugDist').innerHTML = REGULARES.concat(LIDERANCA).map(c => 'PIN ' + c)
-          .concat(REGULARES.map(c => 'PIN ' + AVANCADAS[c])).map(n => '<option value="' + esc(n) + '">').join('');
+        $('coCmpSugDist').innerHTML = REGULARES.flatMap(c => ['Distintivo de Classe de ' + c, 'Distintivo de Classe Avançada ' + AVANCADAS[c]])
+          .map(n => '<option value="' + esc(n) + '">').join('');
       if($('coCmpSugNomes').options.length || typeof SPECIALTY_DB === 'undefined') return;
       $('coCmpSugNomes').innerHTML = Object.keys(SPECIALTY_DB).flatMap(k => SPECIALTY_DB[k]).sort(cmpNome).map(n => '<option value="' + esc(n) + '">').join('');
     }
@@ -40224,7 +40231,7 @@ const REQ_SUMMARIES = {
           '<h4 class="co-card-titulo" id="coCmpItensTit"></h4>' +
           '<div id="coCmpItens"></div>' +
           '<select id="coCmpAddTipo" class="co-input" style="margin:10px 0 0;" aria-label="Tipo do item a adicionar">' +
-            '<option value="especialidade">Adicionar especialidade</option><option value="distintivo">Adicionar distintivo ou classe (PIN)</option></select>' +
+            '<option value="especialidade">Adicionar especialidade</option><option value="distintivo">Adicionar distintivo de classe</option></select>' +
           '<div class="co-cmp-add">' +
             '<input type="text" id="coCmpAddNome" class="co-input" list="coCmpSugNomes" autocomplete="off" placeholder="Nome da especialidade">' +
             '<input type="number" id="coCmpAddQtd" class="co-input" min="1" step="1" inputmode="numeric" value="1" aria-label="Quantidade">' +
@@ -40270,7 +40277,7 @@ const REQ_SUMMARIES = {
       $('coCmpAddTipo').addEventListener('change', () => {
         const dist = $('coCmpAddTipo').value === 'distintivo';
         $('coCmpAddNome').setAttribute('list', dist ? 'coCmpSugDist' : 'coCmpSugNomes');
-        $('coCmpAddNome').placeholder = dist ? 'Ex.: PIN Amigo' : 'Nome da especialidade';
+        $('coCmpAddNome').placeholder = dist ? 'Ex.: Distintivo de Classe de Amigo' : 'Nome da especialidade';
         $('coCmpAddNome').focus();
       });
       $('coCmpAddNome').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); cmpAdicionar(); } });
@@ -43666,7 +43673,7 @@ const REQ_SUMMARIES = {
       prvCampos.modelo.value = (base && base.modelo) || 'cedros';
       prvCampos.nome.value = prova ? prova.titulo : 'Avaliação de ' + currentName;
       prvCampos.associacao.value = base ? (base.associacao || '') : associacaoPadrao;
-      prvCampos.regiao.value = base ? (base.regiao || '') : '9ª Região';
+      prvCampos.regiao.value = base ? (base.regiao || '') : '9º Região';
       prvCampos.abertura.value = (base && base.abertura) || '';
       prvAjustarModelo();
       prvCapa = (base && base.capa_data) || '';
