@@ -1959,6 +1959,7 @@
   .prv-perg-opcoes select.pl-input{ flex:1; min-width:0; }
   .prv-perg-opcoes input[type="number"]{ width:64px; flex:0 0 64px; }
   .prv-perg-linhas{ font-size:12.5px; color:var(--ink-soft); }
+  .prv-pratico-lista{ min-height:150px; }
   .prv-perg > select.pl-input{ margin:6px 0 0 26px; width:calc(100% - 26px); }
   .prv-perg-imagem{ margin-left:26px; }
   .prv-imagem{ display:flex; align-items:center; gap:8px; margin-top:8px; }
@@ -42610,7 +42611,12 @@ const REQ_SUMMARIES = {
       nota_gabarito: 'Você é inteligente e dedicado, tudo dará certo na prova!'
     };
     const PRV_MEMORIA = 'clube:avaliacao-associacao';
-    const PRV_TIPOS = { escrita: 'Resposta escrita', multipla: 'Múltipla escolha', vf: 'Verdadeiro ou falso', grupo: 'Pergunta com alternativas' };
+    const PRV_TIPOS = { escrita: 'Resposta escrita', multipla: 'Múltipla escolha', vf: 'Verdadeiro ou falso', grupo: 'Pergunta com alternativas', pratico: 'Item prático' };
+    // Item prático: a pergunta, o rótulo "Item prático.", a lista a), b), c)…
+    // (um por linha no editor) e as instruções. Quem digita "a) Emprego." tem a
+    // letra tirada, porque o PDF põe as letras sozinho.
+    const prvListaPratica = texto => String(texto || '').split('\n')
+      .map(l => l.replace(/^\s*[a-z]\s*[).\-–]\s*/i, '').trim()).filter(Boolean);
     let provas = [];
     let provaAtual = null;
     let prvItens = [];
@@ -42619,7 +42625,7 @@ const REQ_SUMMARIES = {
 
     // Pedido de resposta escrita que vai junto da múltipla escolha ou do V/F.
     const PRV_COMENTARIO_PADRAO = 'Responda em um pequeno parágrafo suas considerações.';
-    const prvNovoItem = () => ({ tipo: 'escrita', texto: '', linhas: 4, alternativas: ['', '', '', ''], pontos: '', subitem: false, resposta: '', correta: null, espaco: '', imagem: '', comentario: false, comentarioTexto: PRV_COMENTARIO_PADRAO, perguntas: [] });
+    const prvNovoItem = () => ({ tipo: 'escrita', texto: '', linhas: 4, alternativas: ['', '', '', ''], pontos: '', subitem: false, resposta: '', correta: null, espaco: '', imagem: '', comentario: false, comentarioTexto: PRV_COMENTARIO_PADRAO, perguntas: [], pratico: '', instrucoes: '' });
     // Alternativa de uma "Pergunta com alternativas": cada uma responde em V/F ou por escrito.
     const prvNovaPergunta = () => ({ texto: '', tipo: 'vf', correta: null, resposta: '', linhas: 4, espaco: '', imagem: '' });
     // Altura em mm do espaço para imagem na página impressa.
@@ -42693,7 +42699,13 @@ const REQ_SUMMARIES = {
         tipo.setAttribute('aria-label', 'Tipo do item');
         Object.keys(PRV_TIPOS).forEach(k => tipo.appendChild(prvEl('option', '', { value: k, textContent: PRV_TIPOS[k] })));
         tipo.value = item.tipo;
-        tipo.addEventListener('change', () => { item.tipo = tipo.value; prvMarcarAlterada(); prvRenderItens(); });
+        tipo.addEventListener('change', () => {
+          // O item prático é feito fora da folha: começa sem linhas de resposta.
+          if(tipo.value === 'pratico' && item.linhas === 4) item.linhas = 0;
+          item.tipo = tipo.value;
+          prvMarcarAlterada();
+          prvRenderItens();
+        });
         card.appendChild(tipo);
 
         card.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Pergunta ou requisito' }));
@@ -42739,6 +42751,16 @@ const REQ_SUMMARIES = {
           certa.value = item.correta === 'V' || item.correta === 'F' ? item.correta : '';
           certa.addEventListener('change', () => { item.correta = certa.value || null; prvMarcarAlterada(); });
           card.appendChild(certa);
+        }
+        if(item.tipo === 'pratico'){
+          card.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Lista do item prático (um por linha, as letras a), b), c) saem sozinhas)' }));
+          const lista = prvEl('textarea', 'pl-input prv-pratico-lista', { value: item.pratico || '', maxLength: 3000, placeholder: 'Emprego.\nTempo com a família.\nDevoção pessoal.' });
+          lista.addEventListener('input', () => { item.pratico = lista.value; card.classList.remove('prv-erro'); prvMarcarAlterada(); });
+          card.appendChild(lista);
+          card.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Instruções (opcional)' }));
+          const instr = prvEl('textarea', 'pl-input', { value: item.instrucoes || '', maxLength: 1000, placeholder: 'Ex.: Para cada um dos dias não deixe de ter um total de 24 horas anotadas.' });
+          instr.addEventListener('input', () => { item.instrucoes = instr.value; prvMarcarAlterada(); });
+          card.appendChild(instr);
         }
         // Pergunta com alternativas: cada alternativa é uma pergunta com resposta própria.
         if(item.tipo === 'grupo'){
@@ -42870,7 +42892,7 @@ const REQ_SUMMARIES = {
         }
 
         const linhaCampos = prvEl('div', 'pl-field-row');
-        if(item.tipo === 'escrita' || comComentario){
+        if(item.tipo === 'escrita' || item.tipo === 'pratico' || comComentario){
           const col = prvEl('div', 'pl-field-col');
           col.appendChild(prvEl('label', 'pl-field-label', { textContent: 'Linhas' }));
           const linhas = prvEl('input', 'pl-input', { type: 'number', min: 0, max: 30, value: item.linhas, inputMode: 'numeric' });
@@ -43025,17 +43047,20 @@ const REQ_SUMMARIES = {
               linhas: Math.min(30, Math.max(0, parseInt(q.linhas, 10) || 0)),
               espaco: PRV_ESPACOS[q.espaco] ? q.espaco : '', imagem: PRV_ESPACOS[q.espaco] ? (q.imagem || '') : '' }))
           : [];
+        const listaPratica = i.tipo === 'pratico' ? prvListaPratica(i.pratico) : [];
         if(!i.texto.trim() && !i.espaco){
-          if((i.tipo === 'multipla' && alternativas.length) || perguntas.length){ cards[idx].classList.add('prv-erro'); incompleto = true; }
+          if((i.tipo === 'multipla' && alternativas.length) || perguntas.length || listaPratica.length){ cards[idx].classList.add('prv-erro'); incompleto = true; }
           return;
         }
+        if(i.tipo === 'pratico' && !listaPratica.length){ cards[idx].classList.add('prv-erro'); incompleto = true; return; }
         if(i.tipo === 'multipla' && alternativas.length < 2){ cards[idx].classList.add('prv-erro'); incompleto = true; return; }
         if(i.tipo === 'grupo' && !perguntas.length){ cards[idx].classList.add('prv-erro'); incompleto = true; return; }
         const comentario = (i.tipo === 'multipla' || i.tipo === 'vf') && !!i.comentario;
         itens.push(Object.assign({}, i, { texto: i.texto.trim(), alternativas: alternativas.length ? alternativas : i.alternativas, pontos: i.pontos.trim(), resposta: (i.resposta || '').trim(), correta,
-          comentario, comentarioTexto: comentario ? ((i.comentarioTexto || '').trim() || PRV_COMENTARIO_PADRAO) : (i.comentarioTexto || PRV_COMENTARIO_PADRAO), perguntas }));
+          comentario, comentarioTexto: comentario ? ((i.comentarioTexto || '').trim() || PRV_COMENTARIO_PADRAO) : (i.comentarioTexto || PRV_COMENTARIO_PADRAO), perguntas,
+          pratico: listaPratica.join('\n'), instrucoes: i.tipo === 'pratico' ? (i.instrucoes || '').trim() : '' }));
       });
-      if(incompleto){ prvMsg('Complete os itens marcados: múltipla escolha precisa de pergunta e duas alternativas; pergunta com alternativas precisa da pergunta e de ao menos uma alternativa.', true); return null; }
+      if(incompleto){ prvMsg('Complete os itens marcados: múltipla escolha precisa de pergunta e duas alternativas; pergunta com alternativas precisa da pergunta e de ao menos uma alternativa; item prático precisa da pergunta e da lista.', true); return null; }
       if(!itens.length){ prvMsg('Digite pelo menos um item.', true); return null; }
       return {
         titulo: prvCampos.nome.value.trim() || 'Avaliação de ' + currentName,
@@ -43194,7 +43219,7 @@ const REQ_SUMMARIES = {
         const estiloTexto = e.perguntaNegrito && !sub ? 'bold' : 'normal';
         doc.setFont(e.fonte, estiloTexto);
         const linhas = doc.splitTextToSize(texto, e.dir - xTexto);
-        const primeira = item.tipo === 'escrita' ? (item.linhas > 0 ? 7 : 0) : e.linha;
+        const primeira = item.tipo === 'escrita' ? (item.linhas > 0 ? 7 : 0) : item.tipo === 'pratico' ? e.linha * 2 : e.linha;
         // Pergunta com alternativas não tem quadro da questão inteira (só nas alternativas).
         const altCaixa = item.tipo === 'grupo' ? 0 : (PRV_ESPACOS[item.espaco] || 0);
         garantir(linhas.length * e.linha + (altCaixa ? altCaixa + 3 : 0) + primeira);
@@ -43218,6 +43243,41 @@ const REQ_SUMMARIES = {
         }
         if(item.tipo === 'escrita'){
           linhasResposta(xTexto, item.linhas);
+        } else if(item.tipo === 'pratico'){
+          // "Item prático." em negrito, a lista com letras e as instruções.
+          const xP = e.recuoFixo ? xTexto : e.xItem;
+          y += 1;
+          garantir(e.linha);
+          doc.setFont(e.fonte, 'bold');
+          doc.text('Item prático.', xP, y);
+          y += e.linha;
+          doc.setFont(e.fonte, 'normal');
+          prvListaPratica(item.pratico).forEach((t, a) => {
+            const letra = String.fromCharCode(97 + (a % 26)) + ') ';
+            const larg = doc.getTextWidth(letra);
+            const pl = doc.splitTextToSize(t, e.dir - xP - larg);
+            garantir(pl.length * e.linha);
+            doc.text(letra, xP, y);
+            pl.forEach(l => { doc.text(l, xP + larg, y); y += e.linha; });
+          });
+          if(item.instrucoes){
+            doc.setFont(e.fonte, 'bold');
+            const rot = 'Instruções: ';
+            const larg = doc.getTextWidth(rot);
+            doc.setFont(e.fonte, 'normal');
+            // A primeira linha começa depois de "Instruções:"; as seguintes, na margem.
+            const primeiraL = doc.splitTextToSize(item.instrucoes, e.dir - xP - larg)[0] || '';
+            const resto = item.instrucoes.slice(primeiraL.length).trim();
+            const demais = resto ? doc.splitTextToSize(resto, e.dir - xP) : [];
+            garantir((1 + demais.length) * e.linha);
+            doc.setFont(e.fonte, 'bold');
+            doc.text(rot, xP, y);
+            doc.setFont(e.fonte, 'normal');
+            doc.text(primeiraL, xP + larg, y);
+            y += e.linha;
+            demais.forEach(l => { doc.text(l, xP, y); y += e.linha; });
+          }
+          if(item.linhas > 0){ y += 1; linhasResposta(xP, item.linhas); }
         } else if(item.tipo === 'multipla'){
           const xAlt = e.recuoFixo ? xTexto + 4 : e.xItem;
           item.alternativas.forEach((alt, a) => {
@@ -43589,6 +43649,8 @@ const REQ_SUMMARIES = {
         }
         // Enunciado sem linhas nem resposta (como "Escolher 2 dos itens") não entra.
         if(!resposta && i.tipo === 'escrita' && !i.linhas) return;
+        // Item prático é avaliado pelo instrutor, sem resposta de gabarito.
+        if(i.tipo === 'pratico') return;
         linhas.push({ rotulo, resposta });
       });
       return linhas;
