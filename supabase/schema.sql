@@ -1704,3 +1704,36 @@ alter table classes_registradas add column if not exists comprovante_nome text;
 alter table especialidades_concluidas add column if not exists data_entrega date;
 alter table especialidades_concluidas add column if not exists pagina_registro text;
 alter table especialidades_concluidas add column if not exists instrutor text;
+
+-- ---------------------------------------------------------------------
+-- Coordenação de Classes: pedidos de compra de insígnias de especialidades.
+-- Cada pedido guarda a lista de especialidades (itens) e os nomes de quem
+-- assina o documento de autorização (diretor, solicitante e regional).
+-- itens: [{ "nome": "Nós e Amarras", "area": "...", "quantidade": 3,
+--           "para": ["Fulano", ...], "ids": [<id em especialidades_concluidas>, ...] }]
+-- Rode no SQL Editor do Supabase; é seguro rodar de novo.
+-- ---------------------------------------------------------------------
+create table if not exists compras_especialidades (
+  id uuid primary key default gen_random_uuid(),
+  data date not null default current_date,
+  status text not null default 'rascunho'
+    check (status in ('rascunho', 'emitido', 'autorizado', 'comprado')),
+  regional text,
+  regiao text,
+  diretor text,
+  solicitante text,
+  observacao text,
+  itens jsonb not null default '[]'::jsonb,
+  feito_por text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+drop trigger if exists trg_compras_especialidades_updated_at on compras_especialidades;
+create trigger trg_compras_especialidades_updated_at
+  before update on compras_especialidades
+  for each row execute function set_updated_at();
+
+alter table compras_especialidades enable row level security;
+drop policy if exists p_compras_especialidades on compras_especialidades;
+create policy p_compras_especialidades on compras_especialidades for all using(true) with check(true);

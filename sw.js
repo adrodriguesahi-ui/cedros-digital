@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cedros-digital-v34';
+const CACHE_NAME = 'cedros-digital-v36';
 const ASSETS = [
   './login.html',
   './manifest.json',
@@ -6,7 +6,8 @@ const ASSETS = [
   './icon-512.png?v=3',
   './icon-512-maskable.png?v=3',
   './apple-touch-icon.png?v=3',
-  './logo.png?v=3'
+  './logo.png?v=3',
+  './brasao-autorizacao.png'
 ];
 
 self.addEventListener('install', (event) => {
