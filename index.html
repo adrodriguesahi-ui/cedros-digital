@@ -3613,6 +3613,12 @@
   .co-esp-del:hover{ color:#ff7b7b; background:rgba(255,255,255,0.06); }
   .co-novo{ display:grid; grid-template-columns:1fr; gap:0; margin-bottom:12px; }
   .co-novo .co-input{ margin-bottom:6px; }
+  .co-sug-wrap{ position:relative; }
+  .co-extra .co-sug-wrap{ display:inline-block; }
+  .co-sug{ position:absolute; left:0; right:0; top:calc(100% - 4px); z-index:50; max-height:260px; overflow-y:auto; background:#16241b; border:1px solid rgba(255,255,255,0.16); border-radius:10px; box-shadow:0 10px 28px rgba(0,0,0,0.55); padding:4px; }
+  .co-sug-item{ display:block; width:100%; text-align:left; background:none; border:0; color:var(--cream); font:inherit; font-size:14px; padding:10px 10px; border-radius:8px; cursor:pointer; }
+  .co-sug-item + .co-sug-item{ border-top:1px solid rgba(255,255,255,0.06); }
+  .co-sug-item:hover, .co-sug-item:active{ background:rgba(255,255,255,0.08); }
   .co-evo-linha{ display:flex; justify-content:space-between; gap:8px; font-size:12.5px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
   .co-evo-linha small{ color:rgba(245,239,225,0.55); }
   .co-evo-linha b{ color:var(--cream); }
@@ -39048,7 +39054,52 @@ const REQ_SUMMARIES = {
       if($('coVincBtn')) $('coVincBtn').addEventListener('click', () => vincularConta(p, $('coVincSel').value));
       $('coDetalhe').querySelectorAll('.co-assins[data-assin]').forEach(c => c.addEventListener('change', () => mudarAssinatura(p, c.getAttribute('data-assin'), valorAssin(c))));
       $('coDetalhe').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => removerEspec(p, b.getAttribute('data-del'))));
+      $('coDetalhe').querySelectorAll('input[list]').forEach(coSugestoes);
       $('coDetalhe').scrollIntoView({ block: 'start' });
+    }
+
+    // Lista de sugestões própria no lugar do <datalist>: no app do celular
+    // (Android) a lista nativa abre transparente, por cima da tela inteira.
+    function coSugestoes(input){
+      const fonte = document.getElementById(input.getAttribute('list'));
+      input.removeAttribute('list');
+      input.setAttribute('autocomplete', 'off');
+      if(!fonte) return;
+      const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+      const wrap = document.createElement('div');
+      wrap.className = 'co-sug-wrap';
+      input.parentNode.insertBefore(wrap, input);
+      wrap.appendChild(input);
+      const lista = document.createElement('div');
+      lista.className = 'co-sug';
+      lista.setAttribute('role', 'listbox');
+      lista.hidden = true;
+      wrap.appendChild(lista);
+      const fechar = () => { lista.hidden = true; lista.innerHTML = ''; };
+      const abrir = () => {
+        const q = norm(input.value.trim());
+        const itens = Array.from(fonte.options).map(o => o.value).filter(Boolean);
+        const achados = (q ? itens.filter(v => norm(v).indexOf(q) !== -1) : itens)
+          .filter(v => norm(v) !== q)
+          .sort((a, b) => (norm(a).indexOf(q) === 0 ? 0 : 1) - (norm(b).indexOf(q) === 0 ? 0 : 1))
+          .slice(0, 8);
+        if(!achados.length){ fechar(); return; }
+        lista.innerHTML = achados.map(v => '<button type="button" class="co-sug-item" role="option">' + esc(v) + '</button>').join('');
+        lista.hidden = false;
+      };
+      input.addEventListener('input', abrir);
+      input.addEventListener('focus', () => { if(input.value.trim()) abrir(); });
+      input.addEventListener('blur', () => setTimeout(fechar, 150));
+      input.addEventListener('keydown', e => { if(e.key === 'Escape') fechar(); });
+      // pointerdown + preventDefault: escolhe sem tirar o foco antes do toque valer
+      lista.addEventListener('pointerdown', e => {
+        const b = e.target.closest('.co-sug-item'); if(!b) return;
+        e.preventDefault();
+        input.value = b.textContent;
+        fechar();
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      });
     }
 
     // Liga o desbravador (cadastrado direto em Classes Regulares) à conta do app,
