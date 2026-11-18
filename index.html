@@ -3613,12 +3613,6 @@
   .co-esp-del:hover{ color:#ff7b7b; background:rgba(255,255,255,0.06); }
   .co-novo{ display:grid; grid-template-columns:1fr; gap:0; margin-bottom:12px; }
   .co-novo .co-input{ margin-bottom:6px; }
-  .co-sug-wrap{ position:relative; }
-  .co-extra .co-sug-wrap{ display:inline-block; }
-  .co-sug{ position:absolute; left:0; right:0; top:calc(100% - 4px); z-index:50; max-height:260px; overflow-y:auto; background:#16241b; border:1px solid rgba(255,255,255,0.16); border-radius:10px; box-shadow:0 10px 28px rgba(0,0,0,0.55); padding:4px; }
-  .co-sug-item{ display:block; width:100%; text-align:left; background:none; border:0; color:var(--cream); font:inherit; font-size:14px; padding:10px 10px; border-radius:8px; cursor:pointer; }
-  .co-sug-item + .co-sug-item{ border-top:1px solid rgba(255,255,255,0.06); }
-  .co-sug-item:hover, .co-sug-item:active{ background:rgba(255,255,255,0.08); }
   .co-evo-linha{ display:flex; justify-content:space-between; gap:8px; font-size:12.5px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
   .co-evo-linha small{ color:rgba(245,239,225,0.55); }
   .co-evo-linha b{ color:var(--cream); }
@@ -5665,6 +5659,13 @@
     .lb-view .pl-scroll > *{ max-width:var(--col-inicio); margin-left:auto; margin-right:auto; }
     .lb-view .lb-corpo{ padding-left:0; padding-right:0; }
   }
+
+  /* Lista de sugestões própria dos campos com <datalist> (ver SugestoesCampo). */
+  .sug-painel{ position:fixed; z-index:100000; overflow-y:auto; overscroll-behavior:contain; background:#16241b; border:1px solid rgba(255,255,255,0.16); border-radius:10px; box-shadow:0 10px 28px rgba(0,0,0,0.55); padding:4px; }
+  .sug-painel[hidden]{ display:none; }
+  .sug-item{ display:block; width:100%; text-align:left; background:none; border:0; color:var(--cream); font:inherit; font-size:14px; line-height:1.3; padding:10px; border-radius:8px; cursor:pointer; }
+  .sug-item + .sug-item{ border-top:1px solid rgba(255,255,255,0.06); }
+  .sug-item:hover, .sug-item.ativo{ background:rgba(255,255,255,0.09); }
 </style>
 </head>
 <body>
@@ -15886,6 +15887,145 @@
 </div>
 
 <script>
+  // SugestoesCampo — lista de sugestões própria para todo <input list="...">.
+  // No app do celular (Android) a lista nativa do <datalist> abre transparente,
+  // por cima da tela inteira. O atributo list vira data-sug-lista (inclusive em
+  // campos criados ou alterados depois) e a lista é desenhada aqui, presa ao
+  // <body>, sem mexer no layout da tela. Escolher dispara input e change, como
+  // o datalist fazia.
+  const SugestoesCampo = (() => {
+    const MAX = 50;
+    const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    let campo = null, painel = null, ativo = -1, escolhendo = false;
+
+    function converter(el){
+      if(!el || el.tagName !== 'INPUT') return;
+      const id = el.getAttribute('list');
+      if(id === null) return;
+      el.dataset.sugLista = id;
+      el.removeAttribute('list');
+      if(!el.hasAttribute('autocomplete')) el.setAttribute('autocomplete', 'off');
+      if(el === document.activeElement){ campo = el; abrir(); }
+    }
+    function converterEm(raiz){
+      if(raiz.nodeType !== 1) return;
+      converter(raiz);
+      raiz.querySelectorAll('input[list]').forEach(converter);
+    }
+    function painelEl(){
+      if(painel) return painel;
+      painel = document.createElement('div');
+      painel.className = 'sug-painel';
+      painel.setAttribute('role', 'listbox');
+      painel.hidden = true;
+      // pointerdown + preventDefault: escolhe sem tirar o foco do campo
+      painel.addEventListener('pointerdown', e => {
+        const b = e.target.closest('.sug-item'); if(!b) return;
+        e.preventDefault();
+        escolher(b.textContent);
+      });
+      document.body.appendChild(painel);
+      return painel;
+    }
+    function fechar(){
+      ativo = -1;
+      if(painel){ painel.hidden = true; painel.innerHTML = ''; }
+    }
+    function abrir(){
+      if(!campo || escolhendo) return;
+      const fonte = document.getElementById(campo.dataset.sugLista);
+      if(!fonte || campo.disabled || campo.readOnly){ fechar(); return; }
+      const q = norm(campo.value.trim());
+      const vistos = new Set();
+      const itens = Array.from(fonte.querySelectorAll('option')).map(o => o.value || o.textContent)
+        .filter(v => v && !vistos.has(v) && vistos.add(v));
+      const achados = (q ? itens.filter(v => norm(v).indexOf(q) !== -1) : itens)
+        .filter(v => norm(v) !== q)
+        .sort((a, b) => (norm(a).indexOf(q) === 0 ? 0 : 1) - (norm(b).indexOf(q) === 0 ? 0 : 1))
+        .slice(0, MAX);
+      if(!achados.length){ fechar(); return; }
+      const p = painelEl();
+      p.innerHTML = '';
+      achados.forEach(v => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'sug-item'; b.tabIndex = -1;
+        b.setAttribute('role', 'option'); b.textContent = v;
+        p.appendChild(b);
+      });
+      ativo = -1;
+      p.hidden = false;
+      p.scrollTop = 0;
+      posicionar();
+    }
+    function posicionar(){
+      if(!campo || !painel || painel.hidden) return;
+      const r = campo.getBoundingClientRect();
+      if(!r.width && !r.height){ fechar(); return; }
+      const vv = window.visualViewport;
+      const topoVisivel = vv ? vv.offsetTop : 0;
+      const fundoVisivel = vv ? vv.offsetTop + vv.height : window.innerHeight;
+      const larguraTela = document.documentElement.clientWidth;
+      const abaixo = fundoVisivel - r.bottom - 8, acima = r.top - topoVisivel - 8;
+      const paraCima = abaixo < 160 && acima > abaixo;
+      const largura = Math.min(Math.max(r.width, 200), larguraTela - 16);
+      painel.style.left = Math.max(8, Math.min(r.left, larguraTela - largura - 8)) + 'px';
+      painel.style.width = largura + 'px';
+      painel.style.maxHeight = Math.max(96, Math.min(280, paraCima ? acima : abaixo)) + 'px';
+      if(paraCima){ painel.style.top = 'auto'; painel.style.bottom = (window.innerHeight - r.top + 4) + 'px'; }
+      else { painel.style.bottom = 'auto'; painel.style.top = (r.bottom + 4) + 'px'; }
+    }
+    function escolher(valor){
+      const el = campo; if(!el) return;
+      fechar();
+      escolhendo = true;
+      el.value = valor;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      escolhendo = false;
+    }
+    function marcar(i){
+      const itens = painel.querySelectorAll('.sug-item');
+      if(!itens.length) return;
+      ativo = (i + itens.length) % itens.length;
+      itens.forEach((b, k) => b.classList.toggle('ativo', k === ativo));
+      itens[ativo].scrollIntoView({ block: 'nearest' });
+    }
+
+    document.addEventListener('focusin', e => {
+      if(e.target.dataset && e.target.dataset.sugLista !== undefined){ campo = e.target; abrir(); }
+    });
+    document.addEventListener('input', e => { if(e.target === campo) abrir(); });
+    document.addEventListener('focusout', e => {
+      if(e.target !== campo) return;
+      const el = campo;
+      setTimeout(() => { if(document.activeElement !== el){ if(campo === el) campo = null; fechar(); } }, 150);
+    });
+    // Captura: com uma sugestão destacada, Enter escolhe ela e não chega ao campo.
+    document.addEventListener('keydown', e => {
+      if(e.target !== campo || !painel || painel.hidden) return;
+      if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); marcar(ativo + (e.key === 'ArrowDown' ? 1 : -1)); }
+      else if(e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); fechar(); }
+      else if(e.key === 'Enter' && ativo >= 0){
+        e.preventDefault(); e.stopPropagation();
+        escolher(painel.querySelectorAll('.sug-item')[ativo].textContent);
+      }
+    }, true);
+    document.addEventListener('scroll', e => { if(painel && !painel.contains(e.target)) posicionar(); }, true);
+    window.addEventListener('resize', posicionar);
+    if(window.visualViewport){
+      window.visualViewport.addEventListener('resize', posicionar);
+      window.visualViewport.addEventListener('scroll', posicionar);
+    }
+
+    converterEm(document.documentElement);
+    new MutationObserver(muts => muts.forEach(m => {
+      if(m.type === 'attributes') converter(m.target);
+      else m.addedNodes.forEach(converterEm);
+    })).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['list'] });
+
+    return { fechar };
+  })();
+
   // Breakpoints — espelha os media queries do CSS (max-width:360px / min-width:900px)
   // para que a lógica JS possa reagir ao tamanho de tela sem duplicar os valores.
   const Breakpoints = (() => {
@@ -39054,52 +39194,7 @@ const REQ_SUMMARIES = {
       if($('coVincBtn')) $('coVincBtn').addEventListener('click', () => vincularConta(p, $('coVincSel').value));
       $('coDetalhe').querySelectorAll('.co-assins[data-assin]').forEach(c => c.addEventListener('change', () => mudarAssinatura(p, c.getAttribute('data-assin'), valorAssin(c))));
       $('coDetalhe').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => removerEspec(p, b.getAttribute('data-del'))));
-      $('coDetalhe').querySelectorAll('input[list]').forEach(coSugestoes);
       $('coDetalhe').scrollIntoView({ block: 'start' });
-    }
-
-    // Lista de sugestões própria no lugar do <datalist>: no app do celular
-    // (Android) a lista nativa abre transparente, por cima da tela inteira.
-    function coSugestoes(input){
-      const fonte = document.getElementById(input.getAttribute('list'));
-      input.removeAttribute('list');
-      input.setAttribute('autocomplete', 'off');
-      if(!fonte) return;
-      const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-      const wrap = document.createElement('div');
-      wrap.className = 'co-sug-wrap';
-      input.parentNode.insertBefore(wrap, input);
-      wrap.appendChild(input);
-      const lista = document.createElement('div');
-      lista.className = 'co-sug';
-      lista.setAttribute('role', 'listbox');
-      lista.hidden = true;
-      wrap.appendChild(lista);
-      const fechar = () => { lista.hidden = true; lista.innerHTML = ''; };
-      const abrir = () => {
-        const q = norm(input.value.trim());
-        const itens = Array.from(fonte.options).map(o => o.value).filter(Boolean);
-        const achados = (q ? itens.filter(v => norm(v).indexOf(q) !== -1) : itens)
-          .filter(v => norm(v) !== q)
-          .sort((a, b) => (norm(a).indexOf(q) === 0 ? 0 : 1) - (norm(b).indexOf(q) === 0 ? 0 : 1))
-          .slice(0, 8);
-        if(!achados.length){ fechar(); return; }
-        lista.innerHTML = achados.map(v => '<button type="button" class="co-sug-item" role="option">' + esc(v) + '</button>').join('');
-        lista.hidden = false;
-      };
-      input.addEventListener('input', abrir);
-      input.addEventListener('focus', () => { if(input.value.trim()) abrir(); });
-      input.addEventListener('blur', () => setTimeout(fechar, 150));
-      input.addEventListener('keydown', e => { if(e.key === 'Escape') fechar(); });
-      // pointerdown + preventDefault: escolhe sem tirar o foco antes do toque valer
-      lista.addEventListener('pointerdown', e => {
-        const b = e.target.closest('.co-sug-item'); if(!b) return;
-        e.preventDefault();
-        input.value = b.textContent;
-        fechar();
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-      });
     }
 
     // Liga o desbravador (cadastrado direto em Classes Regulares) à conta do app,
