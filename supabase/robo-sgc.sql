@@ -46,3 +46,14 @@ drop policy if exists p_pedidos_sgc_itens on pedidos_sgc_itens;
 create policy p_pedidos_sgc_itens on pedidos_sgc_itens for all using(true) with check(true);
 drop policy if exists p_robos_sgc on robos_sgc;
 create policy p_robos_sgc on robos_sgc for all using(true) with check(true);
+
+-- Classes Regular e Avançada (tela "Inserir Classe" do SGC) usam a mesma fila.
+-- tipo = 'classe': a coluna especialidade guarda o rótulo (ex.: "Amigo da Natureza (Avançada)"),
+-- classe guarda o cartão regular (Amigo, Companheiro, ...) e nivel, 'regular' ou 'avancada'.
+alter table pedidos_sgc_itens add column if not exists tipo text not null default 'especialidade';
+alter table pedidos_sgc_itens add column if not exists classe text;
+alter table pedidos_sgc_itens add column if not exists nivel text;
+alter table pedidos_sgc_itens drop constraint if exists pedidos_sgc_itens_tipo_check;
+alter table pedidos_sgc_itens add constraint pedidos_sgc_itens_tipo_check check (tipo in ('especialidade', 'classe'));
+alter table pedidos_sgc_itens drop constraint if exists pedidos_sgc_itens_nivel_check;
+alter table pedidos_sgc_itens add constraint pedidos_sgc_itens_nivel_check check (nivel is null or nivel in ('regular', 'avancada'));

@@ -14648,6 +14648,23 @@
               </div>
             </div>
             <div class="co-card">
+              <h4 class="co-card-titulo">Classes no SGC</h4>
+              <p class="co-nota">Marque as classes <b>Regulares</b> e <b>Avançadas</b> concluídas que devem ser lançadas no SGC (tela "Inserir Classe"). O robô confere no SGC e <b>não registra o que já existe lá</b>; cada lançamento ainda pede a sua confirmação.</p>
+              <label class="co-label" for="coSgcClInstrutor">Instrutor que assina as classes</label>
+              <select id="coSgcClInstrutor" class="co-input"></select>
+              <div class="co-filtros">
+                <input type="search" id="coSgcClBusca" class="co-input" placeholder="Buscar desbravador…" autocomplete="off">
+                <select id="coSgcClNivel" class="co-input" aria-label="Tipo de classe"><option value="">Regular e Avançada</option><option value="regular">Só Regular</option><option value="avancada">Só Avançada</option></select>
+                <input type="date" id="coSgcClDesde" class="co-input" aria-label="A partir de">
+              </div>
+              <p class="co-nota" style="margin-top:-2px;">O campo de data mostra só as classes concluídas a partir dela. Classes sem data de conclusão não aparecem: registre a data na ficha do desbravador.</p>
+              <div id="coSgcClLista" class="co-folha-lista" style="max-height:420px;"></div>
+              <div class="co-acoes">
+                <button type="button" class="co-btn" id="coSgcClEnviar">Enviar classes ao SGC</button>
+                <small id="coSgcClContagem" class="co-nota" style="margin:0;"></small>
+              </div>
+            </div>
+            <div class="co-card">
               <h4 class="co-card-titulo">Robô do SGC</h4>
               <p class="co-nota" id="coRoboStatus">Verificando o robô…</p>
               <label class="co-assin-op" style="margin-bottom:10px;"><input type="checkbox" id="coSgcSimular"> Só simular (preenche no SGC, mas não salva)</label>
@@ -41113,6 +41130,11 @@ const REQ_SUMMARIES = {
       $('coSgcInstrutor').innerHTML = '<option value="">' + (instrutores.length ? 'Escolha o instrutor…' : 'Cadastre um instrutor acima') + '</option>' +
         instrutores.map(i => '<option value="' + esc(i.nome) + '">' + esc(i.nome) + '</option>').join('');
       if(atual) $('coSgcInstrutor').value = atual;
+      if($('coSgcClInstrutor')){
+        const atualCl = $('coSgcClInstrutor').value || $('coSgcInstrutor').value;
+        $('coSgcClInstrutor').innerHTML = $('coSgcInstrutor').innerHTML;
+        if(atualCl) $('coSgcClInstrutor').value = atualCl;
+      }
     }
     async function adicionarInstrutor(){
       const nome = $('coSgcNovo').value.trim().replace(/\s+/g, ' ');
@@ -41150,7 +41172,75 @@ const REQ_SUMMARIES = {
       }).join('');
       $('coSgcLista').innerHTML = html || '<p class="co-vazio">Nenhuma especialidade neste filtro.</p>';
       sgcContagem();
+      renderSgcClasses();
     }
+    // ---- Classes Regular e Avançada para o SGC (tela "Inserir Classe") ----
+    function sgcClasses(p){
+      const desde = $('coSgcClDesde').value, nivel = $('coSgcClNivel').value;
+      return classesDe(p).filter(c => (c.nivel === 'regular' || c.nivel === 'avancada') && REGULARES.indexOf(c.classe) !== -1 && c.data &&
+        (!nivel || c.nivel === nivel) && (!desde || String(c.data).slice(0, 10) >= desde))
+        .slice().sort((a, b) => String(a.data).localeCompare(String(b.data)) || (ordemClasse(a.classe) - ordemClasse(b.classe)));
+    }
+    const chaveSgcClasse = (p, c) => p.chave + '|' + c.classe + '|' + c.nivel;
+    function renderSgcClasses(){
+      if(!$('coSgcClLista')) return;
+      const q = norm($('coSgcClBusca').value);
+      const marcados = new Set(Array.from($('coSgcClLista').querySelectorAll('input:checked')).map(i => i.value));
+      const abertos = new Set(Array.from($('coSgcClLista').querySelectorAll('details[open]')).map(d => d.getAttribute('data-p')));
+      const html = pessoas.filter(p => !q || norm(p.nome).indexOf(q) !== -1).map(p => {
+        const cs = sgcClasses(p); if(!cs.length) return '';
+        return '<details class="co-sgc-p" data-p="' + esc(p.chave) + '"' + (abertos.has(String(p.chave)) ? ' open' : '') + '><summary><span>' + esc(p.nome) + '</span><small>' + plural(cs.length, 'classe', 'classes') + '</small></summary>' +
+          '<div class="co-acoes" style="margin-bottom:4px;"><button type="button" class="co-mini" data-sgc-todas="' + esc(p.chave) + '">Marcar todas</button><button type="button" class="co-mini" data-sgc-nenhuma="' + esc(p.chave) + '">Limpar</button></div>' +
+          cs.map(c => { const v = chaveSgcClasse(p, c); return '<label class="co-folha-item"><input type="checkbox" value="' + esc(v) + '"' + (marcados.has(v) ? ' checked' : '') + '><span>' + esc(rotuloClasse(c.classe, c.nivel)) + '</span><small>' + dataBr(c.data) + '</small></label>'; }).join('') +
+          '</details>';
+      }).join('');
+      $('coSgcClLista').innerHTML = html || '<p class="co-vazio">Nenhuma classe Regular ou Avançada concluída neste filtro.</p>';
+      sgcClContagem();
+    }
+    function sgcClContagem(){
+      const n = $('coSgcClLista').querySelectorAll('input:checked').length;
+      $('coSgcClContagem').textContent = n ? plural(n, 'selecionada', 'selecionadas') : '';
+    }
+    async function enviarClassesAoSgc(){
+      if(semTabelaPedidos){ alert('Falta criar as tabelas do robô no banco (supabase/robo-sgc.sql).'); return; }
+      const instrutor = $('coSgcClInstrutor').value;
+      const sel = new Set(Array.from($('coSgcClLista').querySelectorAll('input:checked')).map(i => i.value));
+      if(!sel.size){ alert('Marque pelo menos uma classe.'); return; }
+      if(!instrutor){ alert('Escolha o instrutor que assina as classes.'); return; }
+      const registros = [];
+      pessoas.forEach(p => sgcClasses(p).forEach(c => {
+        if(sel.has(chaveSgcClasse(p, c))) registros.push({ nome: p.nome, especialidade: rotuloClasse(c.classe, c.nivel), classe: c.classe, nivel: c.nivel, data: String(c.data).slice(0, 10), instrutor: instrutor });
+      }));
+      registros.sort((a, b) => cmpNome(a.nome, b.nome) || a.data.localeCompare(b.data));
+      const simular = $('coSgcSimular').checked;
+      const direto = !simular && $('coSgcDireto').checked;
+      if(!confirm((simular ? '[SIMULAÇÃO] ' : '') + 'Enviar ' + plural(registros.length, 'classe', 'classes') + ' ao robô do SGC?' + String.fromCharCode(10, 10) + (direto ? 'ATENÇÃO: elas serão SALVAS NO SGC direto, sem nova confirmação. O lançamento no SGC não pode ser desfeito por aqui. O robô pula o que já existe e confere cada lançamento.' : 'O robô confere o que já existe no SGC e só salva depois da sua confirmação aqui.') + String.fromCharCode(10, 10) + '(As opções "Só simular" e "Salvar direto" ficam no cartão Robô do SGC.)')) return;
+      const u = window.__currentUsuario || {};
+      const btn = $('coSgcClEnviar'); btn.disabled = true;
+      const ped = await supa.from('pedidos_sgc').insert({ criado_por: u.nome || null, simular: simular }).select('id').single();
+      if(ped.error || !ped.data){ btn.disabled = false; alert('Não foi possível criar o pedido: ' + (ped.error ? ped.error.message : '')); return; }
+      const it = await supa.from('pedidos_sgc_itens').insert(registros.map((r, i) => ({ pedido_id: ped.data.id, ordem: i, tipo: 'classe', nome: r.nome, especialidade: r.especialidade, classe: r.classe, nivel: r.nivel, data: r.data, instrutor: r.instrutor, decisao: direto ? 'salvar' : null })));
+      btn.disabled = false;
+      if(it.error){
+        await supa.from('pedidos_sgc').delete().eq('id', ped.data.id);
+        alert(/tipo|nivel|classe/i.test(it.error.message) ? 'Falta atualizar o banco para lançar classes: rode de novo o arquivo supabase/robo-sgc.sql no SQL Editor do Supabase.' : 'Não foi possível criar os itens do pedido: ' + it.error.message);
+        return;
+      }
+      $('coSgcClLista').querySelectorAll('input:checked').forEach(i => { i.checked = false; });
+      sgcClContagem();
+      await atualizarRobo();
+    }
+    $('coSgcClBusca').addEventListener('input', renderSgcClasses);
+    $('coSgcClNivel').addEventListener('change', renderSgcClasses);
+    $('coSgcClDesde').addEventListener('change', renderSgcClasses);
+    $('coSgcClLista').addEventListener('change', sgcClContagem);
+    $('coSgcClLista').addEventListener('click', e => {
+      const t = e.target.closest('[data-sgc-todas],[data-sgc-nenhuma]'); if(!t) return;
+      const marcar = t.hasAttribute('data-sgc-todas');
+      t.closest('details').querySelectorAll('input[type=checkbox]').forEach(i => { i.checked = marcar; });
+      sgcClContagem();
+    });
+    $('coSgcClEnviar').addEventListener('click', () => { enviarClassesAoSgc(); });
     function sgcContagem(){
       const n = $('coSgcLista').querySelectorAll('input:checked').length;
       $('coSgcContagem').textContent = n ? plural(n, 'selecionada', 'selecionadas') : '';
@@ -41288,7 +41378,7 @@ const REQ_SUMMARIES = {
       if(!alvo.length) return;
       const nl = String.fromCharCode(10);
       const lista = alvo.slice(0, 12).map(i => '• ' + i.nome + ' — ' + i.especialidade + ' (' + dataBr(i.data) + ')').join(nl) + (alvo.length > 12 ? nl + '… e mais ' + (alvo.length - 12) : '');
-      if(!confirm('Salvar no SGC, sem perguntar de novo, ' + plural(alvo.length, 'especialidade', 'especialidades') + '?' + nl + nl + lista + nl + nl + 'Elas já foram conferidas no SGC e ainda não estão salvas. O robô confere de novo antes de salvar e verifica se cada uma entrou.')) return;
+      if(!confirm('Salvar no SGC, sem perguntar de novo, ' + plural(alvo.length, 'lançamento', 'lançamentos') + '?' + nl + nl + lista + nl + nl + 'Elas já foram conferidas no SGC e ainda não estão salvas. O robô confere de novo antes de salvar e verifica se cada uma entrou.')) return;
       const { error } = await supa.from('pedidos_sgc_itens').update({ decisao: 'salvar' }).eq('pedido_id', id).is('decisao', null).eq('situacao', 'preenchido');
       if(error){ alert('Não foi possível confirmar: ' + error.message); return; }
       await atualizarRobo();
